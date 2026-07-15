@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Bento aesthetic custom scrollbar and card shadows */
+body {
+  background-color: #F8FAFC;
+  font-family: var(--font-sans);
+}
+
+.bento-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem; /* rounded-2xl */
+  padding: 1.25rem; /* p-5 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bento-card:hover {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+.bento-card-dark {
+  background-color: #0f172a;
+  color: #ffffff;
+  border: 1px solid #1e293b;
+  border-radius: 1rem; /* rounded-2xl */
+  padding: 1.25rem; /* p-5 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}

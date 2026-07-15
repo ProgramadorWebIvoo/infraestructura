@@ -1,0 +1,6 @@
+{
+  "name": "IVOO Gestión de Infraestructura",
+  "description": "Sistema integrado de gestión de infraestructura, materiales, contratistas y flujos de aprobación (Cierre de Obra, Procura, Analistas, Finanzas y Presidencia).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
