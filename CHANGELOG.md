@@ -121,3 +121,19 @@ OPENAI_API_KEY=sk-...
 GEMINI_API_KEY=...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+---
+
+## [2026-07-16] — Eliminada columna `observations` (redundante)
+
+**Causa:** La columna `observations` era redundante ya que `description` en `Proposal` cubre el mismo propósito. Los datos contextuales para la evaluación IA (tasa dólar, garantías, disponibilidad de material) se ingresarán en `description`.
+
+**Cambios:**
+- `src/types.ts` — eliminado campo `observations?: string` de interfaz `Proposal`
+- `src/services/aiEvaluationService.ts` — eliminado `observations` del payload y tipo inline
+- `database.sql` — eliminada columna `observations` de tabla `project_proposals`
+
+**Archivos:**
+- `src/types.ts`
+- `src/services/aiEvaluationService.ts`
+- `database.sql`

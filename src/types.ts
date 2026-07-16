@@ -41,8 +41,6 @@ export interface Proposal {
   deliveryWeeks: number;
   negotiatedAdvancePercent: number; // e.g. 30 for 30%
   description: string;
-  /** Observaciones adicionales: tasa del dólar (contexto VE), tipo de divisa, garantía, disponibilidad de material, etc. */
-  observations?: string;
 }
 
 export interface ProjectDocument {

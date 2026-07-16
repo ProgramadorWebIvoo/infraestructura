@@ -47,7 +47,6 @@ interface AIEvaluationPayload {
     deliveryWeeks: number;
     negotiatedAdvancePercent: number;
     description: string;
-    observations?: string;
   }>;
   provider?: 'chatgpt' | 'gemini' | 'claude';
 }
@@ -91,7 +90,6 @@ export async function evaluateProposals(
       deliveryWeeks: p.deliveryWeeks,
       negotiatedAdvancePercent: p.negotiatedAdvancePercent,
       description: p.description,
-      observations: p.observations,
     })),
   };
 

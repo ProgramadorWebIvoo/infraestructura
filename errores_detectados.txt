@@ -1,0 +1,5 @@
+*   Los inputs numericos estan validados, sin embargo si se ingresan los valores por teclado 
+    los mismos no permiten borrar el 1, bien por ahí sin embargo eso no permite colocar que 
+    numero sera ingresado.
+
+*   Realizar un boton para traer al cuadro de analistas la propuesta del proveedor?
