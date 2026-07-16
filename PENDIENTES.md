@@ -15,3 +15,9 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
 2. **Eliminar** `src/data.ts`.
 3. **Eliminar** el bloque de reset en `App.tsx` (líneas ~516–521) y el import correspondiente.
 4. Si `MATERIAL_CATALOG` tiene utilidad, migrar su contenido a la BD (tabla `material_catalog` o similar) o descartarlo.
+5. **VERIFICAR** Parece que algunos contenedores se extienden infinitamente segun el contenido y no tienen un limite.
+6. **VERIFICAR** Los inputs numericos estan validados, sin embargo si se ingresan los valores por teclado 
+    los mismos no permiten borrar el 1, bien por ahí sin embargo eso no permite colocar que 
+    numero sera ingresado.
+7. **REALIZAR** Realizar un boton para traer al cuadro de analistas la propuesta del proveedor?
+
