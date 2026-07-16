@@ -21,8 +21,10 @@ import {
   FileSpreadsheet,
   Map,
   Download,
+  BrainCircuit,
 } from "lucide-react";
 import { ProjectDocument } from "../types";
+import EvaluacionInteligenteModal from "./EvaluacionInteligenteModal";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -64,6 +66,9 @@ export default function ProcuraPanel({
   const [rejectingProjectId, setRejectingProjectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
+
+  // AI Evaluation modal state
+  const [aiEvalProject, setAiEvalProject] = useState<Project | null>(null);
 
   const pendingInvestmentApproval = projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE);
   const pendingContractSelection = projects.filter(p => p.status === ProjectStatus.COMPARATIVA_ENVIADA);
@@ -315,6 +320,14 @@ export default function ProcuraPanel({
                       <span className="text-sky-600 font-bold bg-sky-50 px-3 py-1 rounded-xl border border-sky-100 font-mono text-[10px] tracking-wider uppercase">
                         Comparativa Lista ({p.proposals?.length || 0} Propuestas)
                       </span>
+                      <button
+                        id={`btn-ai-eval-${p.id}`}
+                        onClick={() => setAiEvalProject(p)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors cursor-pointer"
+                      >
+                        <BrainCircuit className="h-3.5 w-3.5" />
+                        Evaluación Inteligente
+                      </button>
                       {!isRejectingThis && (
                         <button
                           onClick={() => handleOpenReject(p.id)}
@@ -431,6 +444,19 @@ export default function ProcuraPanel({
           </div>
         )}
       </div>
+
+      {/* AI Evaluation Modal */}
+      {aiEvalProject && (
+        <EvaluacionInteligenteModal
+          isOpen={!!aiEvalProject}
+          onClose={() => setAiEvalProject(null)}
+          project={aiEvalProject}
+          proposals={aiEvalProject.proposals ?? []}
+          onSelectContractor={onSelectContractor}
+          authToken={authToken}
+          apiBaseUrl={apiBaseUrl}
+        />
+      )}
 
     </div>
   );

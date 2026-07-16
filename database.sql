@@ -144,6 +144,7 @@ CREATE TABLE `project_proposals` (
   `delivery_weeks` INT UNSIGNED NOT NULL DEFAULT 0,
   `negotiated_advance_percent` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
   `description` TEXT NOT NULL,
+  `observations` TEXT DEFAULT NULL COMMENT 'Contexto adicional: tasa dólar, tipo de divisa, garantías, disponibilidad de materiales, etc.',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_project_proposals_project` (`project_id`),
