@@ -24,6 +24,9 @@ import {
   RefreshCw,
   Zap,
   Sparkles,
+  Bot,
+  Brain,
+  Network,
 } from "lucide-react";
 import { Project, Proposal } from "../types";
 import { evaluateProposals, AIEvaluationResult, AIProviderUsed } from "../services/aiEvaluationService";
@@ -32,10 +35,11 @@ import { evaluateProposals, AIEvaluationResult, AIProviderUsed } from "../servic
 // Constantes
 // ---------------------------------------------------------------------------
 
-const PROVIDER_META: Record<AIProviderUsed, { label: string; color: string; icon: string }> = {
-  chatgpt: { label: "ChatGPT (OpenAI)", color: "#10a37f", icon: "🤖" },
-  gemini: { label: "Gemini (Google)", color: "#4285f4", icon: "✨" },
-  claude: { label: "Claude (Anthropic)", color: "#d97706", icon: "🧠" },
+const PROVIDER_META: Record<AIProviderUsed | 'auto', { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }> = {
+  auto: { label: "Automático (Failover)", color: "#f59e0b", Icon: Network },
+  chatgpt: { label: "ChatGPT (OpenAI)", color: "#10a37f", Icon: Bot },
+  gemini: { label: "Gemini (Google)", color: "#4285f4", Icon: Sparkles },
+  claude: { label: "Claude (Anthropic)", color: "#d97706", Icon: Brain },
 };
 
 // ---------------------------------------------------------------------------
@@ -71,6 +75,7 @@ export default function EvaluacionInteligenteModal({
   const [failoverLog, setFailoverLog] = useState<string[]>([]);
   const [currentProvider, setCurrentProvider] = useState<AIProviderUsed>("chatgpt");
   const [accepting, setAccepting] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<'auto' | 'chatgpt' | 'gemini' | 'claude'>('auto');
   const logEndRef = useRef<HTMLDivElement>(null);
 
   // Reset al abrir
@@ -94,17 +99,25 @@ export default function EvaluacionInteligenteModal({
     setStatus("loading");
     setErrorMsg("");
     setFailoverLog([]);
-    setCurrentProvider("chatgpt");
 
     // Simulamos los pasos del failover para feedback visual
     const log = (msg: string) => setFailoverLog((prev) => [...prev, msg]);
 
     try {
-      log(`🤖 Iniciando evaluación con ChatGPT...`);
-      setCurrentProvider("chatgpt");
+      const providerParam = selectedProvider === 'auto' ? undefined : selectedProvider;
+      
+      // Mostrar el proveedor correcto desde el inicio
+      const displayProvider = selectedProvider === 'auto' ? 'chatgpt' : selectedProvider;
+      setCurrentProvider(displayProvider);
+      
+      const startLabel = selectedProvider === 'auto'
+        ? 'Automático (Failover: ChatGPT → Gemini → Claude)'
+        : PROVIDER_META[displayProvider].label;
+      
+      log(`Iniciando evaluación con ${startLabel}...`);
       await delay(800);
 
-      const data = await evaluateProposals(project, proposals, authToken, apiBaseUrl);
+      const data = await evaluateProposals(project, proposals, authToken, apiBaseUrl, providerParam);
 
       log(`✅ Evaluación completada por ${PROVIDER_META[data.providerUsed].label}`);
       setResult(data);
@@ -116,7 +129,7 @@ export default function EvaluacionInteligenteModal({
       setErrorMsg(message);
       setStatus("error");
     }
-  }, [project, proposals, authToken, apiBaseUrl]);
+  }, [project, proposals, authToken, apiBaseUrl, selectedProvider]);
 
   // --- Aceptar recomendación ---
   const handleAccept = () => {
@@ -173,8 +186,16 @@ export default function EvaluacionInteligenteModal({
         {/* BODY */}
         {/* ============================================================ */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {status === "idle" && <IdleView project={project} proposals={proposals} onStart={runEvaluation} />}
-          {status === "loading" && <LoadingView currentProvider={currentProvider} failoverLog={failoverLog} logEndRef={logEndRef} />}
+          {status === "idle" && (
+            <IdleView
+              project={project}
+              proposals={proposals}
+              onStart={runEvaluation}
+              selectedProvider={selectedProvider}
+              onProviderChange={setSelectedProvider}
+            />
+          )}
+          {status === "loading" && <LoadingView currentProvider={currentProvider} failoverLog={failoverLog} logEndRef={logEndRef} selectedProvider={selectedProvider} />}
           {status === "result" && result && (
             <ResultView
               result={result}
@@ -227,10 +248,14 @@ function IdleView({
   project,
   proposals,
   onStart,
+  selectedProvider,
+  onProviderChange,
 }: {
   project: Project;
   proposals: Proposal[];
-  onStart: () => void;
+  onStart: () => Promise<void>;
+  selectedProvider: 'auto' | 'chatgpt' | 'gemini' | 'claude';
+  onProviderChange: (value: 'auto' | 'chatgpt' | 'gemini' | 'claude') => void;
 }) {
   return (
     <div className="space-y-6 text-center">
@@ -299,6 +324,21 @@ function IdleView({
         </table>
       </div>
 
+      <div className="mb-4">
+        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+          Proveedor de IA
+        </label>
+        <select
+          value={selectedProvider}
+          onChange={(e) => onProviderChange(e.target.value as 'auto' | 'chatgpt' | 'gemini' | 'claude')}
+          className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-amber-500 bg-white"
+        >
+          <option value="auto">Automático</option>
+          <option value="chatgpt">ChatGPT (OpenAI)</option>
+          <option value="gemini">Gemini (Google)</option>
+          <option value="claude">Claude (Anthropic)</option>
+        </select>
+      </div>              
       <button
         id="btn-start-ai-evaluation"
         onClick={onStart}
@@ -319,12 +359,17 @@ function LoadingView({
   currentProvider,
   failoverLog,
   logEndRef,
+  selectedProvider,
 }: {
   currentProvider: AIProviderUsed;
   failoverLog: string[];
   logEndRef: React.RefObject<HTMLDivElement | null>;
+  selectedProvider: 'auto' | 'chatgpt' | 'gemini' | 'claude';
 }) {
   const meta = PROVIDER_META[currentProvider];
+  const displayLabel = selectedProvider === 'auto'
+    ? 'Automático (Failover: ChatGPT → Gemini → Claude)'
+    : meta.label;
 
   return (
     <div className="space-y-6 text-center">
@@ -346,14 +391,14 @@ function LoadingView({
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
           >
-            {meta.icon}
+            <meta.Icon className={`w-8 h-8 text-[${meta.color}]`} />
           </motion.span>
         </motion.div>
 
         <div>
           <h4 className="text-base font-bold text-slate-900">Analizando propuestas...</h4>
           <p className="text-sm text-slate-500 mt-1">
-            Consultando: <strong style={{ color: meta.color }}>{meta.label}</strong>
+            Consultando: <strong style={{ color: meta.color }}>{displayLabel}</strong>
           </p>
         </div>
 

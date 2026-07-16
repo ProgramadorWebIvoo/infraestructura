@@ -80,3 +80,44 @@ Botón → setAiEvalProject → Modal (idle)
 - `src/components/EvaluacionInteligenteModal.tsx`
 - `src/components/ProcuraPanel.tsx`
 - `database.sql`
+
+---
+
+## [2026-07-16] — Feature Completa: Evaluación Inteligente con Selección de Proveedor
+
+### Frontend (React + TypeScript)
+
+**Nuevas capacidades:**
+- **Selector de proveedor IA** en el modal: Automático (failover), ChatGPT, Gemini, Claude
+- **Feedback visual correcto** según modo seleccionado:
+  - Modo específico: muestra el proveedor elegido (ej. "Consultando: Gemini (Google)")
+  - Modo automático: muestra "Automático (Failover: ChatGPT → Gemini → Claude)"
+- **Log inicial dinámico**: "Iniciando evaluación con [proveedor]..." o "Iniciando evaluación en modo automático..."
+- **Iconos Lucide** por proveedor: Network (auto), Bot (ChatGPT), Sparkles (Gemini), Brain (Claude)
+
+**Archivos actualizados:**
+- `src/components/EvaluacionInteligenteModal.tsx` — Selector, loading dinámico, logs correctos
+- `src/services/aiEvaluationService.ts` — Parámetro opcional `provider` en `evaluateProposals()`
+
+### Backend (Laravel)
+
+**Endpoint mejorasel API)**
+- `POST /api/ai/evaluate-proposals` acepta parámetro opcional `provider` (`chatgpt` | `gemini` | `claude`)
+- Si se envía `provider`: usa **solo** ese proveedor (sin failover)
+- Si no se envía: failover automático ChatGPT → Gemini → Claude
+- Validación con `Rule::in(['chatgpt','gemini','claude'])`
+
+**Archivos actualizados:**
+- `app/Http/Controllers/Api/AIEvaluationController.php` — Parámetro `provider` opcional
+- `app/Services/AI/AIEvaluationService.php` — Método `evaluateWithProvider()` para modo forzado
+
+---
+
+### Estado Final: Feature Completa ✅
+
+**Para producción solo falta configurar API keys en `.env` del backend:**
+```env
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...
+ANTHROPIC_API_KEY=sk-ant-...
+```

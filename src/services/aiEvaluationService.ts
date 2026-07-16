@@ -49,6 +49,7 @@ interface AIEvaluationPayload {
     description: string;
     observations?: string;
   }>;
+  provider?: 'chatgpt' | 'gemini' | 'claude';
 }
 
 /** Respuesta cruda del backend. */
@@ -71,6 +72,7 @@ export async function evaluateProposals(
   proposals: Proposal[],
   authToken: string,
   apiBaseUrl: string,
+  provider?: 'chatgpt' | 'gemini' | 'claude',
 ): Promise<AIEvaluationResult> {
   const payload: AIEvaluationPayload = {
     projectId: project.id,
@@ -93,6 +95,8 @@ export async function evaluateProposals(
     })),
   };
 
+  if (provider) payload.provider = provider;
+  
   const response = await fetch(`${apiBaseUrl}/ai/evaluate-proposals`, {
     method: "POST",
     headers: {
