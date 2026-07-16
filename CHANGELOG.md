@@ -137,3 +137,51 @@ ANTHROPIC_API_KEY=sk-ant-...
 - `src/types.ts`
 - `src/services/aiEvaluationService.ts`
 - `database.sql`
+
+---
+
+## [2026-07-16] — Fix UX: Feedback visual al adjudicar contratista desde modal IA
+
+**Tipo:** fix
+
+**Qué:** El modal de Evaluación Inteligente se quedaba con el estado "Adjudicando..." indefinidamente después de aceptar la recomendación, sin mostrar éxito o error. El callback `onSelectContractor` se ejecutaba fire-and-forget y el estado `accepting` nunca se resetaba.
+
+**Causa raíz:**
+1. `handleAccept` en el modal no hacía `await` del callback `onSelectContractor` (tipado como `void`)
+2. `handleSelectContractor` en App.tsx atrapaba errores con `alert()` sin re-lanzar, por lo que el modal nunca se enteraba del resultado
+3. No existían estados de `acceptSuccess` ni `acceptError` para renderizar feedback
+
+**Cambios:**
+- `src/components/EvaluacionInteligenteModal.tsx`:
+  - Tipado de `onSelectContractor` cambiado a `Promise<void>`
+  - `handleAccept` hecho `async` con `await` al callback + try/catch
+  - Nuevos estados: `acceptSuccess` (boolean) y `acceptError` (string | null)
+  - `ResultView`: al success muestra badge animado "¡Adjudicado!" con CheckCircle; al error muestra banner rojo con AlertTriangle + mensaje
+  - Footer: texto dinámico según estado, badge "Adjudicado" animado en éxito
+  - Auto-cierre del modal 1.8s después del éxito vía `setTimeout(() => onClose(), 1800)`
+  - Reset de los nuevos estados al reabrir el modal
+- `src/App.tsx` (`handleSelectContractor`): eliminado `alert()` y agregado `throw error` para propagar al modal
+- `src/components/ProcuraPanel.tsx`: tipado de `onSelectContractor` actualizado a `Promise<void>`
+
+**Archivos:**
+- `src/components/EvaluacionInteligenteModal.tsx`
+- `src/App.tsx`
+- `src/components/ProcuraPanel.tsx`
+
+---
+
+## [2026-07-16] — Feature: Rating del contratista como criterio en evaluación IA
+
+**Tipo:** feature
+
+**Qué:** El `confidenceScore` asignado por la IA ahora considera también el `rating` (1.0–5.0) del contratista, que refleja su desempeño histórico, calidad y cumplimiento.
+
+**Cambios:**
+- `src/types.ts` — agregado `contractorRating: number` a interfaz `Proposal`
+- `src/components/AnalistasPanel.tsx` — al crear una propuesta se incluye `contractorRating: contractor.rating`
+- `src/services/aiEvaluationService.ts` — `contractorRating` incluido en el payload enviado al backend AI
+
+**Archivos:**
+- `src/types.ts`
+- `src/components/AnalistasPanel.tsx`
+- `src/services/aiEvaluationService.ts`

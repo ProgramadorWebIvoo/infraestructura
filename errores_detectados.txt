@@ -3,3 +3,9 @@
     numero sera ingresado.
 
 *   Realizar un boton para traer al cuadro de analistas la propuesta del proveedor?
+
+*   Cuando otra 'Orden' no se habia finalizado, un error ocurrio. Lo que pasaba es que no
+    permitia realizar un nuevo analisis de carga (EVALUAR)
+
+*   Realizar pruebas de PROMPT_INJECTION
+

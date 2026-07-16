@@ -379,7 +379,7 @@ function AppRoutes() {
       }));
     } catch (error) {
       console.error(error);
-      alert("No se pudo adjudicar el contratista.");
+      throw error; // propagar para que el modal muestre el feedback
     }
   };
 

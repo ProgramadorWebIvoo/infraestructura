@@ -35,11 +35,12 @@ export interface Proposal {
   id: string;
   contractorCode: string;
   contractorName: string;
+  contractorRating: number; // 1.0–5.0, tomado de Contractor.rating al crear la propuesta
   materialCost: number;
   laborCost: number;
   totalCost: number;
   deliveryWeeks: number;
-  negotiatedAdvancePercent: number; // e.g. 30 for 30%
+  negotiatedAdvancePercent: number;
   description: string;
 }
 

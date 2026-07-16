@@ -41,6 +41,7 @@ interface AIEvaluationPayload {
     id: string;
     contractorCode: string;
     contractorName: string;
+    contractorRating: number; // 1.0–5.0
     materialCost: number;
     laborCost: number;
     totalCost: number;
@@ -84,6 +85,7 @@ export async function evaluateProposals(
       id: p.id,
       contractorCode: p.contractorCode,
       contractorName: p.contractorName,
+      contractorRating: p.contractorRating,
       materialCost: p.materialCost,
       laborCost: p.laborCost,
       totalCost: p.totalCost,

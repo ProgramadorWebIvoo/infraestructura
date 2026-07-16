@@ -56,6 +56,7 @@ export default function AnalistasPanel({
     onAddProposal(selectedProjectId, {
       contractorCode: contractor.code,
       contractorName: contractor.name,
+      contractorRating: contractor.rating,
       materialCost,
       laborCost,
       totalCost: materialCost + laborCost,

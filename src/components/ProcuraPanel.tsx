@@ -29,7 +29,7 @@ import EvaluacionInteligenteModal from "./EvaluacionInteligenteModal";
 interface ProcuraPanelProps {
   projects: Project[];
   onApproveInvestment: (projectId: string, notes: string, approvedAmount: number) => void;
-  onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => void;
+  onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   onRejectProposals: (projectId: string, reason: string) => void;
   authToken: string;
   apiBaseUrl: string;

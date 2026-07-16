@@ -51,7 +51,7 @@ interface EvaluacionInteligenteModalProps {
   onClose: () => void;
   project: Project;
   proposals: Proposal[];
-  onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => void;
+  onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   authToken: string;
   apiBaseUrl: string;
 }
@@ -75,6 +75,8 @@ export default function EvaluacionInteligenteModal({
   const [failoverLog, setFailoverLog] = useState<string[]>([]);
   const [currentProvider, setCurrentProvider] = useState<AIProviderUsed>("chatgpt");
   const [accepting, setAccepting] = useState(false);
+  const [acceptSuccess, setAcceptSuccess] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<'auto' | 'chatgpt' | 'gemini' | 'claude'>('auto');
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -84,8 +86,10 @@ export default function EvaluacionInteligenteModal({
       setStatus("idle");
       setResult(null);
       setErrorMsg("");
-      setFailoverLog([]);
+          setFailoverLog([]);
       setCurrentProvider("chatgpt");
+      setAcceptSuccess(false);
+      setAcceptError(null);
     }
   }, [isOpen]);
 
@@ -132,14 +136,26 @@ export default function EvaluacionInteligenteModal({
   }, [project, proposals, authToken, apiBaseUrl, selectedProvider]);
 
   // --- Aceptar recomendación ---
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!result) return;
     setAccepting(true);
+    setAcceptError(null);
     const winnerProposal = proposals.find((p) => p.contractorCode === result.winnerContractorCode);
-    if (winnerProposal) {
-      onSelectContractor(project.id, result.winnerContractorCode, winnerProposal.id);
+    if (!winnerProposal) {
+      setAcceptError("No se encontró la propuesta del contratista ganador.");
+      setAccepting(false);
+      return;
     }
-    // No cerramos el modal — el padre lo hará al re-renderizar con estado cambiado
+    try {
+      await onSelectContractor(project.id, result.winnerContractorCode, winnerProposal.id);
+      setAccepting(false);
+      setAcceptSuccess(true);
+      // Auto-cierre después de mostrar el feedback visual
+      setTimeout(() => onClose(), 1800);
+    } catch (err: any) {
+      setAcceptError(err?.message ?? "Error al adjudicar el contratista.");
+      setAccepting(false);
+    }
   };
 
   // --- Render ---
@@ -203,6 +219,8 @@ export default function EvaluacionInteligenteModal({
               project={project}
               onAccept={handleAccept}
               accepting={accepting}
+              acceptSuccess={acceptSuccess}
+              acceptError={acceptError}
               onRetry={runEvaluation}
             />
           )}
@@ -214,11 +232,24 @@ export default function EvaluacionInteligenteModal({
         {/* ============================================================ */}
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
           <span className="text-[10px] text-slate-400 font-medium">
-            {status === "result"
-              ? "Puede aceptar la recomendación o cerrar y decidir manualmente."
-              : "Powered by ChatGPT · Gemini · Claude"}
+            {acceptSuccess
+              ? "Contratista adjudicado exitosamente."
+              : acceptError
+                ? "Error al adjudicar. Puede reintentar o cerrar."
+                : status === "result"
+                  ? "Puede aceptar la recomendación o cerrar y decidir manualmente."
+                  : "Powered by ChatGPT · Gemini · Claude"}
           </span>
-          {status === "result" && !accepting && (
+          {acceptSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-emerald-700 bg-emerald-100 rounded-xl border border-emerald-300"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Adjudicado
+            </motion.div>
+          ) : status === "result" && !accepting && !acceptError ? (
             <button
               id="btn-accept-ai-recommendation"
               onClick={handleAccept}
@@ -227,10 +258,9 @@ export default function EvaluacionInteligenteModal({
               <CheckCircle className="h-4 w-4" />
               Aceptar recomendación
             </button>
-          )}
-          {status === "result" && accepting && (
+          ) : status === "result" && accepting ? (
             <span className="text-xs font-bold text-emerald-600">Adjudicando...</span>
-          )}
+          ) : null}
         </div>
       </motion.div>
     </div>
@@ -440,6 +470,8 @@ function ResultView({
   project,
   onAccept,
   accepting,
+  acceptSuccess,
+  acceptError,
   onRetry,
 }: {
   result: AIEvaluationResult;
@@ -447,6 +479,8 @@ function ResultView({
   project: Project;
   onAccept: () => void;
   accepting: boolean;
+  acceptSuccess: boolean;
+  acceptError: string | null;
   onRetry: () => void;
 }) {
   const winnerProposal = proposals.find((p) => p.contractorCode === result.winnerContractorCode);
@@ -515,23 +549,44 @@ function ResultView({
               )}
             </p>
           </div>
-          {!accepting && (
+          {acceptSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-300 shrink-0"
+            >
+              <CheckCircle className="h-5 w-5" />
+              <span className="text-xs font-black">¡Adjudicado!</span>
+            </motion.div>
+          ) : accepting ? (
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+              Adjudicando...
+            </span>
+          ) : (
             <button
               id="btn-accept-from-result"
               onClick={onAccept}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer shrink-0"
+              disabled={!!acceptError}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ShieldCheck className="h-4 w-4" />
               Adjudicar a {result.winnerContractorName}
             </button>
           )}
-          {accepting && (
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
-              Adjudicando...
-            </span>
-          )}
         </div>
       </motion.div>
+
+      {/* Error al adjudicar */}
+      {acceptError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700"
+        >
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="text-xs font-medium">{acceptError}</div>
+        </motion.div>
+      )}
 
       {/* Comparison Matrix: Strengths / Weaknesses / Risks */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
