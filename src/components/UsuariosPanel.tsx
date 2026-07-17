@@ -297,7 +297,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
         </div>
 
         {/* ── Users list ── */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-148">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
             <h3 className="text-sm font-black text-slate-950">Usuarios del sistema</h3>
             <span className="text-[10px] font-bold font-mono text-sky-600 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full">

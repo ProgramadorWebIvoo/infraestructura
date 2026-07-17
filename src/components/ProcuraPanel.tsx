@@ -136,7 +136,7 @@ export default function ProcuraPanel({
           <div className="space-y-5">
             <div className="space-y-2.5">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Peticiones Listas para Procura:</label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scrollbar-smooth">
                 {pendingInvestmentApproval.map((p) => (
                   <button
                     id={`procura-review-select-${p.id}`}
@@ -282,7 +282,7 @@ export default function ProcuraPanel({
       </div>
 
       {/* SECTION 2: Bid Evaluation & Final Hiring Decision */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 gap-2 max-h-80 overflow-y-auto pr-2 -mr-2 scroll-smooth">
         <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
           <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl border border-emerald-100">
             <Users className="h-5 w-5" />
@@ -302,7 +302,7 @@ export default function ProcuraPanel({
             {pendingContractSelection.map((p) => {
               const isRejectingThis = rejectingProjectId === p.id;
               return (
-                <div key={p.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/10 p-5 space-y-4">
+                <div key={p.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/10 p-5 space-y-4 ">
 
                   {/* Project Brief */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/60 pb-4 gap-3">

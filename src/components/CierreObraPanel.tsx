@@ -113,7 +113,7 @@ export default function CierreObraPanel({
               {/* Selector List */}
               <div className="space-y-2.5">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Seleccionar Expediente a Revisar:</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
                   {pendingReview.map((p) => (
                     <button
                       id={`cierre-select-${p.id}`}
@@ -319,7 +319,7 @@ export default function CierreObraPanel({
 
       {/* SECTION 2: Work Completion & Quality Verification */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 p  -2 -mr-2 scroll-smooth overflow-y-auto max-h-65">
           <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-5">
             <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl border border-emerald-100">
               <BadgeCheck className="h-5 w-5" />

@@ -236,7 +236,7 @@ export default function ProveedoresRegistrados({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto grid grid-cols-1 pr-2 scroll-smooth overflow-y-auto max-h-115">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50 text-[9px] font-bold uppercase tracking-wider text-slate-500">
@@ -340,7 +340,7 @@ export default function ProveedoresRegistrados({
               Cargando propuestas...
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 grid grid-cols-1 pr-2 scroll-smooth overflow-y-auto max-h-115">
               {filteredProposals.length === 0 ? (
                 <p className="py-12 text-center text-sm font-medium italic text-slate-400">
                   {proposals.length === 0
@@ -576,7 +576,7 @@ export default function ProveedoresRegistrados({
       {/* ── Invite Modal ── */}
       {inviteModalContractor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ">
 
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 p-5 text-white">

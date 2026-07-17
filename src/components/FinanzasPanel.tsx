@@ -85,7 +85,7 @@ export default function FinanzasPanel({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Left Card: Pending Advance payments */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-115">
           <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-5">
             <div className="bg-rose-50 text-rose-600 p-2.5 rounded-xl border border-rose-100">
               <Coins className="h-5 w-5" />
@@ -160,7 +160,7 @@ export default function FinanzasPanel({
         </div>
 
         {/* Right Card: Final Settlements (Liquidaciones) */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-115">
           <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-5">
             <div className="bg-sky-50 text-sky-600 p-2.5 rounded-xl border border-sky-100">
               <DollarSign className="h-5 w-5" />
@@ -237,7 +237,7 @@ export default function FinanzasPanel({
       </div>
 
       {/* Financial ledger transaction ledger list */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-115">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="font-sans font-bold text-slate-900 text-sm">Libro Diario de Egresos y Transferencias</h3>
