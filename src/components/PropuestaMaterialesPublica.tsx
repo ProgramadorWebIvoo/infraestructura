@@ -38,9 +38,11 @@ interface InvitationPublicInfo {
   project: ProjectPublicData;
 }
 
-interface ItemRow extends SupplierMaterialProposalItem {
+interface ItemRow extends Omit<SupplierMaterialProposalItem, 'unitPrice' | 'quantity'> {
   _id: string;
   isCustom: boolean;
+  unitPrice: number | "";
+  quantity: number | "";
 }
 
 type DurationUnit = "dias" | "semanas" | "meses";
@@ -100,7 +102,9 @@ export default function PropuestaMaterialesPublica() {
       const next = [...prev];
       const row = { ...next[index], [field]: value };
       if (field === "unitPrice" || field === "quantity") {
-        row.totalPrice = parseFloat((Number(row.unitPrice) * Number(row.quantity)).toFixed(2));
+        const uPrice = row.unitPrice === "" ? 0 : Number(row.unitPrice);
+        const qty = row.quantity === "" ? 0 : Number(row.quantity);
+        row.totalPrice = parseFloat((uPrice * qty).toFixed(2));
       }
       next[index] = row;
       return next;
@@ -133,7 +137,7 @@ export default function PropuestaMaterialesPublica() {
     // Strip incomplete custom rows silently
     const validItems = items.filter((i) => !i.isCustom || i.materialName.trim() !== "");
 
-    const hasAnyPrice = validItems.some((i) => i.unitPrice > 0);
+    const hasAnyPrice = validItems.some((i) => Number(i.unitPrice) > 0);
     if (!hasAnyPrice) {
       alert("Ingrese precio unitario para al menos un material.");
       return;
@@ -147,7 +151,11 @@ export default function PropuestaMaterialesPublica() {
         body: JSON.stringify({
           estimatedDays: estimatedDays !== "" ? Number(estimatedDays) : null,
           durationUnit: estimatedDays !== "" ? durationUnit : null,
-          items: validItems.map(({ _id: _u, isCustom: _c, ...rest }) => rest),
+          items: validItems.map(({ _id: _u, isCustom: _c, unitPrice, quantity, ...rest }) => ({
+            ...rest,
+            unitPrice: unitPrice === "" ? 0 : unitPrice,
+            quantity: quantity === "" ? 0 : quantity,
+          })),
           generalNotes: generalNotes.trim() || null,
         }),
       });
@@ -306,7 +314,9 @@ export default function PropuestaMaterialesPublica() {
                               min="0"
                               step="0.01"
                               value={item.unitPrice === 0 ? "" : item.unitPrice}
-                              onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                              onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                              onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
                               placeholder="0.00"
                               className="w-28 rounded-lg border border-slate-200 px-2.5 py-1.5 text-right font-mono text-sm font-bold text-slate-800 outline-hidden focus:border-sky-400 focus:ring-1 focus:ring-sky-200 ml-auto block"
                             />
@@ -376,7 +386,9 @@ export default function PropuestaMaterialesPublica() {
                                 min="0"
                                 step="0.01"
                                 value={item.quantity === 0 ? "" : item.quantity}
-                                onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                                onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); updateItem(index, "quantity", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                                onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                                onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); updateItem(index, "quantity", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
                                 placeholder="0"
                                 className="w-16 rounded-lg border border-amber-200 px-2 py-1.5 text-center font-mono text-xs font-bold text-slate-800 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                               />
@@ -396,7 +408,9 @@ export default function PropuestaMaterialesPublica() {
                                 min="0"
                                 step="0.01"
                                 value={item.unitPrice === 0 ? "" : item.unitPrice}
-                                onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                              onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                              onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                              onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
                                 placeholder="0.00"
                                 className="w-28 rounded-lg border border-amber-200 px-2.5 py-1.5 text-right font-mono text-sm font-bold text-slate-800 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100 ml-auto block"
                               />
@@ -461,8 +475,10 @@ export default function PropuestaMaterialesPublica() {
                     type="number"
                     min="1"
                     value={estimatedDays}
-                    onChange={(e) => setEstimatedDays(e.target.value === "" ? "" : parseInt(e.target.value) || "")}
-                    placeholder="Ej. 30"
+                    onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setEstimatedDays(v === "" ? "" : Math.max(0, parseInt(v) || 0) || ""); }}
+                    onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                    onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setEstimatedDays(v === "" ? "" : Math.max(0, parseInt(v) || 0) || ""); }}
+                    placeholder="0"
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-bold text-slate-800 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                   />
                 </div>

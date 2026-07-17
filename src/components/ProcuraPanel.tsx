@@ -60,7 +60,7 @@ export default function ProcuraPanel({
   // Phase 1 form state
   const [selectedReviewId, setSelectedReviewId] = useState("");
   const [procuraNotes, setProcuraNotes] = useState("");
-  const [approvedAmount, setApprovedAmount] = useState(0);
+  const [approvedAmount, setApprovedAmount] = useState<number | "">("");
 
   // Rejection state
   const [rejectingProjectId, setRejectingProjectId] = useState<string | null>(null);
@@ -78,11 +78,12 @@ export default function ProcuraPanel({
   const handleApproveInvestment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReviewId) return;
-    if (approvedAmount <= 0) {
+    const amountNum = approvedAmount === "" ? 0 : approvedAmount;
+    if (amountNum <= 0) {
       alert("Por favor, introduce un monto de inversión autorizado válido.");
       return;
     }
-    onApproveInvestment(selectedReviewId, procuraNotes, approvedAmount);
+    onApproveInvestment(selectedReviewId, procuraNotes, amountNum);
     setSelectedReviewId("");
     setProcuraNotes("");
     setApprovedAmount(0);
@@ -247,7 +248,10 @@ export default function ProcuraPanel({
                       type="number"
                       step="0.01"
                       value={approvedAmount}
-                      onChange={(e) => setApprovedAmount(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setApprovedAmount(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                      onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                      onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setApprovedAmount(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                      placeholder="0.00"
                       className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-purple-500 bg-white font-mono font-bold"
                     />
                   </div>

@@ -36,9 +36,9 @@ export default function AnalistasPanel({
   // States
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
-  const [materialCost, setMaterialCost] = useState(1000);
-  const [laborCost, setLaborCost] = useState(800);
-  const [deliveryWeeks, setDeliveryWeeks] = useState(2);
+  const [materialCost, setMaterialCost] = useState<number | "">(1000);
+  const [laborCost, setLaborCost] = useState<number | "">(800);
+  const [deliveryWeeks, setDeliveryWeeks] = useState<number | "">(2);
   const [advancePercent, setAdvancePercent] = useState(30);
   const [description, setDescription] = useState("");
 
@@ -53,14 +53,18 @@ export default function AnalistasPanel({
     const contractor = contractors.find(c => c.code === contractorCode);
     if (!contractor) return;
    
+    const matCostNum = Number(materialCost || 0);
+    const laborCostNum = Number(laborCost || 0);
+    const delWeeksNum = Number(deliveryWeeks || 1);
+
     onAddProposal(selectedProjectId, {
       contractorCode: contractor.code,
       contractorName: contractor.name,
       contractorRating: contractor.rating,
-      materialCost,
-      laborCost,
-      totalCost: materialCost + laborCost,
-      deliveryWeeks,
+      materialCost: matCostNum,
+      laborCost: laborCostNum,
+      totalCost: matCostNum + laborCostNum,
+      deliveryWeeks: delWeeksNum,
       negotiatedAdvancePercent: advancePercent,
       description: description.trim() || `Propuesta para trabajos de ${activeProject?.title}. Incluye materiales e instalación certificada.`
     });
@@ -68,9 +72,9 @@ export default function AnalistasPanel({
     // Reset bid specific states
     setDescription("");
     // Give some random variations for the next bid to speed up testing
-    setMaterialCost(Math.round((materialCost * 0.95 + Math.random() * 200) / 10) * 10);
-    setLaborCost(Math.round((laborCost * 1.05 + Math.random() * 100) / 10) * 10);
-    setDeliveryWeeks(Math.max(1, deliveryWeeks + (Math.random() > 0.5 ? 1 : -1)));
+    setMaterialCost(Math.round((matCostNum * 0.95 + Math.random() * 200) / 10) * 10);
+    setLaborCost(Math.round((laborCostNum * 1.05 + Math.random() * 100) / 10) * 10);
+    setDeliveryWeeks(Math.max(1, delWeeksNum + (Math.random() > 0.5 ? 1 : -1)));
   };
 
   const handleSubmit = () => {
@@ -158,7 +162,10 @@ export default function AnalistasPanel({
                           type="number"
                           min="1"
                           value={deliveryWeeks}
-                          onChange={(e) => setDeliveryWeeks(parseInt(e.target.value) || 1)}
+                          onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setDeliveryWeeks(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
+                          onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                          onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setDeliveryWeeks(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
+                          placeholder="0"
                           className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold text-slate-800"
                         />
                       </div>
@@ -171,7 +178,10 @@ export default function AnalistasPanel({
                           id="analistas-mat-cost"
                           type="number"
                           value={materialCost}
-                          onChange={(e) => setMaterialCost(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setMaterialCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                          onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                          onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setMaterialCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                          placeholder="0.00"
                           className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-mono font-bold"
                         />
                       </div>
@@ -182,7 +192,10 @@ export default function AnalistasPanel({
                           id="analistas-labor-cost"
                           type="number"
                           value={laborCost}
-                          onChange={(e) => setLaborCost(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setLaborCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                          onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                          onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setLaborCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                          placeholder="0.00"
                           className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-mono font-bold"
                         />
                       </div>
@@ -218,7 +231,7 @@ export default function AnalistasPanel({
 
                     <div className="flex justify-between items-center pt-3 border-t border-slate-200/60">
                       <div className="text-xs font-bold text-slate-700">
-                        Costo Total Oferta: <span className="font-mono text-sky-700 text-sm font-black">${(materialCost + laborCost).toLocaleString()}</span>
+                        Costo Total Oferta: <span className="font-mono text-sky-700 text-sm font-black">${(Number(materialCost) + Number(laborCost)).toLocaleString()}</span>
                       </div>
                       <button
                         id="btn-analistas-add-bid"

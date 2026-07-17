@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [2026-07-17] — Fix: input type="number" se incrusta en 0 al borrar y tipear nuevo valor
+
+**Tipo:** fix
+
+**Qué:** En todos los `<input type="number">` controlados con estado `number`, cuando el usuario borraba todo el contenido el valor se forzaba a `0` vía `parseFloat(e.target.value) || 0`. Al tipear un nuevo dígito, el `0` se quedaba "incrustado" en el input porque React y el browser nativo se desincronizaban (bug conocido de controlled number inputs con valor `0`).
+
+**Causa raíz:** El patrón `parseFloat(e.target.value) || FALLBACK` en el onChange devolvía `0` cuando el string estaba vacío (`parseFloat("")` = `NaN`), causando que el estado siempre fuera `number` y nunca `""`. React re-renderizaba el input con `value={0}`, y el navegador nativo no podía reemplazar limpiamente ese `0` cuando el usuario tipeaba un nuevo número.
+
+**Solución (Opción 2):** Cambiar el tipo de estado a `number | ""` y preservar el string vacío en el onChange cuando el usuario borra el campo:
+- Estado: `useState<number | "">(INITIAL)`
+- onChange: `e.target.value === "" ? "" : parseFloat(e.target.value) || FALLBACK`
+- Normalización a número en los handlers de submit/uso (via `Number(valor || DEFAULT)`)
+- Se mantiene el mismo patrón ya probado en `estimatedDays` de `PropuestaMaterialesPublica.tsx`
+
+**Archivos modificados:**
+- `src/components/AnalistasPanel.tsx` — `deliveryWeeks`, `materialCost`, `laborCost`: estados `number | ""`, handlers actualizados, normalización en `handleAddProposal`
+- `src/components/ProcuraPanel.tsx` — `approvedAmount`: estado `number | ""`, handler actualizado, normalización en `handleApproveInvestment`
+- `src/components/InfraestructuraMantenimientoPanel.tsx` — `materialQty`, `customMaterialPrice`: estados `number | ""`, handlers actualizados, normalización en `handleAddMaterial`
+- `src/components/ProveedoresRegistrados.tsx` — `editRating`: estado `number | ""`, handler actualizado con early return para `""`, normalización en `handleSave`
+- `src/components/PropuestaMaterialesPublica.tsx` — `ItemRow` sobrescribe `unitPrice` y `quantity` como `number | ""`, `updateItem` normaliza en totalPrice, 3 onChange handlers actualizados, submit handler normaliza antes de enviar a API
+
+### Adicional: Sanitización de notación científica ('e'/'E')
+
+**Qué:** Los `<input type="number">` del navegador aceptan el caracter 'e' como parte de notación científica (ej. `5e2` = 500). En un flujo contable esto genera riesgo de error humano: un usuario que teclea `5e2` pensando que escribe `52` obtiene `500` sin advertencia.
+
+**Fix:** Se agregó `.replace(/[eE]/g, '')` a `e.target.value` en todos los onChange handlers de inputs numéricos. Esto elimina cualquier caracter 'e'/'E' antes del parseFloat/parseInt, previniendo la interpretación de notación científica.
+
+**Archivos:** Mismos 5 archivos + `PropuestaMaterialesPublica.tsx` (estimatedDays)
+
 ## Sinopsis del Proyecto
 
 **Stack:** React 19 + TypeScript 5.8 + Vite 6 + TailwindCSS 4 (Frontend SPA) — Laravel + Sanctum (Backend API) — MySQL/MariaDB.
@@ -39,6 +68,7 @@
 | C1 | Clases Tailwind v4 inválidas (`h-4.5`, `w-4.5`, `pl-9.5`, `p-4.5`) no generan CSS — iconos del sidebar sin dimensión, padding de inputs de búsqueda roto | `src/App.tsx`, `src/components/ProveedoresRegistrados.tsx`, `src/components/PresidenciaDashboard.tsx`, `src/components/InfraestructuraMantenimientoPanel.tsx` | Iconos del sidebar toman tamaño SVG nativo (24×24) en vez de 18×18; el icono Search en inputs de búsqueda se superpone con el texto |
 | C2 | `.env` con `GEMINI_API_KEY` trackeado por git (pese a `.gitignore`) | `.env` | Exposición de secretos si se hace push; el archivo no debe estar en el repo |
 | C3 | 8 dependencias no utilizadas + `vite` duplicado en dependencies y devDependencies | `package.json` | Bundle inflado, mantenibilidad degradada |
+| C4 | Carga de archivos NO DESEADOS | `package.json` | Los inputs de carga de archivos permiten cargar archivos fuera de lo que son .PDF, .DWG, .DXF, .PNG, .JPG, .SVG |
 
 ### 🟠 Graves (5)
 

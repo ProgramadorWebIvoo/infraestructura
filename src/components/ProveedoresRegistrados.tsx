@@ -43,7 +43,7 @@ export default function ProveedoresRegistrados({
 
   // Rating modal state
   const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
-  const [editRating, setEditRating] = useState<number>(0);
+  const [editRating, setEditRating] = useState<number | "">(0);
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -114,7 +114,7 @@ export default function ProveedoresRegistrados({
     if (!editingContractor) return;
     setIsSaving(true);
     try {
-      await onUpdateContractorRating(editingContractor.code, editRating);
+      await onUpdateContractorRating(editingContractor.code, editRating === "" ? 0 : editRating);
       handleCloseEdit();
     } catch {
       alert("No se pudo guardar la evaluacion.");
@@ -187,7 +187,7 @@ export default function ProveedoresRegistrados({
     });
   };
 
-  const displayStars = hoveredStar ?? Math.round(editRating);
+  const displayStars = hoveredStar ?? Math.round(editRating === "" ? 0 : editRating);
   const proposalTotal = (p: SupplierMaterialProposal) =>
     p.items.reduce((sum, i) => sum + i.totalPrice, 0);
 
@@ -548,9 +548,14 @@ export default function ProveedoresRegistrados({
                   step={0.1}
                   value={editRating}
                   onChange={(e) => {
-                    const val = Math.min(5, Math.max(0, parseFloat(e.target.value) || 0));
+                    const v = e.target.value.replace(/[eE]/g, '');
+                    if (v === "") { setEditRating(""); return; }
+                    const val = Math.min(5, Math.max(0, parseFloat(v) || 0));
                     setEditRating(Math.round(val * 10) / 10);
                   }}
+                  onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                  onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); if (v === "") { setEditRating(""); return; } const val = Math.min(5, Math.max(0, parseFloat(v) || 0)); setEditRating(Math.round(val * 10) / 10); }}
+                  placeholder="0"
                   className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-center font-mono text-lg font-black text-amber-500 outline-hidden focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
                 />
               </div>

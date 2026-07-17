@@ -37,10 +37,10 @@ export default function InfraestructuraMantenimientoPanel({
   
   // Material adder states
   const [selectedCatalogIndex, setSelectedCatalogIndex] = useState(0);
-  const [materialQty, setMaterialQty] = useState(1);
+  const [materialQty, setMaterialQty] = useState<number | "">(1);
   const [customMaterialName, setCustomMaterialName] = useState("");
   const [customMaterialUnit, setCustomMaterialUnit] = useState("Unidad");
-  const [customMaterialPrice, setCustomMaterialPrice] = useState(1.0);
+  const [customMaterialPrice, setCustomMaterialPrice] = useState<number | "">(1.0);
   const [isCustomMaterial, setIsCustomMaterial] = useState(false);
 
   // Added materials state
@@ -52,18 +52,22 @@ export default function InfraestructuraMantenimientoPanel({
 
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const qtyNum = materialQty === "" ? 1 : materialQty;
+
     if (isCustomMaterial) {
       if (!customMaterialName.trim()) {
         setErrorMsg("Por favor, introduce el nombre del material personalizado.");
         return;
       }
+      const priceNum = customMaterialPrice === "" ? 0 : customMaterialPrice;
       setAddedMaterials([
         ...addedMaterials,
         {
           name: customMaterialName,
-          quantity: materialQty,
+          quantity: qtyNum,
           unit: customMaterialUnit,
-          estimatedUnitPrice: customMaterialPrice,
+          estimatedUnitPrice: priceNum,
         },
       ]);
       setCustomMaterialName("");
@@ -74,7 +78,7 @@ export default function InfraestructuraMantenimientoPanel({
         ...addedMaterials,
         {
           name: selectedItem.name,
-          quantity: materialQty,
+          quantity: qtyNum,
           unit: selectedItem.unit,
           estimatedUnitPrice: selectedItem.estimatedUnitPrice,
         },
@@ -339,7 +343,10 @@ export default function InfraestructuraMantenimientoPanel({
                     type="number"
                     step="0.01"
                     value={customMaterialPrice}
-                    onChange={(e) => setCustomMaterialPrice(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setCustomMaterialPrice(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                    onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                    onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setCustomMaterialPrice(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                    placeholder="0.00"
                     className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-mono font-bold"
                   />
                 </div>
@@ -353,7 +360,10 @@ export default function InfraestructuraMantenimientoPanel({
                 type="number"
                 min="1"
                 value={materialQty}
-                onChange={(e) => setMaterialQty(parseInt(e.target.value) || 1)}
+                onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setMaterialQty(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
+                onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+                onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setMaterialQty(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
+                placeholder="0"
                 className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold"
               />
             </div>
