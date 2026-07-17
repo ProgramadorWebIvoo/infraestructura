@@ -8,11 +8,136 @@
 
 **Estructura clave:**
 - `src/App.tsx` — Ruteo, estado global, handlers de API, modal de inspección
-- `src/components/ProcuraPanel.tsx` — Panel de Procura con tabla de evaluación comparativa
-- `src/components/AnalistasPanel.tsx` — Panel de Analistas (carga de propuestas)
-- `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus`
-- `src/services/` — (nuevo) Servicios de integración con APIs externas
+- `src/components/ProcuraPanel.tsx` — Panel de Procura con tabla de evaluación comparativa + botón Evaluación Inteligente IA
+- `src/components/CierreObraPanel.tsx` — ✅ Overflow horizontal resuelto (grid + truncate, ver 2026-07-17)
+- `src/components/AnalistasPanel.tsx` — Panel de Analistas (carga de propuestas y cuadro comparativo)
+- `src/components/EvaluacionInteligenteModal.tsx` — Modal IA con 4 estados (idle/loading/result/error) y selector de proveedor
+- `src/components/MaterialesProveedores.tsx` — Portal público de registro de proveedores
+- `src/components/PropuestaMaterialesPublica.tsx` — Portal público de cotización de materiales (vía token)
+- `src/components/ProveedoresRegistrados.tsx` — Catálogo de proveedores + invitaciones + propuestas recibidas
+- `src/components/UsuariosPanel.tsx` — CRUD de usuarios del sistema
+- `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus` y más
+- `src/services/aiEvaluationService.ts` — Servicio de llamada a backend Laravel para evaluación IA con failover
+- `src/components/InteractiveOrganigrama.tsx` — ⚠️ **Código muerto** (no se importa en ningún lado)
+- `mobile/App.tsx` — App mobile React Native con los mismos paneles (lectura y acciones básicas)
 - `database.sql` — Schema completo MySQL con migrations y seed data
+
+---
+
+## [2026-07-17] — Auditoría completa del frontend (24 hallazgos documentados)
+
+**Tipo:** audit
+
+**Qué:** Auditoría integral del frontend (web + mobile) cubriendo configuración, dependencias, seguridad, calidad de código, estilos visuales, rendimiento y accesibilidad. Se documentaron 24 hallazgos clasificados por severidad.
+
+**Hallazgos por categoría:**
+
+### 🔴 Críticos (3)
+
+| ID | Hallazgo | Archivos | Impacto |
+|----|----------|----------|---------|
+| C1 | Clases Tailwind v4 inválidas (`h-4.5`, `w-4.5`, `pl-9.5`, `p-4.5`) no generan CSS — iconos del sidebar sin dimensión, padding de inputs de búsqueda roto | `src/App.tsx`, `src/components/ProveedoresRegistrados.tsx`, `src/components/PresidenciaDashboard.tsx`, `src/components/InfraestructuraMantenimientoPanel.tsx` | Iconos del sidebar toman tamaño SVG nativo (24×24) en vez de 18×18; el icono Search en inputs de búsqueda se superpone con el texto |
+| C2 | `.env` con `GEMINI_API_KEY` trackeado por git (pese a `.gitignore`) | `.env` | Exposición de secretos si se hace push; el archivo no debe estar en el repo |
+| C3 | 8 dependencias no utilizadas + `vite` duplicado en dependencies y devDependencies | `package.json` | Bundle inflado, mantenibilidad degradada |
+
+### 🟠 Graves (5)
+
+| ID | Hallazgo | Archivos | Impacto |
+|----|----------|----------|---------|
+| G1 | `InteractiveOrganigrama.tsx` — 307 líneas de código nunca importado | `src/components/InteractiveOrganigrama.tsx` | Código muerto mantenido sin propósito |
+| G2 | `syncProject()` llama `refreshAuditLogs()` + `loadApiData()` — hace 6 fetchs por mutación | `src/App.tsx:258-263` | 6 peticiones HTTP donde 1-2 bastan; race condition potencial |
+| G3 | `isLoadingApi` nunca se consume — el layout se renderiza con arrays vacíos hasta que carga la API | `src/App.tsx:187-193,232-238` | El usuario ve dashboard con $0, 0 obras, 0 proveedores durante ~segundos, luego parpadea |
+| G4 | `activeRole` derivado de la URL, no del rol del usuario autenticado | `src/App.tsx:167` | Badge "Terminal: X" puede mostrar rol incorrecto |
+| G5 | Doble punto y coma `;;` en dos archivos | `src/components/MaterialesProveedores.tsx:10`, `src/components/UsuariosPanel.tsx:19` | Código sucio |
+
+### 🟡 Moderados (8)
+
+| ID | Hallazgo | Archivos |
+|----|----------|----------|
+| M1 | Componente muerto InteractiveOrganigrama (duplica G1) | `src/components/InteractiveOrganigrama.tsx` |
+| M2 | `strict: false` implícito en tsconfig.json → `useState([])` infiere `never[]` | `tsconfig.json`, `src/App.tsx:190` |
+| M3 | Alias `@` apunta a la raíz del proyecto, no a `./src` | `vite.config.ts:11` |
+| M4 | `setMaterialsCatalog(never[])` + `handleAddCatalogItem` agrega elemento no-tipado | `src/App.tsx:190,463-465` |
+| M5 | `handleResetApp` y `handleLogout` mezclan datos de respaldo locales vs API | `src/App.tsx:483-521` |
+| M6 | Solo `handleSelectContractor` propaga errores al caller; los demás usan `alert()` | `src/App.tsx` (múltiples handlers) |
+| M7 | `refreshAuditLogs()` redundante porque `loadApiData()` lo incluye | `src/App.tsx:240-261` |
+| M8 | Código comentado legacy (initial state con datos mock) | `src/App.tsx:182-186` |
+
+### 🔵 Leves (5)
+
+| ID | Hallazgo | Archivos |
+|----|----------|----------|
+| L1 | `html lang="en"` cuando la UI está en español | `index.html:2` |
+| L2 | Sin loading skeleton en carga inicial (ídem G3) | `src/App.tsx` |
+| L3 | `text-slate-400` sobre `bg-white` tiene contraste ~3.2:1 (WCAG AA requiere 4.5:1) | Múltiples componentes |
+| L4 | Icon-only buttons sin `aria-label` | `src/App.tsx` (botones X, menú hamburguesa) |
+| L5 | Sin rate limiting visual ni CAPTCHA en login | `src/App.tsx` |
+
+### 📱 Mobile (3)
+
+| ID | Hallazgo | Archivos |
+|----|----------|----------|
+| X1 | Props `visible` y `transparent` en Modal sin valor explícito (`={true}`) | `mobile/App.tsx:746` |
+| X2 | URL del API hardcodeada en vez de configurable | `mobile/App.tsx:22` |
+| X3 | Credenciales por defecto hardcodeadas (admin@ivoo.local / Admin12345) | `mobile/App.tsx:436-437` |
+
+**Archivos:**
+- (hallazgos cubren todo el frontend — no hay cambios aplicados, solo diagnóstico documentado)
+
+---
+
+## [2026-07-17] — Seed masivo de datos en infraestructura_ivoo (50+ registros por tabla)
+
+**Tipo:** feature
+
+**Qué:** Población completa de la base de datos `infraestructura_ivoo` con 50+ registros en cada tabla para propósitos de depuración y pruebas visuales/funcionales.
+
+**Detalle por tabla (registros finales):**
+- `app_modules`: 12 (4 nuevos)
+- `contractors`: 55 (50 nuevos)
+- `material_catalog`: 55 (45 nuevos)
+- `projects`: 53 (ninguno nuevo, solo actualización de estados)
+- `project_materials`: 55 (45 nuevos)
+- `project_proposals`: 53 (50 nuevos)
+- `project_payments`: 50 (48 nuevos)
+- `audit_logs`: 58 (50 nuevos)
+- `users`: 58 (51 nuevos)
+- `project_documents`: 50 (50 nuevos)
+
+**Workflow:** Los 53 proyectos ahora están distribuidos en los 9 estados del workflow (CREADO→COMPLETADO_PAGADO), simulando un pipeline realista. 40 proyectos tienen propuestas vinculadas, 50 pagos con referencias a propuestas.
+
+**Archivos:** (temporales eliminados)
+- seed_full.sql → seed_v2.sql (eliminados post-ejecución)
+
+---
+
+## [2026-07-17] — Fix overflow horizontal en CierreObraPanel (causa raíz identificada y resuelta)
+
+**Tipo:** fix
+
+**Qué:** El contenedor de "Revisión de Cálculos y Planos" en `CierreObraPanel` se expandía horizontalmente sin control al mostrar proyectos con títulos largos. Fix integral en TODA la cadena de contenedores.
+
+**Causa raíz:** El componente original NO tenía NINGUNA protección contra overflow horizontal:
+- Sin `max-w-full` en el root grid → el grid podía expandirse según contenido
+- Sin `min-w-0` en grid/flex items → no podían encogerse por debajo del `min-content` del texto
+- Sin `overflow-hidden` en cards/secciones → overflow no se recortaba
+- `line-clamp-1` en títulos → `-webkit-box` intrínseco = texto completo (~1950px)
+- Sin `truncate` en location → locations largos empujaban containers
+
+**Cambios integrales:**
+- **Root grid**: `max-w-full overflow-hidden` — límite superior contraído
+- **Section 1 & 2**: `min-w-0 overflow-hidden` — permiten encoger, recortan overflow
+- **Cards**: `overflow-hidden` — recortan cualquier desbordamiento interno
+- **`space-y-5` / `space-y-2.5` divs**: `min-w-0` — eslabones intermedios quebradizos
+- **Botones**: `min-w-0 overflow-hidden` — encogen y recortan
+- **Títulos**: `line-clamp-1` → `truncate` — sin `-webkit-box` intrinsic bug
+- **Location**: `truncate` → texto largo con elipsis
+- **Form y detalles**: `min-w-0 overflow-hidden break-words` — protección del formulario activo
+- **Badges/Status**: `shrink-0` — no se comprimen en flex
+- **Section 2 items**: `truncate` en títulos, `truncate` en location con `<span>` wrapper
+
+**Archivos:**
+- `src/components/CierreObraPanel.tsx`
 
 ---
 
@@ -185,3 +310,50 @@ ANTHROPIC_API_KEY=sk-ant-...
 - `src/types.ts`
 - `src/components/AnalistasPanel.tsx`
 - `src/services/aiEvaluationService.ts`
+
+---
+
+## [2026-07-16] — Fix overflow horizontal en CierreObraPanel (Revisión de Cálculos y Planos)
+
+**Tipo:** fix
+
+**Qué:** El contenedor de "Revisión de Cálculos y Planos" en el panel de Cierre de Obra se expandía horizontalmente sin límite al mostrar proyectos con títulos/locations largos (195+ caracteres). Se aplicaron 3 capas de defensa + scrollbar custom con estilo bento.
+
+**Causa raíz:** CSS Grid items tienen `min-width: auto` por defecto, impidiendo que los botones del selector se encojan por debajo del tamaño de su contenido. Los textos largos expandían los grid items, y estos estiraban el contenedor padre horizontalmente. No había `overflow-x` que cortara el desbordamiento.
+
+**Cambios:**
+- `src/index.css` — nueva clase `.scrollbar-thin` (webkit + Firefox) con diseño thin, color slate-300/400, bordes redondeados, que matchea la estética bento de la app
+- `src/components/CierreObraPanel.tsx`:
+  - Card contenedor: `overflow-x-auto scrollbar-thin` — scroll horizontal solo cuando el contenido excede, con scrollbar estilizado
+  - Grid items (botones): `min-w-0` — permite que se encojan por debajo del contenido, activando el truncamiento
+  - Location text: `truncate` — equivalente a `overflow-hidden text-ellipsis whitespace-nowrap`
+  - (Título ya tenía `line-clamp-1`)
+
+**Archivos:**
+- `src/index.css`
+- `src/components/CierreObraPanel.tsx`
+
+---
+
+## [2026-07-16] — [RESUELTO 2026-07-17] Overflow horizontal en CierreObraPanel (Revisión de Cálculos y Planos)
+
+**Tipo:** fix (resuelto el 2026-07-17)
+
+**Qué:** El contenedor de "Revisión de Cálculos y Planos" en el panel de Cierre de Obra se expande horizontalmente sin control al mostrar 53 proyectos con títulos largos (~195 chars). El error persiste a pesar de múltiples intentos de fix.
+
+**Intentos realizados (todos fallaron):**
+
+1. `overflow-x-auto` en el card + `min-w-0` en botones + `truncate` en location
+2. `min-w-0` en Section 1 wrapper (`lg:col-span-7`)
+3. `overflow-x-auto` en `<main>` y route wrapper (App.tsx) + eliminado `transition-all`
+4. `overflow-hidden` en botones + cards + Section 1
+5. `min-w-0` en Section 2 wrapper (`lg:col-span-5`) + grid root `max-w-full`
+6. Cambio de `display: grid` a `flex flex-wrap` con `width: calc(50%-6px)` en botones
+7. Estilos inline con `maxWidth: '100%', overflow: 'hidden'` en grid root
+
+**Hipótesis actual:** El `display: -webkit-box` de `line-clamp-1` en el título tiene un `min-content` intrínseco igual al ancho del texto completo (195 chars) que el navegador usa para calcular el ancho mínimo del botón como grid/flex item, y ese ancho se propaga hacia arriba en la cadena de contenedores a pesar de `min-w-0` y `overflow-hidden`.
+
+**Archivos modificados (cambios actuales en disco pendientes de solución):**
+- `src/App.tsx` — `<main>`: `min-w-0 overflow-x-auto`; route wrapper: `min-w-0 overflow-x-auto` (sin `transition-all`) — se mantienen como safety net
+- `src/components/CierreObraPanel.tsx` — fix aplicado (ver entrada 2026-07-17)
+- `src/index.css` — limpio (sin cambios pendientes)

@@ -19,5 +19,5 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
 6. **VERIFICAR** Los inputs numericos estan validados, sin embargo si se ingresan los valores por teclado 
     los mismos no permiten borrar el 1, bien por ahí sin embargo eso no permite colocar que 
     numero sera ingresado.
-7. **REALIZAR** Realizar un boton para traer al cuadro de analistas la propuesta del proveedor?
-
+7. **PREGUNTAR** Realizar un boton para traer al cuadro de analistas la propuesta del proveedor?
+8. **PREGUNTAR** Los proveedores se registran a través de un enlace publico de la web, sin embargo no existe otra manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no este disponible, cierre o no sea aceptado mas por la empresa, como se cambiaria el estatus?
