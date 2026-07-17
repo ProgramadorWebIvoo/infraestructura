@@ -16,18 +16,22 @@ import {
   HelpCircle,
   FileSpreadsheet
 } from "lucide-react";
+import { SkeletonCard, SkeletonBlock, SkeletonTable } from "./SkeletonLoader";
 
 interface FinanzasPanelProps {
   projects: Project[];
   onPayAdvance: (projectId: string, amount: number) => void;
   onPayFinal: (projectId: string, amount: number) => void;
+  isLoading?: boolean;
 }
 
 export default function FinanzasPanel({
   projects,
   onPayAdvance,
   onPayFinal,
+  isLoading = false,
 }: FinanzasPanelProps) {
+  if (isLoading) return <FinanzasSkeleton />;
   
   // Lists
   const pendingAdvances = projects.filter(p => p.status === ProjectStatus.CONTRATADO);
@@ -301,6 +305,19 @@ export default function FinanzasPanel({
         </div>
       </div>
 
+    </div>
+  );
+}
+
+/* ─── Skeleton Loader ─── */
+function FinanzasSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+      <SkeletonTable rows={4} columns={6} />
     </div>
   );
 }

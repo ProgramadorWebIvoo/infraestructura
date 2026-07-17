@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { ProjectDocument } from "../types";
 import EvaluacionInteligenteModal from "./EvaluacionInteligenteModal";
+import { SkeletonCard, SkeletonTable } from "./SkeletonLoader";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -33,6 +34,7 @@ interface ProcuraPanelProps {
   onRejectProposals: (projectId: string, reason: string) => void;
   authToken: string;
   apiBaseUrl: string;
+  isLoading?: boolean;
 }
 
 export default function ProcuraPanel({
@@ -42,7 +44,9 @@ export default function ProcuraPanel({
   onRejectProposals,
   authToken,
   apiBaseUrl,
+  isLoading = false,
 }: ProcuraPanelProps) {
+  if (isLoading) return <ProcuraSkeleton />;
 
   const handleDownload = async (projectId: string, doc: ProjectDocument) => {
     const res = await fetch(`${apiBaseUrl}/projects/${projectId}/documents/${doc.id}/download`, {
@@ -462,6 +466,16 @@ export default function ProcuraPanel({
         />
       )}
 
+    </div>
+  );
+}
+
+/* ─── Skeleton Loader ─── */
+function ProcuraSkeleton() {
+  return (
+    <div className="space-y-6">
+      <SkeletonCard />
+      <SkeletonTable rows={3} columns={7} />
     </div>
   );
 }

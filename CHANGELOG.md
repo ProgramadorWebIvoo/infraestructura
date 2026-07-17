@@ -1,5 +1,53 @@
 # CHANGELOG
 
+## [2026-07-17] — Feature: Skeleton loading en todas las vistas del sistema
+
+**Tipo:** feature
+
+**Qué:** Implementación de skeleton loaders animados en todas las vistas principales del frontend. Cuando `isLoadingApi` es `true` (carga inicial de datos desde Laravel), cada panel muestra un esqueleto visual que coincide con su layout bento — tarjetas KPI, tablas, listas y cards — en vez de renderizar arrays vacíos que mostraban mensajes de "No hay nada pendiente" erróneamente.
+
+**Causa raíz (hallazgos G3/L2):**
+- `isLoadingApi` se declaraba en App.tsx (línea 192) pero **nunca se consumía** en ningún componente.
+- Los estados `projects`, `contractors`, `auditLogs`, `materialsCatalog` inician como `[]`.
+- Durante los ~2-5 segundos que tarda `loadApiData()`, los paneles renderizan con arrays vacíos → mostraban el mensaje de "empty state" ("No hay obras", "No hay proveedores", etc.).
+- Al completar la carga, los datos aparecían de golpe → parpadeo visual y confusión del usuario.
+
+**Solución:**
+
+1. **`src/components/SkeletonLoader.tsx`** (NUEVO) — Componente con primitivas reutilizables:
+   - `SkeletonBlock` — bloque genérico animate-pulse con `bg-slate-200 rounded-xl`
+   - `SkeletonCard` — card bento completa con header (icono + título) + 3 bloques de contenido
+   - `SkeletonStats` / `SkeletonStatsDark` — KPI cards para el dashboard de Presidencia
+   - `SkeletonTable` — tabla completa con header + N filas skeleton
+   - `SkeletonList` — lista de items skeleton
+   - `SkeletonBadge`, `SkeletonButton` — elementos pequeños
+
+2. **Cada panel** recibe `isLoading?: boolean` y muestra su skeleton correspondiente cuando está en `true`:
+   - `PresidenciaDashboard` → 4 KPI cards + chart card + audit table + projects table
+   - `CierreObraPanel` → cards en grid 7/5 + listas
+   - `ProcuraPanel` → card de formulario + tabla comparativa
+   - `AnalistasPanel` → cards en grid 7/5 + comparative panel
+   - `FinanzasPanel` → 2 cards en grid + ledger table
+   - `InfraestructuraMantenimientoPanel` → skeleton en "Peticiones del Departamento" (sidebar)
+   - `ProveedoresRegistrados` → skeleton rows en tabla de contratistas
+
+3. **`App.tsx`** — Se pasa `isLoading={isLoadingApi}` a cada panel en las rutas.
+
+**Estética:** Los skeletons usan `animate-pulse` de Tailwind con `bg-slate-200`, bordes `rounded-xl`/`rounded-2xl` que matchean el diseño bento existente. Sin animaciones bruscas ni colores distractores.
+
+**Archivos:**
+- `src/components/SkeletonLoader.tsx` — [NUEVO]
+- `src/components/PresidenciaDashboard.tsx` — isLoading prop + PresidenciaSkeleton
+- `src/components/CierreObraPanel.tsx` — isLoading prop + CierreObraSkeleton
+- `src/components/ProcuraPanel.tsx` — isLoading prop + ProcuraSkeleton
+- `src/components/AnalistasPanel.tsx` — isLoading prop + AnalistasSkeleton
+- `src/components/FinanzasPanel.tsx` — isLoading prop + FinanzasSkeleton
+- `src/components/InfraestructuraMantenimientoPanel.tsx` — isLoading prop + skeleton en sidebar
+- `src/components/ProveedoresRegistrados.tsx` — isLoading prop + skeleton rows en tabla
+- `src/App.tsx` — isLoading={isLoadingApi} en todas las rutas
+
+---
+
 ## [2026-07-17] — Fix: input type="number" se incrusta en 0 al borrar y tipear nuevo valor
 
 **Tipo:** fix
@@ -47,6 +95,7 @@
 - `src/components/UsuariosPanel.tsx` — CRUD de usuarios del sistema
 - `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus` y más
 - `src/services/aiEvaluationService.ts` — Servicio de llamada a backend Laravel para evaluación IA con failover
+- `src/components/SkeletonLoader.tsx` — Componente de skeleton loading reutilizable (primitivas: SkeletonBlock, SkeletonCard, SkeletonTable, SkeletonStats, SkeletonList)
 - `src/components/InteractiveOrganigrama.tsx` — ⚠️ **Código muerto** (no se importa en ningún lado)
 - `mobile/App.tsx` — App mobile React Native con los mismos paneles (lectura y acciones básicas)
 - `database.sql` — Schema completo MySQL con migrations y seed data

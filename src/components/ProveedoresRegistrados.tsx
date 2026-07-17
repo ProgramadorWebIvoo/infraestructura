@@ -23,6 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { SkeletonBlock, SkeletonTable } from "./SkeletonLoader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -31,6 +32,7 @@ interface ProveedoresRegistradosProps {
   projects: Project[];
   authToken: string;
   onUpdateContractorRating: (code: string, rating: number) => Promise<void>;
+  isLoading?: boolean;
 }
 
 export default function ProveedoresRegistrados({
@@ -38,6 +40,7 @@ export default function ProveedoresRegistrados({
   projects,
   authToken,
   onUpdateContractorRating,
+  isLoading = false,
 }: ProveedoresRegistradosProps) {
   const [search, setSearch] = useState("");
 
@@ -248,55 +251,69 @@ export default function ProveedoresRegistrados({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredContractors.map((contractor) => (
-                  <tr key={contractor.code} className="transition hover:bg-slate-50/70">
-                    <td className="px-6 py-4">
-                      <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">
-                        {contractor.code}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-800">{contractor.name}</td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
-                        {contractor.specialty}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-mono font-semibold text-slate-500">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-3.5 w-3.5 text-slate-400" />
-                        {contractor.contact}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="flex items-center gap-1 rounded-lg border border-amber-100/70 bg-amber-50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-500">
-                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                          {contractor.rating.toFixed(1)}
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="transition hover:bg-slate-50/70">
+                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-20" /></td>
+                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-40" /></td>
+                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-28" /></td>
+                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-36" /></td>
+                      <td className="px-6 py-4"><SkeletonBlock className="h-6 w-24 mx-auto" /></td>
+                    </tr>
+                  ))
+                ) : (
+                  <>
+                    {filteredContractors.map((contractor) => (
+                    <tr key={contractor.code} className="transition hover:bg-slate-50/70">
+                      <td className="px-6 py-4">
+                        <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">
+                          {contractor.code}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-800">{contractor.name}</td>
+                      <td className="px-6 py-4">
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                          {contractor.specialty}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-mono font-semibold text-slate-500">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5 text-slate-400" />
+                          {contractor.contact}
                         </div>
-                        <button
-                          onClick={() => handleOpenEdit(contractor)}
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
-                          title="Actualizar evaluacion"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenInviteModal(contractor)}
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
-                          title="Generar enlace de propuesta de materiales"
-                        >
-                          <Link2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredContractors.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-sm font-medium italic text-slate-400">
-                      No se encontraron proveedores con ese criterio.
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center gap-1 rounded-lg border border-amber-100/70 bg-amber-50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-500">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                            {contractor.rating.toFixed(1)}
+                          </div>
+                          <button
+                            onClick={() => handleOpenEdit(contractor)}
+                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
+                            title="Actualizar evaluacion"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenInviteModal(contractor)}
+                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+                            title="Generar enlace de propuesta de materiales"
+                          >
+                            <Link2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredContractors.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-sm font-medium italic text-slate-400">
+                        No se encontraron proveedores con ese criterio.
+                      </td>
+                    </tr>
+                  )}
+                  </>
                 )}
               </tbody>
             </table>

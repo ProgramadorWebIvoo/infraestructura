@@ -19,11 +19,13 @@ import {
   Paperclip,
   FilePlus2,
 } from "lucide-react";
+import { SkeletonBlock, SkeletonCard, SkeletonList } from "./SkeletonLoader";
 
 interface CierreObraPanelProps {
   projects: Project[];
   onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
   onVerifyCompletion: (projectId: string) => void;
+  isLoading?: boolean;
 }
 
 function formatFileSize(bytes: number): string {
@@ -36,7 +38,9 @@ export default function CierreObraPanel({
   projects,
   onReviewProject,
   onVerifyCompletion,
+  isLoading = false,
 }: CierreObraPanelProps) {
+  if (isLoading) return <CierreObraSkeleton />;
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [cierreNotes, setCierreNotes] = useState("");
   const [calcFiles, setCalcFiles] = useState<File[]>([]);
@@ -401,6 +405,26 @@ export default function CierreObraPanel({
         </div>
       </div>
 
+    </div>
+  );
+}
+
+/* ─── Skeleton Loader ─── */
+function CierreObraSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="lg:col-span-7 space-y-6">
+        <SkeletonCard />
+        <SkeletonList items={3} />
+      </div>
+      <div className="lg:col-span-5 space-y-6">
+        <SkeletonCard />
+        <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 space-y-3">
+          <SkeletonBlock className="h-4 w-48" />
+          <SkeletonBlock className="h-3 w-full" />
+          <SkeletonBlock className="h-3 w-5/6" />
+        </div>
+      </div>
     </div>
   );
 }

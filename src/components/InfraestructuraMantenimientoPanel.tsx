@@ -17,17 +17,20 @@ import {
   MapPin, 
   FileText
 } from "lucide-react";
+import { SkeletonCard, SkeletonBlock } from "./SkeletonLoader";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;
   projects: Project[];
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  isLoading?: boolean;
 }
 
 export default function InfraestructuraMantenimientoPanel({
   onAddProject,
   projects,
   materialsCatalog,
+  isLoading = false,
 }: InfraestructuraMantenimientoPanelProps) {
   // Form states
   const [title, setTitle] = useState("");
@@ -462,7 +465,19 @@ export default function InfraestructuraMantenimientoPanel({
           </h4>
 
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-            {projects.map((p) => (
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-3.5 border border-slate-100 bg-slate-50/50 rounded-xl space-y-2">
+                  <SkeletonBlock className="h-3 w-16" />
+                  <SkeletonBlock className="h-4 w-3/4" />
+                  <div className="flex items-center justify-between">
+                    <SkeletonBlock className="h-3 w-20" />
+                    <SkeletonBlock className="h-4 w-16 rounded-lg" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              projects.map((p) => (
               <div key={p.id} className="p-3.5 border border-slate-100 bg-slate-50/50 rounded-xl space-y-2 hover:border-slate-200 transition-colors">
                 <div className="flex items-start justify-between">
                   <div>
@@ -485,7 +500,8 @@ export default function InfraestructuraMantenimientoPanel({
                   </span>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

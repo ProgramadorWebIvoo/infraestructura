@@ -19,18 +19,22 @@ import {
   AlertTriangle,
   MapPin
 } from "lucide-react";
+import { SkeletonStats, SkeletonStatsDark, SkeletonBlock, SkeletonTable, SkeletonCard } from "./SkeletonLoader";
 
 interface PresidenciaDashboardProps {
   projects: Project[];
   auditLogs: AuditLog[];
   onSelectProject: (project: Project) => void;
+  isLoading?: boolean;
 }
 
 export default function PresidenciaDashboard({
   projects,
   auditLogs,
   onSelectProject,
+  isLoading = false,
 }: PresidenciaDashboardProps) {
+  if (isLoading) return <PresidenciaSkeleton />;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -471,6 +475,30 @@ export default function PresidenciaDashboard({
               
       </div>
 
+    </div>
+  );
+}
+
+/* ─── Skeleton Loader ─── */
+function PresidenciaSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* KPI cards grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SkeletonStatsDark />
+        <SkeletonStats />
+        <SkeletonStats />
+        <SkeletonStats />
+      </div>
+
+      {/* Chart card */}
+      <SkeletonCard />
+
+      {/* Audit table */}
+      <SkeletonTable rows={4} columns={7} />
+
+      {/* Projects table */}
+      <SkeletonTable rows={5} columns={6} />
     </div>
   );
 }

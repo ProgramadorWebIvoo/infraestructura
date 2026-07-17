@@ -17,6 +17,7 @@ import {
   AlertCircle,
   FolderOpen
 } from "lucide-react";
+import { SkeletonCard, SkeletonBlock, SkeletonList } from "./SkeletonLoader";
 
 interface AnalistasPanelProps {
   projects: Project[];
@@ -24,6 +25,7 @@ interface AnalistasPanelProps {
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
+  isLoading?: boolean;
 }
 
 export default function AnalistasPanel({
@@ -32,7 +34,9 @@ export default function AnalistasPanel({
   onAddProposal,
   onRemoveProposal,
   onSubmitComparative,
+  isLoading = false,
 }: AnalistasPanelProps) {
+  if (isLoading) return <AnalistasSkeleton />;
   // States
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
@@ -321,6 +325,27 @@ export default function AnalistasPanel({
         </div>
       </div>
 
+    </div>
+  );
+}
+
+/* ─── Skeleton Loader ─── */
+function AnalistasSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="lg:col-span-7 space-y-6">
+        <SkeletonCard />
+        <SkeletonList items={3} />
+      </div>
+      <div className="lg:col-span-5 space-y-6">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-4 mb-4">
+            <SkeletonBlock className="h-5 w-5 rounded-lg" />
+            <SkeletonBlock className="h-4 w-48" />
+          </div>
+          <SkeletonBlock className="h-32 w-full" />
+        </div>
+      </div>
     </div>
   );
 }

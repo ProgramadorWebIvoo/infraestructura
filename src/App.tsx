@@ -805,43 +805,43 @@ function AppRoutes() {
             <Route
               path="/presidencia"
               element={canAccess("/presidencia")
-                ? <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={(p) => setInspectedProject(p)} />
+                ? <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={(p) => setInspectedProject(p)} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
               path="/infraestructura"
               element={canAccess("/infraestructura")
-                ? <InfraestructuraMantenimientoPanel onAddProject={handleAddProject} projects={projects} materialsCatalog={materialsCatalog} />
+                ? <InfraestructuraMantenimientoPanel onAddProject={handleAddProject} projects={projects} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
               path="/cierre-obra"
               element={canAccess("/cierre-obra")
-                ? <CierreObraPanel projects={projects} onReviewProject={handleReviewProject} onVerifyCompletion={handleVerifyCompletion} />
+                ? <CierreObraPanel projects={projects} onReviewProject={handleReviewProject} onVerifyCompletion={handleVerifyCompletion} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
               path="/procura"
               element={canAccess("/procura")
-                ? <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} apiBaseUrl={API_BASE_URL} />
+                ? <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} apiBaseUrl={API_BASE_URL} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
               path="/analistas"
               element={canAccess("/analistas")
-                ? <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} />
+                ? <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
               path="/finanzas"
               element={canAccess("/finanzas")
-                ? <FinanzasPanel projects={projects} onPayAdvance={handlePayAdvance} onPayFinal={handlePayFinal} />
+                ? <FinanzasPanel projects={projects} onPayAdvance={handlePayAdvance} onPayFinal={handlePayFinal} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
               path="/catalogos"
               element={canAccess("/catalogos")
-                ? <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} />
+                ? <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route
