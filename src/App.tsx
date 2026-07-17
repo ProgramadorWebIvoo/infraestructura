@@ -739,12 +739,12 @@ function AppRoutes() {
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         
         {/* Top Banner Header */}
-        <header className="bg-[#0F172A] text-white border-b border-slate-800 shadow-sm relative overflow-hidden">
+        <header className="bg-[#0F172A] text-white border-b border-slate-800 shadow-sm relative overflow-hidden md:hidden">
           {/* Subtle accent gradient behind header */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
           
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-            
+          <div className="max-w-7xl mx-1 px-1 sm:px-6 lg:px-8 pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+    
             {/* Logo Brand with mobile Hamburger */}
             <div className="flex items-center gap-3.5">
               <button 
