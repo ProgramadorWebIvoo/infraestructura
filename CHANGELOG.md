@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## [2026-07-17] — Feature: Importación automática de propuestas de proveedores al cuadro comparativo (Analistas)
+
+**Tipo:** feature
+
+**Qué:** Nuevo botón "Traer del portal" en el panel de Analistas que importa automáticamente las propuestas de materiales recibidas desde el portal público de proveedores (`SupplierMaterialProposal`) como propuestas del cuadro comparativo (`ProjectProposal`).
+
+**Flujo completo:**
+1. El analista selecciona un expediente en estado `CONFIRMADO_PROCURA`
+2. Hace clic en "Traer del portal" (integrado en el header de "Propuestas Ingresadas")
+3. El frontend llama al nuevo endpoint `POST /api/projects/{project}/import-supplier-proposals`
+4. El backend busca todas las `SupplierMaterialProposal` del proyecto, matchea cada una con un `Contractor` registrado (por email o nombre), calcula `materialCost` (suma de items), convierte duración a semanas, y crea los `ProjectProposal` correspondientes
+5. Si el contratista ya tiene una propuesta en el proyecto, se omite (deduplicación)
+6. El proyecto se actualiza en tiempo real en el frontend
+
+**UX:**
+- Botón integrado en el header de la sección de propuestas (antes estaba como bloque independiente entre la card de inversión y las propuestas)
+- Loading state con spinner y texto "Importando..."
+- Feedback success en banner verde con fade-out suave: 5s visible → 700ms transición `max-height` + `opacity` + `margin` → colapso sin saltos de layout
+- Feedback error en banner rojo (permanente hasta nuevo intento)
+- Mensaje de empty state actualizado para mencionar la opción de importación
+
+**Backend — nuevo endpoint:**
+- `POST /api/projects/{project}/import-supplier-proposals` en `ProjectController::importSupplierProposals`
+- Sin body, sin validación extra (opera sobre datos ya existentes en BD)
+- Retorna `{ message, imported, skipped, errors, project }`
+
+**Archivos frontend:**
+- `src/components/AnalistasPanel.tsx` — nuevo prop `onImportSupplierProposals`, estados `isImporting`/`importFeedback`, handler `handleImport`, botón integrado en header, feedback con transición smooth
+- `src/App.tsx` — nuevo handler `handleImportSupplierProposals` (línea 359), pasado a AnalistasPanel en ruta `/analistas`
+
+**Archivos backend:**
+- `app/Http/Controllers/Api/ProjectController.php` — nuevo método `importSupplierProposals` (línea 179), import `SupplierMaterialProposal`
+- `routes/api.php` — nueva ruta `POST /projects/{project}/import-supplier-proposals` (línea 47)
+
+---
+
 ## [2026-07-17] — Feature: Skeleton loading en todas las vistas del sistema
 
 **Tipo:** feature

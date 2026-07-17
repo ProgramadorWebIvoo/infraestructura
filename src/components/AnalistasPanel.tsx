@@ -15,9 +15,18 @@ import {
   FileSpreadsheet, 
   Award,
   AlertCircle,
-  FolderOpen
+  FolderOpen,
+  LayoutList,
+  Loader2,
+  CheckCircle
 } from "lucide-react";
 import { SkeletonCard, SkeletonBlock, SkeletonList } from "./SkeletonLoader";
+
+interface ImportResult {
+  message: string;
+  imported: number;
+  skipped: number;
+}
 
 interface AnalistasPanelProps {
   projects: Project[];
@@ -25,6 +34,7 @@ interface AnalistasPanelProps {
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
+  onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
   isLoading?: boolean;
 }
 
@@ -34,6 +44,7 @@ export default function AnalistasPanel({
   onAddProposal,
   onRemoveProposal,
   onSubmitComparative,
+  onImportSupplierProposals,
   isLoading = false,
 }: AnalistasPanelProps) {
   if (isLoading) return <AnalistasSkeleton />;
@@ -45,6 +56,10 @@ export default function AnalistasPanel({
   const [deliveryWeeks, setDeliveryWeeks] = useState<number | "">(2);
   const [advancePercent, setAdvancePercent] = useState(30);
   const [description, setDescription] = useState("");
+
+  // Import supplier proposals state
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFeedback, setImportFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const pendingLicitacion = projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA);
   const activeProject = pendingLicitacion.find(p => p.id === selectedProjectId);
@@ -79,6 +94,24 @@ export default function AnalistasPanel({
     setMaterialCost(Math.round((matCostNum * 0.95 + Math.random() * 200) / 10) * 10);
     setLaborCost(Math.round((laborCostNum * 1.05 + Math.random() * 100) / 10) * 10);
     setDeliveryWeeks(Math.max(1, delWeeksNum + (Math.random() > 0.5 ? 1 : -1)));
+  };
+
+  const handleImport = async () => {
+    if (!selectedProjectId || !onImportSupplierProposals) return;
+    setIsImporting(true);
+    setImportFeedback(null);
+    try {
+      const result = await onImportSupplierProposals(selectedProjectId);
+      setImportFeedback({ message: result.message, type: "success" });
+      setTimeout(() => setImportFeedback(null), 5700); // 5000 visible + 700ms transition
+    } catch (error) {
+      setImportFeedback({
+        message: error instanceof Error ? error.message : "Error inesperado al importar propuestas.",
+        type: "error",
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -277,9 +310,49 @@ export default function AnalistasPanel({
               </div>
 
               <div className="space-y-3.5">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Propuestas Ingresadas ({activeProject.proposals?.length || 0}):</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Propuestas Ingresadas ({activeProject.proposals?.length || 0}):
+                  </span>
+                  <button
+                    onClick={handleImport}
+                    disabled={isImporting}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    title="Importar propuestas recibidas desde el portal de proveedores"
+                  >
+                    {isImporting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <LayoutList className="h-3.5 w-3.5" />
+                    )}
+                    {isImporting ? "Importando..." : "Traer del portal"}
+                  </button>
+                </div>
                 
-                <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 overflow-y-auto pr-2 -mr-2 ">
+                  <div
+                    className={`overflow-hidden transition-all duration-700 ease-in-out  ${
+                      importFeedback ? "max-h-16 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+                    }`}
+                  >
+                    <div
+                      className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5  ${
+                        importFeedback?.type === "success"
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : "bg-rose-50 text-rose-700 border border-rose-200"
+                      }`}
+                    >
+                      {importFeedback?.type === "success" ? (
+                        <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                      {importFeedback?.message}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1">
                   {activeProject.proposals?.map((prop) => (
                     <div key={prop.id} className="p-3.5 border border-slate-100 bg-white rounded-xl flex items-center justify-between gap-3 shadow-xs hover:border-slate-200 transition-colors">
                       <div>
@@ -299,7 +372,7 @@ export default function AnalistasPanel({
 
                   {(!activeProject.proposals || activeProject.proposals.length === 0) && (
                     <div className="text-center py-10 border border-dashed border-slate-200 rounded-xl text-xs text-slate-400 font-medium italic bg-slate-50/50">
-                      Ningún contratista ha enviado oferta todavía para este expediente. Use el formulario arriba.
+                      Ninguna oferta registrada. Use el formulario en el panel izquierdo o importe desde el portal de proveedores.
                     </div>
                   )}
                 </div>

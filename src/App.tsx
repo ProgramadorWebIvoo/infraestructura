@@ -356,6 +356,35 @@ function AppRoutes() {
     }
   };
 
+  // 4b. Analysts import supplier material proposals as comparative proposals
+  const handleImportSupplierProposals = async (projectId: string): Promise<{ message: string; imported: number; skipped: number }> => {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/import-supplier-proposals`, {
+      method: "POST",
+      headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new Error(json.message || "No se pudieron importar las propuestas de proveedores.");
+    }
+
+    // Update project in state
+    if (json.project) {
+      const project = json.project.data ?? json.project;
+      setProjects(prev => [project, ...prev.filter(item => item.id !== project.id)]);
+      setInspectedProject(prev => prev?.id === project.id ? project : prev);
+    }
+
+    await refreshAuditLogs();
+
+    return {
+      message: json.message,
+      imported: json.imported ?? 0,
+      skipped: json.skipped ?? 0,
+    };
+  };
+
   // 5. Analysts submit compiled comparative spreadsheet to Procura
   const handleSubmitComparative = async (projectId: string) => {
     try {
@@ -829,7 +858,7 @@ function AppRoutes() {
             <Route
               path="/analistas"
               element={canAccess("/analistas")
-                ? <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} isLoading={isLoadingApi} />
+                ? <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} onImportSupplierProposals={handleImportSupplierProposals} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route

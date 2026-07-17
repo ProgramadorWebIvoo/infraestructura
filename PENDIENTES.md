@@ -21,4 +21,4 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
     numero sera ingresado.
 7. **PREGUNTAR** Realizar un boton para traer al cuadro de analistas la propuesta del proveedor?
 8. **PREGUNTAR** Los proveedores se registran a través de un enlace publico de la web, sin embargo no existe otra manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no este disponible, cierre o no sea aceptado mas por la empresa, como se cambiaria el estatus?
-
+9. **REALIZAR** Al traer las solicitudes de los contratistas automaticamente a los analistas algo a realizar es que se debe concatenar la observacion general + las notas de cada producto, cada nota debe estar especificado a que producto va dirigida y pasar toda la observacion de la parte del analista concatenado en su totalidad de esa manera.
