@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [2026-07-20] — Feature: Transiciones suaves entre vistas (route transitions)
+
+- Tipo: feature
+- Qué:
+  - `<Routes>` autenticado envuelto en `AnimatePresence mode="wait"` + `motion.div` keyed por `location.pathname`. Cada cambio de ruta ahora hace fade + slide vertical (y: 12 → 0 → -12, 0.22s easeOut) en vez de intercambio brusco.
+  - `useReducedMotion()` de `motion/react`: si el SO tiene "reduce motion" activo, las variantes colapsan a opacity 1 / duration 0 (sin movimiento).
+  - `useEffect` en `location.pathname` que hace `window.scrollTo(0,0)` para que cada vista entre desde arriba limpio.
+  - Eliminado el `<div className="transition-all duration-300">` muerto (no animaba nada real).
+- Por qué / causa raíz: el wrapper previo no producía transición alguna; el contenido de las vistas se reemplazaba instantáneamente, dando sensación de "salto" y mal feeling de UX. El stack ya incluía `motion` v12 (usado en Modal) y `react-router-dom` v7, así que no se añaden dependencias.
+- Archivos: `src/App.tsx`
+
+---
+
 ## [2026-07-20] — Refactor: PresidenciaDashboard des-espaguetizado (sin sobre-ingeniería)
 
 - Tipo: refactor
