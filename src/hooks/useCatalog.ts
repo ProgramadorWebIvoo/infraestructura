@@ -6,7 +6,6 @@
  */
 
 import { useState, useCallback } from "react";
-import { MATERIAL_CATALOG } from "../data";
 
 export interface CatalogItem {
   name: string;

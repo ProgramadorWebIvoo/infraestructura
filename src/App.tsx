@@ -33,6 +33,7 @@ import { useAuth, isPublicPath } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
+import type { Contractor } from "./types";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -106,7 +107,7 @@ function AppRoutes() {
     handlePayFinal,
     resetData,
   } = useProjects(authToken, showToast, {
-    onContractorsLoaded: (data) => setContractors(data as any),
+    onContractorsLoaded: (data) => setContractors(data as Contractor[]),
     onMaterialsLoaded: (data) => setMaterialsCatalog(data),
   });
 
@@ -248,7 +249,7 @@ function AppRoutes() {
         <InspectProjectModal isOpen={!!inspectedProject} project={inspectedProject} onClose={() => setInspectedProject(null)} />
 
         {/* Footer copyright */}
-        <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400 font-medium">
+        <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500 font-medium">
           <div className="max-w-7xl mx-auto px-4">
             IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()} &bull; Organigrama Integrado IVOO &bull; Todos los derechos reservados.
           </div>

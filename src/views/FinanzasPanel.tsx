@@ -116,12 +116,12 @@ export default function FinanzasPanel({
 
                     <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-slate-100 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">Contratista adjudicado:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Contratista adjudicado:</span>
                         <span className="font-bold text-slate-800">{winner.contractorName}</span>
                         <span className="font-mono text-[9px] text-sky-600 font-bold block mt-0.5">({winner.contractorCode})</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">Porcentaje Anticipo:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Porcentaje Anticipo:</span>
                         <span className="font-mono font-black text-emerald-600 text-sm">{winner.negotiatedAdvancePercent}%</span>
                       </div>
                     </div>
@@ -188,11 +188,11 @@ export default function FinanzasPanel({
 
                     <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-slate-100 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">Contratista ejecutor:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Contratista ejecutor:</span>
                         <span className="font-bold text-slate-800">{winner.contractorName}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold block mb-0.5">Anticipo ya pagado:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Anticipo ya pagado:</span>
                         <span className="font-mono font-bold text-slate-600">${paidAdvance.toLocaleString()}</span>
                       </div>
                     </div>

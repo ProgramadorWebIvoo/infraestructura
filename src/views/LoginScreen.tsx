@@ -10,16 +10,46 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [blockTimer, setBlockTimer] = useState(0);
+
+  const getBlockDuration = (count: number) => {
+    if (count <= 3) return 0;
+    return Math.min(Math.pow(2, count - 3), 60); // 2, 4, 8, 16, 32, 60 max seg
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmitting) return;
+
+    const blockSec = getBlockDuration(attempts);
+    if (blockSec > 0 && blockTimer > 0) return;
+
     setError("");
     setIsSubmitting(true);
 
     try {
       await onLogin(email, password);
+      setAttempts(0);
     } catch {
-      setError("Correo o clave incorrectos.");
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      const nextBlock = getBlockDuration(newAttempts);
+      if (nextBlock > 0) {
+        setBlockTimer(nextBlock);
+        const interval = setInterval(() => {
+          setBlockTimer(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        setError(`Demasiados intentos. Espere ${nextBlock} segundos.`);
+      } else {
+        setError("Correo o clave incorrectos.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -34,13 +64,13 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight text-slate-950">IVOO Gestion</h1>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Acceso interno</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Acceso interno</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Correo</label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Correo</label>
             <input
               id="login-email"
               type="email"
@@ -52,7 +82,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Clave</label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Clave</label>
             <input
               id="login-password"
               type="password"
@@ -72,11 +102,11 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           <button
             id="btn-login-submit"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || blockTimer > 0}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <LogIn className="h-4 w-4" />
-            {isSubmitting ? "Validando..." : "Ingresar"}
+            {blockTimer > 0 ? `Espere ${blockTimer}s` : isSubmitting ? "Validando..." : "Ingresar"}
           </button>
         </form>
       </div>

@@ -7,7 +7,6 @@
 
 import { useState, useCallback } from "react";
 import type { Contractor } from "../types";
-import { INITIAL_CONTRACTORS } from "../data";
 import { apiFetch } from "../services/api";
 
 export function useContractors(authToken: string) {

@@ -42,17 +42,23 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
 13. **OPCIONAL / CRÍTICO** Añadir Polling a la aplicación en general para evitar el recargar la web para actualizar datos facilitando su uso y diseño
 
 14. **CRÍTICO** Realizar y Corregir todos los puntos especificados en las auditorías internas de BACKEND y FRONTEND
-    - ✅ C1 (Tailwind v4 classes): Resuelto
+    - ✅ C1 (Tailwind v4 classes): Resuelto 2026-07-20
     - ✅ C2 (.env): Falso positivo
     - ✅ C3 (dependencias no usadas): Resuelto 2026-07-20
     - ✅ C4 (carga archivos no deseados): Resuelto 2026-07-20 (validación triple en FileDropZone)
-    - ✅ G1 (InteractiveOrganigrama): Resuelto 2026-07-20 (archivo eliminado)
+    - ✅ G1 (InteractiveOrganigrama): Resuelto 2026-07-20
     - ✅ G2 (fetchs redundantes): Resuelto
     - ✅ G3 (isLoadingApi): Resuelto (skeleton loading)
     - ✅ G4 (activeRole): Resuelto
     - ✅ G5 (doble ;;): Resuelto
+    - ✅ M2 (strict: true): Resuelto 2026-07-20
     - ✅ M3 (alias @): Resuelto
-    - ❌ Pendientes: M2 (strict: false), L1 (lang), L3 (contraste), L4 (aria-label), L5 (rate limiting)
+    - ✅ M4 (setMaterialsCatalog never[]): Resuelto 2026-07-20
+    - ✅ M8 (código comentado legacy): Resuelto 2026-07-20
+    - ✅ L1 (html lang): Resuelto 2026-07-20
+    - ✅ L3 (contraste text-slate-400): Resuelto 2026-07-20
+    - ✅ L4 (aria-label icon buttons): Resuelto 2026-07-20
+    - ✅ L5 (rate limiting login): Resuelto 2026-07-20
 
 15. **CRÍTICO** No existe un panel GENERAL para realizar la configuración y creación de datos IMPRESCINDIBLES como Materiales, Proveedores, IAs
 
@@ -63,3 +69,5 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
 18. **CORREGIR** Los Tokens JWT no expiran. **(CHECK)**
 
 19. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app después de la normalización de la conexión a la API
+
+20. **REALIZAR** Modales para las tablas que muestran muchos datos, el objetivo de estos mdales sera proporcionar la informacion de mejor maner y mas eficientemente.

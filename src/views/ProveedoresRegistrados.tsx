@@ -223,7 +223,7 @@ export default function ProveedoresRegistrados({
                 placeholder="Buscar por nombre, codigo, correo o especialidad..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9.5 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-sky-500"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-sky-500"
               />
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600">
@@ -247,8 +247,8 @@ export default function ProveedoresRegistrados({
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
                       {c.rating.toFixed(1)}
                     </div>
-                    <button onClick={() => handleOpenEdit(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>
-                    <button onClick={() => handleOpenInviteModal(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600" title="Generar enlace de propuesta de materiales"><Link2 className="h-3 w-3" /></button>
+                    <button aria-label="Actualizar evaluación" onClick={() => handleOpenEdit(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>
+                    <button aria-label="Generar enlace de propuesta de materiales" onClick={() => handleOpenInviteModal(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600" title="Generar enlace de propuesta de materiales"><Link2 className="h-3 w-3" /></button>
                   </div>
                 ),
               },
@@ -268,7 +268,7 @@ export default function ProveedoresRegistrados({
           <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                <Package className="h-4.5 w-4.5" />
+                <Package className="h-[18px] w-[18px]" />
               </div>
               <div>
                 <h3 className="text-sm font-black text-slate-900">Propuestas de materiales recibidas</h3>
@@ -285,7 +285,7 @@ export default function ProveedoresRegistrados({
                   placeholder="Buscar por proveedor u obra..."
                   value={proposalSearch}
                   onChange={(e) => setProposalSearch(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9.5 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
               <div className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600">
@@ -458,7 +458,7 @@ export default function ProveedoresRegistrados({
 
             <div className="space-y-6 p-6">
               <div className="flex flex-col items-center gap-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Calificacion</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Calificacion</span>
                 <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -479,7 +479,7 @@ export default function ProveedoresRegistrados({
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Valor exacto (0.0 – 5.0)
                 </label>
                 <input
@@ -542,7 +542,7 @@ export default function ProveedoresRegistrados({
             <div className="p-6 space-y-5">
               {/* Project selector (always visible) */}
               <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Obra activa *
                 </label>
                 <select

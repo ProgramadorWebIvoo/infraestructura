@@ -204,7 +204,7 @@ export default function ProcuraPanel({
         ) : (
           <div className="space-y-5">
             <div className="space-y-2.5">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Peticiones Listas para Procura:</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Peticiones Listas para Procura:</label>
               <div className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
                 {pendingInvestmentApproval.map((p) => (
                   <button

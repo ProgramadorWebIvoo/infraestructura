@@ -22,7 +22,7 @@ export default function EmptyState({ message, icon, className = "" }: EmptyState
       <div className="text-slate-300 flex justify-center mb-2">
         {icon ?? <Inbox className="h-8 w-8" />}
       </div>
-      <p className="text-xs text-slate-400 font-medium italic">{message}</p>
+      <p className="text-xs text-slate-500 font-medium italic">{message}</p>
     </div>
   );
 }

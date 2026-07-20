@@ -69,7 +69,7 @@ export default function RegistroProveedoresPublico({
             </div>
             <div>
               <h1 className="text-base font-black tracking-tight">IVOO Registro de Proveedores</h1>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Portal publico</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Portal publico</p>
             </div>
           </div>
           <div className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-bold text-emerald-200 sm:flex">
@@ -124,7 +124,7 @@ export default function RegistroProveedoresPublico({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nombre de la empresa</label>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Nombre de la empresa</label>
               <input
                 id="public-provider-name"
                 type="text"
@@ -137,7 +137,7 @@ export default function RegistroProveedoresPublico({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Especialidad tecnica</label>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Especialidad tecnica</label>
               <input
                 id="public-provider-specialty"
                 type="text"
@@ -150,7 +150,7 @@ export default function RegistroProveedoresPublico({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Correo de contacto</label>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Correo de contacto</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                 <input

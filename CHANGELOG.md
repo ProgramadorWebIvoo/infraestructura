@@ -1,5 +1,69 @@
 # CHANGELOG
 
+## [2026-07-20] — Fix: Resueltos todos los hallazgos pendientes de auditoría frontend
+
+**Tipo:** fix + security + accessibility
+
+**Qué:** Se resolvieron los 12 hallazgos de auditoría que aún estaban pendientes en frontend y mobile:
+
+### 🔴 Críticos
+- **C1** — Clases Tailwind v4 inválidas (`h-4.5`, `w-4.5`, `pl-9.5`, `p-4.5`) reemplazadas por valores válidos (`h-[18px]`, `w-[18px]`, `pl-10`, `p-5`) en SidebarNav, ProveedoresRegistrados, PresidenciaDashboard, InfraestructuraMantenimientoPanel.
+
+### 🟠 Graves
+- **G1** — `InteractiveOrganigrama.tsx` (307 líneas dead code) eliminado del disco.
+
+### 🟡 Moderados
+- **M2** — `strict: true` activado en `tsconfig.json` + instalado `@types/react-dom` como devDependency. 0 errores de compilación.
+- **M4** — Eliminado `as any` cast en `App.tsx` (`onContractorsLoaded`), tipado correcto con `Contractor[]`.
+- **M8** — Verificado: no existe código comentado legacy en App.tsx.
+
+### 🔵 Leves
+- **L1** — `index.html`: `lang="en"` → `lang="es"`.
+- **L3** — Contraste bajo de `text-slate-400` sobre fondo blanco: cambiados labels, descripciones, footer y placeholders a `text-slate-500` en todas las vistas (LoginScreen, UsuariosPanel, FinanzasPanel, InspectProjectModal, EmptyState, App.tsx footer, etc.).
+- **L4** — Agregados `aria-label` a icon-only buttons: sidebar close, hamburger menu, password toggle, acción editar/invitar en proveedores.
+- **L5** — Rate limiting client-side en LoginScreen: contador de intentos con backoff exponencial (2s, 4s, 8s… máx 60s), botón deshabilitado con cuenta regresiva visible.
+
+### 📱 Mobile
+- **X1** — Props `visible`/`transparent` en Modal de React Native cambiadas a `visible={true}`/`transparent={true}`.
+- **X2** — URL de API movida a `mobile/config.ts` con documentación de configuración.
+- **X3** — Credenciales por defecto (`admin@ivoo.local` / `Admin12345`) eliminadas de initial state.
+
+### 🧹 Otras limpiezas
+- Eliminados dead exports `handleTriggerDemo` y `handleResetApp` de `useProjects.ts` (no usados en ningún componente).
+- Eliminados imports no utilizados de `data.ts` en `useCatalog.ts` y `useContractors.ts`.
+
+**Archivos:**
+- `src/components/UI/SidebarNav.tsx` — C1, L4
+- `src/components/UI/MobileTopBar.tsx` — L4
+- `src/components/UI/EmptyState.tsx` — L3
+- `src/components/UI/Toast.tsx` — L4 (ya tenía aria-label)
+- `src/views/ProveedoresRegistrados.tsx` — C1, L3, L4
+- `src/views/PresidenciaDashboard.tsx` — C1
+- `src/views/InfraestructuraMantenimientoPanel.tsx` — C1, L3
+- `src/views/LoginScreen.tsx` — L3, L5
+- `src/views/UsuariosPanel.tsx` — L3, L4
+- `src/views/FinanzasPanel.tsx` — L3
+- `src/views/MaterialesProveedores.tsx` — L3
+- `src/views/PropuestaMaterialesPublica.tsx` — L3
+- `src/views/ProcuraPanel.tsx` — L3
+- `src/views/CierreObraPanel.tsx` — L3
+- `src/views/AnalistasPanel.tsx` — L3
+- `src/components/Modals/InspectProjectModal.tsx` — L3
+- `src/App.tsx` — M4, L3
+- `src/hooks/useProjects.ts` — dead code removal
+- `src/hooks/useCatalog.ts` — unused import removal
+- `src/hooks/useContractors.ts` — unused import removal
+- `tsconfig.json` — M2 (strict: true)
+- `index.html` — L1 (lang="es")
+- `package.json` — @types/react-dom añadido
+- `mobile/App.tsx` — X1, X2, X3
+- `mobile/config.ts` — [NUEVO] configuración centralizada
+- `src/components/InteractiveOrganigrama.tsx` — [ELIMINADO]
+- `CHANGELOG.md` — actualizado
+- `PENDIENTES.md` — actualizado
+
+---
+
 ## [2026-07-20] — Feature: Paginación integrada en Table + activada en 7 tablas
 
 **Tipo:** feature

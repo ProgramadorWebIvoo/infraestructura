@@ -15,11 +15,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// Android emulator: http://10.0.2.2:8000/api
-// iOS simulator / Expo web on same PC: http://127.0.0.1:8000/api
-// Physical phone: replace with your PC LAN IP, e.g. http://192.168.1.20:8000/api
-//const API_BASE_URL = "http://10.20.16.134/ivoo-gestion-de-infraestructura-back/public/api";
-const API_BASE_URL = 'https://infraestructuraback.ivoofix.com/api';
+import { API_BASE_URL } from "./config";
 
 type ProjectStatus =
   | "CREADO"
@@ -433,8 +429,8 @@ function AppShell({
 }
 
 function LoginScreen({ onLogin }: { onLogin: (email: string, password: string) => Promise<void> }) {
-  const [email, setEmail] = useState("admin@ivoo.local");
-  const [password, setPassword] = useState("Admin12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
@@ -743,7 +739,7 @@ function ProjectModal({ project, onClose }: { project: Project | null; onClose: 
   if (!project) return null;
 
   return (
-    <Modal animationType="slide" visible transparent onRequestClose={onClose}>
+    <Modal animationType="slide" visible={true} transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>

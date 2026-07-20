@@ -16,19 +16,20 @@ export default function MobileTopBar({ user, onMenuClick }: MobileTopBarProps) {
         <div className="flex items-center gap-3">
           <button
             id="btn-mobile-menu"
+            aria-label="Abrir menú de navegación"
             onClick={onMenuClick}
             className="p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-xl transition-colors duration-200 cursor-pointer"
           >
             <Menu className="h-6 w-6" />
           </button>
 
-          <div className="w-9 h-9 bg-gradient-to-br from-sky-400 via-sky-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-sky-500/20 ring-1 ring-white/15 shrink-0">
+          <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20 ring-1 ring-white/15 shrink-0">
             <Building2 className="h-[18px] w-[18px] text-white stroke-[2.5]" />
           </div>
 
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-base font-black tracking-tight text-white leading-none">IVOO</span>
+              <span className="text-base font-black tracking-tight text-emerald-400 leading-none">IVOO</span>
               <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
             </div>
             <p className="text-[9px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">

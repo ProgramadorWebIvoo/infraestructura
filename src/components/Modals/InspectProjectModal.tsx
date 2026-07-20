@@ -109,7 +109,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Paso pendiente de revisi&oacute;n t&eacute;cnica.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Paso pendiente de revisi&oacute;n t&eacute;cnica.</p>
               )}
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   <p className="mt-1 text-slate-500"><strong>Nota Procura:</strong> {project.procuraReviewNotes}</p>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Pendiente de tope presupuestario.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Pendiente de tope presupuestario.</p>
               )}
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   </ul>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Pendiente de cotizaciones.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Pendiente de cotizaciones.</p>
               )}
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   Proveedor Adjudicado: {project.selectedContractorCode}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Pendiente de adjudicar ganador.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Pendiente de adjudicar ganador.</p>
               )}
             </div>
           </div>
@@ -199,7 +199,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   <div className="text-[9px] text-slate-400 mt-0.5 font-mono">Fecha Valor: {project.advancePaidDate}</div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Arranque pendiente de pago de anticipo.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Arranque pendiente de pago de anticipo.</p>
               )}
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   Obra certificada con est&aacute;ndares &oacute;ptimos el {project.completionVerifiedDate}.
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Pendiente de verificaci&oacute;n t&eacute;cnica final de calidad.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Pendiente de verificaci&oacute;n t&eacute;cnica final de calidad.</p>
               )}
             </div>
           </div>
@@ -240,7 +240,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
                   Liquidaci&oacute;n Final de ${project.finalPaidAmount.toLocaleString()} USD Transferida el {project.finalPaidDate}.
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic mt-0.5">Pendiente de liquidaci&oacute;n bancaria.</p>
+                <p className="text-xs text-slate-500 italic mt-0.5">Pendiente de liquidaci&oacute;n bancaria.</p>
               )}
             </div>
           </div>

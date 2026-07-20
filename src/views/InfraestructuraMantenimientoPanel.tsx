@@ -138,7 +138,7 @@ export default function InfraestructuraMantenimientoPanel({
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Título de la Obra</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Título de la Obra</label>
                 <input
                   id="req-title"
                   type="text"
@@ -149,7 +149,7 @@ export default function InfraestructuraMantenimientoPanel({
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Ubicación / Tienda / CD</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ubicación / Tienda / CD</label>
                 <div className="relative">
                   <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                   <input
@@ -166,7 +166,7 @@ export default function InfraestructuraMantenimientoPanel({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tipo de Requerimiento</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo de Requerimiento</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     id="type-infra"
@@ -195,7 +195,7 @@ export default function InfraestructuraMantenimientoPanel({
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción del Trabajo</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Descripción del Trabajo</label>
                 <textarea
                   id="req-description"
                   placeholder="Detallar detalladamente el alcance físico, áreas a intervenir, especificaciones de la instalación..."
@@ -250,7 +250,7 @@ export default function InfraestructuraMantenimientoPanel({
             </button>
           </div>
 
-          <form onSubmit={handleAddMaterial} className="grid grid-cols-1 md:grid-cols-4 gap-3.5 items-end bg-slate-50/50 p-4.5 rounded-xl border border-slate-100">
+          <form onSubmit={handleAddMaterial} className="grid grid-cols-1 md:grid-cols-4 gap-3.5 items-end bg-slate-50/50 p-5 rounded-xl border border-slate-100">
             {!isCustomMaterial ? (
               <div className="md:col-span-2">
                 <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Seleccionar Material</label>

@@ -30,7 +30,7 @@ const navLinkClass = (activeBg: string, borderColor: string) =>
     }`;
 
 const sidebarIconClass = (isActive: boolean, activeClass = "!text-white") =>
-  `h-4.5 w-4.5 shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:rotate-[3deg] ${
+  `h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:rotate-[3deg] ${
     isActive ? activeClass : "text-slate-400 group-hover:text-white"
   }`;
 
@@ -73,7 +73,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
             <div className="flex items-center gap-3">
               {/* Logo icon with live indicator */}
               <div className="relative shrink-0">
-                <div className="w-10 h-10 bg-gradient-to-br from-sky-400 via-sky-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/25 ring-1 ring-white/15">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 ring-1 ring-white/15">
                   <Building2 className="h-5 w-5 text-white stroke-[2.5]" />
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0F172A] shadow-xs" />
@@ -82,7 +82,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               {/* Wordmark + tagline */}
               <div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-black tracking-tight text-white leading-none">IVOO</span>
+                  <span className="text-lg font-black tracking-tight text-emerald-400 leading-none">IVOO</span>
                   <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium mt-0.5 tracking-wide">
@@ -92,6 +92,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
             </div>
 
             <button
+              aria-label="Cerrar menú lateral"
               className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors duration-200 self-start"
               onClick={onClose}
             >
@@ -257,7 +258,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
             onClick={onLogout}
             className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white hover:translate-x-0.5"
           >
-            <LogOut className="h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+            <LogOut className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
             <span>Cerrar Sesión</span>
           </button>
         </div>

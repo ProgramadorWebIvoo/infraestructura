@@ -318,32 +318,6 @@ export function useProjects(
     }
   }, [authToken, showToast, syncProject]);
 
-  // Demo: crear proyecto de ejemplo y navegar
-  const handleTriggerDemo = useCallback(async (navigate: (path: string) => void) => {
-    try {
-      await handleAddProject({
-        title: "Climatizacion de Sala de Servidores CD IVOO",
-        type: "INFRAESTRUCTURA",
-        description: "Reemplazo integral de unidades de aire de precision de 5 toneladas y renovacion de ducteria para el cuarto de datos central.",
-        location: "Centro de Distribucion Central",
-        materials: [
-          { id: "dm1", name: "Lampara LED Industrial 150W", quantity: 6, unit: "Unidad", estimatedUnitPrice: 55.0 },
-          { id: "dm2", name: "Cable de Cobre THHN #10 AWG", quantity: 2, unit: "Rollo (100m)", estimatedUnitPrice: 110.0 },
-        ],
-        estimatedTotal: 550.0,
-      });
-      navigate("/cierre-obra");
-    } catch {
-      // error ya manejado en handleAddProject via toast
-    }
-  }, [handleAddProject]);
-
-  // Reset App (solo muestra toast, recarga página)
-  const handleResetApp = useCallback(() => {
-    showToast("Reinicio: importa database.sql en MySQL y recarga la página.", "info");
-    window.location.reload();
-  }, [showToast]);
-
   // Limpiar datos (para logout)
   const resetData = useCallback(() => {
     setProjects([]);
@@ -381,9 +355,6 @@ export function useProjects(
     handlePayAdvance,
     handleVerifyCompletion,
     handlePayFinal,
-    handleTriggerDemo,
-    handleResetApp,
-
     // Utilidades
     resetData,
   };

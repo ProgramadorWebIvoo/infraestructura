@@ -197,7 +197,7 @@ export default function PropuestaMaterialesPublica() {
             </div>
             <div>
               <h1 className="text-base font-black tracking-tight">IVOO — Propuesta de Materiales</h1>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Portal publico de cotizacion</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Portal publico de cotizacion</p>
             </div>
           </div>
           <div className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-bold text-emerald-200 sm:flex">
@@ -442,7 +442,7 @@ export default function PropuestaMaterialesPublica() {
               </p>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Cantidad</label>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Cantidad</label>
                   <NumericInput
                     value={estimatedDays}
                     onChange={setEstimatedDays}
@@ -451,7 +451,7 @@ export default function PropuestaMaterialesPublica() {
                   />
                 </div>
                 <div className="w-36">
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Unidad</label>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Unidad</label>
                   <select
                     value={durationUnit}
                     onChange={(e) => setDurationUnit(e.target.value as DurationUnit)}
@@ -467,7 +467,7 @@ export default function PropuestaMaterialesPublica() {
 
             {/* General notes */}
             <div className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Observaciones generales (opcional)
               </label>
               <textarea

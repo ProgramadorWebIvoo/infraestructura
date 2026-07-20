@@ -99,7 +99,7 @@ export default function CierreObraPanel({
             <div className="space-y-5">
               {/* Selector List */}
               <div className="space-y-2.5">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                   Seleccionar Expediente a Revisar:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
@@ -136,7 +136,7 @@ export default function CierreObraPanel({
                     </h5>
                     <p className="text-slate-600 leading-relaxed italic">&quot;{activeProject.description}&quot;</p>
                     <div className="pt-3 border-t border-slate-200/60">
-                      <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Materiales Solicitados:</span>
+                      <span className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Materiales Solicitados:</span>
                       <ul className="mt-1.5 space-y-1 text-slate-600 list-disc list-inside font-medium">
                         {activeProject.materials.map((m) => (
                           <li key={m.id}>

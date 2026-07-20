@@ -147,7 +147,7 @@ export default function AnalistasPanel({
             <div className="space-y-4">
               {/* Select Project */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Seleccionar Expediente a Cotizar:</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Seleccionar Expediente a Cotizar:</label>
                 <select
                   id="analistas-project-selector"
                   value={selectedProjectId}
@@ -301,7 +301,7 @@ export default function AnalistasPanel({
 
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Propuestas Ingresadas ({activeProject.proposals?.length || 0}):
                   </span>
                   <button

@@ -122,7 +122,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
         </div>
         <div>
           <h2 className="text-lg font-black tracking-tight text-slate-900">Gestión de Usuarios</h2>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
             Registro y administración de accesos
           </p>
         </div>
@@ -158,7 +158,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Nombre completo
               </label>
               <div className="relative">
@@ -176,7 +176,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
 
             {/* Email */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Correo electronico
               </label>
               <div className="relative">
@@ -194,7 +194,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
 
             {/* Password */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Contraseña
               </label>
               <div className="relative">
@@ -209,6 +209,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   onClick={() => setShowPassword(p => !p)}
                   className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
                 >
@@ -219,7 +220,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
 
             {/* Confirm password */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Confirmar contraseña
               </label>
               <div className="relative">
@@ -240,7 +241,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
 
             {/* Role */}
             <div>
-              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Rol / Modulo de acceso
               </label>
               <div className="relative">
