@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## [2026-07-20] — Fix críticos App.tsx + Sistema de notificaciones Toast + alert() → toast global
+
+**Tipo:** refactor + fix
+
+**Qué:**
+1. **Eliminada redundancia** `refreshAuditLogs()` en `syncProject()` (ya incluido en `loadApiData()`).
+2. **Guarda de reentrada `isFetchingRef`** en `loadApiData()` — previene StrictMode double-fetch y race conditions. El toast de error ahora aparece una sola vez.
+3. **`syncProject` optimizado**: ya no llama `loadApiData()` (4 endpoints), solo `refreshAuditLogs()` (1 endpoint). Las mutaciones ya actualizan estado local con la respuesta del server.
+4. **Fallback INITIAL data** cuando la API falla en `loadApiData()` (antes arrays vacíos sin mensaje).
+3. **handleLogout consistente**: resetea a `[]` en vez de INITIAL (consistente con estado inicial).
+4. **activeRole** ahora usa `authUser?.role` en vez de derivarse del pathname (podía mostrar rol incorrecto).
+5. **handleTriggerDemo** solo navega si `handleAddProject` no lanza error.
+6. **Modal con `createPortal`** a `document.body` — previene rotura de z-index/position:fixed por stacking contexts.
+7. **ToastProvider + useToast** — sistema de notificaciones tipo toast con 4 variantes (success/error/warning/info), animación slide-up, auto-dismiss 4s.
+8. **Todos los `alert()` reemplazados** por `showToast()`:
+   - 10 handlers en App.tsx
+   - 3 en CierreObraPanel
+   - 1 en AnalistasPanel
+   - 2 en MaterialesProveedores
+   - 3 en ProcuraPanel
+   - 2 en PropuestaMaterialesPublica
+   - 2 en ProveedoresRegistrados
+
+**Archivos:**
+- `src/components/UI/Toast.tsx` — [NUEVO]
+- `src/index.css` — animación `slide-up`
+- `src/App.tsx` — múltiples fixes
+- `src/views/CierreObraPanel.tsx` — alerts → toast
+- `src/views/AnalistasPanel.tsx` — alerts → toast
+- `src/views/MaterialesProveedores.tsx` — alerts → toast
+- `src/views/ProcuraPanel.tsx` — alerts → toast
+- `src/views/PropuestaMaterialesPublica.tsx` — alerts → toast
+- `src/views/ProveedoresRegistrados.tsx` — alerts → toast
+- `CHANGELOG.md` — actualizado
+
+---
+
 ## [2026-07-20] — Service: src/services/api.ts creado + eliminado prop drilling apiBaseUrl
 
 **Tipo:** refactor

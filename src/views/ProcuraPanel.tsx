@@ -5,6 +5,7 @@
 
 import React, { useState } from "react";
 import { Project, ProjectStatus, Proposal } from "../types";
+import { useToast } from "../components/UI/Toast";
 import {
   FileSearch,
   DollarSign,
@@ -45,6 +46,7 @@ export default function ProcuraPanel({
   authToken,
   isLoading = false,
 }: ProcuraPanelProps) {
+  const { showToast } = useToast();
   if (isLoading) return <ProcuraSkeleton />;
 
   const handleDownload = async (projectId: string, doc: ProjectDocument) => {
@@ -57,7 +59,7 @@ export default function ProcuraPanel({
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert("No se pudo descargar el archivo.");
+      showToast("No se pudo descargar el archivo.", "error");
     }
   };
   // Phase 1 form state
@@ -83,7 +85,7 @@ export default function ProcuraPanel({
     if (!selectedReviewId) return;
     const amountNum = approvedAmount === "" ? 0 : approvedAmount;
     if (amountNum <= 0) {
-      alert("Por favor, introduce un monto de inversión autorizado válido.");
+      showToast("Introduce un monto de inversión autorizado válido.", "warning");
       return;
     }
     onApproveInvestment(selectedReviewId, procuraNotes, amountNum);
@@ -104,7 +106,7 @@ export default function ProcuraPanel({
 
   const handleConfirmReject = async (projectId: string) => {
     if (!rejectReason.trim()) {
-      alert("Ingrese el motivo del rechazo.");
+      showToast("Ingresa el motivo del rechazo.", "warning");
       return;
     }
     setIsRejecting(true);

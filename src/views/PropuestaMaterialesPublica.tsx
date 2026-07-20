@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useToast } from "../components/UI/Toast";
 import {
   Building2,
   CheckCircle,
@@ -47,6 +48,7 @@ interface ItemRow extends Omit<SupplierMaterialProposalItem, 'unitPrice' | 'quan
 type DurationUnit = "dias" | "semanas" | "meses";
 
 export default function PropuestaMaterialesPublica() {
+  const { showToast } = useToast();
   const { token } = useParams<{ token: string }>();
 
   const [invitation, setInvitation] = useState<InvitationPublicInfo | null>(null);
@@ -131,7 +133,7 @@ export default function PropuestaMaterialesPublica() {
 
     const hasAnyPrice = validItems.some((i) => Number(i.unitPrice) > 0);
     if (!hasAnyPrice) {
-      alert("Ingrese precio unitario para al menos un material.");
+      showToast("Ingresa precio unitario para al menos un material.", "warning");
       return;
     }
 
@@ -152,7 +154,7 @@ export default function PropuestaMaterialesPublica() {
       });
       setSubmittedId(result.id);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo enviar la propuesta.");
+      showToast(error instanceof Error ? error.message : "No se pudo enviar la propuesta.", "error");
     } finally {
       setIsSubmitting(false);
     }

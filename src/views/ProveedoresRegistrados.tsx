@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Contractor, Project, ProjectStatus, SupplierMaterialProposal } from "../types";
+import { useToast } from "../components/UI/Toast";
 import {
   ChevronDown,
   ChevronUp,
@@ -41,6 +42,7 @@ export default function ProveedoresRegistrados({
   onUpdateContractorRating,
   isLoading = false,
 }: ProveedoresRegistradosProps) {
+  const { showToast } = useToast();
   const [search, setSearch] = useState("");
 
   // Rating modal state
@@ -115,7 +117,7 @@ export default function ProveedoresRegistrados({
       await onUpdateContractorRating(editingContractor.code, editRating === "" ? 0 : editRating);
       handleCloseEdit();
     } catch {
-      alert("No se pudo guardar la evaluacion.");
+      showToast("No se pudo guardar la evaluación.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -161,7 +163,7 @@ export default function ProveedoresRegistrados({
       setGeneratedProjectTitle(data.projectTitle);
       setLinkCopied(false);
     } catch {
-      alert("No se pudo generar el enlace. Intente nuevamente.");
+      showToast("No se pudo generar el enlace. Intenta nuevamente.", "error");
     } finally {
       setIsCreatingInvite(false);
     }

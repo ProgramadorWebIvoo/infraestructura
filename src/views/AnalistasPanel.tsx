@@ -5,6 +5,7 @@
 
 import React, { useState } from "react";
 import { Project, ProjectStatus, Contractor, Proposal } from "../types";
+import { useToast } from "../components/UI/Toast";
 import { 
   Users, 
   Plus, 
@@ -47,6 +48,7 @@ export default function AnalistasPanel({
   onImportSupplierProposals,
   isLoading = false,
 }: AnalistasPanelProps) {
+  const { showToast } = useToast();
   if (isLoading) return <AnalistasSkeleton />;
   // States
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -117,7 +119,7 @@ export default function AnalistasPanel({
   const handleSubmit = () => {
     if (!selectedProjectId) return;
     if (!activeProject?.proposals || activeProject.proposals.length === 0) {
-      alert("Debes agregar al menos una propuesta antes de enviar el cuadro comparativo.");
+      showToast("Agrega al menos una propuesta antes de enviar el cuadro comparativo.", "warning");
       return;
     }
     onSubmitComparative(selectedProjectId);

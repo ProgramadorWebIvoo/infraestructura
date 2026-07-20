@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Project, ProjectStatus, Contractor, AuditLog, Proposal } from "./types";
-import { 
-  INITIAL_CONTRACTORS, 
-  MATERIAL_CATALOG, 
-  INITIAL_PROJECTS, 
-  INITIAL_AUDIT_LOGS 
+import {
+  INITIAL_CONTRACTORS,
+  MATERIAL_CATALOG,
+  INITIAL_PROJECTS,
+  INITIAL_AUDIT_LOGS,
 } from "./data";
 
 // Views
@@ -36,11 +37,14 @@ import {
 } from "lucide-react";
 import SidebarNav from "./components/UI/SidebarNav";
 import MobileTopBar from "./components/UI/MobileTopBar";
+import { ToastProvider, useToast } from "./components/UI/Toast";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
     </BrowserRouter>
   );
 }
@@ -76,12 +80,13 @@ const isPublicPath = (path: string) =>
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
-  const activeRole = routeRoles[location.pathname] ?? "PRESIDENCIA";
+  const { showToast } = useToast();
   const [authToken, setAuthToken] = useState(() => localStorage.getItem("ivoo_auth_token") ?? "");
   const [authUser, setAuthUser] = useState<{ name: string; email: string; role?: string } | null>(() => {
     const saved = localStorage.getItem("ivoo_auth_user");
     return saved ? JSON.parse(saved) : null;
   });
+  const activeRole = authUser?.role ?? "PRESIDENCIA";
 
   const canAccess = (path: string) => {
     const role = authUser?.role ?? "PRESIDENCIA";
@@ -91,17 +96,13 @@ function AppRoutes() {
   const firstAllowedRoute = (role: string) =>
     roleAccess[role]?.[0] ?? "/presidencia";
 
-  /*const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
-  const [contractors, setContractors] = useState<Contractor[]>(INITIAL_CONTRACTORS);
-  const [materialsCatalog, setMaterialsCatalog] = useState(MATERIAL_CATALOG);*/
-  
   const [projects, setProjects] = useState<Project[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [materialsCatalog, setMaterialsCatalog] = useState<{ name: string; unit: string; estimatedUnitPrice: number }[]>([]);
 
   const [isLoadingApi, setIsLoadingApi] = useState(true);
+  const isFetchingRef = useRef(false);
 
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -110,6 +111,8 @@ function AppRoutes() {
   const [inspectedProject, setInspectedProject] = useState<Project | null>(null);
 
   const loadApiData = async () => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
       try {
         const [projects, audit, contractors, materials] = await Promise.all([
           apiFetch<Project[]>("/projects", { token: authToken }),
@@ -124,8 +127,13 @@ function AppRoutes() {
         setMaterialsCatalog(materials);
       } catch (error) {
         console.error(error);
-        alert("No se pudo conectar con la API de Laravel. Se mostraran datos locales de respaldo.");
+        setProjects(INITIAL_PROJECTS);
+        setAuditLogs(INITIAL_AUDIT_LOGS);
+        setContractors(INITIAL_CONTRACTORS);
+        setMaterialsCatalog(MATERIAL_CATALOG);
+        showToast("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
       } finally {
+        isFetchingRef.current = false;
         setIsLoadingApi(false);
       }
     };
@@ -150,8 +158,7 @@ function AppRoutes() {
   const syncProject = (project: Project) => {
     setProjects(prev => [project, ...prev.filter(item => item.id !== project.id)]);
     setInspectedProject(prev => prev?.id === project.id ? project : prev);
-    refreshAuditLogs();
-    loadApiData();
+    refreshAuditLogs(); // solo refresca auditoría, no 4 endpoints
   };
 
   // --- Actions & Flow State Machine ---
@@ -167,7 +174,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo registrar la obra en Laravel.");
+      showToast("No se pudo registrar la obra en Laravel.", "error");
     }
   };
 
@@ -200,7 +207,7 @@ function AppRoutes() {
       setProjects(prev => [refreshed, ...prev.filter(item => item.id !== refreshed.id)]);
     } catch (error) {
       console.error(error);
-      alert("No se pudo guardar la revision tecnica.");
+      showToast("No se pudo guardar la revisión técnica.", "error");
     }
   };
 
@@ -215,7 +222,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo aprobar la inversion.");
+      showToast("No se pudo aprobar la inversión.", "error");
     }
   };
 
@@ -230,7 +237,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo cargar la propuesta.");
+      showToast("No se pudo cargar la propuesta.", "error");
     }
   };
 
@@ -243,7 +250,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo eliminar la propuesta.");
+      showToast("No se pudo eliminar la propuesta.", "error");
     }
   };
 
@@ -285,7 +292,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo enviar el cuadro comparativo.");
+      showToast("No se pudo enviar el cuadro comparativo.", "error");
     }
   };
 
@@ -315,7 +322,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo rechazar el cuadro comparativo.");
+      showToast("No se pudo rechazar el cuadro comparativo.", "error");
     }
   };
 
@@ -330,7 +337,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo registrar el anticipo.");
+      showToast("No se pudo registrar el anticipo.", "error");
     }
   };
 
@@ -351,7 +358,7 @@ function AppRoutes() {
       syncProject(updated);
     } catch (error) {
       console.error(error);
-      alert("No se pudo actualizar la verificacion de cierre.");
+      showToast("No se pudo actualizar la verificación de cierre.", "error");
     }
   };
 
@@ -366,7 +373,7 @@ function AppRoutes() {
       syncProject(project);
     } catch (error) {
       console.error(error);
-      alert("No se pudo registrar el pago final.");
+      showToast("No se pudo registrar el pago final.", "error");
     }
   };
 
@@ -390,22 +397,26 @@ function AppRoutes() {
 
   // --- Guided Demo Flows Simulation ---
   const handleTriggerDemo = async () => {
-    await handleAddProject({
-      title: "Climatizacion de Sala de Servidores CD IVOO",
-      type: "INFRAESTRUCTURA",
-      description: "Reemplazo integral de unidades de aire de precision de 5 toneladas y renovacion de ducteria para el cuarto de datos central.",
-      location: "Centro de Distribucion Central",
-      materials: [
-        { id: "dm1", name: "Lampara LED Industrial 150W", quantity: 6, unit: "Unidad", estimatedUnitPrice: 55.0 },
-        { id: "dm2", name: "Cable de Cobre THHN #10 AWG", quantity: 2, unit: "Rollo (100m)", estimatedUnitPrice: 110.0 }
-      ],
-      estimatedTotal: 550.0
-    });
-    navigate("/cierre-obra");
+    try {
+      await handleAddProject({
+        title: "Climatizacion de Sala de Servidores CD IVOO",
+        type: "INFRAESTRUCTURA",
+        description: "Reemplazo integral de unidades de aire de precision de 5 toneladas y renovacion de ducteria para el cuarto de datos central.",
+        location: "Centro de Distribucion Central",
+        materials: [
+          { id: "dm1", name: "Lampara LED Industrial 150W", quantity: 6, unit: "Unidad", estimatedUnitPrice: 55.0 },
+          { id: "dm2", name: "Cable de Cobre THHN #10 AWG", quantity: 2, unit: "Rollo (100m)", estimatedUnitPrice: 110.0 }
+        ],
+        estimatedTotal: 550.0
+      });
+      navigate("/cierre-obra");
+    } catch {
+      // Error ya manejado en handleAddProject via toast
+    }
   };
 
   const handleResetApp = () => {
-    alert("El reinicio ahora se realiza desde MySQL importando database.sql. La pantalla se recargara desde la API.");
+    showToast("Reinicio: importa database.sql en MySQL y recarga la página.", "info");
     window.location.reload();
   };
 
@@ -430,10 +441,10 @@ function AppRoutes() {
     localStorage.removeItem("ivoo_auth_user");
     setAuthToken("");
     setAuthUser(null);
-    setProjects(INITIAL_PROJECTS);
-    setAuditLogs(INITIAL_AUDIT_LOGS);
-    setContractors(INITIAL_CONTRACTORS);
-    setMaterialsCatalog(MATERIAL_CATALOG);
+    setProjects([]);
+    setAuditLogs([]);
+    setContractors([]);
+    setMaterialsCatalog([]);
     navigate("/presidencia");
   };
 
@@ -559,7 +570,7 @@ function AppRoutes() {
       </main>
 
       {/* --- INSPECT MODAL (DETALLE DE RETORNOS - MASTER PROJECT TIMELINE) --- */}
-      {inspectedProject && (
+      {inspectedProject && createPortal(
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-2xl border border-slate-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             
@@ -798,7 +809,7 @@ function AppRoutes() {
 
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Footer copyright */}
       <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400 font-medium">

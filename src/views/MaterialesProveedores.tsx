@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Contractor } from "../types";
 import { Building2, CheckCircle, Mail, Send, ShieldCheck, UserRound } from "lucide-react";
 import { apiFetch } from "../services/api";
+import { useToast } from "../components/UI/Toast";
 
 interface RegistroProveedoresPublicoProps {
   contractorsCount: number;
@@ -17,6 +18,7 @@ export default function RegistroProveedoresPublico({
   contractorsCount,
   onAddContractor,
 }: RegistroProveedoresPublicoProps) {
+  const { showToast } = useToast();
   const [name, setName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [contact, setContact] = useState("");
@@ -27,7 +29,7 @@ export default function RegistroProveedoresPublico({
     event.preventDefault();
 
     if (!name.trim() || !specialty.trim() || !contact.trim()) {
-      alert("Complete todos los campos para registrar el proveedor.");
+      showToast("Completa todos los campos para registrar el proveedor.", "warning");
       return;
     }
 
@@ -51,7 +53,7 @@ export default function RegistroProveedoresPublico({
       setContact("");
     } catch (error) {
       console.error(error);
-      alert("No se pudo registrar el proveedor en Laravel.");
+      showToast("No se pudo registrar el proveedor en Laravel.", "error");
     } finally {
       setIsSubmitting(false);
     }

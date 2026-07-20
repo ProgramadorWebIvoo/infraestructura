@@ -5,6 +5,7 @@
 
 import React, { useState, useRef } from "react";
 import { Project, ProjectStatus } from "../types";
+import { useToast } from "../components/UI/Toast";
 import {
   FileText,
   Upload,
@@ -40,6 +41,7 @@ export default function CierreObraPanel({
   onVerifyCompletion,
   isLoading = false,
 }: CierreObraPanelProps) {
+  const { showToast } = useToast();
   if (isLoading) return <CierreObraSkeleton />;
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [cierreNotes, setCierreNotes] = useState("");
@@ -71,15 +73,15 @@ export default function CierreObraPanel({
     e.preventDefault();
     if (!selectedProjectId) return;
     if (!cierreNotes.trim()) {
-      alert("Por favor, introduce notas técnicas o de revisión de cálculos.");
+      showToast("Introduce notas técnicas o de revisión de cálculos.", "warning");
       return;
     }
     if (calcFiles.length === 0) {
-      alert("Debe adjuntar al menos una hoja de cálculo o archivo de cubicaciones.");
+      showToast("Debe adjuntar al menos una hoja de cálculo o archivo de cubicaciones.", "warning");
       return;
     }
     if (planFiles.length === 0) {
-      alert("Debe adjuntar al menos un plano de ingeniería.");
+      showToast("Debe adjuntar al menos un plano de ingeniería.", "warning");
       return;
     }
 
