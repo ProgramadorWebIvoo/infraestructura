@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## [2026-07-20] — Service: src/services/api.ts creado + eliminado prop drilling apiBaseUrl
+
+**Tipo:** refactor
+
+**Qué:**
+1. Creado `src/services/api.ts` con:
+   - `API_BASE_URL` — única fuente de verdad para la URL del backend
+   - `apiFetch<T>(path, options?)` — wrapper fetch tipado con auth automático, Content-Type, error handling y unwrap de `.data` Laravel
+   - `apiDownload(path, options?)` — wrapper para descarga de archivos (blob)
+2. Refactorizados todos los `fetch()` dispersos en `App.tsx`, vistas y servicios para usar `apiFetch<T>`:
+   - `App.tsx` — ~30 llamadas reemplazadas
+   - `MaterialesProveedores.tsx` — 1 llamada
+   - `UsuariosPanel.tsx` — 2 llamadas
+   - `ProveedoresRegistrados.tsx` — 2 llamadas
+   - `PropuestaMaterialesPublica.tsx` — 2 llamadas
+   - `aiEvaluationService.ts` — 1 llamada
+3. Eliminado prop drilling de `apiBaseUrl`:
+   - `ProcuraPanel.tsx` — ya no recibe `apiBaseUrl` por props, usa `apiDownload` del service
+   - `EvaluacionInteligenteModal.tsx` — eliminada prop `apiBaseUrl`
+   - `aiEvaluationService.ts` — eliminado parámetro `apiBaseUrl` de `evaluateProposals`
+   - `App.tsx` — ya no pasa `apiBaseUrl` a `ProcuraPanel`
+4. Corregido doble punto y coma `;;` en `MaterialesProveedores.tsx` y `UsuariosPanel.tsx`
+5. Eliminados `import React` innecesarios en vistas (React 19)
+6. Tipado correcto de `materialsCatalog` en `App.tsx`
+
+**Por qué / causa raíz:** No existía un cliente HTTP centralizado. C ada componente y servicio declaraba su propia copia de `VITE_API_URL` y repetía headers, error handling y lógica de parsing. La cadena de prop drilling `apiBaseUrl` atravesaba 4 niveles (App → ProcuraPanel → EvaluacionInteligenteModal → aiEvaluationService) innecesariamente.
+
+**Archivos:**
+- `src/services/api.ts` — nuevo
+- `src/App.tsx` — refactor fetch calls + eliminar apiBaseUrl prop
+- `src/views/ProcuraPanel.tsx` — eliminar apiBaseUrl prop, usar apiDownload
+- `src/views/MaterialesProveedores.tsx` — usar apiFetch
+- `src/views/UsuariosPanel.tsx` — usar apiFetch
+- `src/views/ProveedoresRegistrados.tsx` — usar apiFetch
+- `src/views/PropuestaMaterialesPublica.tsx` — usar apiFetch
+- `src/components/EvaluacionInteligenteModal.tsx` — eliminar apiBaseUrl prop
+- `src/services/aiEvaluationService.ts` — usar apiFetch, eliminar apiBaseUrl param
+
+---
+
 ## [2026-07-20] — Refactor: views/ folder, alias fix, LoginScreen extraction, normalization
 
 **Tipo:** refactor

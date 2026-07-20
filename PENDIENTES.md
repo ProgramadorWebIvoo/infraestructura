@@ -48,3 +48,5 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
 17. **REALIZAR / EVALUAR** Evaluar la factibilidad de una Reestructuracion base COMPONENTES -> SERVICIOS -> VISTAS para la escalabilidad, mantenimiento y desarrollo de la web.
 
 18. **CORREGIR** Los Tokens JWT no expiran. **(CHECK)**
+
+19. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app despues de la normalizacion de la conexion a la API

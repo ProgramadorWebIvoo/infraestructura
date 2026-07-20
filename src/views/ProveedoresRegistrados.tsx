@@ -24,8 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from "../services/api";
 
 interface ProveedoresRegistradosProps {
   contractors: Contractor[];
@@ -68,12 +67,8 @@ export default function ProveedoresRegistrados({
     if (!authToken) return;
     const load = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/supplier-material-proposals`, {
-          headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-        });
-        if (!response.ok) return;
-        const json = await response.json();
-        setProposals(json.data ?? json);
+        const data = await apiFetch<SupplierMaterialProposal[]>("/supplier-material-proposals", { token: authToken });
+        setProposals(data);
       } catch {
         // silently ignore
       } finally {
@@ -152,13 +147,9 @@ export default function ProveedoresRegistrados({
     if (!inviteProjectId || !inviteModalContractor) return;
     setIsCreatingInvite(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/supplier-invitations`, {
+      const data = await apiFetch<{ token: string; projectTitle: string }>("/supplier-invitations", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
+        token: authToken,
         body: JSON.stringify({
           project_id: inviteProjectId,
           supplierName: inviteModalContractor.name,
@@ -166,8 +157,6 @@ export default function ProveedoresRegistrados({
           supplierContact: inviteModalContractor.contact,
         }),
       });
-      if (!response.ok) throw new Error();
-      const data = await response.json();
       setGeneratedToken(data.token);
       setGeneratedProjectTitle(data.projectTitle);
       setLinkCopied(false);

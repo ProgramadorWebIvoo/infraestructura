@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Building2,
@@ -19,8 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { SupplierMaterialProposalItem } from "../types";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from "../services/api";
 
 interface ProjectPublicData {
   id: string;
@@ -66,14 +65,7 @@ export default function PropuestaMaterialesPublica() {
 
     const load = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/public/invitations/${token}`, {
-          headers: { Accept: "application/json" },
-        });
-        if (!response.ok) {
-          setLoadError("El enlace no es valido o ya no esta disponible.");
-          return;
-        }
-        const data: InvitationPublicInfo = await response.json();
+        const data = await apiFetch<InvitationPublicInfo>(`/public/invitations/${token}`);
         setInvitation(data);
         setItems(
           data.project.materials.map((m) => ({
@@ -145,9 +137,8 @@ export default function PropuestaMaterialesPublica() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/public/invitations/${token}/proposal`, {
+      const result = await apiFetch<{ id: string }>(`/public/invitations/${token}/proposal`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           estimatedDays: estimatedDays !== "" ? Number(estimatedDays) : null,
           durationUnit: estimatedDays !== "" ? durationUnit : null,
@@ -159,13 +150,6 @@ export default function PropuestaMaterialesPublica() {
           generalNotes: generalNotes.trim() || null,
         }),
       });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error((err as { message?: string }).message ?? "Error al enviar la propuesta.");
-      }
-
-      const result = await response.json();
       setSubmittedId(result.id);
     } catch (error) {
       alert(error instanceof Error ? error.message : "No se pudo enviar la propuesta.");

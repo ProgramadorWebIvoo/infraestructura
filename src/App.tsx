@@ -25,6 +25,7 @@ import ProveedoresRegistrados from "./views/ProveedoresRegistrados";
 import PropuestaMaterialesPublica from "./views/PropuestaMaterialesPublica";
 import UsuariosPanel from "./views/UsuariosPanel";
 import LoginScreen from "./views/LoginScreen";
+import { apiFetch } from "./services/api";
 
 // Icons
 import {
@@ -35,8 +36,6 @@ import {
 } from "lucide-react";
 import SidebarNav from "./components/UI/SidebarNav";
 import MobileTopBar from "./components/UI/MobileTopBar";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function App() {
   return (
@@ -100,7 +99,7 @@ function AppRoutes() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [contractors, setContractors] = useState<Contractor[]>([]);
-  const [materialsCatalog, setMaterialsCatalog] = useState([]);
+  const [materialsCatalog, setMaterialsCatalog] = useState<{ name: string; unit: string; estimatedUnitPrice: number }[]>([]);
 
   const [isLoadingApi, setIsLoadingApi] = useState(true);
 
@@ -110,29 +109,19 @@ function AppRoutes() {
   // Inspect project detail state
   const [inspectedProject, setInspectedProject] = useState<Project | null>(null);
 
-   const loadApiData = async () => {
+  const loadApiData = async () => {
       try {
-        const authHeaders = { Accept: "application/json", Authorization: `Bearer ${authToken}` };
-        const [projectsResponse, auditResponse, contractorsResponse, materialsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/projects`, { headers: authHeaders }),
-          fetch(`${API_BASE_URL}/audit-logs`, { headers: authHeaders }),
-          fetch(`${API_BASE_URL}/contractors`, { headers: authHeaders }),
-          fetch(`${API_BASE_URL}/materials`, { headers: authHeaders }),
+        const [projects, audit, contractors, materials] = await Promise.all([
+          apiFetch<Project[]>("/projects", { token: authToken }),
+          apiFetch<AuditLog[]>("/audit-logs", { token: authToken }),
+          apiFetch<Contractor[]>("/contractors", { token: authToken }),
+          apiFetch<{ name: string; unit: string; estimatedUnitPrice: number }[]>("/materials", { token: authToken }),
         ]);
 
-        if (!projectsResponse.ok || !auditResponse.ok || !contractorsResponse.ok || !materialsResponse.ok) {
-          throw new Error("No se pudo cargar la informacion desde Laravel.");
-        }
-
-        const projectsJson = await projectsResponse.json();
-        const auditJson = await auditResponse.json();
-        const contractorsJson = await contractorsResponse.json();
-        const materialsJson = await materialsResponse.json();
-
-        setProjects(projectsJson.data ?? projectsJson);
-        setAuditLogs(auditJson.data ?? auditJson);
-        setContractors(contractorsJson.data ?? contractorsJson);
-        setMaterialsCatalog(materialsJson.data ?? materialsJson);
+        setProjects(projects);
+        setAuditLogs(audit);
+        setContractors(contractors);
+        setMaterialsCatalog(materials);
       } catch (error) {
         console.error(error);
         alert("No se pudo conectar con la API de Laravel. Se mostraran datos locales de respaldo.");
@@ -140,7 +129,6 @@ function AppRoutes() {
         setIsLoadingApi(false);
       }
     };
-
 
   useEffect(() => {
     if (!authToken) {
@@ -151,28 +139,19 @@ function AppRoutes() {
   }, [authToken]);
 
   const refreshAuditLogs = async () => {
-    const response = await fetch(`${API_BASE_URL}/audit-logs`, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-    });
-    if (!response.ok) return;
-
-    const json = await response.json();
-    setAuditLogs(json.data ?? json);
+    try {
+      const audit = await apiFetch<AuditLog[]>("/audit-logs", { token: authToken });
+      setAuditLogs(audit);
+    } catch {
+      // silent fail on poll
+    }
   };
 
-  const syncProject = async (response: Response) => {
-    if (!response.ok) {
-      const message = await response.text();
-      throw new Error(message || "La API rechazo la operacion.");
-    }
-
-    const json = await response.json();
-    const project = json.data ?? json;
+  const syncProject = (project: Project) => {
     setProjects(prev => [project, ...prev.filter(item => item.id !== project.id)]);
     setInspectedProject(prev => prev?.id === project.id ? project : prev);
-    await refreshAuditLogs();
+    refreshAuditLogs();
     loadApiData();
-    return project as Project;
   };
 
   // --- Actions & Flow State Machine ---
@@ -180,11 +159,12 @@ function AppRoutes() {
   // 1. Infraestructura / Mantenimiento adds new work order
   const handleAddProject = async (newProj: Omit<Project, "id" | "createdDate" | "status">) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects`, {
+      const project = await apiFetch<Project>("/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify(newProj),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo registrar la obra en Laravel.");
@@ -194,20 +174,21 @@ function AppRoutes() {
   // 2. Cierre de Obra reviews calculations and blueprints
   const handleReviewProject = async (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/review`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify({ notes, blueprintsCount: planFiles.length, calculationsAdded: calcFiles.length > 0 }),
-      }));
+      });
+      syncProject(project);
 
       const uploadGroup = async (files: File[], type: "PLANO" | "CALC") => {
         if (files.length === 0) return;
         const form = new FormData();
         form.append("document_type", type);
         files.forEach(f => form.append("files[]", f));
-        await fetch(`${API_BASE_URL}/projects/${projectId}/documents`, {
+        await apiFetch(`/projects/${projectId}/documents`, {
           method: "POST",
-          headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
+          token: authToken,
           body: form,
         });
       };
@@ -215,14 +196,8 @@ function AppRoutes() {
       await Promise.all([uploadGroup(planFiles, "PLANO"), uploadGroup(calcFiles, "CALC")]);
 
       // Reload project to get updated documents list
-      const refreshed = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-        headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-      });
-      if (refreshed.ok) {
-        const json = await refreshed.json();
-        const project = json.data ?? json;
-        setProjects(prev => [project, ...prev.filter(item => item.id !== project.id)]);
-      }
+      const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token: authToken });
+      setProjects(prev => [refreshed, ...prev.filter(item => item.id !== refreshed.id)]);
     } catch (error) {
       console.error(error);
       alert("No se pudo guardar la revision tecnica.");
@@ -232,11 +207,12 @@ function AppRoutes() {
   // 3. Procura sets maximum approved budget investment limit
   const handleApproveInvestment = async (projectId: string, notes: string, approvedAmount: number) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/approve-investment`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/approve-investment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify({ notes, approvedInvestmentAmount: approvedAmount }),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo aprobar la inversion.");
@@ -246,11 +222,12 @@ function AppRoutes() {
   // 4. Analysts submit new bids/proposals
   const handleAddProposal = async (projectId: string, proposal: Omit<Proposal, "id">) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/proposals`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/proposals`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify(proposal),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo cargar la propuesta.");
@@ -259,10 +236,11 @@ function AppRoutes() {
 
   const handleRemoveProposal = async (projectId: string, proposalId: string) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/proposals/${proposalId}`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/proposals/${proposalId}`, {
         method: "DELETE",
-        headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-      }));
+        token: authToken,
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo eliminar la propuesta.");
@@ -271,20 +249,19 @@ function AppRoutes() {
 
   // 4b. Analysts import supplier material proposals as comparative proposals
   const handleImportSupplierProposals = async (projectId: string): Promise<{ message: string; imported: number; skipped: number }> => {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/import-supplier-proposals`, {
+    const json = await apiFetch<{
+      message: string;
+      imported: number;
+      skipped: number;
+      project?: { data?: Project } | Project;
+    }>(`/projects/${projectId}/import-supplier-proposals`, {
       method: "POST",
-      headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
+      token: authToken,
     });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error(json.message || "No se pudieron importar las propuestas de proveedores.");
-    }
 
     // Update project in state
     if (json.project) {
-      const project = json.project.data ?? json.project;
+      const project = (json.project as { data?: Project }).data ?? (json.project as Project);
       setProjects(prev => [project, ...prev.filter(item => item.id !== project.id)]);
       setInspectedProject(prev => prev?.id === project.id ? project : prev);
     }
@@ -301,10 +278,11 @@ function AppRoutes() {
   // 5. Analysts submit compiled comparative spreadsheet to Procura
   const handleSubmitComparative = async (projectId: string) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/submit-comparative`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/submit-comparative`, {
         method: "POST",
-        headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-      }));
+        token: authToken,
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo enviar el cuadro comparativo.");
@@ -314,11 +292,12 @@ function AppRoutes() {
   // 6. Procura awards/hires a contractor from the comparative list
   const handleSelectContractor = async (projectId: string, contractorCode: string, proposalId: string) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/select-contractor`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/select-contractor`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify({ contractorCode, proposalId }),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       throw error; // propagar para que el modal muestre el feedback
@@ -328,11 +307,12 @@ function AppRoutes() {
   // 7. Procura rejects comparative proposals → back to CONFIRMADO_PROCURA
   const handleRejectProposals = async (projectId: string, reason: string) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/reject-proposals`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/reject-proposals`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify({ reason }),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo rechazar el cuadro comparativo.");
@@ -342,11 +322,12 @@ function AppRoutes() {
   // 8. Finanzas pays the negotiated advance, setting project to active execution
   const handlePayAdvance = async (projectId: string, amount: number) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/payments`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify({ paymentType: "ADVANCE", amount }),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo registrar el anticipo.");
@@ -359,14 +340,15 @@ function AppRoutes() {
     const isStartingVerification = project?.status === ProjectStatus.EN_EJECUCION;
 
     try {
-      await syncProject(await fetch(
-        `${API_BASE_URL}/projects/${projectId}/${isStartingVerification ? "report-finished" : "verify-completion"}`,
+      const updated = await apiFetch<Project>(
+        `/projects/${projectId}/${isStartingVerification ? "report-finished" : "verify-completion"}`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+          token: authToken,
           body: isStartingVerification ? undefined : JSON.stringify({ qualityVerified: true }),
-        }
-      ));
+        },
+      );
+      syncProject(updated);
     } catch (error) {
       console.error(error);
       alert("No se pudo actualizar la verificacion de cierre.");
@@ -376,11 +358,12 @@ function AppRoutes() {
   // 9. Finanzas pays the final balance, fully closing the workflow
   const handlePayFinal = async (projectId: string, amount: number) => {
     try {
-      await syncProject(await fetch(`${API_BASE_URL}/projects/${projectId}/payments`, {
+      const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+        token: authToken,
         body: JSON.stringify({ paymentType: "FINAL", amount }),
-      }));
+      });
+      syncProject(project);
     } catch (error) {
       console.error(error);
       alert("No se pudo registrar el pago final.");
@@ -393,12 +376,11 @@ function AppRoutes() {
   };
 
   const handleUpdateContractorRating = async (code: string, rating: number) => {
-    const response = await fetch(`${API_BASE_URL}/contractors/${code}/rating`, {
+    await apiFetch(`/contractors/${code}/rating`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${authToken}` },
+      token: authToken,
       body: JSON.stringify({ rating }),
     });
-    if (!response.ok) throw new Error("No se pudo actualizar la evaluacion.");
     setContractors(prev => prev.map(c => c.code === code ? { ...c, rating } : c));
   };
 
@@ -428,17 +410,11 @@ function AppRoutes() {
   };
 
   const handleLogin = async (email: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
+    const data = await apiFetch<{ token: string; user: { name: string; email: string; role?: string } }>("/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ email, password, device_name: "web" }),
     });
 
-    if (!response.ok) {
-      throw new Error("Credenciales invalidas.");
-    }
-
-    const data = await response.json();
     localStorage.setItem("ivoo_auth_token", data.token);
     localStorage.setItem("ivoo_auth_user", JSON.stringify(data.user));
     setAuthToken(data.token);
@@ -447,10 +423,7 @@ function AppRoutes() {
 
   const handleLogout = async () => {
     if (authToken) {
-      await fetch(`${API_BASE_URL}/logout`, {
-        method: "POST",
-        headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-      }).catch(() => null);
+      await apiFetch("/logout", { method: "POST", token: authToken }).catch(() => null);
     }
 
     localStorage.removeItem("ivoo_auth_token");
@@ -552,7 +525,7 @@ function AppRoutes() {
             <Route
               path="/procura"
               element={canAccess("/procura")
-                ? <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} apiBaseUrl={API_BASE_URL} isLoading={isLoadingApi} />
+                ? <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} isLoading={isLoadingApi} />
                 : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
             />
             <Route

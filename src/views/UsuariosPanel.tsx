@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   UserPlus,
@@ -15,8 +15,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;;
+import { apiFetch } from "../services/api";
 
 const ROLES = [
   { value: "SUPERADMIN", label: "Super Administrador" },
@@ -70,12 +69,8 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/users`, {
-          headers: { Accept: "application/json", Authorization: `Bearer ${authToken}` },
-        });
-        if (!response.ok) throw new Error();
-        const json = await response.json();
-        setUsers(json.data ?? json);
+        const data = await apiFetch<UserRecord[]>("/users", { token: authToken });
+        setUsers(data);
       } catch {
         // endpoint may not exist yet; silently ignore
       } finally {
@@ -101,13 +96,9 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/users`, {
+      const created = await apiFetch<UserRecord>("/users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
+        token: authToken,
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
@@ -116,14 +107,6 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
           role,
         }),
       });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.message ?? "No se pudo registrar el usuario.");
-      }
-
-      const json = await response.json();
-      const created: UserRecord = json.data ?? json;
       setUsers(prev => [created, ...prev]);
       setSuccessMsg(`Usuario "${created.name}" registrado correctamente.`);
       setName("");

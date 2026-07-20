@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Contractor } from "../types";
 import { Building2, CheckCircle, Mail, Send, ShieldCheck, UserRound } from "lucide-react";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;;
+import { apiFetch } from "../services/api";
 
 interface RegistroProveedoresPublicoProps {
   contractorsCount: number;
@@ -35,9 +34,8 @@ export default function RegistroProveedoresPublico({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/contractors`, {
+      const contractor = await apiFetch<Contractor>("/contractors", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           name: name.trim(),
           specialty: specialty.trim(),
@@ -45,12 +43,6 @@ export default function RegistroProveedoresPublico({
           rating: 4.0,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const contractor = await response.json();
 
       onAddContractor(contractor);
       setSubmittedCode(contractor.code);

@@ -53,7 +53,6 @@ interface EvaluacionInteligenteModalProps {
   proposals: Proposal[];
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   authToken: string;
-  apiBaseUrl: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +66,6 @@ export default function EvaluacionInteligenteModal({
   proposals,
   onSelectContractor,
   authToken,
-  apiBaseUrl,
 }: EvaluacionInteligenteModalProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "result" | "error">("idle");
   const [result, setResult] = useState<AIEvaluationResult | null>(null);
@@ -121,7 +119,7 @@ export default function EvaluacionInteligenteModal({
       log(`Iniciando evaluación con ${startLabel}...`);
       await delay(800);
 
-      const data = await evaluateProposals(project, proposals, authToken, apiBaseUrl, providerParam);
+      const data = await evaluateProposals(project, proposals, authToken, providerParam);
 
       log(`✅ Evaluación completada por ${PROVIDER_META[data.providerUsed].label}`);
       setResult(data);
@@ -133,7 +131,7 @@ export default function EvaluacionInteligenteModal({
       setErrorMsg(message);
       setStatus("error");
     }
-  }, [project, proposals, authToken, apiBaseUrl, selectedProvider]);
+  }, [project, proposals, authToken, selectedProvider]);
 
   // --- Aceptar recomendación ---
   const handleAccept = async () => {

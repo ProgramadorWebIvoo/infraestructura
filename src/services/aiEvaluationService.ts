@@ -8,6 +8,7 @@
  */
 
 import { Project, Proposal } from "../types";
+import { apiFetch } from "./api";
 
 // ---------------------------------------------------------------------------
 // Tipos públicos
@@ -71,7 +72,6 @@ export async function evaluateProposals(
   project: Project,
   proposals: Proposal[],
   authToken: string,
-  apiBaseUrl: string,
   provider?: 'chatgpt' | 'gemini' | 'claude',
 ): Promise<AIEvaluationResult> {
   const payload: AIEvaluationPayload = {
@@ -96,29 +96,12 @@ export async function evaluateProposals(
   };
 
   if (provider) payload.provider = provider;
-  
-  const response = await fetch(`${apiBaseUrl}/ai/evaluate-proposals`, {
+
+  const result = await apiFetch<AIEvaluationResponse>("/ai/evaluate-proposals", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${authToken}`,
-    },
+    token: authToken,
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    let errorMsg = `Error del servidor (${response.status})`;
-    try {
-      const errorBody: AIEvaluationResponse = await response.json();
-      errorMsg = errorBody.error ?? errorMsg;
-    } catch {
-      // ignorar, usar mensaje por defecto
-    }
-    throw new Error(errorMsg);
-  }
-
-  const result: AIEvaluationResponse = await response.json();
 
   if (!result.success || !result.data) {
     throw new Error(result.error ?? "La evaluación no devolvió resultados.");

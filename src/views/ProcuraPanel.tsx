@@ -26,6 +26,7 @@ import {
 import { ProjectDocument } from "../types";
 import EvaluacionInteligenteModal from "../components/EvaluacionInteligenteModal";
 import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
+import { apiDownload } from "../services/api";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -33,7 +34,6 @@ interface ProcuraPanelProps {
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   onRejectProposals: (projectId: string, reason: string) => void;
   authToken: string;
-  apiBaseUrl: string;
   isLoading?: boolean;
 }
 
@@ -43,23 +43,22 @@ export default function ProcuraPanel({
   onSelectContractor,
   onRejectProposals,
   authToken,
-  apiBaseUrl,
   isLoading = false,
 }: ProcuraPanelProps) {
   if (isLoading) return <ProcuraSkeleton />;
 
   const handleDownload = async (projectId: string, doc: ProjectDocument) => {
-    const res = await fetch(`${apiBaseUrl}/projects/${projectId}/documents/${doc.id}/download`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    if (!res.ok) { alert("No se pudo descargar el archivo."); return; }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = doc.originalName;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.originalName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("No se pudo descargar el archivo.");
+    }
   };
   // Phase 1 form state
   const [selectedReviewId, setSelectedReviewId] = useState("");
@@ -462,7 +461,6 @@ export default function ProcuraPanel({
           proposals={aiEvalProject.proposals ?? []}
           onSelectContractor={onSelectContractor}
           authToken={authToken}
-          apiBaseUrl={apiBaseUrl}
         />
       )}
 
