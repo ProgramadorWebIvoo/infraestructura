@@ -6,35 +6,44 @@ export function usePolling(
     enabled: boolean = true
 ) {
     const savedCallback = useRef(callback);
+    const isHidden = useRef(typeof document !== "undefined" ? document.hidden : false);
 
     useEffect(() => {
         savedCallback.current = callback;
     }, [callback]);
 
     useEffect(() => {
-        if (!enabled || interval <= 0) {
-            console.log("🔍 usePolling: disabled or invalid interval", { enabled, interval });
-            return;
-        }
-        
-        let timerId: NodeJS.Timeout;
-        let isSubscribed = true;
+        if (!enabled || interval <= 0) return;
 
-        const loop = async () => {
-            if (isSubscribed) {
-                console.log("🔄 usePolling: executing callback");
-                await savedCallback.current();
-                timerId = setTimeout(loop, interval);
+        let timerId: ReturnType<typeof setTimeout>;
+        let isSubscribed = true;
+        let isRunning = false;
+
+        const tick = async () => {
+            if (!isSubscribed) return;
+            // Pausa por pestaña oculta + guarda de overlap (no apila requests)
+            if (!isHidden.current && !isRunning) {
+                isRunning = true;
+                try {
+                    await savedCallback.current();
+                } finally {
+                    isRunning = false;
+                }
             }
+            if (isSubscribed) timerId = setTimeout(tick, interval);
         };
 
-        console.log("🔍 usePolling: starting", { interval, enabled });
-        timerId = setTimeout(loop, interval);
+        const onVisibility = () => {
+            isHidden.current = document.hidden;
+        };
+
+        document.addEventListener("visibilitychange", onVisibility);
+        timerId = setTimeout(tick, interval);
 
         return () => {
-            console.log("🔍 usePolling: cleanup");
             isSubscribed = false;
             clearTimeout(timerId);
+            document.removeEventListener("visibilitychange", onVisibility);
         };
     }, [interval, enabled]);
 }

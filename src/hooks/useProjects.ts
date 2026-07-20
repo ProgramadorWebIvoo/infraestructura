@@ -7,7 +7,7 @@
  * para otros hooks (acoplamiento eliminado); cada dominio fetchea lo suyo.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Project, AuditLog } from "../types";
 import { apiFetch } from "../services/api";
 import { useProjectsData } from "./useProjectsData";
@@ -38,6 +38,14 @@ export function useProjects(authToken: string, showToast: ShowToast) {
   }, [setProjects, setInspectedProject, refreshAuditLogs]);
 
   const getProject = useCallback((id: string) => projects.find(p => p.id === id), [projects]);
+
+  // Re-sync del modal abierto cuando el poll actualiza projects (cambios de otros roles)
+  useEffect(() => {
+    setInspectedProject(prev => {
+      if (!prev) return null;
+      return projects.find(p => p.id === prev.id) ?? prev;
+    });
+  }, [projects]);
 
   const workflows = useProjectsWorkflows({
     authToken,

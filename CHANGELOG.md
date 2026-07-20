@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-07-20] — Feature: Polling en zonas esenciales (projects/auditLogs + supplier proposals)
+
+- Tipo: feature
+- Qué:
+  - `useProjectsData`: `loadProjects` acepta `{ isPoll? }`; dedupe por firma (ref `lastSig`) para no re-renderizar si no hay cambios; en poll falla silencioso (sin toast, sin fallback INITIAL, sin `isLoading`). `usePolling` de 25s sobre `/projects` + `/audit-logs` con `enabled = !!authToken`.
+  - `useProveedores`: `loadProposals` con mismo patrón (dedupe por ids); `usePolling` de 12s sobre `/supplier-material-proposals` (push externo del portal público de proveedores).
+  - `useProjects`: effect que re-synca `inspectedProject` desde `projects` en cada actualización del poll (el modal abierto refleja cambios de otros roles).
+  - `usePolling` (infraestructura): eliminados `console.log` de debug; guarda de overlap (`isRunning`); pausa por `visibilitychange` (no gasta requests con la pestaña oculta). Corregido bug estructural de llaves que dejaba `tick` sin invocar (polling no arrancaba) y con doble agendado + fuga de listeners.
+- Por qué / causa raíz: `projects`, `auditLogs` y `supplier-material-proposals` son mutados por otras sesiones/roles/dispositivo (incl. app móvil y portal de proveedores sin auth). Sin polling esos cambios no llegaban al viewer sin refresh manual. La sinopsis declara trazabilidad "en tiempo real" para la bitácora de auditoría.
+- Archivos:
+  - `src/hooks/usePolling.ts`
+  - `src/hooks/useProjectsData.ts`
+  - `src/hooks/useProveedores.ts`
+  - `src/hooks/useProjects.ts`
+
+---
+
 ## [2026-07-20] — Refactor: hooks atomizados (10 archivos) sin sobre-ingeniería
 
 **Tipo:** refactor
