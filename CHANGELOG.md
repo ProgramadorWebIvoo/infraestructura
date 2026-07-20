@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## [2026-07-20] — Refactor: hooks atomizados (10 archivos) sin sobre-ingeniería
+
+**Tipo:** refactor
+
+**Qué:** Reestructuración de `src/hooks/` de 5 hooks planos (con God Hook `useProjects` de 361 líneas) a 10 hooks atómicos organizados por dominio:
+- `useAuth.ts` — solo auth (login/logout/token). Routing extraído.
+- `useRouting.ts` — `roleAccess`, `publicRoutes`, `isPublicPath`, `useRoleAccess`.
+- `useProjects.ts` — facade que compone data + workflows. Ya NO carga contratistas/materiales para otros hooks (acoplamiento eliminado).
+- `useProjectsData.ts` — GET /projects + /audit-logs.
+- `useProjectsWorkflows.ts` — los 12 handlers de workflow en UN archivo, agrupados por dominio (infra, procura, analistas, finanzas, cierre).
+- `useContractors.ts` — estado + GET /contractors + handlers (antes solo POST, dependía de useProjects).
+- `useCatalog.ts` — estado + GET /materials + handlers (antes no fetcheaba).
+- `useUsuarios.ts` — extraído de `UsuariosPanel` (GET/POST /users).
+- `useProveedores.ts` — extraído de `ProveedoresRegistrados` (GET/POST supplier endpoints).
+- `usePolling.ts` — sin cambios (ya atómico).
+
+**Por qué / causa raíz:** `useProjects` era un God Hook (361 líneas) que hacía fetch, state, sync y 12 handlers, además de cargar datos de OTROS dominios vía callbacks (acoplamiento cruzado). Las llamadas a API estaban dispersas entre hooks y componentes (usuarios/proveedores tenían `apiFetch` directo en el componente). El usuario reportó no poder ubicar los GET de AuditLogs/usuarios.
+
+**Archivos:**
+- `src/hooks/useAuth.ts` — refactor (sin routing)
+- `src/hooks/useRouting.ts` — [NUEVO] routing extraído
+- `src/hooks/useProjects.ts` — facade (compone data + workflows)
+- `src/hooks/useProjectsData.ts` — [NUEVO] fetch proyectos + audit logs
+- `src/hooks/useProjectsWorkflows.ts` — [NUEVO] 12 handlers agrupados
+- `src/hooks/useContractors.ts` — +GET /contractors
+- `src/hooks/useCatalog.ts` — +GET /materials
+- `src/hooks/useUsuarios.ts` — [NUEVO] extraído de UsuariosPanel
+- `src/hooks/useProveedores.ts` — [NUEVO] extraído de ProveedoresRegistrados
+- `src/App.tsx` — usa useRouting, sin callbacks cruzados
+- `src/views/UsuariosPanel.tsx` — usa useUsuarios
+- `src/views/ProveedoresRegistrados.tsx` — usa useProveedores
+
+---
+
 ## [2026-07-20] — Fix: Resueltos todos los hallazgos pendientes de auditoría frontend
 
 **Tipo:** fix + security + accessibility

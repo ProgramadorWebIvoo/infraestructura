@@ -29,11 +29,11 @@ import InspectProjectModal from "./components/Modals/InspectProjectModal";
 import { ToastProvider, useToast } from "./components/UI/Toast";
 
 // Hooks por dominio
-import { useAuth, isPublicPath } from "./hooks/useAuth";
+import { useAuth } from "./hooks/useAuth";
+import { useRoleAccess, isPublicPath } from "./hooks/useRouting";
 import { useProjects } from "./hooks/useProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
-import type { Contractor } from "./types";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -62,12 +62,12 @@ function AppRoutes() {
   const {
     authToken,
     authUser,
-    activeRole,
-    canAccess,
-    firstAllowedRoute,
     handleLogin,
     handleLogout: authLogout,
   } = useAuth();
+
+  // ---- Role Access ----
+  const { activeRole, canAccess, firstAllowedRoute } = useRoleAccess(authUser?.role);
 
   // ---- Contractors ----
   const {
@@ -76,7 +76,7 @@ function AppRoutes() {
     handleAddContractor,
     handleUpdateContractorRating,
     resetContractors,
-  } = useContractors(authToken);
+  } = useContractors(authToken, showToast);
 
   // ---- Catalog ----
   const {
@@ -84,7 +84,7 @@ function AppRoutes() {
     setMaterialsCatalog,
     handleAddCatalogItem,
     resetCatalog,
-  } = useCatalog();
+  } = useCatalog(authToken, showToast);
 
   // ---- Projects ----
   const {
@@ -106,10 +106,7 @@ function AppRoutes() {
     handleVerifyCompletion,
     handlePayFinal,
     resetData,
-  } = useProjects(authToken, showToast, {
-    onContractorsLoaded: (data) => setContractors(data as Contractor[]),
-    onMaterialsLoaded: (data) => setMaterialsCatalog(data),
-  });
+  } = useProjects(authToken, showToast);
 
   // ---- Logout compuesto (limpia auth + datos) ----
   const handleLogout = async () => {

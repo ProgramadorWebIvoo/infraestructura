@@ -112,11 +112,10 @@ export default function CierreObraPanel({
                         setSelectedProjectId(p.id);
                         setCierreNotes(`Cálculos de materiales verificados. Las cantidades indicadas para ${p.materials.length} insumos son correctas y corresponden a las necesidades técnicas de la obra en ${p.location}.`);
                       }}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        selectedProjectId === p.id
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${selectedProjectId === p.id
                           ? "border-sky-500 bg-sky-50/50 text-sky-950 ring-2 ring-sky-100"
                           : "border-slate-200 bg-white hover:border-sky-400 hover:bg-slate-50/50"
-                      }`}
+                        }`}
                     >
                       <div className="font-mono text-[9px] font-bold text-sky-600 mb-1">{p.id}</div>
                       <div className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</div>
@@ -211,7 +210,7 @@ export default function CierreObraPanel({
 
       {/* SECTION 2: Work Completion & Quality Verification */}
       <div className="lg:col-span-5 space-y-6">
-        <Card className="max-h-65 overflow-y-auto scroll-smooth">
+        <Card className="max-h-70 overflow-y-auto scroll-smooth">
           <SectionHeader
             icon={<BadgeCheck className="h-5 w-5" />}
             title="Auditoría de Fin de Obra"

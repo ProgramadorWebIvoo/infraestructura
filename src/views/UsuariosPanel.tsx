@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Users,
   UserPlus,
@@ -15,8 +15,9 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { apiFetch } from "../services/api";
 import StatusBadge from "../components/UI/StatusBadge";
+import { useToast } from "../components/UI/Toast";
+import { useUsuarios, type UserRecord } from "../hooks/useUsuarios";
 
 const ROLES = [
   { value: "SUPERADMIN", label: "Super Administrador" },
@@ -29,21 +30,13 @@ const ROLES = [
   { value: "FINANZAS", label: "Finanzas" },
 ];
 
-interface UserRecord {
-  id: number | string;
-  name: string;
-  email: string;
-  role: string;
-  created_at?: string;
-}
-
 interface UsuariosPanelProps {
   authToken: string;
 }
 
 export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
+  const { users, isLoading, handleCreateUser } = useUsuarios(authToken, showToast);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -55,20 +48,6 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await apiFetch<UserRecord[]>("/users", { token: authToken });
-        setUsers(data);
-      } catch {
-        // endpoint may not exist yet; silently ignore
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    load();
-  }, [authToken]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -86,18 +65,13 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
 
     setIsSubmitting(true);
     try {
-      const created = await apiFetch<UserRecord>("/users", {
-        method: "POST",
-        token: authToken,
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          password,
-          password_confirmation: passwordConfirmation,
-          role,
-        }),
+      const created = await handleCreateUser({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        password_confirmation: passwordConfirmation,
+        role,
       });
-      setUsers(prev => [created, ...prev]);
       setSuccessMsg(`Usuario "${created.name}" registrado correctamente.`);
       setName("");
       setEmail("");

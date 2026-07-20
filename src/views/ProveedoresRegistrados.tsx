@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Contractor, Project, ProjectStatus, SupplierMaterialProposal } from "../types";
 import { useToast } from "../components/UI/Toast";
@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
 import { Table, type Column } from "../components/UI/Table";
-import { apiFetch } from "../services/api";
+import { useProveedores } from "../hooks/useProveedores";
 
 interface ProveedoresRegistradosProps {
   contractors: Contractor[];
@@ -44,6 +44,7 @@ export default function ProveedoresRegistrados({
   isLoading = false,
 }: ProveedoresRegistradosProps) {
   const { showToast } = useToast();
+  const { proposals, isLoadingProposals, handleInviteSupplier } = useProveedores(authToken, showToast);
   const [search, setSearch] = useState("");
 
   // Rating modal state
@@ -60,26 +61,8 @@ export default function ProveedoresRegistrados({
   const [generatedProjectTitle, setGeneratedProjectTitle] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Proposals state
-  const [proposals, setProposals] = useState<SupplierMaterialProposal[]>([]);
-  const [isLoadingProposals, setIsLoadingProposals] = useState(true);
   const [expandedProposal, setExpandedProposal] = useState<string | null>(null);
   const [proposalSearch, setProposalSearch] = useState("");
-
-  useEffect(() => {
-    if (!authToken) return;
-    const load = async () => {
-      try {
-        const data = await apiFetch<SupplierMaterialProposal[]>("/supplier-material-proposals", { token: authToken });
-        setProposals(data);
-      } catch {
-        // silently ignore
-      } finally {
-        setIsLoadingProposals(false);
-      }
-    };
-    load();
-  }, [authToken]);
 
   const activeProjects = projects.filter((p) => p.status !== ProjectStatus.COMPLETADO_PAGADO);
 
@@ -150,15 +133,11 @@ export default function ProveedoresRegistrados({
     if (!inviteProjectId || !inviteModalContractor) return;
     setIsCreatingInvite(true);
     try {
-      const data = await apiFetch<{ token: string; projectTitle: string }>("/supplier-invitations", {
-        method: "POST",
-        token: authToken,
-        body: JSON.stringify({
-          project_id: inviteProjectId,
-          supplierName: inviteModalContractor.name,
-          supplierCompany: null,
-          supplierContact: inviteModalContractor.contact,
-        }),
+      const data = await handleInviteSupplier({
+        project_id: inviteProjectId,
+        supplierName: inviteModalContractor.name,
+        supplierCompany: null,
+        supplierContact: inviteModalContractor.contact,
       });
       setGeneratedToken(data.token);
       setGeneratedProjectTitle(data.projectTitle);

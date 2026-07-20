@@ -2,60 +2,25 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Hook de autenticación. Único punto que gestiona token, usuario,
- * control de acceso por rol y constantes de ruteo.
+ * Hook de autenticación. Único punto que gestiona token, usuario
+ * y operaciones de login/logout. El control de acceso por rol
+ * vive en useRouting.
  */
 
 import { useState, useCallback } from "react";
 import { apiFetch } from "../services/api";
 
-// ---------------------------------------------------------------------------
-// Constantes de ruteo
-// ---------------------------------------------------------------------------
-
-export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios"],
-  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios"],
-  PRESIDENCIA:    ["/presidencia", "/catalogos"],
-  INFRAESTRUCTURA:["/presidencia", "/infraestructura"],
-  CIERRE_DE_OBRA: ["/presidencia", "/cierre-obra"],
-  PROCURA:        ["/presidencia", "/procura", "/catalogos"],
-  ANALISTA:       ["/presidencia", "/analistas"],
-  FINANZAS:       ["/presidencia", "/finanzas"],
-  CATALOGOS:      ["/presidencia", "/catalogos"],
-};
-
-export const publicRoutes = new Set(["/registro-proveedores"]);
-export const isPublicPath = (path: string) =>
-  publicRoutes.has(path) || path.startsWith("/propuesta-materiales/");
+const STORAGE_TOKEN = "ivoo_auth_token";
+const STORAGE_USER = "ivoo_auth_user";
 
 export type AuthUser = { name: string; email: string; role?: string } | null;
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
 export function useAuth() {
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem("ivoo_auth_token") ?? "");
+  const [authToken, setAuthToken] = useState<string>(() => localStorage.getItem(STORAGE_TOKEN) ?? "");
   const [authUser, setAuthUser] = useState<AuthUser>(() => {
-    const saved = localStorage.getItem("ivoo_auth_user");
+    const saved = localStorage.getItem(STORAGE_USER);
     return saved ? JSON.parse(saved) : null;
   });
-
-  const activeRole = authUser?.role ?? "PRESIDENCIA";
-
-  const canAccess = useCallback(
-    (path: string) => {
-      const role = authUser?.role ?? "PRESIDENCIA";
-      return (roleAccess[role] ?? roleAccess["PRESIDENCIA"]).includes(path);
-    },
-    [authUser],
-  );
-
-  const firstAllowedRoute = useCallback(
-    (role: string) => roleAccess[role]?.[0] ?? "/presidencia",
-    [],
-  );
 
   const handleLogin = useCallback(async (email: string, password: string) => {
     const data = await apiFetch<{ token: string; user: { name: string; email: string; role?: string } }>("/login", {
@@ -63,20 +28,19 @@ export function useAuth() {
       body: JSON.stringify({ email, password, device_name: "web" }),
     });
 
-    localStorage.setItem("ivoo_auth_token", data.token);
-    localStorage.setItem("ivoo_auth_user", JSON.stringify(data.user));
+    localStorage.setItem(STORAGE_TOKEN, data.token);
+    localStorage.setItem(STORAGE_USER, JSON.stringify(data.user));
     setAuthToken(data.token);
     setAuthUser(data.user);
   }, []);
 
-  /** Solo limpia estado de auth. El caller debe resetear datos de la app. */
   const handleLogout = useCallback(async () => {
     if (authToken) {
       await apiFetch("/logout", { method: "POST", token: authToken }).catch(() => null);
     }
 
-    localStorage.removeItem("ivoo_auth_token");
-    localStorage.removeItem("ivoo_auth_user");
+    localStorage.removeItem(STORAGE_TOKEN);
+    localStorage.removeItem(STORAGE_USER);
     setAuthToken("");
     setAuthUser(null);
   }, [authToken]);
@@ -84,9 +48,6 @@ export function useAuth() {
   return {
     authToken,
     authUser,
-    activeRole,
-    canAccess,
-    firstAllowedRoute,
     handleLogin,
     handleLogout,
   };

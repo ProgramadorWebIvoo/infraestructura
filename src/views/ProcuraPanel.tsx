@@ -290,7 +290,7 @@ export default function ProcuraPanel({
       </Card>
 
       {/* SECTION 2: Bid Evaluation & Final Hiring Decision */}
-      <Card className="max-h-80 overflow-y-auto scroll-smooth">
+      <Card className="max-h-150 overflow-y-auto scroll-smooth">
         <SectionHeader
           icon={<Users className="h-5 w-5" />}
           title="Evaluación Comparativa de Ofertas y Contratación"

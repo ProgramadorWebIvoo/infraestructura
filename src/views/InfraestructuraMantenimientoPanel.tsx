@@ -353,7 +353,7 @@ export default function InfraestructuraMantenimientoPanel({
               data={addedMaterials}
               rowKey={(_m, index) => index}
               emptyMessage="No se han agregado materiales. Agregue elementos arriba."
-              pageSize={10}
+              pageSize={5}
               footer={addedMaterials.length > 0 ? (
                 <tr>
                   <td colSpan={3} className="py-3.5 px-4 text-right text-slate-500 uppercase tracking-wider text-[9px]">Costo Estimado Materiales:</td>
@@ -387,35 +387,36 @@ export default function InfraestructuraMantenimientoPanel({
           </div>
         </div>
 
-        {/* Existing Requests sidebar */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all duration-300">
-          <h4 className="font-sans font-bold text-slate-400 text-[10px] uppercase tracking-wider font-mono mb-4">
-            Peticiones del Departamento
-          </h4>
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-            {projects.map((p) => (
-              <div key={p.id} className="p-3.5 border border-slate-100 bg-slate-50/50 rounded-xl space-y-2 hover:border-slate-200 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[9px] font-mono font-bold text-sky-600">{p.id}</span>
-                    <h5 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h5>
+        <div>
+          <Card className="min-h-139">
+            <h4 className="font-sans font-bold text-slate-400 text-[10px] uppercase tracking-wider font-mono mb-4">
+              Peticiones del Departamento
+            </h4>
+            <div className="space-y-3 overflow-y-auto pr-1">
+              {projects.map((p) => (
+                <div key={p.id} className="p-3.5 border border-slate-100 bg-slate-50/50 rounded-xl space-y-2 hover:border-slate-200 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[9px] font-mono font-bold text-sky-600">{p.id}</span>
+                      <h5 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h5>
+                    </div>
+                    <span className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-lg border ${
+                      p.type === "INFRAESTRUCTURA" ? "bg-sky-50 text-sky-800 border-sky-100" : "bg-slate-200/60 text-slate-800 border-slate-300/60"
+                    }`}>
+                      {p.type.substring(0, 5)}
+                    </span>
                   </div>
-                  <span className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-lg border ${
-                    p.type === "INFRAESTRUCTURA" ? "bg-sky-50 text-sky-800 border-sky-100" : "bg-slate-200/60 text-slate-800 border-slate-300/60"
-                  }`}>
-                    {p.type.substring(0, 5)}
-                  </span>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                    <span className="flex items-center gap-1 font-mono font-bold text-slate-700">
+                      <DollarSign className="h-3.5 w-3.5 text-slate-400" />
+                      {p.estimatedTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                    </span>
+                    <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg font-mono font-bold">{p.status}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                  <span className="flex items-center gap-1 font-mono font-bold text-slate-700">
-                    <DollarSign className="h-3.5 w-3.5 text-slate-400" />
-                    {p.estimatedTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                  </span>
-                  <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg font-mono font-bold">{p.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Card>
         </div>
       </div>
 
