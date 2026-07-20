@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## [2026-07-20] — Fix críticos/graves de auditoría (C2, C3, C4, G1) + endurecimiento FileDropZone
+
+**Tipo:** fix + security
+
+**Qué:**
+
+1. **C2 — Falso positivo confirmado.** `.env` con `GEMINI_API_KEY` nunca estuvo en git. Solo `.env.example` fue commiteado. El `.gitignore` con `.env*` funciona correctamente. Se documenta como resuelto.
+
+2. **C3 — 8 dependencias no utilizadas eliminadas + `vite` duplicado corregido:**
+   - Eliminadas de `dependencies`: `@google/genai`, `dotenv`, `express`, `postcss`, `react-icons`, `vite` (duplicado)
+   - Eliminadas de `devDependencies`: `@types/express`, `@types/react-native-vector-icons`, `autoprefixer`, `esbuild`, `tsx`, `vite` (duplicado)
+   - `vite` se mantiene solo en `devDependencies` (uso correcto)
+   - Validadas como NO importadas en ningún archivo del proyecto
+
+3. **C4 — Endurecimiento de seguridad en `FileDropZone`:**
+   - **Validación de extensión** contra `accept` prop (existente)
+   - **MIME type validation**: mapeo `EXT_MIME_MAP` con 14 extensiones y sus MIME types válidos; si el browser reporta `file.type` y no coincide, se rechaza
+   - **Límite de tamaño** configurable vía `maxSizeBytes` (default: 10 MB)
+   - **Callback `onFileRejected`**: notifica al padre con nombre + razón para mostrar feedback UX (implementado en CierreObraPanel vía `showToast`)
+   - La validación client-side es defensiva en profundidad; la validación real debe hacerse en backend Laravel
+
+4. **G1 — `InteractiveOrganigrama.tsx` eliminado:**
+   - 307 líneas de código muerto que no se importaba en ningún lado
+   - Sin referencias residuales en el código
+
+**Archivos:**
+- `package.json` — limpieza de dependencias
+- `src/components/UI/FileDropZone.tsx` — validación triple (extensión + MIME + tamaño)
+- `src/views/CierreObraPanel.tsx` — integración `onFileRejected` con toast
+- `src/components/InteractiveOrganigrama.tsx` — [ELIMINADO]
+- `CHANGELOG.md` — actualizado
+
+---
+
 ## [2026-07-20] — Modal genérico unificado + refactor de ambos modales existentes
 
 **Tipo:** refactor
@@ -424,8 +458,7 @@
 - `src/services/aiEvaluationService.ts` — Servicio de llamada a backend Laravel para evaluación IA con failover
 - `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus` y más
 - `src/components/SkeletonLoader.tsx` — Primitivas de skeleton loading (SkeletonBlock, SkeletonCard, SkeletonTable, etc.)
-- `src/data.ts` — Datos de respaldo/fallback para cuando la API no responde
-- `src/components/InteractiveOrganigrama.tsx` — ⚠️ **Código muerto** (no se importa en ningún lado)
+- `src/data.ts` — ⚠️ Datos de respaldo legacy (por limpiar — ver PENDIENTES.md)
 - `mobile/App.tsx` — App mobile React Native con los mismos paneles (lectura y acciones básicas)
 - `database.sql` — Schema completo MySQL con migrations y seed data
 
@@ -444,15 +477,15 @@
 | ID | Hallazgo | Archivos | Impacto |
 |----|----------|----------|---------|
 | C1 | Clases Tailwind v4 inválidas (`h-4.5`, `w-4.5`, `pl-9.5`, `p-4.5`) no generan CSS — iconos del sidebar sin dimensión, padding de inputs de búsqueda roto | `src/App.tsx`, `src/components/ProveedoresRegistrados.tsx`, `src/components/PresidenciaDashboard.tsx`, `src/components/InfraestructuraMantenimientoPanel.tsx` | Iconos del sidebar toman tamaño SVG nativo (24×24) en vez de 18×18; el icono Search en inputs de búsqueda se superpone con el texto |
-| C2 | `.env` con `GEMINI_API_KEY` trackeado por git (pese a `.gitignore`) | `.env` | Exposición de secretos si se hace push; el archivo no debe estar en el repo |
-| C3 | 8 dependencias no utilizadas + `vite` duplicado en dependencies y devDependencies | `package.json` | Bundle inflado, mantenibilidad degradada |
-| C4 | Carga de archivos NO DESEADOS | `package.json` | Los inputs de carga de archivos permiten cargar archivos fuera de lo que son .PDF, .DWG, .DXF, .PNG, .JPG, .SVG |
+| C2 | `.env` con `GEMINI_API_KEY` trackeado por git (pese a `.gitignore`) | `.env` | Exposición de secretos si se hace push; el archivo no debe estar en el repo ✅ **Falso positivo — .env nunca estuvo en git** |
+| C3 | 8 dependencias no utilizadas + `vite` duplicado en dependencies y devDependencies | `package.json` | Bundle inflado, mantenibilidad degradada ✅ **Resuelto 2026-07-20** |
+| C4 | Carga de archivos NO DESEADOS | `package.json` | Los inputs de carga de archivos permiten cargar archivos fuera de lo que son .PDF, .DWG, .DXF, .PNG, .JPG, .SVG ✅ **Resuelto 2026-07-20 — validación triple (extensión + MIME + tamaño) en FileDropZone** |
 
 ### 🟠 Graves (5)
 
 | ID | Hallazgo | Archivos | Impacto |
 |----|----------|----------|---------|
-| G1 | `InteractiveOrganigrama.tsx` — 307 líneas de código nunca importado | `src/components/InteractiveOrganigrama.tsx` | Código muerto mantenido sin propósito |
+| G1 | `InteractiveOrganigrama.tsx` — 307 líneas de código nunca importado | `src/components/InteractiveOrganigrama.tsx` | Código muerto mantenido sin propósito ✅ **Resuelto 2026-07-20 — archivo eliminado** |
 | G2 | `syncProject()` llama `refreshAuditLogs()` + `loadApiData()` — hace 6 fetchs por mutación | `src/App.tsx:258-263` | 6 peticiones HTTP donde 1-2 bastan; race condition potencial |
 | G3 | `isLoadingApi` nunca se consume — el layout se renderiza con arrays vacíos hasta que carga la API | `src/App.tsx:187-193,232-238` | El usuario ve dashboard con $0, 0 obras, 0 proveedores durante ~segundos, luego parpadea |
 | G4 | `activeRole` derivado de la URL, no del rol del usuario autenticado | `src/App.tsx:167` | Badge "Terminal: X" puede mostrar rol incorrecto |
@@ -462,7 +495,7 @@
 
 | ID | Hallazgo | Archivos |
 |----|----------|----------|
-| M1 | Componente muerto InteractiveOrganigrama (duplica G1) | `src/components/InteractiveOrganigrama.tsx` |
+| M1 | Componente muerto InteractiveOrganigrama (duplica G1) | `src/components/InteractiveOrganigrama.tsx` | ✅ **Resuelto 2026-07-20** |
 | M2 | `strict: false` implícito en tsconfig.json → `useState([])` infiere `never[]` | `tsconfig.json`, `src/App.tsx:190` |
 | M3 | Alias `@` apunta a la raíz del proyecto, no a `./src` | `vite.config.ts:11` |
 | M4 | `setMaterialsCatalog(never[])` + `handleAddCatalogItem` agrega elemento no-tipado | `src/App.tsx:190,463-465` |

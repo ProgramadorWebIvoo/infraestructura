@@ -10,6 +10,26 @@ import { useState, useRef, useCallback } from "react";
 import { X, Upload } from "lucide-react";
 import { formatFileSize } from "../../utils";
 
+const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+
+/** Mapeo extensión → MIME types válidos para validación client-side. */
+const EXT_MIME_MAP: Record<string, string[]> = {
+  ".pdf":    ["application/pdf"],
+  ".dwg":    ["application/acad", "application/x-autocad", "image/vnd.dwg", "application/dwg"],
+  ".dxf":    ["application/dxf", "image/vnd.dxf", "application/x-autocad"],
+  ".png":    ["image/png"],
+  ".jpg":    ["image/jpeg"],
+  ".jpeg":   ["image/jpeg"],
+  ".svg":    ["image/svg+xml"],
+  ".xlsx":   ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+  ".xls":    ["application/vnd.ms-excel"],
+  ".csv":    ["text/csv", "text/plain"],
+  ".ods":    ["application/vnd.oasis.opendocument.spreadsheet"],
+  ".numbers":["application/x-iwork-numbers-sffnumbers"],
+  ".tif":    ["image/tiff"],
+  ".tiff":   ["image/tiff"],
+};
+
 interface FileDropZoneProps {
   /** Archivos actualmente seleccionados */
   files: File[];
@@ -33,6 +53,10 @@ interface FileDropZoneProps {
   required?: boolean;
   /** Texto de contador (ej. "planos adjuntos") */
   countLabel?: string;
+  /** Tamaño máximo en bytes (default: 10 MB). 0 = sin límite. */
+  maxSizeBytes?: number;
+  /** Callback cuando un archivo es rechazado por validación client-side */
+  onFileRejected?: (fileName: string, reason: string) => void;
 }
 
 const COLOR_THEMES: Record<string, { border: string; bg: string; text: string; hover: string; dragBorder: string; dragBg: string; fileBg: string; fileBorder: string; fileText: string; countText: string }> = {
@@ -98,21 +122,60 @@ export default function FileDropZone({
   id,
   required = false,
   countLabel,
+  maxSizeBytes = DEFAULT_MAX_SIZE,
+  onFileRejected,
 }: FileDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const t = COLOR_THEMES[color] ?? COLOR_THEMES.sky;
 
+  const reject = useCallback(
+    (fileName: string, reason: string) => {
+      onFileRejected?.(fileName, reason);
+    },
+    [onFileRejected],
+  );
+
   const addFiles = useCallback(
     (incoming: FileList) => {
+      const allowedExts = accept.split(",").map(e => e.trim().toLowerCase());
       const existing = new Set(files.map(f => f.name + f.size));
       const merged = [...files];
+
       Array.from(incoming).forEach(f => {
-        if (!existing.has(f.name + f.size)) merged.push(f);
+        const ext = "." + f.name.split(".").pop()?.toLowerCase();
+
+        // 1. Validar extensión contra accept
+        if (!allowedExts.some(a => a === ext)) {
+          reject(f.name, `Extensión "${ext}" no permitida. Extensiones aceptadas: ${accept}`);
+          return;
+        }
+
+        // 2. Validar tamaño máximo
+        if (maxSizeBytes > 0 && f.size > maxSizeBytes) {
+          const limit = formatFileSize(maxSizeBytes);
+          reject(f.name, `El archivo excede el límite de ${limit}.`);
+          return;
+        }
+
+        // 3. Validar MIME type si el browser lo reporta
+        if (f.type) {
+          const validMimes = EXT_MIME_MAP[ext];
+          if (validMimes && !validMimes.includes(f.type)) {
+            reject(f.name, `El tipo MIME "${f.type}" no coincide con la extensión "${ext}".`);
+            return;
+          }
+        }
+
+        // 4. Evitar duplicados
+        if (!existing.has(f.name + f.size)) {
+          merged.push(f);
+        }
       });
+
       onFilesChange(merged);
     },
-    [files, onFilesChange],
+    [files, onFilesChange, accept, maxSizeBytes, reject],
   );
 
   const removeFile = useCallback(

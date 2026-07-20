@@ -159,6 +159,7 @@ export default function CierreObraPanel({
                     fileIcon={<FileSpreadsheet className="h-3.5 w-3.5" />}
                     id="cierre-calc-upload"
                     required
+                    onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
                   />
 
                   {/* Planos de Ingeniería */}
@@ -174,6 +175,7 @@ export default function CierreObraPanel({
                     id="cierre-plan-upload"
                     required
                     countLabel="plano adjunto"
+                    onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
                   />
 
                   <div>

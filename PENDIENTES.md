@@ -19,34 +19,47 @@ Hoy la app opera completamente contra la API Laravel + MySQL. Estos datos solo s
 
 4. Si `MATERIAL_CATALOG` tiene utilidad, migrar su contenido a la BD (tabla `material_catalog` o similar) o descartarlo.
 
-5. **VERIFICAR** Parece que algunos contenedores se extienden infinitamente segun el contenido y no tienen un limite. **(CHECK)**
+---
 
-6. **VERIFICAR** Los inputs numericos estan validados, sin embargo si se ingresan los valores por teclado 
-    los mismos no permiten borrar el 1, bien por ahí sin embargo eso no permite colocar que 
-    numero sera ingresado. **(CHECK)**
+## Pendientes funcionales
 
-8. **REALIZAR** Los proveedores se registran a través de un enlace publico de la web, sin embargo no existe otra manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no este disponible, cierre o no sea aceptado mas por la empresa, como se cambiaria el estatus?
+5. **VERIFICAR** Parece que algunos contenedores se extienden infinitamente según el contenido y no tienen un límite. **(CHECK)**
 
-9. **REALIZAR** Al traer las solicitudes de los contratistas automaticamente a los analistas algo a realizar es que se debe concatenar la observacion general + las notas de cada producto, cada nota debe estar especificado a que producto va dirigida y pasar toda la observacion de la parte del analista concatenado en su totalidad de esa manera. **(CHECK)**
+6. **VERIFICAR** Los inputs numéricos están validados, sin embargo si se ingresan los valores por teclado los mismos no permiten borrar el 1, bien por ahí sin embargo eso no permite colocar que número será ingresado. **(CHECK)**
 
-10. **REALIZAR** Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.). Tambien existe un error grafico donde la cabecera de la Card de Usuarios del Sistema crece de manera indebida y expnencial con poca cantidad de usuarios.
+8. **REALIZAR** Los proveedores se registran a través de un enlace público de la web, sin embargo no existe otra manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no esté disponible, cierre o no sea aceptado más por la empresa, ¿cómo se cambiaría el estatus?
+
+9. **REALIZAR** Al traer las solicitudes de los contratistas automáticamente a los analistas algo a realizar es que se debe concatenar la observación general + las notas de cada producto, cada nota debe estar especificada a qué producto va dirigida y pasar toda la observación de la parte del analista concatenado en su totalidad de esa manera. **(CHECK)**
+
+10. **REALIZAR** Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.). También existe un error gráfico donde la cabecera de la Card de Usuarios del Sistema crece de manera indebida y exponencial con poca cantidad de usuarios.
 
 11. **REALIZAR** Mejorar Cabecera del SideBar **(CHECK)**
 
-12. **REALIZAR ESENCIAL** Modificar las tablas de utilizadas para que tengan o paginación o limite de muestra de registros y poseea la capacidad de mostrar mas registros por modales de tablas paginadas, Esto debido a que cuando existan MUCHOS registros la aplicación pude fallar y dejar de ser amigable con el usuario desencadenando en problemas varios. Este mismo problema surge con los elementos SELECT.
+12. **REALIZAR ESENCIAL** Modificar las tablas utilizadas para que tengan o paginación o límite de muestra de registros y posean la capacidad de mostrar más registros por modales de tablas paginadas. Esto debido a que cuando existan MUCHOS registros la aplicación puede fallar y dejar de ser amigable con el usuario desencadenando en problemas varios. Este mismo problema surge con los elementos SELECT.
 
-13. **OPCIONAL** Mejorar el cambio entre vistas para que la aplicacion SPA sea mas UserFriendly **(CHECK)**
+13. **OPCIONAL** Mejorar el cambio entre vistas para que la aplicación SPA sea más UserFriendly **(CHECK)**
 
-13. **OPCIONAL / CRITICO** Añadir Polling a la aplicacion en general para evitar el recargar la web para actualizar datos facilitando su uso y diseño
+13. **OPCIONAL / CRÍTICO** Añadir Polling a la aplicación en general para evitar el recargar la web para actualizar datos facilitando su uso y diseño
 
-14. **CRITICO** Realizar y Corregir todos los puntos especificados en las auditorias internas de BACKEND y FRONTEND
+14. **CRÍTICO** Realizar y Corregir todos los puntos especificados en las auditorías internas de BACKEND y FRONTEND
+    - ✅ C1 (Tailwind v4 classes): Resuelto
+    - ✅ C2 (.env): Falso positivo
+    - ✅ C3 (dependencias no usadas): Resuelto 2026-07-20
+    - ✅ C4 (carga archivos no deseados): Resuelto 2026-07-20 (validación triple en FileDropZone)
+    - ✅ G1 (InteractiveOrganigrama): Resuelto 2026-07-20 (archivo eliminado)
+    - ✅ G2 (fetchs redundantes): Resuelto
+    - ✅ G3 (isLoadingApi): Resuelto (skeleton loading)
+    - ✅ G4 (activeRole): Resuelto
+    - ✅ G5 (doble ;;): Resuelto
+    - ✅ M3 (alias @): Resuelto
+    - ❌ Pendientes: M2 (strict: false), L1 (lang), L3 (contraste), L4 (aria-label), L5 (rate limiting)
 
-15. **CRITICO** No existe un panel GENERAL para realizar la configuración y creacion de datos IMPRESINDIBLES como Materiales, Proveedores, IAs
+15. **CRÍTICO** No existe un panel GENERAL para realizar la configuración y creación de datos IMPRESCINDIBLES como Materiales, Proveedores, IAs
 
-16. **VERIFICAR** Estado de LOGGERS de BD y evaluación para la creacion de vista dedicada a ella.
+16. **VERIFICAR** Estado de LOGGERS de BD y evaluación para la creación de vista dedicada a ellos.
 
-17. **REALIZAR / EVALUAR** Evaluar la factibilidad de una Reestructuracion base COMPONENTES -> SERVICIOS -> VISTAS para la escalabilidad, mantenimiento y desarrollo de la web.
+17. **REALIZAR / EVALUAR** Evaluar la factibilidad de una Reestructuración base COMPONENTES -> SERVICIOS -> VISTAS para la escalabilidad, mantenimiento y desarrollo de la web.
 
 18. **CORREGIR** Los Tokens JWT no expiran. **(CHECK)**
 
-19. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app despues de la normalizacion de la conexion a la API
+19. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app después de la normalización de la conexión a la API
