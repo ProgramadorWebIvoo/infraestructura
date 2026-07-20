@@ -1,23 +1,28 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Panel de Infraestructura / Mantenimiento: creación de peticiones de obra.
  */
 
-import React, { useState } from "react";
-import { Project, ProjectStatus, MaterialItem } from "../types";
-import { 
-  Plus, 
-  Trash2, 
-  Send, 
-  CheckCircle, 
-  AlertCircle, 
-  FilePlus2, 
-  Package, 
-  DollarSign, 
-  MapPin, 
-  FileText
+import { useState, useEffect, useRef } from "react";
+import { Project, MaterialItem } from "../types";
+import {
+  Plus,
+  Trash2,
+  Send,
+  CheckCircle,
+  AlertCircle,
+  FilePlus2,
+  Package,
+  DollarSign,
+  MapPin,
 } from "lucide-react";
 import { SkeletonCard, SkeletonBlock } from "../components/SkeletonLoader";
+import Card from "../components/UI/Card";
+import SectionHeader from "../components/UI/SectionHeader";
+import NumericInput from "../components/UI/NumericInput";
+import AlertBanner from "../components/UI/AlertBanner";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;
@@ -32,12 +37,14 @@ export default function InfraestructuraMantenimientoPanel({
   materialsCatalog,
   isLoading = false,
 }: InfraestructuraMantenimientoPanelProps) {
+  if (isLoading) return <InfraestructuraSkeleton />;
+
   // Form states
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"INFRAESTRUCTURA" | "MANTENIMIENTO">("INFRAESTRUCTURA");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  
+
   // Material adder states
   const [selectedCatalogIndex, setSelectedCatalogIndex] = useState(0);
   const [materialQty, setMaterialQty] = useState<number | "">(1);
@@ -53,9 +60,19 @@ export default function InfraestructuraMantenimientoPanel({
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Auto-clear success message after 4s
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  useEffect(() => {
+    if (successMsg) {
+      successTimerRef.current = setTimeout(() => setSuccessMsg(""), 4000);
+      return () => {
+        if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      };
+    }
+  }, [successMsg]);
+
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
-
     const qtyNum = materialQty === "" ? 1 : materialQty;
 
     if (isCustomMaterial) {
@@ -66,12 +83,7 @@ export default function InfraestructuraMantenimientoPanel({
       const priceNum = customMaterialPrice === "" ? 0 : customMaterialPrice;
       setAddedMaterials([
         ...addedMaterials,
-        {
-          name: customMaterialName,
-          quantity: qtyNum,
-          unit: customMaterialUnit,
-          estimatedUnitPrice: priceNum,
-        },
+        { name: customMaterialName, quantity: qtyNum, unit: customMaterialUnit, estimatedUnitPrice: priceNum },
       ]);
       setCustomMaterialName("");
     } else {
@@ -79,12 +91,7 @@ export default function InfraestructuraMantenimientoPanel({
       if (!selectedItem) return;
       setAddedMaterials([
         ...addedMaterials,
-        {
-          name: selectedItem.name,
-          quantity: qtyNum,
-          unit: selectedItem.unit,
-          estimatedUnitPrice: selectedItem.estimatedUnitPrice,
-        },
+        { name: selectedItem.name, quantity: qtyNum, unit: selectedItem.unit, estimatedUnitPrice: selectedItem.estimatedUnitPrice },
       ]);
     }
     setErrorMsg("");
@@ -94,74 +101,40 @@ export default function InfraestructuraMantenimientoPanel({
     setAddedMaterials(addedMaterials.filter((_, i) => i !== index));
   };
 
-  // Compute estimate
-  const materialsSubtotal = addedMaterials.reduce(
-    (sum, m) => sum + m.quantity * m.estimatedUnitPrice,
-    0
-  );
+  const materialsSubtotal = addedMaterials.reduce((sum, m) => sum + m.quantity * m.estimatedUnitPrice, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      setErrorMsg("El título del proyecto o trabajo es obligatorio.");
-      return;
-    }
-    if (!location.trim()) {
-      setErrorMsg("La ubicación exacta es obligatoria.");
-      return;
-    }
-    if (!description.trim()) {
-      setErrorMsg("Por favor, proporciona una descripción del trabajo.");
-      return;
-    }
-    if (addedMaterials.length === 0) {
-      setErrorMsg("Debes agregar al menos un material o servicio a la petición.");
-      return;
-    }
+    if (!title.trim()) { setErrorMsg("El título del proyecto o trabajo es obligatorio."); return; }
+    if (!location.trim()) { setErrorMsg("La ubicación exacta es obligatoria."); return; }
+    if (!description.trim()) { setErrorMsg("Por favor, proporciona una descripción del trabajo."); return; }
+    if (addedMaterials.length === 0) { setErrorMsg("Debes agregar al menos un material o servicio a la petición."); return; }
 
-    // Call callback to add project
     onAddProject({
-      title,
-      type,
-      description,
-      location,
-      materials: addedMaterials.map((m, index) => ({
-        id: `m-new-${index}-${Date.now()}`,
-        ...m,
-      })),
+      title, type, description, location,
+      materials: addedMaterials.map((m, index) => ({ id: `m-new-${index}-${Date.now()}`, ...m })),
       estimatedTotal: materialsSubtotal,
     });
 
-    // Reset form
-    setTitle("");
-    setDescription("");
-    setLocation("");
+    setTitle(""); setDescription(""); setLocation("");
     setAddedMaterials([]);
     setSuccessMsg("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.");
     setErrorMsg("");
-    
-    // Clear success message after 4s
-    setTimeout(() => setSuccessMsg(""), 4000);
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
+
       {/* Left 2 Columns: Creation Form */}
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
-            <div className="bg-sky-50 text-sky-600 p-2.5 rounded-xl border border-sky-100">
-              <FilePlus2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-slate-900 text-base">Crear Nueva Petición de Obra / Trabajo</h3>
-              <p className="text-xs text-slate-500 font-medium">Formule su requerimiento y defina los materiales necesarios para iniciar el flujo de aprobación.</p>
-            </div>
-          </div>
+        <Card>
+          <SectionHeader
+            icon={<FilePlus2 className="h-5 w-5" />}
+            title="Crear Nueva Petición de Obra / Trabajo"
+            description="Formule su requerimiento y defina los materiales necesarios para iniciar el flujo de aprobación."
+          />
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Form layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Título de la Obra</label>
@@ -174,7 +147,6 @@ export default function InfraestructuraMantenimientoPanel({
                   className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white font-semibold text-slate-800"
                 />
               </div>
-
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Ubicación / Tienda / CD</label>
                 <div className="relative">
@@ -221,7 +193,6 @@ export default function InfraestructuraMantenimientoPanel({
                   </button>
                 </div>
               </div>
-
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción del Trabajo</label>
                 <textarea
@@ -231,25 +202,13 @@ export default function InfraestructuraMantenimientoPanel({
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white font-medium text-slate-700"
-                ></textarea>
+                />
               </div>
             </div>
 
-            {/* Error and Success states inside the form */}
-            {errorMsg && (
-              <div className="flex items-center gap-2.5 text-xs bg-rose-50 border border-rose-100 text-rose-700 p-3.5 rounded-xl font-medium">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-            {successMsg && (
-              <div className="flex items-center gap-2.5 text-xs bg-emerald-50 border border-emerald-100 text-emerald-700 p-3.5 rounded-xl font-medium">
-                <CheckCircle className="h-4 w-4 shrink-0" />
-                <span>{successMsg}</span>
-              </div>
-            )}
+            {errorMsg && <AlertBanner type="error" message={errorMsg} icon={<AlertCircle className="h-4 w-4 shrink-0" />} />}
+            {successMsg && <AlertBanner type="success" message={successMsg} icon={<CheckCircle className="h-4 w-4 shrink-0" />} />}
 
-            {/* Form submit */}
             <div className="flex justify-end pt-2">
               <button
                 id="btn-submit-project"
@@ -261,26 +220,22 @@ export default function InfraestructuraMantenimientoPanel({
               </button>
             </div>
           </form>
-        </div>
+        </Card>
 
-        {/* Dynamic Material Adder Subsection */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
+        {/* Dynamic Material Adder */}
+        <Card>
           <h4 className="font-sans font-bold text-slate-900 text-sm mb-5 flex items-center gap-2">
             <Package className="h-4 w-4 text-sky-500" />
             Configurar Requerimientos de Material / Servicios
           </h4>
 
-          {/* Toggle between catalog & custom */}
+          {/* Toggle catalog / custom */}
           <div className="flex border-b border-slate-100 mb-5 text-xs font-bold">
             <button
               id="tab-catalog"
               type="button"
               onClick={() => setIsCustomMaterial(false)}
-              className={`pb-2 px-4 transition-all cursor-pointer ${
-                !isCustomMaterial 
-                  ? "border-b-2 border-sky-500 text-sky-600 font-black" 
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
+              className={`pb-2 px-4 transition-all cursor-pointer ${!isCustomMaterial ? "border-b-2 border-sky-500 text-sky-600 font-black" : "text-slate-400 hover:text-slate-600"}`}
             >
               Catálogo Predefinido IVOO
             </button>
@@ -288,11 +243,7 @@ export default function InfraestructuraMantenimientoPanel({
               id="tab-custom"
               type="button"
               onClick={() => setIsCustomMaterial(true)}
-              className={`pb-2 px-4 transition-all cursor-pointer ${
-                isCustomMaterial 
-                  ? "border-b-2 border-sky-500 text-sky-600 font-black" 
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
+              className={`pb-2 px-4 transition-all cursor-pointer ${isCustomMaterial ? "border-b-2 border-sky-500 text-sky-600 font-black" : "text-slate-400 hover:text-slate-600"}`}
             >
               Material o Servicio Personalizado
             </button>
@@ -309,9 +260,7 @@ export default function InfraestructuraMantenimientoPanel({
                   className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-700"
                 >
                   {materialsCatalog.map((mat, i) => (
-                    <option key={i} value={i}>
-                      {mat.name} (${mat.estimatedUnitPrice} / {mat.unit})
-                    </option>
+                    <option key={i} value={i}>{mat.name} (${mat.estimatedUnitPrice} / {mat.unit})</option>
                   ))}
                 </select>
               </div>
@@ -341,16 +290,13 @@ export default function InfraestructuraMantenimientoPanel({
                 </div>
                 <div>
                   <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Costo Estimado ($)</label>
-                  <input
+                  <NumericInput
                     id="custom-mat-price"
-                    type="number"
-                    step="0.01"
                     value={customMaterialPrice}
-                    onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setCustomMaterialPrice(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                    onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                    onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setCustomMaterialPrice(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                    onChange={setCustomMaterialPrice}
                     placeholder="0.00"
-                    className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-mono font-bold"
+                    step="0.01"
+                    className="rounded-lg"
                   />
                 </div>
               </>
@@ -358,16 +304,13 @@ export default function InfraestructuraMantenimientoPanel({
 
             <div>
               <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cantidad</label>
-              <input
+              <NumericInput
                 id="mat-qty"
-                type="number"
-                min="1"
                 value={materialQty}
-                onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setMaterialQty(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
-                onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setMaterialQty(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
+                onChange={setMaterialQty}
                 placeholder="0"
-                className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold"
+                step="1"
+                className="rounded-lg"
               />
             </div>
 
@@ -383,7 +326,7 @@ export default function InfraestructuraMantenimientoPanel({
             </div>
           </form>
 
-          {/* List of currently added materials */}
+          {/* Materials table */}
           <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
@@ -433,18 +376,17 @@ export default function InfraestructuraMantenimientoPanel({
               )}
             </table>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Right Column: Information, Guides and Existing Created Requests */}
+      {/* Right Column: Info + Existing Requests */}
       <div className="space-y-6">
-        {/* Info card */}
         <div className="bg-slate-900 text-slate-300 rounded-2xl p-6 border border-slate-800 shadow-md">
           <h4 className="font-sans font-bold text-white text-sm mb-3 uppercase tracking-wider font-mono text-[10px] text-sky-400">
             Gestión de Inversiones e Insumos
           </h4>
           <p className="text-xs leading-relaxed text-slate-400 font-medium">
-            Al registrar una obra, la base de datos almacena el requerimiento técnico inicial de materiales. 
+            Al registrar una obra, la base de datos almacena el requerimiento técnico inicial de materiales.
           </p>
           <div className="mt-4 border-t border-slate-800 pt-4 space-y-3.5 text-xs">
             <div className="flex items-start gap-2.5">
@@ -458,26 +400,13 @@ export default function InfraestructuraMantenimientoPanel({
           </div>
         </div>
 
-        {/* Existing Requests of Infra/Mantenimiento status */}
+        {/* Existing Requests sidebar */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all duration-300">
           <h4 className="font-sans font-bold text-slate-400 text-[10px] uppercase tracking-wider font-mono mb-4">
             Peticiones del Departamento
           </h4>
-
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="p-3.5 border border-slate-100 bg-slate-50/50 rounded-xl space-y-2">
-                  <SkeletonBlock className="h-3 w-16" />
-                  <SkeletonBlock className="h-4 w-3/4" />
-                  <div className="flex items-center justify-between">
-                    <SkeletonBlock className="h-3 w-20" />
-                    <SkeletonBlock className="h-4 w-16 rounded-lg" />
-                  </div>
-                </div>
-              ))
-            ) : (
-              projects.map((p) => (
+            {projects.map((p) => (
               <div key={p.id} className="p-3.5 border border-slate-100 bg-slate-50/50 rounded-xl space-y-2 hover:border-slate-200 transition-colors">
                 <div className="flex items-start justify-between">
                   <div>
@@ -495,17 +424,43 @@ export default function InfraestructuraMantenimientoPanel({
                     <DollarSign className="h-3.5 w-3.5 text-slate-400" />
                     {p.estimatedTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })}
                   </span>
-                  <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg font-mono font-bold">
-                    {p.status}
-                  </span>
+                  <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg font-mono font-bold">{p.status}</span>
                 </div>
               </div>
-              ))
-            )}
+            ))}
           </div>
         </div>
       </div>
 
+    </div>
+  );
+}
+
+/* ─── Skeleton Loader ─── */
+function InfraestructuraSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+      <div className="space-y-6">
+        <div className="bg-slate-900 rounded-2xl p-6 space-y-3">
+          <SkeletonBlock className="h-4 w-48 bg-slate-700" />
+          <SkeletonBlock className="h-3 w-full bg-slate-700" />
+          <SkeletonBlock className="h-3 w-5/6 bg-slate-700" />
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
+          <SkeletonBlock className="h-3 w-32" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="p-3 border border-slate-100 rounded-xl space-y-2">
+              <SkeletonBlock className="h-3 w-16" />
+              <SkeletonBlock className="h-4 w-3/4" />
+              <SkeletonBlock className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

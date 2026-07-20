@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Project, ProjectStatus, AuditLog } from "../types";
 import { 
   DollarSign, 
@@ -20,6 +20,8 @@ import {
   MapPin
 } from "lucide-react";
 import { SkeletonStats, SkeletonStatsDark, SkeletonBlock, SkeletonTable, SkeletonCard } from "../components/SkeletonLoader";
+import StatusBadge from "../components/UI/StatusBadge";
+import { getRoleColor } from "../utils";
 
 interface PresidenciaDashboardProps {
   projects: Project[];
@@ -80,44 +82,21 @@ export default function PresidenciaDashboard({
   const infraPercent = Math.round((infraCount / totalTypeCount) * 100);
   const mantPercent = Math.round((mantCount / totalTypeCount) * 100);
 
-  // Status mapping colors
-  const getStatusBadge = (status: ProjectStatus) => {
-    switch (status) {
-      case ProjectStatus.CREADO:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">Enviado a Cierre de Obra</span>;
-      case ProjectStatus.REVISADO_CIERRE:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">Revisado - Para Procura</span>;
-      case ProjectStatus.CONFIRMADO_PROCURA:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">Confirmado - En Licitación</span>;
-      case ProjectStatus.COMPARATIVA_ENVIADA:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Comparativa Lista</span>;
-      case ProjectStatus.CONTRATADO:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-yellow-50 text-yellow-800 border border-yellow-200">Pendiente Anticipo Finanzas</span>;
-      case ProjectStatus.EN_EJECUCION:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200">Obra en Ejecución</span>;
-      case ProjectStatus.VERIFICANDO_FINALIZACION:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-orange-50 text-orange-800 border border-orange-200">Cerrando Obra (Auditoría)</span>;
-      case ProjectStatus.LISTO_PAGO_FINAL:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">Pendiente Finiquito</span>;
-      case ProjectStatus.COMPLETADO_PAGADO:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">Completado y Liquidado</span>;
-      default:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200">{status}</span>;
-    }
+  const STATUS_LABEL_MAP: Record<string, string> = {
+    [ProjectStatus.CREADO]: "Enviado a Cierre de Obra",
+    [ProjectStatus.REVISADO_CIERRE]: "Revisado - Para Procura",
+    [ProjectStatus.CONFIRMADO_PROCURA]: "Confirmado - En Licitación",
+    [ProjectStatus.COMPARATIVA_ENVIADA]: "Comparativa Lista",
+    [ProjectStatus.CONTRATADO]: "Pendiente Anticipo Finanzas",
+    [ProjectStatus.EN_EJECUCION]: "Obra en Ejecución",
+    [ProjectStatus.VERIFICANDO_FINALIZACION]: "Cerrando Obra (Auditoría)",
+    [ProjectStatus.LISTO_PAGO_FINAL]: "Pendiente Finiquito",
+    [ProjectStatus.COMPLETADO_PAGADO]: "Completado y Liquidado",
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "PRESIDENCIA": return "bg-amber-50 text-amber-800 border-amber-200";
-      case "CIERRE_DE_OBRA": return "bg-sky-50 text-sky-800 border-sky-200";
-      case "PROCURA": return "bg-purple-50 text-purple-800 border-purple-200";
-      case "ANALISTA": return "bg-emerald-50 text-emerald-800 border-emerald-200";
-      case "FINANZAS": return "bg-rose-50 text-rose-800 border-rose-200";
-      case "INFRAESTRUCTURA": return "bg-cyan-50 text-cyan-800 border-cyan-200";
-      case "SISTEMA": return "bg-slate-50 text-slate-800 border-slate-200";
-      default: return "bg-slate-50 text-slate-800 border-slate-200";
-    }
-  };
+  const getStatusBadge = (status: ProjectStatus) => (
+    <StatusBadge code={status} label={STATUS_LABEL_MAP[status]} />
+  );
 
   return (
     <div className="space-y-6">

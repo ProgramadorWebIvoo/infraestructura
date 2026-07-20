@@ -1,22 +1,17 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Panel de Finanzas: liberación de anticipos + liquidaciones finales + libro diario.
  */
 
-import React from "react";
+import { DollarSign, CheckCircle, CreditCard, ArrowUpRight, Coins } from "lucide-react";
 import { Project, ProjectStatus } from "../types";
-import { 
-  DollarSign, 
-  CheckCircle, 
-  AlertCircle, 
-  CreditCard, 
-  ArrowUpRight, 
-  TrendingUp, 
-  Coins, 
-  HelpCircle,
-  FileSpreadsheet
-} from "lucide-react";
-import { SkeletonCard, SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
+import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
+import Card from "../components/UI/Card";
+import SectionHeader from "../components/UI/SectionHeader";
+import EmptyState from "../components/UI/EmptyState";
+import { formatNumber } from "../utils";
 
 interface FinanzasPanelProps {
   projects: Project[];
@@ -32,12 +27,11 @@ export default function FinanzasPanel({
   isLoading = false,
 }: FinanzasPanelProps) {
   if (isLoading) return <FinanzasSkeleton />;
-  
-  // Lists
+
   const pendingAdvances = projects.filter(p => p.status === ProjectStatus.CONTRATADO);
   const pendingFinalPayments = projects.filter(p => p.status === ProjectStatus.LISTO_PAGO_FINAL);
 
-  // Completed transactions list (computed from paid amounts)
+  // Completed transactions ledger
   const paidLedger: {
     id: string;
     projectId: string;
@@ -62,7 +56,7 @@ export default function FinanzasPanel({
         type: "ANTICIPO",
         amount: p.advancePaidAmount,
         date: p.advancePaidDate,
-        voucher: `VCH-${1000 + idx}A`
+        voucher: `VCH-${1000 + idx}A`,
       });
     }
     if (p.finalPaidAmount && p.finalPaidDate) {
@@ -74,38 +68,32 @@ export default function FinanzasPanel({
         type: "LIQUIDACIÓN_FINAL",
         amount: p.finalPaidAmount,
         date: p.finalPaidDate,
-        voucher: `VCH-${1000 + idx}F`
+        voucher: `VCH-${1000 + idx}F`,
       });
     }
   });
-
-  // Sort ledger by date descending
   paidLedger.sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <div className="space-y-6">
-      
-      {/* 2 Column Operations: Left (Advances), Right (Final Settlements) */}
+
+      {/* 2 Column Operations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Left Card: Pending Advance payments */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-115">
-          <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-5">
-            <div className="bg-rose-50 text-rose-600 p-2.5 rounded-xl border border-rose-100">
-              <Coins className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-slate-900 text-sm">Liberación de Anticipos Pactados (Inicio Obra)</h3>
-              <p className="text-xs text-slate-500 font-medium">Autorice el primer desembolso de fondos acordado para que el contratista inicie los trabajos de campo.</p>
-            </div>
-          </div>
+        <Card className="max-h-115 overflow-y-auto scroll-smooth">
+          <SectionHeader
+            icon={<Coins className="h-5 w-5" />}
+            title="Liberación de Anticipos Pactados (Inicio Obra)"
+            description="Autorice el primer desembolso de fondos acordado para que el contratista inicie los trabajos de campo."
+            color="rose"
+          />
 
           {pendingAdvances.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <CheckCircle className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs text-slate-500 font-medium">No hay anticipos pendientes por liberar.</p>
-              <p className="text-[10px] text-slate-400 mt-1 font-medium">Adjudique un contratista en el panel de <strong className="text-slate-600">Procura</strong> para activar.</p>
-            </div>
+            <EmptyState
+              message="No hay anticipos pendientes por liberar."
+              icon={<CheckCircle className="h-8 w-8 text-slate-300" />}
+            />
           ) : (
             <div className="space-y-4">
               {pendingAdvances.map((p) => {
@@ -144,7 +132,7 @@ export default function FinanzasPanel({
                       </div>
                       <div className="text-right">
                         <span className="text-[9px] text-slate-400 font-bold block uppercase font-mono tracking-wider text-rose-500 mb-0.5">Monto Anticipo a Pagar:</span>
-                        <span className="font-mono font-black text-slate-900 text-base">${advAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-mono font-black text-slate-900 text-base">${formatNumber(advAmount)}</span>
                       </div>
                     </div>
 
@@ -161,26 +149,22 @@ export default function FinanzasPanel({
               })}
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Right Card: Final Settlements (Liquidaciones) */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-115">
-          <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-5">
-            <div className="bg-sky-50 text-sky-600 p-2.5 rounded-xl border border-sky-100">
-              <DollarSign className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-slate-900 text-sm">Finiquitos y Liquidaciones de Cierre (100%)</h3>
-              <p className="text-xs text-slate-500 font-medium">Cierre el ciclo financiero de la obra pagando el saldo restante, previa certificación de calidad por Cierre de Obra.</p>
-            </div>
-          </div>
+        {/* Right Card: Final Settlements */}
+        <Card className="max-h-115 overflow-y-auto scroll-smooth">
+          <SectionHeader
+            icon={<DollarSign className="h-5 w-5" />}
+            title="Finiquitos y Liquidaciones de Cierre (100%)"
+            description="Cierre el ciclo financiero de la obra pagando el saldo restante, previa certificación de calidad por Cierre de Obra."
+            color="sky"
+          />
 
           {pendingFinalPayments.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <CheckCircle className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs text-slate-500 font-medium">No hay liquidaciones pendientes.</p>
-              <p className="text-[10px] text-slate-400 mt-1 font-medium">El departamento de <strong className="text-slate-600">Cierre de Obra</strong> debe verificar la calidad final primero.</p>
-            </div>
+            <EmptyState
+              message="No hay liquidaciones pendientes."
+              icon={<CheckCircle className="h-8 w-8 text-slate-300" />}
+            />
           ) : (
             <div className="space-y-4">
               {pendingFinalPayments.map((p) => {
@@ -219,7 +203,7 @@ export default function FinanzasPanel({
                       </div>
                       <div className="text-right">
                         <span className="text-[9px] text-slate-400 font-bold block uppercase font-mono tracking-wider text-sky-600 mb-0.5">Saldo Pendiente a Liquidar:</span>
-                        <span className="font-mono font-black text-slate-900 text-base">${balanceDue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-mono font-black text-slate-900 text-base">${formatNumber(balanceDue)}</span>
                       </div>
                     </div>
 
@@ -236,13 +220,13 @@ export default function FinanzasPanel({
               })}
             </div>
           )}
-        </div>
+        </Card>
 
       </div>
 
-      {/* Financial ledger transaction ledger list */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 grid grid-cols-1 pr-2 -mr-2 scrool-smooth overflow-y-auto max-h-115">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+      {/* Financial ledger */}
+      <Card className="max-h-115 overflow-y-auto scroll-smooth">
+        <div className="p-0 border-b border-slate-100 flex items-center justify-between mb-0">
           <div>
             <h3 className="font-sans font-bold text-slate-900 text-sm">Libro Diario de Egresos y Transferencias</h3>
             <p className="text-xs text-slate-500 font-medium">Historial detallado de desembolsos bancarios directos realizados por el sistema.</p>
@@ -282,12 +266,8 @@ export default function FinanzasPanel({
                       {tx.type}
                     </span>
                   </td>
-                  <td className="py-3 px-4 font-mono font-bold text-slate-600">
-                    {tx.contractorCode}
-                  </td>
-                  <td className="py-3 px-4 font-mono text-slate-500 font-medium">
-                    {tx.date}
-                  </td>
+                  <td className="py-3 px-4 font-mono font-bold text-slate-600">{tx.contractorCode}</td>
+                  <td className="py-3 px-4 font-mono text-slate-500 font-medium">{tx.date}</td>
                   <td className="py-3 px-5 text-right font-mono font-bold text-slate-900 text-sm">
                     ${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
@@ -303,7 +283,7 @@ export default function FinanzasPanel({
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
     </div>
   );

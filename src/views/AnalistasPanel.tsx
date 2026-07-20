@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Project, ProjectStatus, Contractor, Proposal } from "../types";
 import { useToast } from "../components/UI/Toast";
 import { 
@@ -15,13 +15,16 @@ import {
   Clock, 
   FileSpreadsheet, 
   Award,
-  AlertCircle,
   FolderOpen,
   LayoutList,
-  Loader2,
-  CheckCircle
+  Loader2
 } from "lucide-react";
-import { SkeletonCard, SkeletonBlock, SkeletonList } from "../components/SkeletonLoader";
+import { SkeletonCard, SkeletonList, SkeletonBlock } from "../components/SkeletonLoader";
+import Card from "../components/UI/Card";
+import SectionHeader from "../components/UI/SectionHeader";
+import NumericInput from "../components/UI/NumericInput";
+import AlertBanner from "../components/UI/AlertBanner";
+import EmptyState from "../components/UI/EmptyState";
 
 interface ImportResult {
   message: string;
@@ -68,7 +71,6 @@ export default function AnalistasPanel({
 
   const handleAddProposal = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(selectedProjectId,contractorCode)
     if (!selectedProjectId) return;
     
     const contractor = contractors.find(c => c.code === contractorCode);
@@ -90,12 +92,10 @@ export default function AnalistasPanel({
       description: description.trim() || `Propuesta para trabajos de ${activeProject?.title}. Incluye materiales e instalación certificada.`
     });
 
-    // Reset bid specific states
     setDescription("");
-    // Give some random variations for the next bid to speed up testing
-    setMaterialCost(Math.round((matCostNum * 0.95 + Math.random() * 200) / 10) * 10);
-    setLaborCost(Math.round((laborCostNum * 1.05 + Math.random() * 100) / 10) * 10);
-    setDeliveryWeeks(Math.max(1, delWeeksNum + (Math.random() > 0.5 ? 1 : -1)));
+    setMaterialCost(1000);
+    setLaborCost(800);
+    setDeliveryWeeks(2);
   };
 
   const handleImport = async () => {
@@ -131,23 +131,18 @@ export default function AnalistasPanel({
       
       {/* Left panel: Active Licitations and Adder */}
       <div className="lg:col-span-7 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
-            <div className="bg-sky-50 text-sky-600 p-2.5 rounded-xl border border-sky-100">
-              <FileSpreadsheet className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-slate-900 text-base">Carga de Propuestas de Contratistas</h3>
-              <p className="text-xs text-slate-500 font-medium">Reciba y digitalice ofertas para consolidar cuadros comparativos. Los contratistas operan bajo códigos únicos asignados.</p>
-            </div>
-          </div>
+        <Card>
+          <SectionHeader
+            icon={<FileSpreadsheet className="h-5 w-5" />}
+            title="Carga de Propuestas de Contratistas"
+            description="Reciba y digitalice ofertas para consolidar cuadros comparativos. Los contratistas operan bajo códigos únicos asignados."
+          />
 
           {pendingLicitacion.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <FolderOpen className="h-10 w-10 text-slate-400 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-800">No hay expedientes en licitación activa</p>
-              <p className="text-xs text-slate-400 mt-1 font-medium">Vaya al panel de <strong>Procura</strong> o <strong>Cierre de Obra</strong> para avanzar flujos.</p>
-            </div>
+            <EmptyState
+              icon={<FolderOpen className="h-8 w-8" />}
+              message="No hay expedientes en licitación activa. Vaya al panel de Procura o Cierre de Obra para avanzar flujos."
+            />
           ) : (
             <div className="space-y-4">
               {/* Select Project */}
@@ -196,16 +191,12 @@ export default function AnalistasPanel({
 
                       <div>
                         <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Semanas de Ejecución</label>
-                        <input
+                        <NumericInput
                           id="analistas-weeks"
-                          type="number"
-                          min="1"
                           value={deliveryWeeks}
-                          onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setDeliveryWeeks(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
-                          onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                          onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setDeliveryWeeks(v === "" ? "" : Math.max(0, parseInt(v) || 1)); }}
+                          onChange={setDeliveryWeeks}
+                          min={1}
                           placeholder="0"
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold text-slate-800"
                         />
                       </div>
                     </div>
@@ -213,29 +204,23 @@ export default function AnalistasPanel({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Costo Materiales ($)</label>
-                        <input
+                        <NumericInput
                           id="analistas-mat-cost"
-                          type="number"
                           value={materialCost}
-                          onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setMaterialCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                          onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                          onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setMaterialCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                          onChange={setMaterialCost}
+                          min={0}
                           placeholder="0.00"
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-mono font-bold"
                         />
                       </div>
 
                       <div>
                         <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Costo Mano de Obra ($)</label>
-                        <input
+                        <NumericInput
                           id="analistas-labor-cost"
-                          type="number"
                           value={laborCost}
-                          onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setLaborCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                          onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                          onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setLaborCost(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                          onChange={setLaborCost}
+                          min={0}
                           placeholder="0.00"
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-mono font-bold"
                         />
                       </div>
 
@@ -286,21 +271,24 @@ export default function AnalistasPanel({
               )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Right panel: Comparative Table Preview & Submission */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-4 mb-4">
-            <Award className="h-5 w-5 text-sky-600" />
-            <h4 className="font-sans font-bold text-slate-900 text-sm">Cuadro Comparativo Digital</h4>
-          </div>
+        <Card hoverable={false}>
+          <SectionHeader
+            icon={<Award className="h-5 w-5" />}
+            title="Cuadro Comparativo Digital"
+            description="Consolide y compare las ofertas recibidas por expediente."
+            color="sky"
+          />
 
           {!activeProject ? (
-            <div className="text-center py-12 text-xs text-slate-400 italic font-medium leading-relaxed">
-              Seleccione un expediente a cotizar en el panel de la izquierda para ver su cuadro comparativo en tiempo real.
-            </div>
+            <EmptyState
+              icon={<Award className="h-8 w-8" />}
+              message="Seleccione un expediente en el panel izquierdo para ver su cuadro comparativo."
+            />
           ) : (
             <div className="space-y-4">
               <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 text-xs">
@@ -331,27 +319,10 @@ export default function AnalistasPanel({
                   </button>
                 </div>
                 
-                <div className="grid grid-cols-1 overflow-y-auto pr-2 -mr-2 ">
-                  <div
-                    className={`overflow-hidden transition-all duration-700 ease-in-out  ${
-                      importFeedback ? "max-h-16 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
-                    }`}
-                  >
-                    <div
-                      className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5  ${
-                        importFeedback?.type === "success"
-                          ? "bg-green-50 text-green-700 border border-green-200"
-                          : "bg-rose-50 text-rose-700 border border-rose-200"
-                      }`}
-                    >
-                      {importFeedback?.type === "success" ? (
-                        <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                      ) : (
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      )}
-                      {importFeedback?.message}
-                    </div>
-                  </div>
+                <div className={`overflow-hidden transition-all duration-700 ease-in-out ${importFeedback ? "max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
+                  {importFeedback && (
+                    <AlertBanner type={importFeedback.type} message={importFeedback.message} />
+                  )}
                 </div>
 
                 <div className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1">
@@ -373,9 +344,10 @@ export default function AnalistasPanel({
                   ))}
 
                   {(!activeProject.proposals || activeProject.proposals.length === 0) && (
-                    <div className="text-center py-10 border border-dashed border-slate-200 rounded-xl text-xs text-slate-400 font-medium italic bg-slate-50/50">
-                      Ninguna oferta registrada. Use el formulario en el panel izquierdo o importe desde el portal de proveedores.
-                    </div>
+                    <EmptyState
+                      icon={<FileSpreadsheet className="h-6 w-6" />}
+                      message="Ninguna oferta registrada. Use el formulario en el panel izquierdo o importe desde el portal de proveedores."
+                    />
                   )}
                 </div>
               </div>
@@ -397,7 +369,7 @@ export default function AnalistasPanel({
               )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
     </div>

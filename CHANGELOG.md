@@ -1,5 +1,111 @@
 # CHANGELOG
 
+## [2026-07-20] — Refactor: UI components, eliminación de código duplicado y debug en vistas
+
+**Tipo:** refactor
+
+**Qué:**
+1. **Creados 7 componentes UI reutilizables** en `src/components/UI/`:
+   - `Card` — contenedor bento con hover opcional
+   - `SectionHeader` — icono + título + descripción (reemplaza 12+ patrones duplicados)
+   - `NumericInput` — input numérico seguro (sanetiza e/E, negativos, paste)
+   - `AlertBanner` — success/error/warning/info con animación
+   - `StatusBadge` — badge de estado/rol con colores unificados desde utils
+   - `EmptyState` — placeholder vacío con icono y mensaje
+   - `FileDropZone` — drag & drop con 4 temas de color
+
+2. **Creado `src/utils.ts`** — funciones compartidas:
+   - `formatCurrency`, `formatNumber`, `formatFileSize`
+   - `getRoleColor`, `ROLE_COLORS`, `getStatusColor`, `STATUS_COLORS`, `STATUS_LABELS`
+
+3. **Refactorizados 4 paneles** para usar los nuevos componentes:
+   - `CierreObraPanel` — FileDropZone, Card, SectionHeader, EmptyState, StatusBadge; eliminado formatFileSize inline
+   - `ProcuraPanel` — Card, SectionHeader, StatusBadge; eliminada IIFE
+   - `FinanzasPanel` — Card, SectionHeader, NumericInput; eliminados cards duplicados
+   - `InfraestructuraMantenimientoPanel` — NumericInput, Card, SectionHeader, AlertBanner, FileDropZone; setTimeout con cleanup; skeleton dedicado sin children en SkeletonCard
+
+4. **Refactorizados 4 paneles adicionales** (segunda tanda):
+   - `AnalistasPanel` — Card, SectionHeader, NumericInput, AlertBanner, EmptyState; eliminados console.log, lógica random de testing, inputs manuales e/E prevention
+   - `PresidenciaDashboard` — reemplazada función `getStatusBadge` (120 líneas switch) por `<StatusBadge>`; eliminada `getRoleColor` local en favor de utils
+   - `UsuariosPanel` — eliminado `ROLE_BADGE` local (8 entradas) en favor de `<StatusBadge isRole>`
+   - `PropuestaMaterialesPublica` — 4 inputs numéricos con e/E prevention reemplazados por NumericInput
+
+5. **Eliminados debug logs:**
+   - `LoginScreen.tsx`: `console.error(loginError)` en catch (línea 22)
+   - `AnalistasPanel.tsx`: `console.log(selectedProjectId,contractorCode)` (línea 75)
+
+6. **Build verificado:** `tsc --noEmit` + `vite build` sin errores.
+
+**Por qué / causa raíz:** Las vistas tenían patrones UI duplicados (SectionHeader, Card, input handlers, badges) con lógica de sanitización inline repetida. El código espagueti dificultaba el mantenimiento y la consistencia visual.
+
+**Archivos:**
+- `src/utils.ts` — [NUEVO]
+- `src/components/UI/Card.tsx` — [NUEVO]
+- `src/components/UI/SectionHeader.tsx` — [NUEVO]
+- `src/components/UI/NumericInput.tsx` — [NUEVO]
+- `src/components/UI/AlertBanner.tsx` — [NUEVO]
+- `src/components/UI/StatusBadge.tsx` — [NUEVO]
+- `src/components/UI/EmptyState.tsx` — [NUEVO]
+- `src/components/UI/FileDropZone.tsx` — [NUEVO]
+- `src/views/CierreObraPanel.tsx` — refactor
+- `src/views/ProcuraPanel.tsx` — refactor
+- `src/views/FinanzasPanel.tsx` — refactor
+- `src/views/InfraestructuraMantenimientoPanel.tsx` — refactor
+- `src/views/AnalistasPanel.tsx` — refactor
+- `src/views/PresidenciaDashboard.tsx` — refactor
+- `src/views/UsuariosPanel.tsx` — refactor
+- `src/views/PropuestaMaterialesPublica.tsx` — refactor
+- `src/views/LoginScreen.tsx` — fix
+- `src/views/ProveedoresRegistrados.tsx` — (input rating con lógica específica mantenido)
+- `CHANGELOG.md` — actualizado
+
+## [2026-07-20] — Refactor: separación por dominios (hooks) + InspectProjectModal extraído
+
+**Tipo:** refactor
+
+**Qué:**
+1. **Extraído InspectProjectModal** (`src/components/InspectProjectModal.tsx`):
+   - Modal inline de ~240 líneas movido a su propio componente
+   - Renderiza `createPortal` internamente, App.tsx solo lo importa
+   - Props limpias: `project: Project`, `onClose: () => void`
+   - Eliminados imports de `createPortal`, `X`, `MapPin`, `Calendar`, `CheckCircle` de App.tsx
+
+2. **Creado `src/hooks/useAuth.ts`**:
+   - Encapsula: authToken, authUser, handleLogin, handleLogout
+   - Exporta constantes de ruteo (`roleAccess`, `publicRoutes`, `isPublicPath`)
+   - `canAccess` y `firstAllowedRoute` derivados de `authUser.role`
+   - `handleLogout` solo limpia auth (el caller resetea datos de la app)
+
+3. **Creado `src/hooks/useProjects.ts`**:
+   - Encapsula: projects, auditLogs, isLoadingApi, inspectedProject
+   - Todos los handlers del workflow (addProject, reviewProject, approveInvestment, addProposal, removeProposal, importSupplierProposals, submitComparative, selectContractor, rejectProposals, payAdvance, verifyCompletion, payFinal)
+   - `loadApiData` con guarda de reentrada + fallback a INITIAL_DATA
+   - `syncProject` centralizado (actualiza projects + inspectedProject + refreshAuditLogs)
+   - Acepta `onContractorsLoaded` / `onMaterialsLoaded` para poblar hooks hermanos
+   - `handleTriggerDemo` y `handleResetApp` incluidos
+
+4. **Creado `src/hooks/useContractors.ts`**: contractors, handleAddContractor, handleUpdateContractorRating
+
+5. **Creado `src/hooks/useCatalog.ts`**: materialsCatalog, handleAddCatalogItem
+
+6. **App.tsx refactorizado** (580 → ~120 líneas):
+   - Composición plana de hooks: `useAuth()` + `useProjects()` + `useContractors()` + `useCatalog()`
+   - `handleLogout` compuesto: authLogout → resetData → resetContractors → resetCatalog → navigate
+   - Routing + layout únicamente, sin lógica de negocio
+   - Eliminados imports: `useRef`, `createPortal`, `Project`, `ProjectStatus`, `Contractor`, `AuditLog`, `Proposal`, `data`, `apiFetch`, iconos lucide
+
+**Por qué / causa raíz:** App.tsx era un God Component de 824 líneas con 20+ handlers inline, estado global mezclado con UI, modal inline de 240 líneas y prop drilling de authToken. La lógica de negocio no era testeable ni mantenible por separado.
+
+**Archivos:**
+- `src/hooks/useAuth.ts` — [NUEVO]
+- `src/hooks/useProjects.ts` — [NUEVO]
+- `src/hooks/useContractors.ts` — [NUEVO]
+- `src/hooks/useCatalog.ts` — [NUEVO]
+- `src/components/InspectProjectModal.tsx` — [NUEVO]
+- `src/App.tsx` — refactor completo
+
+---
+
 ## [2026-07-20] — Fix críticos App.tsx + Sistema de notificaciones Toast + alert() → toast global
 
 **Tipo:** refactor + fix
@@ -267,19 +373,19 @@
 **Propósito:** Sistema multi-rol para gestionar el ciclo de vida completo de obras de infraestructura y mantenimiento. Cada obra pasa secuencialmente por 8 departamentos (Infraestructura → Cierre de Obra → Procura → Analistas → Finanzas → etc.) con trazabilidad en tiempo real mediante bitácora de auditoría.
 
 **Estructura clave:**
-- `src/App.tsx` — Ruteo, estado global, handlers de API, modal de inspección
-- `src/components/UI/` — Componentes de UI encapsulados y reutilizables
-- `src/components/ProcuraPanel.tsx` — Panel de Procura con tabla de evaluación comparativa + botón Evaluación Inteligente IA
-- `src/components/CierreObraPanel.tsx` — ✅ Overflow horizontal resuelto (grid + truncate, ver 2026-07-17)
-- `src/components/AnalistasPanel.tsx` — Panel de Analistas (carga de propuestas y cuadro comparativo)
-- `src/components/EvaluacionInteligenteModal.tsx` — Modal IA con 4 estados (idle/loading/result/error) y selector de proveedor
-- `src/components/MaterialesProveedores.tsx` — Portal público de registro de proveedores
-- `src/components/PropuestaMaterialesPublica.tsx` — Portal público de cotización de materiales (vía token)
-- `src/components/ProveedoresRegistrados.tsx` — Catálogo de proveedores + invitaciones + propuestas recibidas
-- `src/components/UsuariosPanel.tsx` — CRUD de usuarios del sistema
-- `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus` y más
+- `src/App.tsx` — Routing + layout únicamente. Compone hooks por dominio.
+- `src/hooks/useAuth.ts` — Autenticación, control de acceso por rol, constantes de ruteo
+- `src/hooks/useProjects.ts` — Estado global de proyectos + todos los handlers del workflow (12 handlers)
+- `src/hooks/useContractors.ts` — Catálogo de contratistas
+- `src/hooks/useCatalog.ts` — Catálogo de materiales
+- `src/components/InspectProjectModal.tsx` — Modal de trazabilidad de obra (createPortal a body)
+- `src/components/UI/` — Componentes de UI encapsulados y reutilizables (SidebarNav, MobileTopBar, Toast)
+- `src/views/` — 11 vistas (ruteables), reciben handlers por props desde App.tsx
+- `src/services/api.ts` — Cliente HTTP centralizado (apiFetch, apiDownload)
 - `src/services/aiEvaluationService.ts` — Servicio de llamada a backend Laravel para evaluación IA con failover
-- `src/components/SkeletonLoader.tsx` — Componente de skeleton loading reutilizable (primitivas: SkeletonBlock, SkeletonCard, SkeletonTable, SkeletonStats, SkeletonList)
+- `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus` y más
+- `src/components/SkeletonLoader.tsx` — Primitivas de skeleton loading (SkeletonBlock, SkeletonCard, SkeletonTable, etc.)
+- `src/data.ts` — Datos de respaldo/fallback para cuando la API no responde
 - `src/components/InteractiveOrganigrama.tsx` — ⚠️ **Código muerto** (no se importa en ningún lado)
 - `mobile/App.tsx` — App mobile React Native con los mismos paneles (lectura y acciones básicas)
 - `database.sql` — Schema completo MySQL con migrations y seed data

@@ -1,9 +1,11 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Panel de Cierre de Obra: revisión de cálculos/planos + auditoría de fin de obra.
  */
 
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Project, ProjectStatus } from "../types";
 import { useToast } from "../components/UI/Toast";
 import {
@@ -16,23 +18,20 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Map,
-  X,
-  Paperclip,
-  FilePlus2,
 } from "lucide-react";
-import { SkeletonBlock, SkeletonCard, SkeletonList } from "../components/SkeletonLoader";
+import { SkeletonCard, SkeletonList, SkeletonBlock } from "../components/SkeletonLoader";
+import Card from "../components/UI/Card";
+import SectionHeader from "../components/UI/SectionHeader";
+import FileDropZone from "../components/UI/FileDropZone";
+import EmptyState from "../components/UI/EmptyState";
+import StatusBadge from "../components/UI/StatusBadge";
+import { formatNumber } from "../utils";
 
 interface CierreObraPanelProps {
   projects: Project[];
   onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
   onVerifyCompletion: (projectId: string) => void;
   isLoading?: boolean;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export default function CierreObraPanel({
@@ -43,31 +42,17 @@ export default function CierreObraPanel({
 }: CierreObraPanelProps) {
   const { showToast } = useToast();
   if (isLoading) return <CierreObraSkeleton />;
+
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [cierreNotes, setCierreNotes] = useState("");
   const [calcFiles, setCalcFiles] = useState<File[]>([]);
   const [planFiles, setPlanFiles] = useState<File[]>([]);
-  const [isDraggingCalc, setIsDraggingCalc] = useState(false);
-  const [isDraggingPlan, setIsDraggingPlan] = useState(false);
-
-  const calcInputRef = useRef<HTMLInputElement>(null);
-  const planInputRef = useRef<HTMLInputElement>(null);
 
   const pendingReview = projects.filter(p => p.status === ProjectStatus.CREADO);
   const pendingCompletionVerify = projects.filter(
     p => p.status === ProjectStatus.EN_EJECUCION || p.status === ProjectStatus.VERIFICANDO_FINALIZACION
   );
-
   const activeProject = pendingReview.find(p => p.id === selectedProjectId);
-
-  const addFiles = (current: File[], incoming: FileList): File[] => {
-    const existing = new Set(current.map(f => f.name + f.size));
-    const merged = [...current];
-    Array.from(incoming).forEach(f => {
-      if (!existing.has(f.name + f.size)) merged.push(f);
-    });
-    return merged;
-  };
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,31 +79,29 @@ export default function CierreObraPanel({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
+
       {/* SECTION 1: Pending Technical Reviews */}
       <div className="lg:col-span-7 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
-          <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
-            <div className="bg-sky-50 text-sky-600 p-2.5 rounded-xl border border-sky-100">
-              <Calculator className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-slate-900 text-base">Cierre de Obra: Revisión de Cálculos y Planos</h3>
-              <p className="text-xs text-slate-500 font-medium">Valide la inversión, revise la cubicación de materiales y aporte la planimetría de cierre.</p>
-            </div>
-          </div>
+        <Card>
+          <SectionHeader
+            icon={<Calculator className="h-5 w-5" />}
+            title="Cierre de Obra: Revisión de Cálculos y Planos"
+            description="Valide la inversión, revise la cubicación de materiales y aporte la planimetría de cierre."
+            color="sky"
+          />
 
           {pendingReview.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-800">¡Al día!</p>
-              <p className="text-xs text-slate-500 mt-1">No hay nuevas peticiones técnicas pendientes de revisión por Cierre de Obra.</p>
-            </div>
+            <EmptyState
+              message="No hay nuevas peticiones técnicas pendientes de revisión por Cierre de Obra."
+              icon={<CheckCircle2 className="h-10 w-10 text-emerald-500" />}
+            />
           ) : (
             <div className="space-y-5">
               {/* Selector List */}
               <div className="space-y-2.5">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Seleccionar Expediente a Revisar:</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Seleccionar Expediente a Revisar:
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
                   {pendingReview.map((p) => (
                     <button
@@ -149,9 +132,9 @@ export default function CierreObraPanel({
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2.5 text-xs">
                     <h5 className="font-bold text-slate-700 flex items-center justify-between">
                       <span>Detalles de Inversión Propuesta:</span>
-                      <span className="font-mono text-sky-600 font-black">${activeProject.estimatedTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                      <span className="font-mono text-sky-600 font-black">${formatNumber(activeProject.estimatedTotal)}</span>
                     </h5>
-                    <p className="text-slate-600 leading-relaxed italic">"{activeProject.description}"</p>
+                    <p className="text-slate-600 leading-relaxed italic">&quot;{activeProject.description}&quot;</p>
                     <div className="pt-3 border-t border-slate-200/60">
                       <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Materiales Solicitados:</span>
                       <ul className="mt-1.5 space-y-1 text-slate-600 list-disc list-inside font-medium">
@@ -164,138 +147,39 @@ export default function CierreObraPanel({
                     </div>
                   </div>
 
-                  {/* ── Hoja de Cálculo / Cubicaciones ── */}
+                  {/* Hoja de Cálculo */}
+                  <FileDropZone
+                    files={calcFiles}
+                    onFilesChange={setCalcFiles}
+                    label="Hoja de Cálculo / Cubicaciones"
+                    accept=".xlsx,.xls,.csv,.pdf,.ods,.numbers"
+                    extensionsLabel=".xlsx · .xls · .csv · .pdf · .ods"
+                    color="sky"
+                    icon={<FileSpreadsheet className="h-6 w-6 text-slate-400" />}
+                    fileIcon={<FileSpreadsheet className="h-3.5 w-3.5" />}
+                    id="cierre-calc-upload"
+                    required
+                  />
+
+                  {/* Planos de Ingeniería */}
+                  <FileDropZone
+                    files={planFiles}
+                    onFilesChange={setPlanFiles}
+                    label="Planos de Ingeniería"
+                    accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg,.svg,.tif,.tiff"
+                    extensionsLabel=".pdf · .dwg · .dxf · .png · .jpg · .svg"
+                    color="indigo"
+                    icon={<Map className="h-6 w-6 text-slate-400" />}
+                    fileIcon={<Map className="h-3.5 w-3.5" />}
+                    id="cierre-plan-upload"
+                    required
+                    countLabel="plano adjunto"
+                  />
+
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                      <FileSpreadsheet className="h-3.5 w-3.5 text-sky-500" />
-                      Hoja de Cálculo / Cubicaciones
-                      <span className="text-rose-500">*</span>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Notas de Revisión y Corrección
                     </label>
-
-                    {/* Drop zone */}
-                    <div
-                      onDragOver={(e) => { e.preventDefault(); setIsDraggingCalc(true); }}
-                      onDragEnter={() => setIsDraggingCalc(true)}
-                      onDragLeave={() => setIsDraggingCalc(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDraggingCalc(false);
-                        if (e.dataTransfer.files.length) setCalcFiles(f => addFiles(f, e.dataTransfer.files));
-                      }}
-                      onClick={() => calcInputRef.current?.click()}
-                      className={`relative flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                        isDraggingCalc ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-slate-50 hover:border-sky-400 hover:bg-sky-50/30"
-                      }`}
-                    >
-                      <FilePlus2 className="h-6 w-6 text-slate-400" />
-                      <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
-                      <span className="text-[10px] text-slate-400 font-medium">.xlsx · .xls · .csv · .pdf · .ods</span>
-                      <input
-                        ref={calcInputRef}
-                        id="cierre-calc-upload"
-                        type="file"
-                        multiple
-                        accept=".xlsx,.xls,.csv,.pdf,.ods,.numbers"
-                        className="hidden"
-                        onChange={(e) => { 
-                          console.log("Files selected:", e.target.files);
-                          if (e.target.files) setCalcFiles([...e.target.files, ...calcFiles]); e.target.value = ""; 
-                        }}
-                      />
-                    </div>
-
-                    {/* Attached calc files */}
-                    {calcFiles.length > 0 && (
-                      <ul className="mt-2 space-y-1.5">
-                        {calcFiles.map((file, i) => (
-                          <li key={i} className="flex items-center justify-between bg-sky-50 border border-sky-100 rounded-lg px-3 py-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <FileSpreadsheet className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                              <span className="text-[11px] font-bold text-sky-800 truncate">{file.name}</span>
-                              <span className="text-[10px] text-sky-400 font-medium shrink-0">{formatFileSize(file.size)}</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setCalcFiles(f => f.filter((_, idx) => idx !== i))}
-                              className="ml-2 text-sky-300 hover:text-rose-500 transition-colors shrink-0 cursor-pointer"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  {/* ── Planos de Ingeniería ── */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                      <Map className="h-3.5 w-3.5 text-indigo-500" />
-                      Planos de Ingeniería
-                      <span className="text-rose-500">*</span>
-                    </label>
-
-                    {/* Drop zone */}
-                    <div
-                      onDragOver={(e) => { e.preventDefault(); setIsDraggingPlan(true); }}
-                      onDragEnter={() => setIsDraggingPlan(true)}
-                      onDragLeave={() => setIsDraggingPlan(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDraggingPlan(false);
-                        if (e.dataTransfer.files.length) setPlanFiles(f => addFiles(f, e.dataTransfer.files));
-                      }}
-                      onClick={() => planInputRef.current?.click()}
-                      className={`relative flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                        isDraggingPlan ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/30"
-                      }`}
-                    >
-                      <Paperclip className="h-6 w-6 text-slate-400" />
-                      <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
-                      <span className="text-[10px] text-slate-400 font-medium">.pdf · .dwg · .dxf · .png · .jpg · .svg</span>
-                      <input
-                        ref={planInputRef}
-                        id="cierre-plan-upload"
-                        type="file"
-                        multiple
-                        accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg,.svg,.tif,.tiff"
-                        className="hidden"
-                        onChange={(e) => { if (e.target.files) setPlanFiles([...e.target.files, ...planFiles] ); e.target.value = ""; }}
-                      />
-                    </div>
-
-                    {/* Attached plan files */}
-                    {planFiles.length > 0 && (
-                      <ul className="mt-2 space-y-1.5">
-                        {planFiles.map((file, i) => (
-                          <li key={i} className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <FileText className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                              <span className="text-[11px] font-bold text-indigo-800 truncate">{file.name}</span>
-                              <span className="text-[10px] text-indigo-400 font-medium shrink-0">{formatFileSize(file.size)}</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setPlanFiles(f => f.filter((_, idx) => idx !== i))}
-                              className="ml-2 text-indigo-300 hover:text-rose-500 transition-colors shrink-0 cursor-pointer"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {/* Counter badge */}
-                    {planFiles.length > 0 && (
-                      <p className="mt-1.5 text-[10px] font-bold text-indigo-600 text-right">
-                        {planFiles.length} {planFiles.length === 1 ? "plano adjunto" : "planos adjuntos"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas de Revisión y Corrección</label>
                     <textarea
                       id="cierre-notes"
                       rows={3}
@@ -320,31 +204,25 @@ export default function CierreObraPanel({
               )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* SECTION 2: Work Completion & Quality Verification */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 p  -2 -mr-2 scroll-smooth overflow-y-auto max-h-65">
-          <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-5">
-            <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl border border-emerald-100">
-              <BadgeCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-sans font-bold text-slate-900 text-base">Auditoría de Fin de Obra</h3>
-              <p className="text-xs text-slate-500 font-medium">Certifique la calidad de la entrega técnica y libere el finiquito de obra.</p>
-            </div>
-          </div>
+        <Card className="max-h-65 overflow-y-auto scroll-smooth">
+          <SectionHeader
+            icon={<BadgeCheck className="h-5 w-5" />}
+            title="Auditoría de Fin de Obra"
+            description="Certifique la calidad de la entrega técnica y libere el finiquito de obra."
+            color="emerald"
+          />
 
           {pendingCompletionVerify.length === 0 ? (
-            <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <p className="text-xs text-slate-400 italic font-medium">No hay obras en ejecución o pendientes de entrega técnica en este momento.</p>
-            </div>
+            <EmptyState message="No hay obras en ejecución o pendientes de entrega técnica en este momento." />
           ) : (
             <div className="space-y-4">
               {pendingCompletionVerify.map((p) => {
                 const isUnderAudit = p.status === ProjectStatus.VERIFICANDO_FINALIZACION;
-
                 return (
                   <div key={p.id} className="p-4 border border-slate-100 bg-slate-50/50 rounded-xl space-y-3 hover:bg-slate-50 transition-colors">
                     <div className="flex items-start justify-between">
@@ -356,11 +234,10 @@ export default function CierreObraPanel({
                           {p.location}
                         </div>
                       </div>
-                      <span className={`text-[9px] font-mono px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider ${
-                        isUnderAudit ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-sky-100 text-sky-800 border border-sky-200 animate-pulse"
-                      }`}>
-                        {isUnderAudit ? "Auditoría" : "En Curso"}
-                      </span>
+                      <StatusBadge
+                        code={isUnderAudit ? "VERIFICANDO_FINALIZACION" : "EN_EJECUCION"}
+                        label={isUnderAudit ? "Auditoría" : "En Curso"}
+                      />
                     </div>
 
                     <div className="bg-white p-3 rounded-lg border border-slate-100 text-[11px] text-slate-600 space-y-1 font-medium">
@@ -388,7 +265,7 @@ export default function CierreObraPanel({
               })}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Detailed returns documentation info box */}
         <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 text-xs space-y-3 text-slate-600 leading-relaxed">

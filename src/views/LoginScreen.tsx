@@ -18,8 +18,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
     try {
       await onLogin(email, password);
-    } catch (loginError) {
-      console.error(loginError);
+    } catch {
       setError("Correo o clave incorrectos.");
     } finally {
       setIsSubmitting(false);

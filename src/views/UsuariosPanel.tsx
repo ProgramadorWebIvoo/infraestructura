@@ -16,6 +16,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { apiFetch } from "../services/api";
+import StatusBadge from "../components/UI/StatusBadge";
 
 const ROLES = [
   { value: "SUPERADMIN", label: "Super Administrador" },
@@ -27,17 +28,6 @@ const ROLES = [
   { value: "ANALISTA", label: "Analistas" },
   { value: "FINANZAS", label: "Finanzas" },
 ];
-
-const ROLE_BADGE: Record<string, string> = {
-  SUPERADMIN: "bg-violet-100 text-violet-800 border-violet-300",
-  ADMIN: "bg-amber-50 text-amber-700 border-amber-200",
-  PRESIDENCIA: "bg-slate-100 text-slate-700 border-slate-200",
-  INFRAESTRUCTURA: "bg-sky-50 text-sky-700 border-sky-200",
-  CIERRE_DE_OBRA: "bg-blue-50 text-blue-700 border-blue-200",
-  PROCURA: "bg-purple-50 text-purple-700 border-purple-200",
-  ANALISTA: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  FINANZAS: "bg-rose-50 text-rose-700 border-rose-200",
-};
 
 interface UserRecord {
   id: number | string;
@@ -321,13 +311,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                       <p className="text-[11px] text-slate-400 font-medium font-mono truncate">{user.email}</p>
                     </div>
                   </div>
-                  <span
-                    className={`ml-3 shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                      ROLE_BADGE[user.role] ?? "bg-slate-100 text-slate-600 border-slate-200"
-                    }`}
-                  >
-                    {roleLabel(user.role)}
-                  </span>
+                  <StatusBadge code={user.role} label={roleLabel(user.role)} isRole />
                 </li>
               ))}
             </ul>

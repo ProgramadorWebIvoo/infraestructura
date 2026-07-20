@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { SupplierMaterialProposalItem } from "../types";
 import { apiFetch } from "../services/api";
+import NumericInput from "../components/UI/NumericInput";
 
 interface ProjectPublicData {
   id: string;
@@ -295,16 +296,11 @@ export default function PropuestaMaterialesPublica() {
                           <td className="px-4 py-3 text-center font-mono font-bold text-slate-600">{item.quantity}</td>
                           <td className="px-4 py-3 text-slate-500 font-medium">{item.unit}</td>
                           <td className="px-4 py-3">
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                            <NumericInput
                               value={item.unitPrice === 0 ? "" : item.unitPrice}
-                                onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                              onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                              onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                              onChange={(v) => updateItem(index, "unitPrice", v)}
                               placeholder="0.00"
-                              className="w-28 rounded-lg border border-slate-200 px-2.5 py-1.5 text-right font-mono text-sm font-bold text-slate-800 outline-hidden focus:border-sky-400 focus:ring-1 focus:ring-sky-200 ml-auto block"
+                              className="!w-28 !px-2.5 !py-1.5 !text-right !text-sm"
                             />
                           </td>
                           <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">
@@ -367,16 +363,11 @@ export default function PropuestaMaterialesPublica() {
                               />
                             </td>
                             <td className="px-4 py-2.5">
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                              <NumericInput
                                 value={item.quantity === 0 ? "" : item.quantity}
-                                onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); updateItem(index, "quantity", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                                onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                                onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); updateItem(index, "quantity", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                                onChange={(v) => updateItem(index, "quantity", v)}
                                 placeholder="0"
-                                className="w-16 rounded-lg border border-amber-200 px-2 py-1.5 text-center font-mono text-xs font-bold text-slate-800 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                                className="!w-16 !px-2 !py-1.5 !text-center"
                               />
                             </td>
                             <td className="px-4 py-2.5">
@@ -389,16 +380,11 @@ export default function PropuestaMaterialesPublica() {
                               />
                             </td>
                             <td className="px-4 py-2.5">
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                              <NumericInput
                                 value={item.unitPrice === 0 ? "" : item.unitPrice}
-                              onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                              onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                              onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); updateItem(index, "unitPrice", v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                                onChange={(v) => updateItem(index, "unitPrice", v)}
                                 placeholder="0.00"
-                                className="w-28 rounded-lg border border-amber-200 px-2.5 py-1.5 text-right font-mono text-sm font-bold text-slate-800 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100 ml-auto block"
+                                className="!w-28 !px-2.5 !py-1.5 !text-right !text-sm"
                               />
                             </td>
                             <td className="px-4 py-2.5 text-right font-mono font-bold text-amber-700">
@@ -457,15 +443,11 @@ export default function PropuestaMaterialesPublica() {
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Cantidad</label>
-                  <input
-                    type="number"
-                    min="1"
+                  <NumericInput
                     value={estimatedDays}
-                    onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setEstimatedDays(v === "" ? "" : Math.max(0, parseInt(v) || 0) || ""); }}
-                    onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                    onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setEstimatedDays(v === "" ? "" : Math.max(0, parseInt(v) || 0) || ""); }}
+                    onChange={setEstimatedDays}
                     placeholder="0"
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-bold text-slate-800 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                    min={1}
                   />
                 </div>
                 <div className="w-36">

@@ -1,22 +1,18 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Panel de Procura: aprobación de inversión inicial + evaluación comparativa.
  */
 
-import React, { useState } from "react";
-import { Project, ProjectStatus, Proposal } from "../types";
+import { useState } from "react";
+import { Project, ProjectStatus, ProjectDocument } from "../types";
 import { useToast } from "../components/UI/Toast";
 import {
-  FileSearch,
-  DollarSign,
-  Briefcase,
-  CheckCircle,
   Users,
-  Clock,
   TrendingUp,
   CheckSquare,
   ShieldCheck,
-  ChevronDown,
   XCircle,
   AlertTriangle,
   FileSpreadsheet,
@@ -24,10 +20,14 @@ import {
   Download,
   BrainCircuit,
 } from "lucide-react";
-import { ProjectDocument } from "../types";
 import EvaluacionInteligenteModal from "../components/EvaluacionInteligenteModal";
 import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
 import { apiDownload } from "../services/api";
+import Card from "../components/UI/Card";
+import SectionHeader from "../components/UI/SectionHeader";
+import NumericInput from "../components/UI/NumericInput";
+import EmptyState from "../components/UI/EmptyState";
+import { formatNumber } from "../utils";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -62,6 +62,7 @@ export default function ProcuraPanel({
       showToast("No se pudo descargar el archivo.", "error");
     }
   };
+
   // Phase 1 form state
   const [selectedReviewId, setSelectedReviewId] = useState("");
   const [procuraNotes, setProcuraNotes] = useState("");
@@ -77,10 +78,9 @@ export default function ProcuraPanel({
 
   const pendingInvestmentApproval = projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE);
   const pendingContractSelection = projects.filter(p => p.status === ProjectStatus.COMPARATIVA_ENVIADA);
-
   const activeReviewProject = pendingInvestmentApproval.find(p => p.id === selectedReviewId);
 
-  const handleApproveInvestment = (e: React.FormEvent) => {
+  const handleApproveInvestmentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReviewId) return;
     const amountNum = approvedAmount === "" ? 0 : approvedAmount;
@@ -119,30 +119,92 @@ export default function ProcuraPanel({
     }
   };
 
+  /** Renderiza documentos adjuntos (planos + hojas de cálculo) */
+  const renderDocuments = (project: Project) => {
+    const docs = project.documents ?? [];
+    const planos = docs.filter(d => d.documentType === "PLANO");
+    const calcs = docs.filter(d => d.documentType === "CALC");
+    if (docs.length === 0) return null;
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Map className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+            <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">
+              Planos de Ingeniería ({planos.length})
+            </span>
+          </div>
+          {planos.length === 0 ? (
+            <p className="text-[10px] text-slate-400 italic font-medium">Sin planos adjuntos.</p>
+          ) : (
+            <ul className="space-y-1">
+              {planos.map(doc => (
+                <li key={doc.id} className="flex items-center justify-between gap-2 bg-white border border-indigo-100 rounded-lg px-2.5 py-1.5">
+                  <span className="text-[11px] font-bold text-indigo-800 truncate" title={doc.originalName}>{doc.originalName}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(project.id, doc)}
+                    className="shrink-0 text-indigo-400 hover:text-indigo-700 transition-colors cursor-pointer"
+                    title="Descargar"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="rounded-xl border border-sky-100 bg-sky-50/40 p-3 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <FileSpreadsheet className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+            <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider">
+              Hojas de Cálculo ({calcs.length})
+            </span>
+          </div>
+          {calcs.length === 0 ? (
+            <p className="text-[10px] text-slate-400 italic font-medium">Sin hojas de cálculo adjuntas.</p>
+          ) : (
+            <ul className="space-y-1">
+              {calcs.map(doc => (
+                <li key={doc.id} className="flex items-center justify-between gap-2 bg-white border border-sky-100 rounded-lg px-2.5 py-1.5">
+                  <span className="text-[11px] font-bold text-sky-800 truncate" title={doc.originalName}>{doc.originalName}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(project.id, doc)}
+                    className="shrink-0 text-sky-400 hover:text-sky-700 transition-colors cursor-pointer"
+                    title="Descargar"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
 
       {/* SECTION 1: Pending Investment Approvals */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300">
-        <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
-          <div className="bg-purple-50 text-purple-600 p-2.5 rounded-xl border border-purple-100">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-sans font-bold text-slate-900 text-base">Gerencia de Procura: Autorización de Inversión Inicial</h3>
-            <p className="text-xs text-slate-500 font-medium">Autorice el envío de expedientes de obra para la ronda de licitación. Fije los límites presupuestarios según las cubicaciones corregidas.</p>
-          </div>
-        </div>
+      <Card>
+        <SectionHeader
+          icon={<TrendingUp className="h-5 w-5" />}
+          title="Gerencia de Procura: Autorización de Inversión Inicial"
+          description="Autorice el envío de expedientes de obra para la ronda de licitación. Fije los límites presupuestarios según las cubicaciones corregidas."
+          color="purple"
+        />
 
         {pendingInvestmentApproval.length === 0 ? (
-          <div className="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-xs text-slate-400 font-medium italic">
-            No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario.
-          </div>
+          <EmptyState message="No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario." />
         ) : (
           <div className="space-y-5">
             <div className="space-y-2.5">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Peticiones Listas para Procura:</label>
-              <div className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scrollbar-smooth">
+              <div className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
                 {pendingInvestmentApproval.map((p) => (
                   <button
                     id={`procura-review-select-${p.id}`}
@@ -167,11 +229,11 @@ export default function ProcuraPanel({
             </div>
 
             {activeReviewProject && (
-              <form onSubmit={handleApproveInvestment} className="border-t border-slate-100 pt-5 space-y-5">
+              <form onSubmit={handleApproveInvestmentSubmit} className="border-t border-slate-100 pt-5 space-y-5">
                 <div className="p-4 bg-slate-50 rounded-xl text-xs space-y-2 border border-slate-100 font-medium">
                   <div className="flex justify-between items-center text-slate-800">
                     <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
-                    <span className="font-mono font-bold text-slate-900">${activeProjectEstimates(activeReviewProject)}</span>
+                    <span className="font-mono font-bold text-slate-900">${formatNumber(activeReviewProject.estimatedTotal)}</span>
                   </div>
                   <div><strong className="font-bold text-slate-400">Ubicación: </strong> {activeReviewProject.location}</div>
                   <div className="text-slate-500 italic mt-1.5 leading-relaxed pt-2 border-t border-slate-200/60">
@@ -179,90 +241,26 @@ export default function ProcuraPanel({
                   </div>
                 </div>
 
-                {/* Documents: planos y hojas de cálculo */}
-                {(() => {
-                  const docs = activeReviewProject.documents ?? [];
-                  const planos = docs.filter(d => d.documentType === "PLANO");
-                  const calcs = docs.filter(d => d.documentType === "CALC");
-                  if (docs.length === 0) return null;
-                  return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 space-y-2">
-                        <div className="flex items-center gap-1.5">
-                          <Map className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                          <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">
-                            Planos de Ingeniería ({planos.length})
-                          </span>
-                        </div>
-                        {planos.length === 0 ? (
-                          <p className="text-[10px] text-slate-400 italic font-medium">Sin planos adjuntos.</p>
-                        ) : (
-                          <ul className="space-y-1">
-                            {planos.map(doc => (
-                              <li key={doc.id} className="flex items-center justify-between gap-2 bg-white border border-indigo-100 rounded-lg px-2.5 py-1.5">
-                                <span className="text-[11px] font-bold text-indigo-800 truncate" title={doc.originalName}>{doc.originalName}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDownload(activeReviewProject.id, doc)}
-                                  className="shrink-0 text-indigo-400 hover:text-indigo-700 transition-colors cursor-pointer"
-                                  title="Descargar"
-                                >
-                                  <Download className="h-3.5 w-3.5" />
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <div className="rounded-xl border border-sky-100 bg-sky-50/40 p-3 space-y-2">
-                        <div className="flex items-center gap-1.5">
-                          <FileSpreadsheet className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                          <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider">
-                            Hojas de Cálculo ({calcs.length})
-                          </span>
-                        </div>
-                        {calcs.length === 0 ? (
-                          <p className="text-[10px] text-slate-400 italic font-medium">Sin hojas de cálculo adjuntas.</p>
-                        ) : (
-                          <ul className="space-y-1">
-                            {calcs.map(doc => (
-                              <li key={doc.id} className="flex items-center justify-between gap-2 bg-white border border-sky-100 rounded-lg px-2.5 py-1.5">
-                                <span className="text-[11px] font-bold text-sky-800 truncate" title={doc.originalName}>{doc.originalName}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDownload(activeReviewProject.id, doc)}
-                                  className="shrink-0 text-sky-400 hover:text-sky-700 transition-colors cursor-pointer"
-                                  title="Descargar"
-                                >
-                                  <Download className="h-3.5 w-3.5" />
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
+                {renderDocuments(activeReviewProject)}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Inversión Aprobada Autorizada ($)</label>
-                    <input
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Inversión Aprobada Autorizada ($)
+                    </label>
+                    <NumericInput
                       id="procura-approved-amount"
-                      type="number"
-                      step="0.01"
                       value={approvedAmount}
-                      onChange={(e) => { const v = e.target.value.replace(/[eE]/g, ''); setApprovedAmount(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
-                      onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                      onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); setApprovedAmount(v === "" ? "" : Math.max(0, parseFloat(v) || 0)); }}
+                      onChange={setApprovedAmount}
                       placeholder="0.00"
-                      className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-purple-500 bg-white font-mono font-bold"
+                      className="focus:ring-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas de Aprobación de Presupuesto</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Notas de Aprobación de Presupuesto
+                    </label>
                     <input
                       id="procura-notes"
                       type="text"
@@ -288,30 +286,25 @@ export default function ProcuraPanel({
             )}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* SECTION 2: Bid Evaluation & Final Hiring Decision */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition-all duration-300 grid grid-cols-1 gap-2 max-h-80 overflow-y-auto pr-2 -mr-2 scroll-smooth">
-        <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
-          <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl border border-emerald-100">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-sans font-bold text-slate-900 text-base">Evaluación Comparativa de Ofertas y Contratación</h3>
-            <p className="text-xs text-slate-500 font-medium">Examine el cuadro comparativo estructurado por los Analistas. Seleccione el contratista idóneo considerando precio, plazo y condiciones de anticipo.</p>
-          </div>
-        </div>
+      <Card className="max-h-80 overflow-y-auto scroll-smooth">
+        <SectionHeader
+          icon={<Users className="h-5 w-5" />}
+          title="Evaluación Comparativa de Ofertas y Contratación"
+          description="Examine el cuadro comparativo estructurado por los Analistas. Seleccione el contratista idóneo considerando precio, plazo y condiciones de anticipo."
+          color="emerald"
+        />
 
         {pendingContractSelection.length === 0 ? (
-          <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-            <p className="text-xs text-slate-400 italic font-medium">No hay propuestas ni cuadros comparativos pendientes por revisión de contratación en este momento.</p>
-          </div>
+          <EmptyState message="No hay propuestas ni cuadros comparativos pendientes por revisión de contratación en este momento." />
         ) : (
           <div className="space-y-6">
             {pendingContractSelection.map((p) => {
               const isRejectingThis = rejectingProjectId === p.id;
               return (
-                <div key={p.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/10 p-5 space-y-4 ">
+                <div key={p.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/10 p-5 space-y-4">
 
                   {/* Project Brief */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/60 pb-4 gap-3">
@@ -321,7 +314,7 @@ export default function ProcuraPanel({
                       </span>
                       <h4 className="text-sm font-bold text-slate-900 mt-1.5">{p.title}</h4>
                       <p className="text-xs text-slate-500 font-medium mt-0.5">
-                        {p.location} • Inversión Autorizada:{" "}
+                        {p.location} &bull; Inversión Autorizada:{" "}
                         <span className="font-mono text-slate-700 font-bold">${p.approvedInvestmentAmount?.toLocaleString("en-US")}</span>
                       </p>
                     </div>
@@ -452,7 +445,7 @@ export default function ProcuraPanel({
             })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* AI Evaluation Modal */}
       {aiEvalProject && (
@@ -478,9 +471,4 @@ function ProcuraSkeleton() {
       <SkeletonTable rows={3} columns={7} />
     </div>
   );
-}
-
-// Helper
-function activeProjectEstimates(p: Project) {
-  return p.estimatedTotal.toLocaleString("en-US", { minimumFractionDigits: 2 });
 }
