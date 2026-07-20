@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-07-20] — Refactor: PresidenciaDashboard des-espaguetizado (sin sobre-ingeniería)
+
+- Tipo: refactor
+- Qué:
+  - Extraídos 3 componentes presentacionales locales (single-use, sin nuevo archivo): `KpiCard` (4 usos, reemplaza 4 bloques copiados de ~77 líneas), `DonutChart` (SVG donut autocontenido, ~59 líneas fuera del render), `DistributionBar` (2 barras de leyenda duplicadas).
+  - Columnas de ambas `Table` movidas a constantes/factory de módulo: `AUDIT_COLUMNS` (const) y `getProjectColumns(onSelectProject)` (factory, cierra sobre el handler). El cuerpo del render ya no define arrays inline.
+  - Eliminado `STATUS_LABEL_MAP` (redefinía `STATUS_LABELS` de `utils.ts` con etiquetas divergentes → inconsistencia) y `getStatusBadge`. Ahora usa `<StatusBadge code={status} />` que cae a `STATUS_LABELS` del utils (única fuente de verdad). Nota: el dashboard ahora muestra las etiquetas cortas canónicas ("Creado", no "Enviado a Cierre de Obra").
+  - Corrección menor: `totalApprovedInvestment += p.approvedInvestmentAmount ?? p.estimatedTotal` (antes `if (p.approvedInvestmentAmount)` trataba 0 como falsy y caía a `estimatedTotal`).
+  - Eliminados imports muertos: `Filter`, `TrendingUp`, `AlertTriangle`, `SkeletonBlock`.
+- Por qué / causa raíz: el render tenía ~307 líneas porque 4 KPI cards idénticos, un donut SVG y dos arrays `columns` estaban inline en el JSX; además duplicaba el mapa de etiquetas de estado del utils.
+- Archivos: `src/views/PresidenciaDashboard.tsx`
+
+---
+
 ## [2026-07-20] — Feature: Polling en zonas esenciales (projects/auditLogs + supplier proposals)
 
 - Tipo: feature
