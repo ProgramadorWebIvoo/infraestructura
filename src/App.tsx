@@ -25,7 +25,7 @@ import LoginScreen from "./views/LoginScreen";
 // UI
 import SidebarNav from "./components/UI/SidebarNav";
 import MobileTopBar from "./components/UI/MobileTopBar";
-import InspectProjectModal from "./components/InspectProjectModal";
+import InspectProjectModal from "./components/Modals/InspectProjectModal";
 import { ToastProvider, useToast } from "./components/UI/Toast";
 
 // Hooks por dominio
@@ -245,9 +245,7 @@ function AppRoutes() {
         </main>
 
         {/* Inspect Modal */}
-        {inspectedProject && (
-          <InspectProjectModal project={inspectedProject} onClose={() => setInspectedProject(null)} />
-        )}
+        <InspectProjectModal isOpen={!!inspectedProject} project={inspectedProject} onClose={() => setInspectedProject(null)} />
 
         {/* Footer copyright */}
         <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400 font-medium">

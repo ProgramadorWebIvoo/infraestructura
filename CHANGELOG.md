@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## [2026-07-20] — Modal genérico unificado + refactor de ambos modales existentes
+
+**Tipo:** refactor
+
+**Qué:**
+1. **Creado `src/components/UI/Modal.tsx`** — componente modal genérico que centraliza:
+   - `createPortal` a `document.body` (evita roturas de z-index/stacking)
+   - `AnimatePresence` + `motion.div` con animación opacity/scale/y (0.2s) para entrada/salida
+   - Slot `header`: icono (con 6 colores), badge, título, infoLine, close button
+   - Slot `children`: body scrollable (`flex-1 overflow-y-auto p-6 space-y-6`)
+   - Slot `footer`: contenedor estructural (`p-4 border-t border-slate-100 bg-slate-50 shrink-0`)
+   - Props: `isOpen`, `onClose`, `maxWidth`, `closeDisabled`, `hideCloseButton`
+
+2. **InspectProjectModal refactorizado** (~268 → ~265 líneas):
+   - Ahora usa `<Modal>` internamente, eliminando backdrop, panel, header, footer duplicados
+   - Agregado `isOpen` prop + `project` nullable para compatibilidad con AnimatePresence
+   - Footer con botón "Entendido" como slot
+   - App.tsx: cambia de `{inspectedProject && <InspectProjectModal ... />}` a `<InspectProjectModal isOpen={!!inspectedProject} ... />`
+
+3. **EvaluacionInteligenteModal refactorizado** (~722 → ~600 líneas):
+   - Ahora usa `<Modal>` internamente, eliminando ~40 líneas de estructura duplicada (backdrop, motion.div, header, body wrapper, footer wrapper, close button)
+   - Header, close button disabled durante loading, footer contextual pasados como props de Modal
+   - Eliminados imports: `X`, `AnimatePresence` (ahora en Modal)
+   - Sub-vistas (IdleView, LoadingView, ResultView, ErrorView) sin cambios estructurales
+
+4. **Corregido error de tipos preexistente** en ResultView:
+   - `result.risks` → `result.riskFactors` (nombre real del campo en AIEvaluationResult)
+   - `result.qualitativeAnalysis` → `result.summary` (nombre real del campo en AIEvaluationResult)
+
+**Por qué / causa raíz:** Dos modales con ~40 líneas de estructura idéntica duplicada (backdrop, panel, header, close button, body wrapper, footer). InspectProjectModal usaba createPortal pero sin animaciones; EvaluacionInteligenteModal tenía animaciones pero sin createPortal. Inconsistencia visual y de comportamiento. Además, EvaluacionInteligenteModal importaba `AnimatePresence` pero nunca lo usaba.
+
+**Archivos:**
+- `src/components/UI/Modal.tsx` — [NUEVO]
+- `src/components/InspectProjectModal.tsx` — refactor
+- `src/components/EvaluacionInteligenteModal.tsx` — refactor
+- `src/App.tsx` — actualizado render de InspectProjectModal
+
+---
+
 ## [2026-07-20] — Refactor: UI components, eliminación de código duplicado y debug en vistas
 
 **Tipo:** refactor

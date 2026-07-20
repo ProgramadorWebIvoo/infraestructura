@@ -20,7 +20,7 @@ import {
   Download,
   BrainCircuit,
 } from "lucide-react";
-import EvaluacionInteligenteModal from "../components/EvaluacionInteligenteModal";
+import EvaluacionInteligenteModal from "../components/Modals/EvaluacionInteligenteModal";
 import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
 import { apiDownload } from "../services/api";
 import Card from "../components/UI/Card";
