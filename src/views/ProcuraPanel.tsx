@@ -24,8 +24,8 @@ import {
   BrainCircuit,
 } from "lucide-react";
 import { ProjectDocument } from "../types";
-import EvaluacionInteligenteModal from "./EvaluacionInteligenteModal";
-import { SkeletonCard, SkeletonTable } from "./SkeletonLoader";
+import EvaluacionInteligenteModal from "../components/EvaluacionInteligenteModal";
+import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
 
 interface ProcuraPanelProps {
   projects: Project[];

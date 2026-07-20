@@ -16,7 +16,7 @@ import {
   HelpCircle,
   FileSpreadsheet
 } from "lucide-react";
-import { SkeletonCard, SkeletonBlock, SkeletonTable } from "./SkeletonLoader";
+import { SkeletonCard, SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
 
 interface FinanzasPanelProps {
   projects: Project[];

@@ -17,7 +17,7 @@ import {
   MapPin, 
   FileText
 } from "lucide-react";
-import { SkeletonCard, SkeletonBlock } from "./SkeletonLoader";
+import { SkeletonCard, SkeletonBlock } from "../components/SkeletonLoader";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;

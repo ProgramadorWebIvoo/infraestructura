@@ -19,7 +19,7 @@ import {
   Paperclip,
   FilePlus2,
 } from "lucide-react";
-import { SkeletonBlock, SkeletonCard, SkeletonList } from "./SkeletonLoader";
+import { SkeletonBlock, SkeletonCard, SkeletonList } from "../components/SkeletonLoader";
 
 interface CierreObraPanelProps {
   projects: Project[];

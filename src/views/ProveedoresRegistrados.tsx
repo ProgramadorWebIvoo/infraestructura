@@ -23,7 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { SkeletonBlock, SkeletonTable } from "./SkeletonLoader";
+import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 

@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## [2026-07-20] — Refactor: views/ folder, alias fix, LoginScreen extraction, normalization
+
+**Tipo:** refactor
+
+**Qué:**
+1. Creada carpeta `src/views/` y migradas las 10 vistas (componentes ruteables) desde `src/components/`.
+2. Extraído `LoginScreen` de `App.tsx` a `src/views/LoginScreen.tsx`.
+3. Corregido alias `@` en `vite.config.ts` y `tsconfig.json`: apuntaba a raíz (`./`), ahora apunta a `./src`.
+4. Agregado `"types": ["vite/client"]` en `tsconfig.json` y excluido `mobile/` para limpiar type-checking.
+5. Eliminado `import React` innecesario en `App.tsx` (React 19 + react-jsx).
+6. Limpiados iconos no utilizados del import de lucide-react en `App.tsx`.
+
+**Por qué / causa raíz:** Los componentes vista y los componentes reutilizables estaban mezclados sin separación de propósito. El alias incorrecto podía causar confusión y errores de resolución de módulos.
+
+**Archivos:**
+- `src/views/` (11 archivos — nuevo directorio)
+- `src/components/` (quedan: `UI/`, `SkeletonLoader.tsx`, `EvaluacionInteligenteModal.tsx`)
+- `src/App.tsx` — imports actualizados + LoginScreen extraído
+- `vite.config.ts` — alias `@` → `./src`
+- `tsconfig.json` — alias `@/*` → `./src/*`, +types, +exclude
+
+---
+
+## [2026-07-20] — Fix: overflow horizontal en header de lista de usuarios (UsuariosPanel)
+
+**Tipo:** fix
+
+**Qué:** El contenedor de la lista de usuarios en `UsuariosPanel` usaba simultáneamente `flex flex-col` y `grid grid-cols-1`, clases CSS incompatibles que provocaban que el header "Usuarios del sistema - n° usuarios" se estirara horizontalmente sin control. Además contenía la clase mal escrita `scrool-smooth` y un hack de scrollbar (`pr-2 -mr-2`).
+
+**Causa raíz:** `grid grid-cols-1` sobreescribe `flex flex-col` como display. Al ser un grid de 1 columna, el header (flex item del grid) ocupaba todo el ancho disponible del contenedor sin restricción de overflow.
+
+**Cambios:**
+- Eliminado `grid grid-cols-1` (conflicto con flex)
+- Eliminado `pr-2 -mr-2` (hack de scrollbar innecesario)
+- Corregido `scrool-smooth` → eliminado (clase mal escrita, no existe en Tailwind)
+- Se conserva `flex flex-col overflow-y-auto max-h-148`
+
+**Archivos:**
+- `src/components/UsuariosPanel.tsx`
+
+---
+
 ## [2026-07-20] — Refactor: Sidebar nav extraído a componente UI + mejoras visuales
 
 **Tipo:** refactor + feature

@@ -20,7 +20,7 @@ import {
   Loader2,
   CheckCircle
 } from "lucide-react";
-import { SkeletonCard, SkeletonBlock, SkeletonList } from "./SkeletonLoader";
+import { SkeletonCard, SkeletonBlock, SkeletonList } from "../components/SkeletonLoader";
 
 interface ImportResult {
   message: string;

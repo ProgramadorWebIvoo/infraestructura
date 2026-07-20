@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   MapPin
 } from "lucide-react";
-import { SkeletonStats, SkeletonStatsDark, SkeletonBlock, SkeletonTable, SkeletonCard } from "./SkeletonLoader";
+import { SkeletonStats, SkeletonStatsDark, SkeletonBlock, SkeletonTable, SkeletonCard } from "../components/SkeletonLoader";
 
 interface PresidenciaDashboardProps {
   projects: Project[];
