@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Project, ProjectStatus, Contractor, AuditLog, Proposal } from "./types";
 import { 
   INITIAL_CONTRACTORS, 
@@ -26,23 +26,16 @@ import PropuestaMaterialesPublica from "./components/PropuestaMaterialesPublica"
 import UsuariosPanel from "./components/UsuariosPanel";
 
 // Icons
-import { 
-  Building2, 
-  TrendingUp, 
-  CheckSquare, 
-  FileSearch, 
-  Users, 
-  DollarSign, 
-  Settings,
+import {
+  Building2,
   X,
   MapPin,
   Calendar,
   CheckCircle,
-  Menu,
   LogIn,
-  LogOut,
-  UserCog
 } from "lucide-react";
+import SidebarNav from "./components/UI/SidebarNav";
+import MobileTopBar from "./components/UI/MobileTopBar";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -551,14 +544,6 @@ function AppRoutes() {
     navigate("/presidencia");
   };
 
-  const navLinkClass = (activeClass: string) => ({ isActive }: { isActive: boolean }) =>
-    `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-      isActive ? activeClass : "text-slate-400 hover:bg-slate-900 hover:text-white"
-    }`;
-
-  const sidebarIconClass = (isActive: boolean, activeClass = "text-white") =>
-    `h-4.5 w-4.5 shrink-0 ${isActive ? activeClass : "text-slate-400"}`;
-
   if (isPublicPath(location.pathname)) {
     return (
       <Routes>
@@ -584,226 +569,21 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
       
-      {/* Mobile Sidebar Back Drop */}
-      {isMobileSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 lg:hidden"
-          onClick={() => setIsMobileSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* Sidebar navigation */}
-      <aside 
-        className={`fixed inset-y-0 left-0 w-64 bg-[#0F172A] text-white border-r border-slate-800 z-50 flex flex-col transition-transform duration-300 transform lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0 ${
-          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {/* Sidebar Header (Logo/Brand) */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
-              <Building2 className="h-5 w-5 text-white stroke-[2.5]" />
-            </div>
-            <div>
-              <h2 className="text-sm font-black tracking-tight text-white leading-none">IVOO GESTIÓN</h2>
-              <span className="text-[9px] text-sky-400 font-mono tracking-wider font-extrabold px-1.5 py-0.5 rounded-md bg-slate-800 border border-slate-700/50 mt-1 inline-block">INTEGRADO</span>
-            </div>
-          </div>
-          <button 
-            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/50 cursor-pointer"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Sidebar Navigation Items */}
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
-          <div className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest px-3 mb-3">
-            Flujos de Trabajo
-          </div>
-
-          {canAccess("/presidencia") && (
-            <NavLink
-              to="/presidencia"
-              id="sidebar-presidencia"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-slate-800 text-white shadow-sm border border-slate-700/50 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <TrendingUp className={sidebarIconClass(isActive, "text-sky-400")} />
-                  <span>Presidencia</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/infraestructura") && (
-            <NavLink
-              to="/infraestructura"
-              id="sidebar-infraestructura"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-sky-500 text-white shadow-md shadow-sky-500/20 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <Building2 className={sidebarIconClass(isActive)} />
-                  <span>Infra / Mant</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/cierre-obra") && (
-            <NavLink
-              to="/cierre-obra"
-              id="sidebar-cierre"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-blue-600 text-white shadow-md shadow-blue-600/20 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <CheckSquare className={sidebarIconClass(isActive)} />
-                  <span>Cierre Obra</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/procura") && (
-            <NavLink
-              to="/procura"
-              id="sidebar-procura"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-purple-600 text-white shadow-md shadow-purple-600/20 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <FileSearch className={sidebarIconClass(isActive)} />
-                  <span>Procura</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/analistas") && (
-            <NavLink
-              to="/analistas"
-              id="sidebar-analistas"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <Users className={sidebarIconClass(isActive)} />
-                  <span>Analistas</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/finanzas") && (
-            <NavLink
-              to="/finanzas"
-              id="sidebar-finanzas"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-rose-600 text-white shadow-md shadow-rose-600/20 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <DollarSign className={sidebarIconClass(isActive)} />
-                  <span>Finanzas</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/catalogos") && (
-            <NavLink
-              to="/catalogos"
-              id="sidebar-catalogos"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-slate-800 text-white border border-slate-700/50 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <Settings className={sidebarIconClass(isActive)} />
-                  <span>Proveedores</span>
-                </>
-              )}
-            </NavLink>
-          )}
-
-          {canAccess("/usuarios") && (
-            <NavLink
-              to="/usuarios"
-              id="sidebar-usuarios"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className={navLinkClass("bg-sky-500 text-white shadow-md shadow-sky-500/20 font-black")}
-            >
-              {({ isActive }) => (
-                <>
-                  <UserCog className={sidebarIconClass(isActive)} />
-                  <span>Usuarios</span>
-                </>
-              )}
-            </NavLink>
-          )}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800 shrink-0">
-          <button
-            id="btn-logout"
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900 hover:text-white"
-          >
-            <LogOut className="h-4.5 w-4.5 shrink-0" /> Cerrar Sesión
-          </button>
-        </div>
-      </aside>
+      <SidebarNav
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+        user={authUser}
+        onLogout={handleLogout}
+        canAccess={canAccess}
+      />
 
       {/* Main Container Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         
-        {/* Top Banner Header */}
-        <header className="bg-[#0F172A] text-white border-b border-slate-800 shadow-sm relative overflow-hidden md:hidden">
-          {/* Subtle accent gradient behind header */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-          
-          <div className="max-w-7xl mx-1 px-1 sm:px-6 lg:px-8 pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-    
-            {/* Logo Brand with mobile Hamburger */}
-            <div className="flex items-center gap-3.5">
-              <button 
-                id="btn-mobile-menu"
-                onClick={() => setIsMobileSidebarOpen(true)}
-                className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-850 rounded-xl mr-1 transition-colors cursor-pointer"
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-              <div className="w-11 h-11 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20 transform hover:scale-105 transition-transform duration-300">
-                <Building2 className="h-5 w-5 text-white stroke-[2.5]" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black font-sans tracking-tight text-white flex items-center gap-2">
-                  IVOO GESTIÓN <span className="text-sky-400 font-mono text-[10px] tracking-wider font-extrabold px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/50">INTEGRADO</span>
-                </h1>
-                <p className="text-[11px] text-slate-400 font-mono uppercase tracking-widest font-semibold mt-0.5">
-                  Core Base de Datos &amp; Workflow de Infraestructura
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Stats Summary */}
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <div className="hidden md:block text-slate-400 text-right">
-                <div className="text-[20px] text-slate-500 mt-0.5">{authUser?.email ?? "Sesion activa"}</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <MobileTopBar
+          user={authUser}
+          onMenuClick={() => setIsMobileSidebarOpen(true)}
+        />
 
         {/* Main Workspace Body */}
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">

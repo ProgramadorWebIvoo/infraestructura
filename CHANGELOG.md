@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [2026-07-20] — Refactor: Sidebar nav extraído a componente UI + mejoras visuales
+
+**Tipo:** refactor + feature
+
+**Qué:**
+1. Sidebar nav (antes inline en `App.tsx` ~170 líneas) encapsulado en `src/components/UI/SidebarNav.tsx`
+2. Mejoras visuales para UX más fluida y moderna:
+
+### Refactor
+- Creada carpeta `src/components/UI/` y componente `SidebarNav` con props tipadas (`isOpen`, `onClose`, `user`, `onLogout`, `canAccess`)
+- `App.tsx` reducido en ~170 líneas; eliminadas dependencias de 6 iconos lucide-react y función `NavLink`
+- Compilación 100% limpia (0 errores nuevos)
+
+### Mejoras visuales
+- **Header**: Gradiente `from-sky-400 to-sky-600` en logo + glow difuso en background
+- **Nav items**: `border-l-2` con color de sección como indicador activo, efecto `hover:translate-x-0.5`, íconos con `group-hover:scale-110 group-hover:rotate-[3deg]`
+- **Section label**: Indicador LED pulsante `bg-sky-500/60 animate-pulse`
+- **Footer**: Avatar con iniciales del usuario (`bg-gradient-to-br from-sky-400 to-sky-600`), nombre y email truncados
+- **Logout**: `group-hover:translate-x-0.5` en icono
+- **Mobile backdrop**: Transición `opacity` con `duration-300 ease-out` en vez de render condicional brusco
+- **Sutilezas**: `border-slate-800/80` en separadores, `shadow-sm` en items activos, `ring-1 ring-white/10` en avatares
+
+**Archivos:**
+- `src/components/UI/SidebarNav.tsx` — [NUEVO]
+- `src/App.tsx` — import SidebarNav, eliminado bloque inline y funciones auxiliares
+
+---
+
 ## [2026-07-17] — Feature: Importación automática de propuestas de proveedores al cuadro comparativo (Analistas)
 
 **Tipo:** feature
@@ -121,6 +149,7 @@
 
 **Estructura clave:**
 - `src/App.tsx` — Ruteo, estado global, handlers de API, modal de inspección
+- `src/components/UI/` — Componentes de UI encapsulados y reutilizables
 - `src/components/ProcuraPanel.tsx` — Panel de Procura con tabla de evaluación comparativa + botón Evaluación Inteligente IA
 - `src/components/CierreObraPanel.tsx` — ✅ Overflow horizontal resuelto (grid + truncate, ver 2026-07-17)
 - `src/components/AnalistasPanel.tsx` — Panel de Analistas (carga de propuestas y cuadro comparativo)
