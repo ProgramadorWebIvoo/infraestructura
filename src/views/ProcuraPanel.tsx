@@ -27,6 +27,7 @@ import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import NumericInput from "../components/UI/NumericInput";
 import EmptyState from "../components/UI/EmptyState";
+import { Table, type Column } from "../components/UI/Table";
 import { formatNumber } from "../utils";
 
 interface ProcuraPanelProps {
@@ -388,55 +389,54 @@ export default function ProcuraPanel({
 
                   {/* Proposals Spreadsheet Comparer */}
                   {!isRejectingThis && (
-                    <div className="overflow-x-auto border border-slate-100 rounded-xl bg-white">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[9px] border-b border-slate-200">
-                            <th className="py-3 px-4">Contratista (Código)</th>
-                            <th className="py-3 px-3 text-right">Insumos/Materiales</th>
-                            <th className="py-3 px-3 text-right">Mano de Obra</th>
-                            <th className="py-3 px-3 text-right text-sky-700 font-black">Costo Total</th>
-                            <th className="py-3 px-3 text-center">Entrega</th>
-                            <th className="py-3 px-3 text-center">Anticipo Pactado</th>
-                            <th className="py-3 px-4 text-center">Contratación</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {p.proposals?.map((prop) => (
-                            <tr key={prop.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-4 px-4">
+                    <div className="border border-slate-100 rounded-xl bg-white overflow-hidden">
+                      <Table
+                        columns={[
+                          {
+                            key: "contractor",
+                            label: "Contratista (Código)",
+                            render: (prop) => (
+                              <>
                                 <div className="font-bold text-slate-800 text-[12px]">{prop.contractorName}</div>
                                 <div className="font-mono text-[9px] text-sky-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
-                                <div className="text-[10px] text-slate-400 mt-1 max-w-xs truncate font-medium" title={prop.description}>
-                                  {prop.description}
-                                </div>
-                              </td>
-                              <td className="py-4 px-3 text-right font-mono font-medium text-slate-600">${prop.materialCost.toLocaleString("en-US")}</td>
-                              <td className="py-4 px-3 text-right font-mono font-medium text-slate-600">${prop.laborCost.toLocaleString("en-US")}</td>
-                              <td className="py-4 px-3 text-right font-mono font-black text-slate-900 text-sm">${prop.totalCost.toLocaleString("en-US")}</td>
-                              <td className="py-4 px-3 text-center text-slate-600 font-semibold">{prop.deliveryWeeks} semanas</td>
-                              <td className="py-4 px-3 text-center font-mono">
-                                <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[10px] border border-emerald-200">
-                                  {prop.negotiatedAdvancePercent}%
-                                </span>
-                                <div className="text-[9px] text-slate-400 mt-1 font-semibold">
-                                  (${(prop.totalCost * (prop.negotiatedAdvancePercent / 100)).toLocaleString("en-US", { maximumFractionDigits: 0 })})
-                                </div>
-                              </td>
-                              <td className="py-4 px-4 text-center">
-                                <button
-                                  id={`btn-hire-${p.id}-${prop.contractorCode}`}
-                                  onClick={() => onSelectContractor(p.id, prop.contractorCode, prop.id)}
-                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-xl shadow-md shadow-sky-500/10 transition-colors cursor-pointer"
-                                >
-                                  <ShieldCheck className="h-4 w-4" />
-                                  Adjudicar
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                                <div className="text-[10px] text-slate-400 mt-1 max-w-xs truncate font-medium" title={prop.description}>{prop.description}</div>
+                              </>
+                            ),
+                          },
+                          { key: "materialCost", label: "Insumos/Materiales", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">${prop.materialCost.toLocaleString("en-US")}</span> },
+                          { key: "laborCost", label: "Mano de Obra", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">${prop.laborCost.toLocaleString("en-US")}</span> },
+                          { key: "totalCost", label: "Costo Total", align: "right", render: (prop) => <span className="font-mono font-black text-slate-900 text-sm">${prop.totalCost.toLocaleString("en-US")}</span> },
+                          { key: "deliveryWeeks", label: "Entrega", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks} semanas</span> },
+                          {
+                            key: "advance",
+                            label: "Anticipo Pactado",
+                            align: "center",
+                            render: (prop) => (
+                              <>
+                                <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[10px] border border-emerald-200">{prop.negotiatedAdvancePercent}%</span>
+                                <div className="text-[9px] text-slate-400 mt-1 font-semibold">(${(prop.totalCost * (prop.negotiatedAdvancePercent / 100)).toLocaleString("en-US", { maximumFractionDigits: 0 })})</div>
+                              </>
+                            ),
+                          },
+                          {
+                            key: "actions",
+                            label: "Contratación",
+                            align: "center",
+                            render: (prop) => (
+                              <button
+                                id={`btn-hire-${p.id}-${prop.contractorCode}`}
+                                onClick={() => onSelectContractor(p.id, prop.contractorCode, prop.id)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-xl shadow-md shadow-sky-500/10 transition-colors cursor-pointer"
+                              >
+                                <ShieldCheck className="h-4 w-4" />
+                                Adjudicar
+                              </button>
+                            ),
+                          },
+                        ]}
+                        data={p.proposals ?? []}
+                        rowKey={(prop) => prop.id}
+                      />
                     </div>
                   )}
 

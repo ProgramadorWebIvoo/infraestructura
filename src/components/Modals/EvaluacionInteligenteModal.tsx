@@ -31,6 +31,7 @@ import {
 import { Project, Proposal } from "../../types";
 import { evaluateProposals, AIEvaluationResult, AIProviderUsed } from "../../services/aiEvaluationService";
 import Modal from "../UI/Modal";
+import { Table, type Column } from "../UI/Table";
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -304,41 +305,33 @@ function IdleView({
         </div>
       </div>
 
-      {/* Tabla de propuestas */}
       <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-            <tr>
-              <th className="px-3 py-2 text-left">Contratista</th>
-              <th className="px-3 py-2 text-right">Mat.</th>
-              <th className="px-3 py-2 text-right">M.O.</th>
-              <th className="px-3 py-2 text-right">Total</th>
-              <th className="px-3 py-2 text-center">Plazo</th>
-              <th className="px-3 py-2 text-center">Rating</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {proposals.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-50/60">
-                <td className="px-3 py-2 font-semibold text-slate-800 text-left">{p.contractorName}</td>
-                <td className="px-3 py-2 font-mono text-right">${p.materialCost.toLocaleString()}</td>
-                <td className="px-3 py-2 font-mono text-right">${p.laborCost.toLocaleString()}</td>
-                <td className="px-3 py-2 font-mono font-bold text-slate-900 text-right">${p.totalCost.toLocaleString()}</td>
-                <td className="px-3 py-2 text-center">{p.deliveryWeeks} sem</td>
-                <td className="px-3 py-2 text-center">
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                    p.contractorRating == null ? "bg-slate-50 text-slate-400" :
-                    p.contractorRating >= 4 ? "bg-emerald-50 text-emerald-700" :
-                    p.contractorRating >= 3 ? "bg-amber-50 text-amber-700" :
-                    "bg-red-50 text-red-700"
-                  }`}>
-                    {p.contractorRating?.toFixed(1) ?? "—"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table
+          columns={[
+            { key: "contractorName", label: "Contratista", render: (p) => <span className="font-semibold text-slate-800">{p.contractorName}</span> },
+            { key: "materialCost", label: "Mat.", align: "right", render: (p) => <span className="font-mono">${p.materialCost.toLocaleString()}</span> },
+            { key: "laborCost", label: "M.O.", align: "right", render: (p) => <span className="font-mono">${p.laborCost.toLocaleString()}</span> },
+            { key: "totalCost", label: "Total", align: "right", render: (p) => <span className="font-mono font-bold text-slate-900">${p.totalCost.toLocaleString()}</span> },
+            { key: "deliveryWeeks", label: "Plazo", align: "center", render: (p) => <>{p.deliveryWeeks} sem</> },
+            {
+              key: "contractorRating",
+              label: "Rating",
+              align: "center",
+              render: (p) => (
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  p.contractorRating == null ? "bg-slate-50 text-slate-400" :
+                  p.contractorRating >= 4 ? "bg-emerald-50 text-emerald-700" :
+                  p.contractorRating >= 3 ? "bg-amber-50 text-amber-700" :
+                  "bg-red-50 text-red-700"
+                }`}>
+                  {p.contractorRating?.toFixed(1) ?? "—"}
+                </span>
+              ),
+            },
+          ]}
+          data={proposals}
+          rowKey={(p) => p.id}
+        />
       </div>
 
       {/* Selector de proveedor AI */}

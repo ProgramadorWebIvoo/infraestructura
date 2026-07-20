@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { SkeletonStats, SkeletonStatsDark, SkeletonBlock, SkeletonTable, SkeletonCard } from "../components/SkeletonLoader";
 import StatusBadge from "../components/UI/StatusBadge";
+import { Table, type Column } from "../components/UI/Table";
 import { getRoleColor } from "../utils";
 
 interface PresidenciaDashboardProps {
@@ -262,68 +263,25 @@ export default function PresidenciaDashboard({
             </span>
           </div>
         </div>
-        {/* 1. Agregamos el alto máximo y el overflow vertical al contenedor */}
-        <div className="overflow-x-auto max-h-[350px] overflow-y-auto border border-slate-100 rounded-lg">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50/70">
-                {/* 2. Añadimos 'sticky top-0 bg-slate-50 z-10' a cada th para que no se pierdan al hacer scroll */}
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono whitespace-nowrap border-b border-slate-100">Timestamp</th>
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono border-b border-slate-100">Rol</th>
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono border-b border-slate-100">Usuario</th>
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono border-b border-slate-100">Acción</th>
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono border-b border-slate-100">Proyecto</th>
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono whitespace-nowrap border-b border-slate-100">Ref. ID</th>
-                <th className="sticky top-0 bg-slate-50 z-10 py-3 px-5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono border-b border-slate-100">Detalles</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {auditLogs.map((log, index) => (
-                <tr
-                  key={log.id}
-                  className={`hover:bg-sky-50/30 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
-                >
-                  <td className="py-3.5 px-5 text-[10px] font-mono text-slate-400 font-semibold whitespace-nowrap">
-                    {log.timestamp}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className={`text-[9px] font-mono font-bold px-2.5 py-1 rounded-lg border ${getRoleColor(log.role)}`}>
-                      {log.role}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    {log.userName ? (
-                      <span className="text-xs font-semibold text-slate-700">{log.userName}</span>
-                    ) : (
-                      <span className="text-[10px] text-slate-300 italic font-mono">—</span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="text-xs font-bold text-slate-800">{log.action}</span>
-                  </td>
-                  <td className="py-3.5 px-4 max-w-[200px]">
-                    <span className="text-xs font-medium text-slate-700 line-clamp-1">{log.projectTitle}</span>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="text-[10px] text-sky-600 font-bold font-mono whitespace-nowrap">{log.projectId}</span>
-                  </td>
-                  <td className="py-3.5 px-5 max-w-xs">
-                    <span className="text-xs text-slate-500 font-medium line-clamp-2">
-                      {log.details || `Operación sobre: ${log.projectTitle}`}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {auditLogs.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-14 text-center text-slate-400 font-medium italic text-sm">
-                    No hay logs registrados todavía.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          columns={[
+            { key: "timestamp", label: "Timestamp", render: (log) => <span className="text-[10px] font-mono text-slate-400 font-semibold whitespace-nowrap">{log.timestamp}</span> },
+            { key: "role", label: "Rol", render: (log) => <span className={`text-[9px] font-mono font-bold px-2.5 py-1 rounded-lg border ${getRoleColor(log.role)}`}>{log.role}</span> },
+            { key: "userName", label: "Usuario", render: (log) => log.userName ? <span className="text-xs font-semibold text-slate-700">{log.userName}</span> : <span className="text-[10px] text-slate-300 italic font-mono">—</span> },
+            { key: "action", label: "Acción", render: (log) => <span className="text-xs font-bold text-slate-800">{log.action}</span> },
+            { key: "projectTitle", label: "Proyecto", render: (log) => <span className="text-xs font-medium text-slate-700 line-clamp-1 max-w-[200px] block">{log.projectTitle}</span> },
+            { key: "projectId", label: "Ref. ID", render: (log) => <span className="text-[10px] text-sky-600 font-bold font-mono whitespace-nowrap">{log.projectId}</span> },
+            { key: "details", label: "Detalles", render: (log) => <span className="text-xs text-slate-500 font-medium line-clamp-2 max-w-xs block">{log.details || `Operación sobre: ${log.projectTitle}`}</span> },
+          ]}
+          data={auditLogs}
+          rowKey={(log) => log.id}
+          emptyMessage="No hay logs registrados todavía."
+          maxHeight="350px"
+          stickyHeader
+          containerClassName="border border-slate-100 rounded-lg"
+          rowHoverClass="hover:bg-sky-50/30"
+          pageSize={25}
+        />
       </div>
 
       {/* Master Database Table view */}
@@ -379,78 +337,70 @@ export default function PresidenciaDashboard({
           </div>
         </div>
 
-        {/* Table container */}
-        <div className="overflow-x-auto max-h-[350px] overflow-y-auto border border-slate-100 rounded-lg">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold font-mono text-[9px] uppercase tracking-wider">
-                <th className="py-4 px-5">Código / Obra</th>
-                <th className="py-4 px-4">Ubicación</th>
-                <th className="py-4 px-4">Estimado Materiales</th>
-                <th className="py-4 px-4">Contrato Final</th>
-                <th className="py-4 px-4">Estado del Flujo</th>
-                <th className="py-4 px-5 text-right">Detalle</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredProjects.map((p) => {
-                
-                // Contractor check
-                const winningProposal = p.proposals?.find(prop => prop.contractorCode === p.selectedContractorCode);
-                const finalContractValue = winningProposal ? winningProposal.totalCost : null;
-
-                return (
-                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-4 px-5">
-                      <div className="font-mono text-sky-600 font-bold mb-0.5">{p.id}</div>
-                      <div className="font-sans font-bold text-slate-800 line-clamp-1">{p.title}</div>
-                      <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1 font-semibold">
-                        <span className={`w-1.5 h-1.5 rounded-full ${p.type === "INFRAESTRUCTURA" ? "bg-sky-500" : "bg-slate-400"}`}></span>
-                        {p.type} • Creado el {p.createdDate}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-slate-600">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-                        <span className="line-clamp-1 font-medium">{p.location}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 font-mono font-bold text-slate-700">
-                      ${p.estimatedTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-4 px-4 font-mono font-black text-slate-900">
-                      {finalContractValue ? (
-                        <span>${finalContractValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                      ) : (
-                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider italic">Sin contratar</span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4">
-                      {getStatusBadge(p.status)}
-                    </td>
-                    <td className="py-4 px-5 text-right">
-                      <button
-                        id={`btn-inspect-${p.id}`}
-                        onClick={() => onSelectProject(p)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-100 hover:bg-sky-100 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Inspeccionar
-                        <ArrowRight className="h-3 w-3" />
-                      </button>
-                    </td>
-                  </tr>
+        <Table
+          columns={[
+            {
+              key: "title",
+              label: "Código / Obra",
+              render: (p) => (
+                <>
+                  <div className="font-mono text-sky-600 font-bold mb-0.5">{p.id}</div>
+                  <div className="font-sans font-bold text-slate-800 line-clamp-1">{p.title}</div>
+                  <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1 font-semibold">
+                    <span className={`w-1.5 h-1.5 rounded-full ${p.type === "INFRAESTRUCTURA" ? "bg-sky-500" : "bg-slate-400"}`} />
+                    {p.type} • Creado el {p.createdDate}
+                  </div>
+                </>
+              ),
+            },
+            {
+              key: "location",
+              label: "Ubicación",
+              render: (p) => (
+                <div className="flex items-center gap-1 text-slate-600">
+                  <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="line-clamp-1 font-medium">{p.location}</span>
+                </div>
+              ),
+            },
+            { key: "estimatedTotal", label: "Estimado Materiales", render: (p) => <span className="font-mono font-bold text-slate-700">${p.estimatedTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+            {
+              key: "finalContractValue",
+              label: "Contrato Final",
+              render: (p) => {
+                const wp = p.proposals?.find(prop => prop.contractorCode === p.selectedContractorCode);
+                const val = wp ? wp.totalCost : null;
+                return val ? (
+                  <span className="font-mono font-black text-slate-900">${val.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                ) : (
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider italic">Sin contratar</span>
                 );
-              })}
-              {filteredProjects.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 font-medium italic">
-                    No se encontraron obras con los filtros aplicados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              },
+            },
+            { key: "status", label: "Estado del Flujo", render: (p) => getStatusBadge(p.status) },
+            {
+              key: "actions",
+              label: "Detalle",
+              align: "right",
+              render: (p) => (
+                <button
+                  id={`btn-inspect-${p.id}`}
+                  onClick={() => onSelectProject(p)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-100 hover:bg-sky-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Inspeccionar
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              ),
+            },
+          ]}
+          data={filteredProjects}
+          rowKey={(p) => p.id}
+          emptyMessage="No se encontraron obras con los filtros aplicados."
+          maxHeight="350px"
+          containerClassName="border border-slate-100 rounded-lg"
+          pageSize={15}
+        />
               
       </div>
 

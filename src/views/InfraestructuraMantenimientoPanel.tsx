@@ -23,6 +23,7 @@ import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import NumericInput from "../components/UI/NumericInput";
 import AlertBanner from "../components/UI/AlertBanner";
+import { Table, type Column } from "../components/UI/Table";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;
@@ -326,55 +327,41 @@ export default function InfraestructuraMantenimientoPanel({
             </div>
           </form>
 
-          {/* Materials table */}
           <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+            <Table
+              columns={[
+                { key: "name", label: "Material / Servicio", render: (m) => <span className="text-slate-800 font-bold">{m.name}</span> },
+                { key: "quantity", label: "Cantidad", align: "center", render: (m) => <span className="text-slate-600 font-medium">{m.quantity} {m.unit}</span> },
+                { key: "estimatedUnitPrice", label: "Precio Unit. (Est)", align: "right", render: (m) => <span className="font-mono text-slate-500 font-semibold">${m.estimatedUnitPrice.toFixed(2)}</span> },
+                { key: "total", label: "Total (Est)", align: "right", render: (m) => <span className="font-mono font-bold text-slate-900">${(m.quantity * m.estimatedUnitPrice).toFixed(2)}</span> },
+                {
+                  key: "actions",
+                  label: "Remover",
+                  align: "center",
+                  render: (_m, index) => (
+                    <button
+                      id={`btn-remove-mat-${index}`}
+                      type="button"
+                      onClick={() => handleRemoveMaterial(index)}
+                      className="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ),
+                },
+              ]}
+              data={addedMaterials}
+              rowKey={(_m, index) => index}
+              emptyMessage="No se han agregado materiales. Agregue elementos arriba."
+              pageSize={10}
+              footer={addedMaterials.length > 0 ? (
                 <tr>
-                  <th className="py-3 px-4 text-[10px] uppercase tracking-wider">Material / Servicio</th>
-                  <th className="py-3 px-4 text-center text-[10px] uppercase tracking-wider">Cantidad</th>
-                  <th className="py-3 px-4 text-right text-[10px] uppercase tracking-wider">Precio Unit. (Est)</th>
-                  <th className="py-3 px-4 text-right text-[10px] uppercase tracking-wider">Total (Est)</th>
-                  <th className="py-3 px-4 text-center text-[10px] uppercase tracking-wider">Remover</th>
+                  <td colSpan={3} className="py-3.5 px-4 text-right text-slate-500 uppercase tracking-wider text-[9px]">Costo Estimado Materiales:</td>
+                  <td className="py-3.5 px-4 text-right font-mono text-sky-700 text-sm font-black">${materialsSubtotal.toFixed(2)}</td>
+                  <td />
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {addedMaterials.map((m, index) => (
-                  <tr key={index} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 px-4 text-slate-800 font-bold">{m.name}</td>
-                    <td className="py-3 px-4 text-center text-slate-600 font-medium">{m.quantity} {m.unit}</td>
-                    <td className="py-3 px-4 text-right font-mono text-slate-500 font-semibold">${m.estimatedUnitPrice.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">${(m.quantity * m.estimatedUnitPrice).toFixed(2)}</td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        id={`btn-remove-mat-${index}`}
-                        type="button"
-                        onClick={() => handleRemoveMaterial(index)}
-                        className="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {addedMaterials.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-400 font-medium italic">
-                      No se han agregado materiales. Agregue elementos arriba.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              {addedMaterials.length > 0 && (
-                <tfoot className="bg-slate-50 font-bold">
-                  <tr>
-                    <td colSpan={3} className="py-3.5 px-4 text-right text-slate-500 uppercase tracking-wider text-[9px]">Costo Estimado Materiales:</td>
-                    <td className="py-3.5 px-4 text-right font-mono text-sky-700 text-sm font-black">${materialsSubtotal.toFixed(2)}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
+              ) : undefined}
+            />
           </div>
         </Card>
       </div>

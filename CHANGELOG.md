@@ -1,5 +1,87 @@
 # CHANGELOG
 
+## [2026-07-20] — Feature: Paginación integrada en Table + activada en 7 tablas
+
+**Tipo:** feature
+
+**Qué:**
+
+1. **Table component mejorado** con paginación integrada:
+   - Nueva prop `pageSize?: number` — al definirla, la tabla entra en modo paginado
+   - UI de paginación: barra fuera del overflow container (siempre visible) con:
+     - "Mostrando X — Y de Z registros"
+     - Botones Anterior/Siguiente con ChevronLeft/ChevronRight
+     - Páginas numeradas con ellipsis (...) para conjuntos grandes
+     - Página activa destacada con bg-sky-500 + shadow
+   - Reseteo automático a página 1 al cambiar ordenamiento
+   - Sincronización vía `useEffect` cuando el total de páginas se reduce (filtrado externo)
+   - Skeleton rows se adaptan al `pageSize`
+
+2. **Paginación activada en 7 tablas**:
+
+   | Tabla | pageSize | Criterio |
+   |-------|----------|----------|
+   | PresidenciaDashboard — Audit Logs | 25 | Volumen alto de logs |
+   | PresidenciaDashboard — Projects Master | 15 | 50+ proyectos |
+   | FinanzasPanel — Ledger Financiero | 20 | Múltiples transacciones |
+   | InfraestructuraMantenimientoPanel — Materiales | 10 | Editor, pocos items |
+   | ProveedoresRegistrados — Contratistas | 20 | Lista maestra de proveedores |
+   | ProveedoresRegistrados — Items Propuesta | 10 | Items por propuesta |
+   | ProcuraPanel, EvaluacionInteligenteModal | sin pageSize | Tablas pequeñas (<10 filas) |
+
+**Por qué / causa raíz:** Las tablas renderizaban todos los datos simultáneamente (tablas infinitas). Con datos crecientes (logs, proyectos, transacciones), el renderizado se degrada. La paginación parte los datos en lotes y reduce nodos DOM activos.
+
+**Archivos:**
+- `src/components/UI/Table.tsx` — paginación integrada
+- `src/views/PresidenciaDashboard.tsx` — pageSize en ambas tablas
+- `src/views/FinanzasPanel.tsx` — pageSize
+- `src/views/InfraestructuraMantenimientoPanel.tsx` — pageSize
+- `src/views/ProveedoresRegistrados.tsx` — pageSize en ambas tablas
+
+---
+
+## [2026-07-20] — Refactor: Tabla genérica encapsulada (Table) + refactor de 9 tablas en vistas
+
+**Tipo:** refactor
+
+**Qué:**
+
+1. **Creado `src/components/UI/Table.tsx`** — componente de tabla genérico que encapsula:
+   - `Column<T>` — definición de columna con key, label, align, width, sortable, className y render personalizado
+   - `Table<T>` — props: columns, data, rowKey, isLoading (skeleton rows automático), loadingRows, emptyMessage/emptyState, footer (tfoot), maxHeight, stickyHeader, containerClassName, rowHoverClass, alternating
+   - Sorting integrado por columna (click header) con iconos ChevronsUpDown/ChevronUp/ChevronDown
+   - Skeleton rows que matchean el número de columnas cuando `isLoading=true`
+   - Default cell render con `—` para valores null/vacío
+
+2. **Refactorizadas 9 tablas en 6 vistas** para usar `<Table>`:
+
+   | Vista | Tabla | Columnas | Particularidades |
+   |-------|-------|----------|-----------------|
+   | `PresidenciaDashboard` | Audit Logs | 7 | stickyHeader, maxHeight=350px, rowHoverClass="hover:bg-sky-50/30" |
+   | `PresidenciaDashboard` | Projects Master | 6 | maxHeight=350px, acción "Inspeccionar" + avoid inline lambda |
+   | `FinanzasPanel` | Ledger Financiero | 6 | emptyMessage personalizado, sin is-loading (data ya computada) |
+   | `ProcuraPanel` | Propuestas Comparativa | 7 | scope closure con `p.id` para onSelectContractor |
+   | `InfraestructuraMantenimientoPanel` | Materiales | 5 | tfoot con subtotal, acción "Remover", footer condicional |
+   | `ProveedoresRegistrados` | Contratistas | 5 | isLoading=true con skeleton, search filtering upstream |
+   | `ProveedoresRegistrados` | Items Propuesta (expandible) | 6 | tfoot con total, dentro de expandable row |
+   | `EvaluacionInteligenteModal` | Propuestas (idle view) | 6 | dentro de Modal, rating con color condicional |
+
+3. **No refactorizado** (por diseño):
+   - `PropuestaMaterialesPublica` — tabla editable con section divider, inline inputs (NumericInput + text), filas custom con botón remover. Es un editor/form no una tabla de datos display. Mantiene HTML nativo.
+
+**Por qué / causa raíz:** 9 tablas en 6 archivos repetían el mismo patrón de ~50-80 líneas de HTML cada una (styling de header, hover, alternado, empty state, skeleton). No existía un componente que centralizara estas responsabilidades.
+
+**Archivos:**
+- `src/components/UI/Table.tsx` — [NUEVO]
+- `src/views/PresidenciaDashboard.tsx` — refactor 2 tablas
+- `src/views/FinanzasPanel.tsx` — refactor 1 tabla
+- `src/views/ProcuraPanel.tsx` — refactor 1 tabla
+- `src/views/InfraestructuraMantenimientoPanel.tsx` — refactor 1 tabla
+- `src/views/ProveedoresRegistrados.tsx` — refactor 2 tablas
+- `src/components/Modals/EvaluacionInteligenteModal.tsx` — refactor 1 tabla
+
+---
+
 ## [2026-07-20] — Fix críticos/graves de auditoría (C2, C3, C4, G1) + endurecimiento FileDropZone
 
 **Tipo:** fix + security

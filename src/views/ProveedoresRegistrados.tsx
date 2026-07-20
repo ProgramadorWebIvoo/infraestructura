@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
+import { Table, type Column } from "../components/UI/Table";
 import { apiFetch } from "../services/api";
 
 interface ProveedoresRegistradosProps {
@@ -230,85 +231,36 @@ export default function ProveedoresRegistrados({
             </div>
           </div>
 
-          <div className="overflow-x-auto grid grid-cols-1 pr-2 scroll-smooth overflow-y-auto max-h-115">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50 text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="px-6 py-4">Codigo</th>
-                  <th className="px-6 py-4">Empresa</th>
-                  <th className="px-6 py-4">Especialidad</th>
-                  <th className="px-6 py-4">Contacto</th>
-                  <th className="px-6 py-4 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="transition hover:bg-slate-50/70">
-                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-20" /></td>
-                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-40" /></td>
-                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-28" /></td>
-                      <td className="px-6 py-4"><SkeletonBlock className="h-4 w-36" /></td>
-                      <td className="px-6 py-4"><SkeletonBlock className="h-6 w-24 mx-auto" /></td>
-                    </tr>
-                  ))
-                ) : (
-                  <>
-                    {filteredContractors.map((contractor) => (
-                    <tr key={contractor.code} className="transition hover:bg-slate-50/70">
-                      <td className="px-6 py-4">
-                        <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">
-                          {contractor.code}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-bold text-slate-800">{contractor.name}</td>
-                      <td className="px-6 py-4">
-                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
-                          {contractor.specialty}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-mono font-semibold text-slate-500">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5 text-slate-400" />
-                          {contractor.contact}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="flex items-center gap-1 rounded-lg border border-amber-100/70 bg-amber-50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-500">
-                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                            {contractor.rating.toFixed(1)}
-                          </div>
-                          <button
-                            onClick={() => handleOpenEdit(contractor)}
-                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
-                            title="Actualizar evaluacion"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenInviteModal(contractor)}
-                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
-                            title="Generar enlace de propuesta de materiales"
-                          >
-                            <Link2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredContractors.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-sm font-medium italic text-slate-400">
-                        No se encontraron proveedores con ese criterio.
-                      </td>
-                    </tr>
-                  )}
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={[
+              { key: "code", label: "Codigo", render: (c) => <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">{c.code}</span> },
+              { key: "name", label: "Empresa", render: (c) => <span className="font-bold text-slate-800">{c.name}</span> },
+              { key: "specialty", label: "Especialidad", render: (c) => <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{c.specialty}</span> },
+              { key: "contact", label: "Contacto", render: (c) => <div className="flex items-center gap-2 font-mono font-semibold text-slate-500"><Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />{c.contact}</div> },
+              {
+                key: "actions",
+                label: "Acciones",
+                align: "center",
+                render: (c) => (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center gap-1 rounded-lg border border-amber-100/70 bg-amber-50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-500">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                      {c.rating.toFixed(1)}
+                    </div>
+                    <button onClick={() => handleOpenEdit(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>
+                    <button onClick={() => handleOpenInviteModal(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600" title="Generar enlace de propuesta de materiales"><Link2 className="h-3 w-3" /></button>
+                  </div>
+                ),
+              },
+            ]}
+            data={filteredContractors}
+            rowKey={(c) => c.code}
+            isLoading={isLoading}
+            emptyMessage="No se encontraron proveedores con ese criterio."
+            maxHeight="29rem"
+            containerClassName="pr-2"
+            pageSize={20}
+          />
         </div>
 
         {/* Supplier material proposals table */}
@@ -456,45 +408,26 @@ export default function ProveedoresRegistrados({
                           </div>
 
                           <div className="overflow-x-auto rounded-xl border border-slate-200">
-                            <table className="w-full border-collapse text-left text-xs">
-                              <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50 text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                                  <th className="px-4 py-3">Material</th>
-                                  <th className="px-4 py-3 text-center">Cantidad</th>
-                                  <th className="px-4 py-3">Unidad</th>
-                                  <th className="px-4 py-3 text-right">Precio unit.</th>
-                                  <th className="px-4 py-3 text-right">Total</th>
-                                  <th className="px-4 py-3">Notas</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {proposal.items.map((item, idx) => (
-                                  <tr key={idx} className="hover:bg-slate-50/60">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800">{item.materialName}</td>
-                                    <td className="px-4 py-2.5 text-center font-mono font-bold text-slate-600">{item.quantity}</td>
-                                    <td className="px-4 py-2.5 text-slate-500">{item.unit}</td>
-                                    <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-700">
-                                      ${item.unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-right font-mono font-black text-indigo-700">
-                                      ${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-slate-400 italic">{item.notes || "—"}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
+                            <Table
+                              columns={[
+                                { key: "materialName", label: "Material", render: (item) => <span className="font-semibold text-slate-800">{item.materialName}</span> },
+                                { key: "quantity", label: "Cantidad", align: "center", render: (item) => <span className="font-mono font-bold text-slate-600">{item.quantity}</span> },
+                                { key: "unit", label: "Unidad", render: (item) => <span className="text-slate-500">{item.unit}</span> },
+                                { key: "unitPrice", label: "Precio unit.", align: "right", render: (item) => <span className="font-mono font-bold text-slate-700">${item.unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                                { key: "totalPrice", label: "Total", align: "right", render: (item) => <span className="font-mono font-black text-indigo-700">${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                                { key: "notes", label: "Notas", render: (item) => <span className="text-slate-400 italic">{item.notes || "—"}</span> },
+                              ]}
+                              data={proposal.items}
+                              rowKey={(_item, idx) => idx}
+                              pageSize={10}
+                              footer={
                                 <tr className="border-t-2 border-slate-200 bg-slate-50">
-                                  <td colSpan={4} className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-600">
-                                    Total propuesta:
-                                  </td>
-                                  <td className="px-4 py-3 text-right font-mono text-sm font-black text-indigo-700">
-                                    ${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                  </td>
+                                  <td colSpan={4} className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-600">Total propuesta:</td>
+                                  <td className="px-4 py-3 text-right font-mono text-sm font-black text-indigo-700">${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                                   <td />
                                 </tr>
-                              </tfoot>
-                            </table>
+                              }
+                            />
                           </div>
                         </div>
                       )}

@@ -11,6 +11,7 @@ import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import EmptyState from "../components/UI/EmptyState";
+import { Table, type Column } from "../components/UI/Table";
 import { formatNumber } from "../utils";
 
 interface FinanzasPanelProps {
@@ -236,53 +237,21 @@ export default function FinanzasPanel({
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
-              <tr>
-                <th className="py-3 px-5 uppercase tracking-wider text-[9px]">ID Voucher</th>
-                <th className="py-3 px-4 uppercase tracking-wider text-[9px]">Ref. Obra</th>
-                <th className="py-3 px-4 uppercase tracking-wider text-[9px]">Tipo Egreso</th>
-                <th className="py-3 px-4 uppercase tracking-wider text-[9px]">Proveedor (Código)</th>
-                <th className="py-3 px-4 uppercase tracking-wider text-[9px]">Fecha Pago</th>
-                <th className="py-3 px-5 text-right uppercase tracking-wider text-[9px]">Monto Desembolsado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {paidLedger.map((tx) => (
-                <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="py-3 px-5 font-mono font-bold text-sky-600 flex items-center gap-1">
-                    <ArrowUpRight className="h-4 w-4 text-rose-500" />
-                    {tx.voucher}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div>
-                    <span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${
-                      tx.type === "ANTICIPO" ? "bg-rose-50 text-rose-700 border border-rose-100" : "bg-sky-50 text-sky-700 border border-sky-100"
-                    }`}>
-                      {tx.type}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-mono font-bold text-slate-600">{tx.contractorCode}</td>
-                  <td className="py-3 px-4 font-mono text-slate-500 font-medium">{tx.date}</td>
-                  <td className="py-3 px-5 text-right font-mono font-bold text-slate-900 text-sm">
-                    ${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                </tr>
-              ))}
-              {paidLedger.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 font-medium italic">
-                    Ninguna transferencia financiera ha sido efectuada aún.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          columns={[
+            { key: "voucher", label: "ID Voucher", render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-rose-500 shrink-0" />{tx.voucher}</span> },
+            { key: "title", label: "Ref. Obra", render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
+            { key: "type", label: "Tipo Egreso", render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-rose-50 text-rose-700 border border-rose-100" : "bg-sky-50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
+            { key: "contractorCode", label: "Proveedor (Código)", render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
+            { key: "date", label: "Fecha Pago", render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
+            { key: "amount", label: "Monto Desembolsado", align: "right", render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+          ]}
+          data={paidLedger}
+          rowKey={(tx) => tx.id}
+          emptyMessage="Ninguna transferencia financiera ha sido efectuada aún."
+          isLoading={false}
+          pageSize={20}
+        />
       </Card>
 
     </div>
