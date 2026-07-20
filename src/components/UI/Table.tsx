@@ -258,7 +258,10 @@ export function Table<T>({
     <div className={containerClassName}>
       <div
         className={`overflow-x-auto ${maxHeight ? "overflow-y-auto" : ""}`}
-        style={maxHeight ? { maxHeight } : undefined}
+        style={{
+          ...(maxHeight ? { maxHeight } : {}),
+          willChange: "scroll-position",
+        }}
       >
         <table className={`w-full text-left text-xs border-collapse ${className}`}>
           <thead>
@@ -300,8 +303,8 @@ export function Table<T>({
                   paginatedData.map((row, index) => (
                     <tr
                       key={rowKey(row, index)}
-                      className={`transition-colors ${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass}`}
-                      style={{ contentVisibility: "auto" }}
+                      className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass}`}
+                      style={{ contentVisibility: "auto", contain: "layout style paint" }}
                     >
                       {columns.map((col) => (
                         <td
