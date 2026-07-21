@@ -7,7 +7,7 @@
  * para cargar los datos; ahora fetchea lo suyo.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Contractor } from "../types";
 import { apiFetch } from "../services/api";
 import type { ShowToast } from "./useProjects";
@@ -16,10 +16,19 @@ export function useContractors(authToken: string, showToast: ShowToast) {
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const prevToken = useRef(authToken);
+
+  // Resetear loading cuando el token pasa de falsy → truthy (login)
+  useEffect(() => {
+    if (!prevToken.current && authToken) {
+      setIsLoading(true);
+    }
+    prevToken.current = authToken;
+  }, [authToken]);
+
   const loadContractors = useCallback(async () => {
     if (!authToken) {
-      setIsLoading(false);
-      return;
+      return; // sin token no hay fetch, isLoading se mantiene para que al llegar el token se muestre skeleton
     }
     try {
       const data = await apiFetch<Contractor[]>("/contractors", { token: authToken });

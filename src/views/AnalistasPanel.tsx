@@ -23,7 +23,6 @@ import { SkeletonCard, SkeletonList, SkeletonBlock } from "../components/Skeleto
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import NumericInput from "../components/UI/NumericInput";
-import AlertBanner from "../components/UI/AlertBanner";
 import EmptyState from "../components/UI/EmptyState";
 
 interface ImportResult {
@@ -64,7 +63,6 @@ export default function AnalistasPanel({
 
   // Import supplier proposals state
   const [isImporting, setIsImporting] = useState(false);
-  const [importFeedback, setImportFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const pendingLicitacion = projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA);
   const activeProject = pendingLicitacion.find(p => p.id === selectedProjectId);
@@ -101,16 +99,14 @@ export default function AnalistasPanel({
   const handleImport = async () => {
     if (!selectedProjectId || !onImportSupplierProposals) return;
     setIsImporting(true);
-    setImportFeedback(null);
     try {
       const result = await onImportSupplierProposals(selectedProjectId);
-      setImportFeedback({ message: result.message, type: "success" });
-      setTimeout(() => setImportFeedback(null), 5700); // 5000 visible + 700ms transition
+      showToast(result.message, "success");
     } catch (error) {
-      setImportFeedback({
-        message: error instanceof Error ? error.message : "Error inesperado al importar propuestas.",
-        type: "error",
-      });
+      showToast(
+        error instanceof Error ? error.message : "Error inesperado al importar propuestas.",
+        "error",
+      );
     } finally {
       setIsImporting(false);
     }
@@ -318,13 +314,6 @@ export default function AnalistasPanel({
                     {isImporting ? "Importando..." : "Traer del portal"}
                   </button>
                 </div>
-                
-                <div className={`overflow-hidden transition-all duration-700 ease-in-out ${importFeedback ? "max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
-                  {importFeedback && (
-                    <AlertBanner type={importFeedback.type} message={importFeedback.message} />
-                  )}
-                </div>
-
                 <div className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1">
                   {activeProject.proposals?.map((prop) => (
                     <div key={prop.id} className="p-3.5 border border-slate-100 bg-white rounded-xl flex items-center justify-between gap-3 shadow-xs hover:border-slate-200 transition-colors">

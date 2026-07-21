@@ -24,6 +24,15 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
   const [isLoading, setIsLoading] = useState(true);
 
   const lastSig = useRef("");
+  const prevToken = useRef(authToken);
+
+  // Resetear loading cuando el token pasa de falsy → truthy (login)
+  useEffect(() => {
+    if (!prevToken.current && authToken) {
+      setIsLoading(true);
+    }
+    prevToken.current = authToken;
+  }, [authToken]);
 
   const signatureOf = (projects: Project[], audit: AuditLog[]) =>
     projects
@@ -34,8 +43,7 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
 
   const loadProjects = useCallback(async (opts?: { isPoll?: boolean }) => {
     if (!authToken) {
-      setIsLoading(false);
-      return;
+      return; // sin token no hay fetch, pero NO se baja isLoading para que al llegar el token se muestre skeleton
     }
     try {
       const [projectsData, audit] = await Promise.all([

@@ -82,7 +82,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               {/* Wordmark + tagline */}
               <div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-black tracking-tight text-emerald-400 leading-none">IVOO</span>
+                  <span className="text-lg font-black tracking-tight text-emerald-400 leading-none font-brand">IVOO</span>
                   <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium mt-0.5 tracking-wide">

@@ -37,6 +37,15 @@
 10. **CORREGIR**  ✅ Los Tokens JWT no expiran. 
 
 12. **OPCIONAL / CRÍTICO** ✅ Añadir Polling a la aplicación en general para evitar el recargar la web para actualizar datos facilitando su uso y diseño
+
+13. **REALIZAR** ✅ Realizar un Enrutador liviano, atomico (Sin Sobreingienieria) y encapsulado para el frontend.
+
+14. **REALIZAR** ✅ Mejorar la seguridad y la visualización del login. Resuelto.
+
+15. **REALIZAR** ✅ Cuando se entra en la aplicación por el login no renderiza el skeletonLoading.
+
+16. **REALIZAR** ✅  Migrar la notificación de 'Traer al portal' a un 'Toast'.
+
 # PENDIENTE ----
 
 1. **REALIZAR** Los proveedores se registran a través de un enlace público de la web, sin embargo no existe manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no esté disponible, cierre o no sea aceptado más por la empresa, ¿cómo se cambiaría el estatus?
@@ -53,22 +62,16 @@
 
 7. **REALIZAR** Modificar el elemento Card para que tenga una variante de tamaño estatica con 'overflow-y-auto'
 
-8. **REALIZAR** Que la barra de 'Base de Datos Unificada' sea un componente visual.
-
-9. **URGENTE** Realizar las pestañas debidas de configuracióon para:
+8. **URGENTE** Realizar las pestañas debidas de configuracióon para:
     - Proveedores.
     - Usuarios.
     - Materiales.
 
-10. Migrar la notificación de 'Traer al portal' a un 'Toast'.
+9. **REALIZAR** El modal de calificación de proveedores aun no usa el componente generico de modales.
 
-11. El modal de calificación de proveedores aun no usa el componente generico de modales.
+10. **REALIZAR** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
 
-12. Mejorar la seguridad y la visualización del login.
-
-13. Realizar un Enrutador liviano, atomico (Sin Sobreingienieria) y encapsulado para el frontend.
-
-14. Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
+11. **REALIZAR** Mejorar estilos del enlace publico.
 
 # PRUEBAS A REALIZAR ---- 
 1. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app después de la normalización de la conexión a la API

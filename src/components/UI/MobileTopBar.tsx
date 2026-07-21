@@ -29,7 +29,7 @@ export default function MobileTopBar({ user, onMenuClick }: MobileTopBarProps) {
 
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-base font-black tracking-tight text-emerald-400 leading-none">IVOO</span>
+              <span className="text-base font-black tracking-tight text-emerald-400 leading-none font-brand">IVOO</span>
               <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
             </div>
             <p className="text-[9px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">

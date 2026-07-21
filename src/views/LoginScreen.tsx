@@ -1,22 +1,82 @@
-import { useState } from "react";
-import { Building2, LogIn } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Building2, LogIn, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 
 interface LoginScreenProps {
   onLogin: (email: string, password: string) => Promise<void>;
 }
 
+const MAX_ATTEMPTS_BEFORE_BLOCK = 3;
+const MAX_BLOCK_SECONDS = 60;
+
+/**
+ * Retorna segundos de bloqueo según el número de intentos fallidos.
+ * Backoff exponencial: 2, 4, 8, 16, 32, 60 (max).
+ */
+function getBlockDuration(count: number): number {
+  if (count <= MAX_ATTEMPTS_BEFORE_BLOCK) return 0;
+  return Math.min(Math.pow(2, count - MAX_ATTEMPTS_BEFORE_BLOCK), MAX_BLOCK_SECONDS);
+}
+
+/**
+ * Componente spinner SVG animado inline (sin dependencias extra).
+ * Usa CSS nativo para la rotación. Tamaño controlado por className.
+ */
+function Spinner({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      className={`animate-spin ${className}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+}
+
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [blockTimer, setBlockTimer] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const getBlockDuration = (count: number) => {
-    if (count <= 3) return 0;
-    return Math.min(Math.pow(2, count - 3), 60); // 2, 4, 8, 16, 32, 60 max seg
-  };
+  // Limpiar interval al desmontar
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  const clearBlockInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const startBlockTimer = useCallback((seconds: number) => {
+    clearBlockInterval();
+    setBlockTimer(seconds);
+    intervalRef.current = setInterval(() => {
+      setBlockTimer((prev) => {
+        if (prev <= 1) {
+          clearBlockInterval();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [clearBlockInterval]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -31,84 +91,154 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     try {
       await onLogin(email, password);
       setAttempts(0);
-    } catch {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error inesperado.";
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
+
       const nextBlock = getBlockDuration(newAttempts);
       if (nextBlock > 0) {
-        setBlockTimer(nextBlock);
-        const interval = setInterval(() => {
-          setBlockTimer(prev => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+        startBlockTimer(nextBlock);
         setError(`Demasiados intentos. Espere ${nextBlock} segundos.`);
       } else {
-        setError("Correo o clave incorrectos.");
+        setError(message || "Correo o clave incorrectos.");
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isBlocked = blockTimer > 0;
+  const canSubmit = !isSubmitting && !isBlocked;
+
   return (
-    <div className="min-h-screen bg-[#0F172A] text-white flex items-center justify-center px-4 font-sans">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-white p-6 text-slate-900 shadow-2xl shadow-slate-950/40">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
-            <Building2 className="h-5 w-5 stroke-[2.5]" />
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950 px-4 font-sans">
+      {/* Fondo animado con orbes gradientes */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 -right-32 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/5 blur-3xl" />
+        {/* Grid pattern sutil */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+          }}
+        />
+      </div>
+
+      {/* Tarjeta de login con glassmorphism */}
+      <div className="relative w-full max-w-md animate-slide-up rounded-2xl border border-slate-700/60 bg-white/95 p-7 text-slate-900 shadow-2xl shadow-slate-950/50 backdrop-blur-xl sm:p-8">
+        {/* Logo y título */}
+        <div className="mb-7 flex items-center gap-3.5">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 ring-1 ring-white/20">
+            <Building2 className="h-5 w-5 stroke-[2.5]" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-950">IVOO Gestion</h1>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Acceso interno</p>
+            <h1 className="text-xl font-black tracking-tight text-emerald-600"><span className="font-brand">IVOO</span> <span className="text-slate-900">Gestión</span></h1>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              Acceso interno
+            </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          {/* Campo email */}
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Correo</label>
+            <label
+              htmlFor="login-email"
+              className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400"
+            >
+              Correo electrónico
+            </label>
             <input
               id="login-email"
               type="email"
+              autoComplete="email"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-semibold outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="usuario@ivoo.local"
+              disabled={isBlocked}
+              className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-3 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
+          {/* Campo password con toggle de visibilidad */}
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Clave</label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-semibold outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-            />
+            <label
+              htmlFor="login-password"
+              className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400"
+            >
+              Clave
+            </label>
+            <div className="relative">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={isBlocked}
+                className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-3 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                disabled={isBlocked}
+                aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600 disabled:opacity-60"
+              >
+                {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+              </button>
+            </div>
           </div>
 
+          {/* Mensaje de error */}
           {error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700">
-              {error}
+            <div
+              role="alert"
+              className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700"
+            >
+              <AlertCircle className="mt-0.5 h-[14px] w-[14px] shrink-0 stroke-[2.5]" aria-hidden="true" />
+              <span>{error}</span>
             </div>
           )}
 
+          {/* Botón submit */}
           <button
             id="btn-login-submit"
             type="submit"
-            disabled={isSubmitting || blockTimer > 0}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={!canSubmit}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all duration-200 hover:from-sky-600 hover:to-sky-700 hover:shadow-xl hover:shadow-sky-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
           >
-            <LogIn className="h-4 w-4" />
-            {blockTimer > 0 ? `Espere ${blockTimer}s` : isSubmitting ? "Validando..." : "Ingresar"}
+            {isSubmitting ? (
+              <>
+                <Spinner />
+                Validando...
+              </>
+            ) : isBlocked ? (
+              <>
+                <Loader2 className="h-4 w-4" aria-hidden="true" />
+                Espere {blockTimer}s
+              </>
+            ) : (
+              <>
+                <LogIn className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+                Ingresar
+              </>
+            )}
           </button>
         </form>
+
+        {/* Footer */}
+        <p className="mt-6 text-center text-[11px] font-medium text-slate-400">
+          IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   );

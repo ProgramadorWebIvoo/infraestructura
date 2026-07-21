@@ -6,7 +6,7 @@
  * Antes no fetcheaba; ahora carga lo suyo sin depender de useProjects.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { apiFetch } from "../services/api";
 import type { ShowToast } from "./useProjects";
 
@@ -20,10 +20,19 @@ export function useCatalog(authToken: string, showToast: ShowToast) {
   const [materialsCatalog, setMaterialsCatalog] = useState<CatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const prevToken = useRef(authToken);
+
+  // Resetear loading cuando el token pasa de falsy → truthy (login)
+  useEffect(() => {
+    if (!prevToken.current && authToken) {
+      setIsLoading(true);
+    }
+    prevToken.current = authToken;
+  }, [authToken]);
+
   const loadMaterials = useCallback(async () => {
     if (!authToken) {
-      setIsLoading(false);
-      return;
+      return; // sin token no hay fetch, isLoading se mantiene para que al llegar el token se muestre skeleton
     }
     try {
       const data = await apiFetch<CatalogItem[]>("/materials", { token: authToken });

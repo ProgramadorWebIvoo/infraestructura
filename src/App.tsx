@@ -6,7 +6,7 @@
  * las rutas con control de acceso por rol.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -113,11 +113,18 @@ function AppRoutes() {
   // ---- Logout compuesto (limpia auth + datos) ----
   const handleLogout = async () => {
     await authLogout();
+    showToast("Sesión cerrada.", "info");
     resetData();
     resetContractors();
     resetCatalog();
     navigate(ROUTES.PRESIDENCIA);
   };
+
+  // ---- Login wrapper con toast de bienvenida ----
+  const handleLoginWithToast = useCallback(async (email: string, password: string) => {
+    await handleLogin(email, password);
+    showToast("Sesión iniciada correctamente.", "success");
+  }, [handleLogin, showToast]);
 
   // ---- UI state ----
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -159,7 +166,7 @@ function AppRoutes() {
 
   // ---- No autenticado ----
   if (!authToken) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return <LoginScreen onLogin={handleLoginWithToast} />;
   }
 
   // ---- Autenticado pero sin rol asignado ----
@@ -210,15 +217,18 @@ function AppRoutes() {
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
           {/* Dynamic Role Indicator Notification */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-xs gap-3">
-            <div className="flex items-center gap-2.5 text-xs text-slate-500">
-              <span className="font-mono text-sky-600 font-bold uppercase tracking-wider text-[10px]">Base de datos unificada:</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-xs gap-3 border-l-4 border-l-sky-400">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-600 ring-1 ring-sky-200/50">
+                <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                Base de datos unificada
+              </span>
               <span className="font-semibold text-slate-700">{projects.length} Obras</span>
-              <span className="text-slate-300">&bull;</span>
+              <span className="text-slate-300 hidden sm:inline">&bull;</span>
               <span className="font-semibold text-slate-700">{contractors.length} Proveedores</span>
             </div>
-            <div className="inline-flex items-center gap-1.5 self-start sm:self-auto text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
-              <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></span>
+            <div className="inline-flex items-center gap-1.5 self-start sm:self-auto text-[11px] font-mono font-bold bg-gradient-to-r from-slate-100 to-slate-50 text-slate-600 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-xs shadow-emerald-500/40" />
               Terminal: {activeRole}
             </div>
           </div>

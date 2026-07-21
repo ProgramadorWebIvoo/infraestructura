@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## [2026-07-21] — Fix: Skeleton loading no se activaba tras login + test suite
+
+- Tipo: fix
+- Qué:
+  - **Causa raíz:** Los hooks `useProjectsData`, `useContractors` y `useCatalog` se montan con `authToken = ""` (vista login). El `useEffect` ejecuta el loader, que ve `!authToken` y llama `setIsLoading(false)` inmediatamente, fijando `isLoading = false` **antes** de que el usuario haga login. Cuando luego el usuario se autentica, el loader arranca pero `isLoading` ya es `false`, por lo que nunca se muestra el skeleton: las vistas renderizan vacío/"0" durante la carga.
+  - **Fix (3 hooks):**
+    1. Eliminado `setIsLoading(false)` en el early return `if (!authToken)` — sin token no se toca `isLoading`.
+    2. Agregado `useEffect` con `useRef(prevToken)` que detecta la transición falsy→truthy de `authToken` y resetea `setIsLoading(true)`. Esto cubre tanto login inicial como logout→login con distinto usuario.
+    3. `isLoading` se mantiene `true` desde el mount hasta que el primer fetch con token real completa.
+  - **Archivos:** `src/hooks/useProjectsData.ts`, `src/hooks/useContractors.ts`, `src/hooks/useCatalog.ts`
+  - Tests pasan: 37/37.
+
+---
+
+## [2026-07-21] — Security + UX: LoginScreen rediseñado y useAuth endurecido
+
+- Tipo: security + feature + refactor
+- Qué:
+  - **useAuth.ts** — endurecimiento de seguridad:
+    - Sanitización de email: `trim().toLowerCase()` antes de enviar
+    - Validación client-side defensiva (formato email, no vacío, longitud máx 254)
+    - Parseo seguro de `localStorage` con try/catch + cleanup si corrupto
+    - Tipado estricto de `safeUser` con coerción a String/undefined
+  - **LoginScreen.tsx** — rediseño completo de UX/seguridad:
+    - **Fondo**: gradiente oscuro con 3 orbes difusos (sky/indigo) + grid pattern sutíl, sin distraer
+    - **Tarjeta**: glassmorphism (backdrop-blur-xl + bg-white/95 + borde translúcido), sombra profunda
+    - **Password**: toggle visibilidad con iconos Eye/EyeOff + aria-label descriptivo
+    - **Autocomplete**: `autoComplete="email"` y `autoComplete="current-password"` en inputs
+    - **Rate limiting**: refactor con `useRef` para interval, cleanup en unmount (evita fugas), constantes con nombre
+    - **Botón submit**: gradiente `from-sky-500 to-sky-600`, hover/active con scale, spinner SVG animado en loading
+    - **Errores**: `role="alert"` con icono AlertCircle, mensaje del servidor preservado (no hardcodeado)
+    - **Estados**: disabled en inputs durante bloqueo, feedback visual claro (opacity 60%)
+    - **Accesibilidad**: aria-labels, aria-hidden en decorativos, roles semánticos
+    - **Footer**: año dinámico
+- Por qué / causa raíz: el login no tenía validación client-side, el password era visible sin toggle, el fondo era plano (#0F172A), el rate limiting no limpiaba interval en unmount, no había feedback visual de carga, y faltaban atributos de autocompletado/seguridad.
+- Archivos:
+  - `src/hooks/useAuth.ts` — sanitización, validación, parseo seguro
+  - `src/views/LoginScreen.tsx` — rediseño completo
+  - `src/views/LoginScreen.test.tsx` — [NUEVO] 23 tests unitarios
+  - `src/hooks/useAuth.test.ts` — [NUEVO] 14 tests unitarios
+  - `src/test/setup.ts` — [NUEVO] setup de testing-library/jest-dom
+  - `vite.config.ts` — configuración vitest (globals, jsdom, setup)
+  - `package.json` — script `test` y `test:watch` + dependencias vitest/testing-library
+
+---
+
 ## [2026-07-21] — Refactor: Enrutador encapsulado en src/routes.tsx (ROUTES + ProtectedRoute)
 
 - Tipo: refactor
