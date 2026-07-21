@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [2026-07-21] — Refactor: Enrutador encapsulado en src/routes.tsx (ROUTES + ProtectedRoute)
+
+- Tipo: refactor
+- Qué:
+  - Creado `src/routes.tsx` con:
+    - `ROUTES` — objeto constante con los 11 paths del sistema (`ROUTES.PRESIDENCIA`, `ROUTES.INFRAESTRUCTURA`, etc.), eliminando todos los strings mágicos.
+    - `isPublicRoute(path)` — reemplaza a `isPublicPath` (que estaba en useRouting.ts), centraliza la detección de rutas públicas.
+    - `ProtectedRoute` — componente guard que envuelve elementos de rutas auth. Si `canAccess` es false redirige a `redirectTo` vía `<Navigate replace>`, eliminando el patrón ternario `canAccess ? <View /> : <Navigate />` que se repetía 8 veces.
+  - `App.tsx` simplificado:
+    - `fallbackRoute` computado una sola vez, no 9 veces.
+    - Las 8 rutas auth usan `<ProtectedRoute>` en vez del ternario inline.
+    - Todos los paths son `ROUTES.*` — cero strings hardcodeados.
+    - `firstAllowedRoute` sin fallback redundante (`authUser?.role ?? "PRESIDENCIA"`).
+  - `useRouting.ts` limpiado: eliminados `publicRoutes` e `isPublicPath` (movidos a routes.tsx).
+- Por qué / causa raíz: las rutas estaban definidas como strings mágicos en 3 lugares (roleAccess, paths de Route, Navigate); el patrón `canAccess + Navigate` se duplicaba en cada Route; `firstAllowedRoute` se recomputaba en cada ruta. Esto violaba DRY y hacía que cambiar un path requiriera editar múltiples archivos.
+- Archivos:
+  - `src/routes.tsx` — [NUEVO]
+  - `src/App.tsx` — refactor (usa ROUTES, ProtectedRoute, isPublicRoute)
+  - `src/hooks/useRouting.ts` — limpieza (eliminados publicRoutes/isPublicPath)
+
+---
+
 ## [2026-07-20] — Feature: Transiciones suaves entre vistas (route transitions)
 
 - Tipo: feature
@@ -670,8 +692,10 @@
 **Propósito:** Sistema multi-rol para gestionar el ciclo de vida completo de obras de infraestructura y mantenimiento. Cada obra pasa secuencialmente por 8 departamentos (Infraestructura → Cierre de Obra → Procura → Analistas → Finanzas → etc.) con trazabilidad en tiempo real mediante bitácora de auditoría.
 
 **Estructura clave:**
-- `src/App.tsx` — Routing + layout únicamente. Compone hooks por dominio.
-- `src/hooks/useAuth.ts` — Autenticación, control de acceso por rol, constantes de ruteo
+- `src/routes.tsx` — Definiciones de rutas: constantes `ROUTES`, guard `ProtectedRoute`, detección `isPublicRoute`
+- `src/App.tsx` — Layout + composición de hooks por dominio. Usa `ROUTES.*` y `ProtectedRoute` de routes.tsx
+- `src/hooks/useAuth.ts` — Autenticación (login/logout/token)
+- `src/hooks/useRouting.ts` — Control de acceso por rol (`canAccess`, `firstAllowedRoute`)
 - `src/hooks/useProjects.ts` — Estado global de proyectos + todos los handlers del workflow (12 handlers)
 - `src/hooks/useContractors.ts` — Catálogo de contratistas
 - `src/hooks/useCatalog.ts` — Catálogo de materiales

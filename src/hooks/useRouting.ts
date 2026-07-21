@@ -2,7 +2,8 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Control de acceso por rol y rutas públicas.
+ * Control de acceso por rol. Las definiciones de rutas (paths, guard,
+ * detección de rutas públicas) viven en src/routes.tsx.
  * Separado de useAuth para respetar SRP.
  */
 
@@ -20,21 +21,22 @@ export const roleAccess: Record<string, string[]> = {
   CATALOGOS:      ["/presidencia", "/catalogos"],
 };
 
-export const publicRoutes = new Set(["/registro-proveedores"]);
-
-export const isPublicPath = (path: string): boolean =>
-  publicRoutes.has(path) || path.startsWith("/propuesta-materiales/");
-
 export function useRoleAccess(role: string | undefined) {
-  const activeRole = role ?? "PRESIDENCIA";
+  const activeRole = role; // sin fallback — si no hay rol, canAccess es false
 
   const canAccess = useCallback(
-    (path: string) => (roleAccess[activeRole] ?? roleAccess["PRESIDENCIA"]).includes(path),
+    (path: string) => {
+      if (!activeRole) return false;
+      return (roleAccess[activeRole] ?? roleAccess["INFRAESTRUCTURA"]).includes(path);
+    },
     [activeRole],
   );
 
   const firstAllowedRoute = useCallback(
-    (r: string) => roleAccess[r]?.[0] ?? "/presidencia",
+    (r: string | undefined): string | null => {
+      if (!r) return null;
+      return roleAccess[r]?.[0] ?? null;
+    },
     [],
   );
 

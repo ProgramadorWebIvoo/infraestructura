@@ -31,7 +31,8 @@ import { ToastProvider, useToast } from "./components/UI/Toast";
 
 // Hooks por dominio
 import { useAuth } from "./hooks/useAuth";
-import { useRoleAccess, isPublicPath } from "./hooks/useRouting";
+import { useRoleAccess } from "./hooks/useRouting";
+import { ROUTES, isPublicRoute, ProtectedRoute } from "./routes";
 import { useProjects } from "./hooks/useProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
@@ -51,7 +52,7 @@ export default function App() {
 }
 
 // ---------------------------------------------------------------------------
-// AppRoutes — toda la lógica de ruteo y layout
+// AppRoutes
 // ---------------------------------------------------------------------------
 
 function AppRoutes() {
@@ -115,7 +116,7 @@ function AppRoutes() {
     resetData();
     resetContractors();
     resetCatalog();
-    navigate("/presidencia");
+    navigate(ROUTES.PRESIDENCIA);
   };
 
   // ---- UI state ----
@@ -138,11 +139,11 @@ function AppRoutes() {
   }, [location.pathname]);
 
   // ---- Public routes (sin auth) ----
-  if (isPublicPath(location.pathname)) {
+  if (isPublicRoute(location.pathname)) {
     return (
       <Routes>
         <Route
-          path="/registro-proveedores"
+          path={ROUTES.REGISTRO_PROVEEDORES}
           element={
             <MaterialesProveedores
               contractorsCount={contractors.length}
@@ -150,8 +151,8 @@ function AppRoutes() {
             />
           }
         />
-        <Route path="/propuesta-materiales/:token" element={<PropuestaMaterialesPublica />} />
-        <Route path="*" element={<Navigate to="/registro-proveedores" replace />} />
+        <Route path={ROUTES.PROPUESTA_MATERIALES} element={<PropuestaMaterialesPublica />} />
+        <Route path="*" element={<Navigate to={ROUTES.REGISTRO_PROVEEDORES} replace />} />
       </Routes>
     );
   }
@@ -161,7 +162,31 @@ function AppRoutes() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
+  // ---- Autenticado pero sin rol asignado ----
+  if (!authUser?.role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 max-w-md w-full text-center space-y-4">
+          <div className="w-14 h-14 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+            <span className="text-2xl">⛔</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-800">Acceso denegado</h1>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Tu cuenta no tiene un rol asignado. Contacta al administrador del sistema para que configure tus permisos.
+          </p>
+          <button
+            onClick={handleLogout}
+            className="mt-2 px-6 py-2.5 bg-sky-500 text-white text-sm font-semibold rounded-xl hover:bg-sky-600 transition-colors"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ---- Layout autenticado ----
+  const fallbackRoute = firstAllowedRoute(authUser.role) as string;
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
 
@@ -211,58 +236,74 @@ function AppRoutes() {
             >
               <Routes location={location}>
                 <Route
-                  path="/"
-                  element={<Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.HOME}
+                  element={<Navigate to={fallbackRoute} replace />}
                 />
                 <Route
-                  path="/presidencia"
-                  element={canAccess("/presidencia")
-                    ? <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={(p) => setInspectedProject(p)} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.PRESIDENCIA}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
+                      <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={(p) => setInspectedProject(p)} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/infraestructura"
-                  element={canAccess("/infraestructura")
-                    ? <InfraestructuraMantenimientoPanel onAddProject={handleAddProject} projects={projects} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.INFRAESTRUCTURA}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
+                      <InfraestructuraMantenimientoPanel onAddProject={handleAddProject} projects={projects} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/cierre-obra"
-                  element={canAccess("/cierre-obra")
-                    ? <CierreObraPanel projects={projects} onReviewProject={handleReviewProject} onVerifyCompletion={handleVerifyCompletion} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.CIERRE_OBRA}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.CIERRE_OBRA)} redirectTo={fallbackRoute}>
+                      <CierreObraPanel projects={projects} onReviewProject={handleReviewProject} onVerifyCompletion={handleVerifyCompletion} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/procura"
-                  element={canAccess("/procura")
-                    ? <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.PROCURA}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.PROCURA)} redirectTo={fallbackRoute}>
+                      <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/analistas"
-                  element={canAccess("/analistas")
-                    ? <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} onImportSupplierProposals={handleImportSupplierProposals} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.ANALISTAS}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
+                      <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} onImportSupplierProposals={handleImportSupplierProposals} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/finanzas"
-                  element={canAccess("/finanzas")
-                    ? <FinanzasPanel projects={projects} onPayAdvance={handlePayAdvance} onPayFinal={handlePayFinal} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.FINANZAS}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.FINANZAS)} redirectTo={fallbackRoute}>
+                      <FinanzasPanel projects={projects} onPayAdvance={handlePayAdvance} onPayFinal={handlePayFinal} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/catalogos"
-                  element={canAccess("/catalogos")
-                    ? <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} isLoading={isLoadingApi} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.CATALOGOS}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.CATALOGOS)} redirectTo={fallbackRoute}>
+                      <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/usuarios"
-                  element={canAccess("/usuarios")
-                    ? <UsuariosPanel authToken={authToken} />
-                    : <Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />}
+                  path={ROUTES.USUARIOS}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.USUARIOS)} redirectTo={fallbackRoute}>
+                      <UsuariosPanel authToken={authToken} />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="*" element={<Navigate to={firstAllowedRoute(authUser?.role ?? "PRESIDENCIA")} replace />} />
+                <Route path="*" element={<Navigate to={fallbackRoute} replace />} />
               </Routes>
             </motion.div>
           </AnimatePresence>
