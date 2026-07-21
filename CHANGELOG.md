@@ -1,5 +1,87 @@
 # CHANGELOG
 
+## [2026-07-21] — Fixes post-testing: CSP, sanitización XSS, rate limiting, token refresh
+
+- Tipo: fix
+- Qué:
+  - **CSP backend** — Nuevo middleware `AddCspHeaders.php` agregado al grupo `api` en Kernel. Todas las respuestas API ahora incluyen `Content-Security-Policy` con `default-src 'self'`, `frame-ancestors 'none'`, etc.
+  - **Sanitización XSS mejorada** — `sanitize()` en `MaterialesProveedores.tsx` y `PropuestaMaterialesPublica.tsx` ahora también elimina `javascript:` URIs, event handlers (`onerror=`, `onclick=`, etc.) y llamadas JS peligrosas (`alert()`, `prompt()`, `confirm()`, `print()`, `open()`, `write()`). Backend: `SupportController@storeContractor` agrega `strip_tags()` en name/specialty/contact como defensa en profundidad.
+  - **Rate limiting** — Corregido comando de prueba en `TESTING_GUIDE.md`: usa `http://localhost:8000` (no HTTPS), sintaxis PowerShell con `Invoke-WebRequest` + alternativa curl para Git Bash.
+  - **Token refresh** — Nuevo comando Artisan `token:age {email}` que envejece el último token del usuario a 23h atrás para probar el refresh sin esperar. Guía actualizada con pasos claros.
+- Por qué / causa raíz: Reporte de pruebas manuales del 21-Jul: CSP ausente en API responses, sanitización no eliminaba `alert(1)` del texto, comando curl usaba protocolo incorrecto, token refresh no era testeable sin modificar BD manualmente.
+- Archivos:
+  - `infraestructura-back/app/Http/Middleware/AddCspHeaders.php` — [NUEVO]
+  - `infraestructura-back/app/Http/Kernel.php` — registro del middleware
+  - `infraestructura-back/app/Http/Controllers/Api/SupportController.php` — strip_tags()
+  - `infraestructura-back/app/Console/Commands/AgeUserToken.php` — [NUEVO]
+  - `infraestructura/src/views/MaterialesProveedores.tsx` — sanitize() mejorado
+  - `infraestructura/src/views/PropuestaMaterialesPublica.tsx` — sanitize() mejorado
+  - `infraestructura/TESTING_GUIDE.md` — comandos corregidos, token refresh guía
+
+---
+
+## [2026-07-21] — Feature: Links de invitación single-use + invalidación automática
+
+- Tipo: feature
+- Qué:
+  - **Migración** — `database/migrations/2026_07_21_000001_add_link_status_to_supplier_invitations.php`: agregadas columnas `used_at` (timestamp nullable) y `replaced_by` (char(36) nullable) a `supplier_invitations`.
+  - **Modelo** — `SupplierInvitation.php`: nuevo método `isValid()` que retorna `true` solo si `used_at IS NULL AND replaced_by IS NULL`. Nuevos campos en `$fillable` y `$casts`.
+  - **Single-use** — `storeSupplierMaterialProposal`: después de crear la propuesta exitosamente, marca `used_at = now()` en la invitación. El mismo link no puede usarse dos veces.
+  - **Invalidación al re-invitar** — `createSupplierInvitation`: al crear una nueva invitación para el mismo `project_id + supplier_contact`, marca todas las invitaciones activas previas con `replaced_by = {nuevo_uuid}`. El proveedor siempre usa el link más reciente.
+  - **Frontend**: sin cambios — los mensajes de error ya decían "Enlace no valido o expirado."
+- Por qué / causa raíz: los links de invitación nunca expiraban ni se invalidaban. Re-invitar al mismo proveedor generaba múltiples links activos, permitiendo propuestas duplicadas.
+- Archivos:
+  - `infraestructura-back/database/migrations/2026_07_21_000001_add_link_status_to_supplier_invitations.php` — [NUEVO]
+  - `infraestructura-back/app/Models/SupplierInvitation.php`
+  - `infraestructura-back/app/Http/Controllers/Api/SupportController.php`
+  - `CHANGELOG.md` — actualizado
+
+---
+
+## [2026-07-21] — Security audit + hardening de rutas públicas (Fase 1 + 2)
+
+- Tipo: security + feature
+- Qué: Auditoría y endurecimiento completo de las 2 rutas públicas del sistema (`/registro-proveedores` y `/propuesta-materiales/:token`) más seguridad estructural del frontend y backend.
+
+### BACKEND (Laravel — `infraestructura-back/`)
+
+1. **CORS restringido** — `config/cors.php`: `allowed_origins` cambiado de `['*']` a `[env('FRONTEND_URL', 'http://localhost:3000')]`. Se agregó `FRONTEND_URL` a `.env`.
+2. **Rate limiter dedicado para endpoints públicos** — `app/Providers/RouteServiceProvider.php`: nuevo rate limiter `public-api` con 10 req/min por IP. Aplicado a `POST /login`, `POST /contractors`, `GET /public/invitations/{token}`, `POST /public/invitations/{token}/proposal` via `->middleware('throttle:public-api')`.
+3. **Audit logging de accesos públicos** — `app/Http/Controllers/Api/SupportController.php`: nuevo método `logPublicAccess()` que registra en Laravel Log cada acceso a rutas públicas con IP, User-Agent, acción y timestamp. Integrado en `storeContractor`, `getInvitationPublicInfo`, `storeSupplierMaterialProposal`.
+4. **Firma de método corregida** — `getInvitationPublicInfo(string $token)` → `getInvitationPublicInfo(Request $request, string $token)` para poder acceder al request.
+
+### FRONTEND (React SPA — `infraestructura/`)
+
+5. **Content Security Policy (CSP)** — `index.html`: meta tag CSP que restringe `script-src 'self'`, `connect-src 'self' https://infraestructuraback.ivoofix.com`, `form-action 'self'`, `frame-ancestors 'none'`, etc. También configurado via `server.headers` en `vite.config.ts` para modo desarrollo.
+6. **Sanitización de inputs (XSS)** — `PropuestaMaterialesPublica.tsx`: agregada función `sanitize()` (elimina etiquetas HTML/XML) aplicada a todos los inputs de texto: `materialName`, `notes`, `unit`, `generalNotes`. También en `handleSubmit` como defensa en profundidad. Se agregaron `maxLength` coincidiendo con validación backend (materialName=220, notes=500, unit=60, generalNotes=1000).
+7. **Sanitización de errores del backend** — `services/api.ts`: errores HTTP mapeados a mensajes genéricos en español. 401→"Sesión expirada", 403→"Sin permiso", 404→"No encontrado", 422→primer error de validación, 429→"Demasiadas solicitudes", 500+→"Error interno". Ya no se expone `body.error` crudo del servidor.
+8. **Rate limiting client-side** — `MaterialesProveedores.tsx` y `PropuestaMaterialesPublica.tsx`: backoff exponencial tras 5 intentos fallidos (2^N seg, max 120s). Botón deshabilitado con cuenta regresiva, cleanup de interval en unmount.
+9. **Manejo de X-Refresh-Token** — `services/api.ts`: nuevo `setTokenRefreshHandler()` callback que `useAuth.ts` registra al montar. Cuando el backend Laravel envía `X-Refresh-Token` header (middleware `RefreshSanctumToken`), se persiste automáticamente en localStorage y estado.
+10. **Timeout de sesión por inactividad** — `useAuth.ts`: 30 minutos sin actividad (mousedown, keydown, touchstart, scroll, mousemove) cierra sesión automáticamente y recarga la aplicación.
+
+### PRUEBAS
+
+11. **Tests actualizados** — `useAuth.test.ts`: agregado `setTokenRefreshHandler` al mock de `../services/api` para que los 14 tests existentes sigan funcionando.
+12. **37/37 tests pasan** — `npm test` exitoso con Test Files: 2 passed, Tests: 37 passed.
+
+- Archivos backend:
+  - `infraestructura-back/config/cors.php`
+  - `infraestructura-back/.env`
+  - `infraestructura-back/app/Providers/RouteServiceProvider.php`
+  - `infraestructura-back/routes/api.php`
+  - `infraestructura-back/app/Http/Controllers/Api/SupportController.php`
+- Archivos frontend:
+  - `index.html`
+  - `vite.config.ts`
+  - `src/services/api.ts`
+  - `src/hooks/useAuth.ts`
+  - `src/hooks/useAuth.test.ts`
+  - `src/views/MaterialesProveedores.tsx`
+  - `src/views/PropuestaMaterialesPublica.tsx`
+- CHANGELOG.md — actualizado
+
+---
+
 ## [2026-07-21] — Fix: Skeleton loading no se activaba tras login + test suite
 
 - Tipo: fix

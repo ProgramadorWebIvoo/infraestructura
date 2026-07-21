@@ -7,11 +7,12 @@
  * vive en useRouting.
  */
 
-import { useState, useCallback } from "react";
-import { apiFetch } from "../services/api";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { apiFetch, setTokenRefreshHandler } from "../services/api";
 
 const STORAGE_TOKEN = "ivoo_auth_token";
 const STORAGE_USER = "ivoo_auth_user";
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos de inactividad
 
 export type AuthUser = { name: string; email: string; role?: string } | null;
 
@@ -47,6 +48,60 @@ export function useAuth() {
       return null;
     }
   });
+
+  // Registrar handler para renovación silenciosa de token via X-Refresh-Token
+  // Se ejecuta una sola vez al montar el hook.
+  const [handlerRegistered] = useState(() => {
+    setTokenRefreshHandler((newToken: string) => {
+      localStorage.setItem(STORAGE_TOKEN, newToken);
+      setAuthToken(newToken);
+    });
+    return true;
+  });
+  void handlerRegistered; // usado solo para asegurar ejecución única
+
+  // ── Session timeout por inactividad ──
+  const lastActivityRef = useRef(Date.now());
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSessionTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const resetSessionTimeout = useCallback(() => {
+    clearSessionTimeout();
+    if (!authToken) return;
+    lastActivityRef.current = Date.now();
+    timeoutRef.current = setTimeout(() => {
+      // Cerrar sesión por inactividad
+      localStorage.removeItem(STORAGE_TOKEN);
+      localStorage.removeItem(STORAGE_USER);
+      setAuthToken("");
+      setAuthUser(null);
+      window.location.reload(); // Forzar recarga completa para resetear estado
+    }, SESSION_TIMEOUT_MS);
+  }, [authToken, clearSessionTimeout]);
+
+  useEffect(() => {
+    if (!authToken) {
+      clearSessionTimeout();
+      return;
+    }
+
+    const events = ["mousedown", "keydown", "touchstart", "scroll", "mousemove"] as const;
+    const onActivity = () => resetSessionTimeout();
+
+    events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }));
+    resetSessionTimeout();
+
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, onActivity));
+      clearSessionTimeout();
+    };
+  }, [authToken, resetSessionTimeout, clearSessionTimeout]);
 
   const handleLogin = useCallback(async (email: string, password: string) => {
     // Sanitización antes de enviar

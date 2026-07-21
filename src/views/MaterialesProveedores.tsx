@@ -24,9 +24,18 @@ interface RegistroProveedoresPublicoProps {
 
 // ── Helpers ──
 
-/** Elimina etiquetas HTML/XML del string para prevenir XSS en renderizados posteriores. */
+/**
+ * Sanitiza texto de entrada: elimina etiquetas HTML, javascript: URIs,
+ * event handlers (onerror=, onclick=, etc.) y llamadas a funciones JS
+ * comunes (alert, prompt, confirm) para prevenir XSS.
+ */
 function sanitize(value: string): string {
-  return value.replace(/<[^>]*>/g, "").trim();
+  return value
+    .replace(/<[^>]*>/g, "")                // Etiquetas HTML/XML
+    .replace(/javascript\s*:/gi, "")         // javascript: URIs
+    .replace(/on\w+\s*=\s*(['"]?)[^'"\s]*\1/gi, "") // Event handlers
+    .replace(/\b(alert|prompt|confirm|print|open|write)\s*\([^)]*\)/gi, "") // Llamadas JS peligrosas
+    .trim();
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

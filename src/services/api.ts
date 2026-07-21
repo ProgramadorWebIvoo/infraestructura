@@ -11,6 +11,20 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 export { API_BASE_URL };
 
 // ---------------------------------------------------------------------------
+// Token refresh handler (registrado por useAuth para evitar dependencia circular)
+// ---------------------------------------------------------------------------
+
+let onTokenRefreshed: ((token: string) => void) | null = null;
+
+/**
+ * Registra el callback que se invocará cuando el backend devuelva
+ * un nuevo token via X-Refresh-Token.
+ */
+export function setTokenRefreshHandler(handler: (token: string) => void): void {
+  onTokenRefreshed = handler;
+}
+
+// ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
 
@@ -62,14 +76,39 @@ export async function apiFetch<T = unknown>(
   const text = await response.text();
 
   if (!response.ok) {
-    let message = `Error del servidor (${response.status})`;
-    try {
-      const body = JSON.parse(text);
-      message = body.error ?? body.message ?? message;
-    } catch {
-      // usar mensaje por defecto
+    const status = response.status;
+    let message: string;
+
+    if (status === 401) {
+      message = "Sesión expirada. Inicia sesión nuevamente.";
+    } else if (status === 403) {
+      message = "No tienes permiso para realizar esta acción.";
+    } else if (status === 404) {
+      message = "El recurso solicitado no fue encontrado.";
+    } else if (status === 422) {
+      try {
+        const body = JSON.parse(text);
+        // Extraer el primer error de validación de Laravel
+        const firstKey = Object.keys(body.errors ?? {})[0];
+        message = firstKey ? body.errors[firstKey][0] : (body.message ?? "Datos inválidos.");
+      } catch {
+        message = "Datos inválidos. Revisa la información ingresada.";
+      }
+    } else if (status === 429) {
+      message = "Demasiadas solicitudes. Intenta nuevamente en un minuto.";
+    } else if (status >= 500) {
+      message = "Error interno del servidor. Intenta más tarde.";
+    } else {
+      message = `Error del servidor (${status}).`;
     }
+
     throw new Error(message);
+  }
+
+  // Si el backend renovó el token via RefreshSanctumToken middleware, lo persistimos
+  const refreshedToken = response.headers.get("X-Refresh-Token");
+  if (refreshedToken && onTokenRefreshed) {
+    onTokenRefreshed(refreshedToken);
   }
 
   // Algunos endpoints devuelven texto plano

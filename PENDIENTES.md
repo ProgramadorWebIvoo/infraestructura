@@ -48,6 +48,8 @@
 
 17. **REALIZAR** ✅ El modal de calificación de proveedores aun no usa el componente generico de modales.
 
+18. **REALIZAR** Mejorar estilos del enlace publico.
+
 # PENDIENTE ----
 
 1. **REALIZAR** Los proveedores se registran a través de un enlace público de la web, sin embargo no existe manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no esté disponible, cierre o no sea aceptado más por la empresa, ¿cómo se cambiaría el estatus?
@@ -68,14 +70,17 @@
     - Proveedores.
     - Usuarios.
     - Materiales.
+    - IA Models.
 
-9. **REALIZAR** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
+9. **REALIZAR** Seguridad reforzada a los enlaces publicos.
 
-10. **REALIZAR** Mejorar estilos del enlace publico.
+10. **REALIZAR** La navbar y la tobar desaparecen en pantallas de entre 780px a 870px
 
-10. **REALIZAR** Auditoria completa para el enlace publico generado para los proveedores, Tanto en el Backend como en el Frontend.
+# AUDITORIAS A REALIZAR ---
 
-11. **REALIZAR** Los enlaces publicos generados a los proveedores no expiran en un plazo determinado.
+1. **AUDITORIA** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
+
+2. **AUDITORIA** Auditoria completa para el enlace publico generado para los proveedores, Tanto en el Backend como en el Frontend.
 
 # PRUEBAS A REALIZAR ---- 
 1. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app después de la normalización de la conexión a la API

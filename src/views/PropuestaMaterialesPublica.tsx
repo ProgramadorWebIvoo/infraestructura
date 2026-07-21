@@ -23,6 +23,16 @@ import { SupplierMaterialProposalItem } from "../types";
 import { apiFetch } from "../services/api";
 import NumericInput from "../components/UI/NumericInput";
 
+/** Elimina etiquetas HTML/XML del string para prevenir XSS en renderizados posteriores. */
+function sanitize(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, "")
+    .replace(/javascript\s*:/gi, "")
+    .replace(/on\w+\s*=\s*(['"]?)[^'"\s]*\1/gi, "")
+    .replace(/\b(alert|prompt|confirm|print|open|write)\s*\([^)]*\)/gi, "")
+    .trim();
+}
+
 interface ProjectPublicData {
   id: string;
   title: string;
@@ -145,12 +155,15 @@ export default function PropuestaMaterialesPublica() {
         body: JSON.stringify({
           estimatedDays: estimatedDays !== "" ? Number(estimatedDays) : null,
           durationUnit: estimatedDays !== "" ? durationUnit : null,
-          items: validItems.map(({ _id: _u, isCustom: _c, unitPrice, quantity, ...rest }) => ({
-            ...rest,
-            unitPrice: unitPrice === "" ? 0 : unitPrice,
-            quantity: quantity === "" ? 0 : quantity,
+          items: validItems.map((item) => ({
+            materialName: sanitize(item.materialName),
+            quantity: item.quantity === "" ? 0 : item.quantity,
+            unit: sanitize(item.unit),
+            unitPrice: item.unitPrice === "" ? 0 : item.unitPrice,
+            totalPrice: item.totalPrice,
+            notes: item.notes ? sanitize(item.notes) : null,
           })),
-          generalNotes: generalNotes.trim() || null,
+          generalNotes: sanitize(generalNotes) || null,
         }),
       });
       setSubmittedId(result.id);
@@ -312,8 +325,9 @@ export default function PropuestaMaterialesPublica() {
                             <input
                               type="text"
                               value={item.notes ?? ""}
-                              onChange={(e) => updateItem(index, "notes", e.target.value)}
+                              onChange={(e) => updateItem(index, "notes", sanitize(e.target.value))}
                               placeholder="Marca, plazo entrega..."
+                              maxLength={500}
                               className="w-40 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-hidden focus:border-sky-400 focus:ring-1 focus:ring-sky-200"
                             />
                           </td>
@@ -357,8 +371,9 @@ export default function PropuestaMaterialesPublica() {
                               <input
                                 type="text"
                                 value={item.materialName}
-                                onChange={(e) => updateItem(index, "materialName", e.target.value)}
+                                onChange={(e) => updateItem(index, "materialName", sanitize(e.target.value))}
                                 placeholder="Nombre del material *"
+                                maxLength={220}
                                 className="w-full min-w-[140px] rounded-lg border border-amber-200 px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                               />
                             </td>
@@ -374,8 +389,9 @@ export default function PropuestaMaterialesPublica() {
                               <input
                                 type="text"
                                 value={item.unit}
-                                onChange={(e) => updateItem(index, "unit", e.target.value)}
+                                onChange={(e) => updateItem(index, "unit", sanitize(e.target.value))}
                                 placeholder="Und."
+                                maxLength={60}
                                 className="w-20 rounded-lg border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                               />
                             </td>
@@ -396,8 +412,9 @@ export default function PropuestaMaterialesPublica() {
                               <input
                                 type="text"
                                 value={item.notes ?? ""}
-                                onChange={(e) => updateItem(index, "notes", e.target.value)}
+                                onChange={(e) => updateItem(index, "notes", sanitize(e.target.value))}
                                 placeholder="Notas..."
+                                maxLength={500}
                                 className="w-40 rounded-lg border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                               />
                             </td>
@@ -472,8 +489,9 @@ export default function PropuestaMaterialesPublica() {
               </label>
               <textarea
                 value={generalNotes}
-                onChange={(e) => setGeneralNotes(e.target.value)}
+                onChange={(e) => setGeneralNotes(sanitize(e.target.value))}
                 rows={3}
+                maxLength={1000}
                 placeholder="Condiciones de pago, garantias, disponibilidad, etc."
                 className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-800 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 resize-none"
               />

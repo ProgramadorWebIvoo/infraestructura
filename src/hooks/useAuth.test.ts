@@ -15,9 +15,11 @@ import { useAuth } from "./useAuth";
 // ---------------------------------------------------------------------------
 
 const mockApiFetch = vi.fn();
+const mockSetTokenRefreshHandler = vi.fn();
 
 vi.mock("../services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  setTokenRefreshHandler: (...args: unknown[]) => mockSetTokenRefreshHandler(...args),
 }));
 
 // ---------------------------------------------------------------------------
