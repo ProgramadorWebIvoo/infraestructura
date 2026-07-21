@@ -46,6 +46,8 @@
 
 16. **REALIZAR** ✅  Migrar la notificación de 'Traer al portal' a un 'Toast'.
 
+17. **REALIZAR** ✅ El modal de calificación de proveedores aun no usa el componente generico de modales.
+
 # PENDIENTE ----
 
 1. **REALIZAR** Los proveedores se registran a través de un enlace público de la web, sin embargo no existe manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no esté disponible, cierre o no sea aceptado más por la empresa, ¿cómo se cambiaría el estatus?
@@ -67,11 +69,13 @@
     - Usuarios.
     - Materiales.
 
-9. **REALIZAR** El modal de calificación de proveedores aun no usa el componente generico de modales.
+9. **REALIZAR** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
 
-10. **REALIZAR** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
+10. **REALIZAR** Mejorar estilos del enlace publico.
 
-11. **REALIZAR** Mejorar estilos del enlace publico.
+10. **REALIZAR** Auditoria completa para el enlace publico generado para los proveedores, Tanto en el Backend como en el Frontend.
+
+11. **REALIZAR** Los enlaces publicos generados a los proveedores no expiran en un plazo determinado.
 
 # PRUEBAS A REALIZAR ---- 
 1. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app después de la normalización de la conexión a la API

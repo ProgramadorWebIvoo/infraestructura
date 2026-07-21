@@ -22,10 +22,10 @@ import {
   Search,
   Star,
   Users,
-  X,
 } from "lucide-react";
 import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
 import { Table, type Column } from "../components/UI/Table";
+import Modal from "../components/UI/Modal";
 import { useProveedores } from "../hooks/useProveedores";
 
 interface ProveedoresRegistradosProps {
@@ -421,182 +421,162 @@ export default function ProveedoresRegistrados({
       </div>
 
       {/* ── Rating Modal ── */}
-      {editingContractor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 p-5 text-white">
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-amber-400">Evaluacion de proveedor</span>
-                <h3 className="text-sm font-bold">{editingContractor.name}</h3>
-                <p className="mt-0.5 font-mono text-[11px] text-slate-400">{editingContractor.code}</p>
-              </div>
-              <button onClick={handleCloseEdit} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-6 p-6">
-              <div className="flex flex-col items-center gap-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Calificacion</span>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setEditRating(star)}
-                      onMouseEnter={() => setHoveredStar(star)}
-                      onMouseLeave={() => setHoveredStar(null)}
-                      className="transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={`h-8 w-8 transition-colors ${
-                          star <= displayStars ? "fill-amber-400 text-amber-400" : "fill-slate-100 text-slate-300"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Valor exacto (0.0 – 5.0)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  value={editRating}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/[eE]/g, '');
-                    if (v === "") { setEditRating(""); return; }
-                    const val = Math.min(5, Math.max(0, parseFloat(v) || 0));
-                    setEditRating(Math.round(val * 10) / 10);
-                  }}
-                  onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
-                  onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); if (v === "") { setEditRating(""); return; } const val = Math.min(5, Math.max(0, parseFloat(v) || 0)); setEditRating(Math.round(val * 10) / 10); }}
-                  placeholder="0"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-center font-mono text-lg font-black text-amber-500 outline-hidden focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4">
-              <button onClick={handleCloseEdit} disabled={isSaving} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50">
-                Cancelar
-              </button>
+      <Modal
+        isOpen={editingContractor !== null}
+        onClose={handleCloseEdit}
+        title={editingContractor?.name}
+        badge="Evaluacion de proveedor"
+        infoLine={editingContractor?.code}
+        icon={<Star className="h-5 w-5" />}
+        iconColor="amber"
+        maxWidth="max-w-sm"
+        closeDisabled={isSaving}
+        footer={
+          <div className="flex justify-end gap-2">
+            <button onClick={handleCloseEdit} disabled={isSaving} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50">
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-amber-500/20 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Star className="h-3.5 w-3.5" />
+              {isSaving ? "Guardando..." : "Guardar evaluacion"}
+            </button>
+          </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Calificacion</span>
+          <div className="flex gap-1.5">
+            {[1, 2, 3, 4, 5].map((star) => (
               <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-amber-500/20 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                key={star}
+                type="button"
+                onClick={() => setEditRating(star)}
+                onMouseEnter={() => setHoveredStar(star)}
+                onMouseLeave={() => setHoveredStar(null)}
+                className="transition-transform hover:scale-110"
               >
-                <Star className="h-3.5 w-3.5" />
-                {isSaving ? "Guardando..." : "Guardar evaluacion"}
+                <Star
+                  className={`h-8 w-8 transition-colors ${
+                    star <= displayStars ? "fill-amber-400 text-amber-400" : "fill-slate-100 text-slate-300"
+                  }`}
+                />
               </button>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Valor exacto (0.0 – 5.0)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={5}
+            step={0.1}
+            value={editRating}
+            onChange={(e) => {
+              const v = e.target.value.replace(/[eE]/g, '');
+              if (v === "") { setEditRating(""); return; }
+              const val = Math.min(5, Math.max(0, parseFloat(v) || 0));
+              setEditRating(Math.round(val * 10) / 10);
+            }}
+            onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === 'Subtract') e.preventDefault(); }}
+            onPaste={(e) => { e.preventDefault(); const v = e.clipboardData.getData('text/plain').replace(/[eE]/g, ''); if (v === "") { setEditRating(""); return; } const val = Math.min(5, Math.max(0, parseFloat(v) || 0)); setEditRating(Math.round(val * 10) / 10); }}
+            placeholder="0"
+            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-center font-mono text-lg font-black text-amber-500 outline-hidden focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
+          />
+        </div>
+      </Modal>
 
       {/* ── Invite Modal ── */}
-      {inviteModalContractor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ">
+      <Modal
+        isOpen={inviteModalContractor !== null}
+        onClose={handleCloseInviteModal}
+        title={inviteModalContractor?.name}
+        badge="Propuesta de materiales"
+        infoLine={inviteModalContractor?.contact}
+        icon={<Link2 className="h-5 w-5" />}
+        iconColor="purple"
+        maxWidth="max-w-md"
+      >
+        {/* Project selector (always visible) */}
+        <div>
+          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Obra activa *
+          </label>
+          <select
+            value={inviteProjectId}
+            onChange={(e) => {
+              setInviteProjectId(e.target.value);
+              setGeneratedToken("");
+              setLinkCopied(false);
+            }}
+            disabled={!!generatedToken}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            <option value="">-- Seleccione una obra --</option>
+            {activeProjects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.id} — {p.title}
+              </option>
+            ))}
+          </select>
+          {activeProjects.length === 0 && (
+            <p className="mt-1.5 text-[11px] text-slate-400 font-medium">No hay obras activas disponibles.</p>
+          )}
+        </div>
 
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 p-5 text-white">
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-indigo-400">Propuesta de materiales</span>
-                <h3 className="text-sm font-bold">{inviteModalContractor.name}</h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <Mail className="h-3 w-3 text-slate-400" />
-                  <p className="font-mono text-[11px] text-slate-400">{inviteModalContractor.contact}</p>
-                </div>
-              </div>
-              <button onClick={handleCloseInviteModal} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white">
-                <X className="h-5 w-5" />
+        {/* Result: generated link */}
+        {generatedToken ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Enlace generado para</div>
+            <div className="text-xs font-black text-slate-800">{inviteModalContractor?.name}</div>
+            <div className="text-[11px] text-slate-500 font-medium">Obra: {generatedProjectTitle}</div>
+            <p className="break-all rounded-lg border border-emerald-200 bg-white px-3 py-2 font-mono text-[11px] text-indigo-600 leading-relaxed">
+              {inviteUrl}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopyLink}
+                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black shadow-md transition ${
+                  linkCopied
+                    ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                    : "bg-indigo-600 text-white shadow-indigo-600/20 hover:bg-indigo-700"
+                }`}
+              >
+                {linkCopied ? (
+                  <><ClipboardCheck className="h-4 w-4" />Copiado</>
+                ) : (
+                  <><ClipboardCheck className="h-4 w-4" />Copiar enlace</>
+                )}
+              </button>
+              <button
+                onClick={handleResetInviteProject}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                title="Generar para otra obra"
+              >
+                <RotateCcw className="h-4 w-4" />
               </button>
             </div>
-
-            <div className="p-6 space-y-5">
-              {/* Project selector (always visible) */}
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Obra activa *
-                </label>
-                <select
-                  value={inviteProjectId}
-                  onChange={(e) => {
-                    setInviteProjectId(e.target.value);
-                    setGeneratedToken("");
-                    setLinkCopied(false);
-                  }}
-                  disabled={!!generatedToken}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option value="">-- Seleccione una obra --</option>
-                  {activeProjects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.id} — {p.title}
-                    </option>
-                  ))}
-                </select>
-                {activeProjects.length === 0 && (
-                  <p className="mt-1.5 text-[11px] text-slate-400 font-medium">No hay obras activas disponibles.</p>
-                )}
-              </div>
-
-              {/* Result: generated link */}
-              {generatedToken ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Enlace generado para</div>
-                  <div className="text-xs font-black text-slate-800">{inviteModalContractor.name}</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Obra: {generatedProjectTitle}</div>
-                  <p className="break-all rounded-lg border border-emerald-200 bg-white px-3 py-2 font-mono text-[11px] text-indigo-600 leading-relaxed">
-                    {inviteUrl}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleCopyLink}
-                      className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black shadow-md transition ${
-                        linkCopied
-                          ? "bg-emerald-500 text-white shadow-emerald-500/20"
-                          : "bg-indigo-600 text-white shadow-indigo-600/20 hover:bg-indigo-700"
-                      }`}
-                    >
-                      {linkCopied ? (
-                        <><ClipboardCheck className="h-4 w-4" />Copiado</>
-                      ) : (
-                        <><ClipboardCheck className="h-4 w-4" />Copiar enlace</>
-                      )}
-                    </button>
-                    <button
-                      onClick={handleResetInviteProject}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
-                      title="Generar para otra obra"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={handleGenerateInvite}
-                  disabled={isCreatingInvite || !inviteProjectId}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {isCreatingInvite ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" />Generando enlace...</>
-                  ) : (
-                    <><Link2 className="h-4 w-4" />Generar enlace unico</>
-                  )}
-                </button>
-              )}
-            </div>
-
           </div>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={handleGenerateInvite}
+            disabled={isCreatingInvite || !inviteProjectId}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isCreatingInvite ? (
+              <><Loader2 className="h-4 w-4 animate-spin" />Generando enlace...</>
+            ) : (
+              <><Link2 className="h-4 w-4" />Generar enlace unico</>
+            )}
+          </button>
+        )}
+      </Modal>
     </>
   );
 }
