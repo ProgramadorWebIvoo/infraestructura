@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   FileSpreadsheet,
   Map,
+  MapPin,
   Download,
   BrainCircuit,
 } from "lucide-react";
@@ -48,22 +49,6 @@ export default function ProcuraPanel({
   isLoading = false,
 }: ProcuraPanelProps) {
   const { showToast } = useToast();
-  if (isLoading) return <ProcuraSkeleton />;
-
-  const handleDownload = async (projectId: string, doc: ProjectDocument) => {
-    try {
-      const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.originalName;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
-  };
-
   // Phase 1 form state
   const [selectedReviewId, setSelectedReviewId] = useState("");
   const [procuraNotes, setProcuraNotes] = useState("");
@@ -80,6 +65,22 @@ export default function ProcuraPanel({
   const pendingInvestmentApproval = projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE);
   const pendingContractSelection = projects.filter(p => p.status === ProjectStatus.COMPARATIVA_ENVIADA);
   const activeReviewProject = pendingInvestmentApproval.find(p => p.id === selectedReviewId);
+
+  if (isLoading) return <ProcuraSkeleton />;
+
+  const handleDownload = async (projectId: string, doc: ProjectDocument) => {
+    try {
+      const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.originalName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast("No se pudo descargar el archivo.", "error");
+    }
+  };
 
   const handleApproveInvestmentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,7 +192,7 @@ export default function ProcuraPanel({
     <div className="space-y-6">
 
       {/* SECTION 1: Pending Investment Approvals */}
-      <Card>
+      <Card className="border-l-4 border-l-purple-400">
         <SectionHeader
           icon={<TrendingUp className="h-5 w-5" />}
           title="Gerencia de Procura: Autorización de Inversión Inicial"
@@ -205,7 +206,10 @@ export default function ProcuraPanel({
           <div className="space-y-5">
             <div className="space-y-2.5">
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Peticiones Listas para Procura:</label>
-              <div className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
+              <div
+                className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth"
+                style={{ willChange: "scroll-position" }}
+              >
                 {pendingInvestmentApproval.map((p) => (
                   <button
                     id={`procura-review-select-${p.id}`}
@@ -216,14 +220,16 @@ export default function ProcuraPanel({
                       setApprovedAmount(p.estimatedTotal);
                       setProcuraNotes(`Presupuesto aprobado de $${p.estimatedTotal} para licitación directa. Cierre de Obra validó planos correspondientes.`);
                     }}
-                    className={`px-4 py-3 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer ${
+                    style={{ contentVisibility: "auto", contain: "layout style paint" }}
+                    className={`px-4 py-3 rounded-xl border text-xs font-bold transition-all duration-200 text-left cursor-pointer ${
                       selectedReviewId === p.id
-                        ? "border-purple-500 bg-purple-50 text-purple-950 ring-2 ring-purple-100"
-                        : "border-slate-200 bg-white hover:border-purple-400 hover:bg-slate-50/50"
+                        ? "border-purple-500 bg-gradient-to-br from-purple-50 to-white text-purple-950 ring-2 ring-purple-100 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-purple-400 hover:bg-slate-50/50 hover:shadow-sm"
                     }`}
                   >
                     <div className="font-mono text-[9px] text-purple-600 font-bold mb-0.5">{p.id}</div>
-                    <div>{p.title}</div>
+                    <div className="line-clamp-1">{p.title}</div>
+                    <div className="text-[9px] text-slate-400 font-medium mt-1">{p.location}</div>
                   </button>
                 ))}
               </div>
@@ -231,14 +237,18 @@ export default function ProcuraPanel({
 
             {activeReviewProject && (
               <form onSubmit={handleApproveInvestmentSubmit} className="border-t border-slate-100 pt-5 space-y-5">
-                <div className="p-4 bg-slate-50 rounded-xl text-xs space-y-2 border border-slate-100 font-medium">
-                  <div className="flex justify-between items-center text-slate-800">
+                <div className="p-4 bg-gradient-to-br from-purple-50/40 to-white rounded-xl text-xs space-y-2 border border-purple-100/60 font-medium">
+                  <div className="flex justify-between items-center">
                     <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
-                    <span className="font-mono font-bold text-slate-900">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                    <span className="font-mono font-bold text-purple-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
                   </div>
-                  <div><strong className="font-bold text-slate-400">Ubicación: </strong> {activeReviewProject.location}</div>
-                  <div className="text-slate-500 italic mt-1.5 leading-relaxed pt-2 border-t border-slate-200/60">
-                    <strong className="font-bold text-slate-600">Nota Cierre de Obra: </strong> {activeReviewProject.cierreObraNotes}
+                  <div className="flex items-center gap-1 text-slate-500">
+                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                    {activeReviewProject.location}
+                  </div>
+                  <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-purple-100/60">
+                    <span className="font-bold not-italic text-slate-600">Nota Cierre de Obra: </span>
+                    {activeReviewProject.cierreObraNotes}
                   </div>
                 </div>
 
@@ -277,7 +287,7 @@ export default function ProcuraPanel({
                   <button
                     id="btn-procura-approve-investment"
                     type="submit"
-                    className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-md shadow-purple-600/10 transition-all cursor-pointer transform hover:scale-[1.02]"
+                    className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white rounded-xl shadow-md shadow-purple-600/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-purple-600/30 hover:-translate-y-0.5"
                   >
                     <CheckSquare className="h-4 w-4" />
                     Autorizar Presupuesto y Enviar a Licitación
@@ -290,7 +300,7 @@ export default function ProcuraPanel({
       </Card>
 
       {/* SECTION 2: Bid Evaluation & Final Hiring Decision */}
-      <Card className="max-h-150 overflow-y-auto scroll-smooth">
+      <Card className="border-l-4 border-l-emerald-400">
         <SectionHeader
           icon={<Users className="h-5 w-5" />}
           title="Evaluación Comparativa de Ofertas y Contratación"
@@ -301,40 +311,48 @@ export default function ProcuraPanel({
         {pendingContractSelection.length === 0 ? (
           <EmptyState message="No hay propuestas ni cuadros comparativos pendientes por revisión de contratación en este momento." />
         ) : (
-          <div className="space-y-6">
+          <div
+            className="space-y-6 max-h-[580px] overflow-y-auto pr-1"
+            style={{ willChange: "scroll-position" }}
+          >
             {pendingContractSelection.map((p) => {
               const isRejectingThis = rejectingProjectId === p.id;
               return (
-                <div key={p.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/10 p-5 space-y-4">
+                <div
+                  key={p.id}
+                  className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-white p-5 space-y-4"
+                  style={{ contentVisibility: "auto", contain: "layout style paint" }}
+                >
 
                   {/* Project Brief */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/60 pb-4 gap-3">
                     <div>
-                      <span className="text-[9px] font-mono font-bold bg-sky-50 text-sky-800 px-2.5 py-0.5 rounded-lg border border-sky-100">
+                      <span className="text-[9px] font-mono font-bold bg-gradient-to-br from-emerald-50 to-emerald-100/50 text-emerald-800 px-2.5 py-0.5 rounded-lg border border-emerald-200">
                         {p.id}
                       </span>
                       <h4 className="text-sm font-bold text-slate-900 mt-1.5">{p.title}</h4>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                         {p.location} &bull; Inversión Autorizada:{" "}
                         <span className="font-mono text-slate-700 font-bold">${p.approvedInvestmentAmount?.toLocaleString("en-US")}</span>
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sky-600 font-bold bg-sky-50 px-3 py-1 rounded-xl border border-sky-100 font-mono text-[10px] tracking-wider uppercase">
-                        Comparativa Lista ({p.proposals?.length || 0} Propuestas)
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      <span className="text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 font-mono text-[10px] tracking-wider uppercase shadow-xs">
+                        {p.proposals?.length || 0} Propuestas
                       </span>
                       <button
                         id={`btn-ai-eval-${p.id}`}
                         onClick={() => setAiEvalProject(p)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm"
                       >
                         <BrainCircuit className="h-3.5 w-3.5" />
-                        Evaluación Inteligente
+                        Evaluación IA
                       </button>
                       {!isRejectingThis && (
                         <button
                           onClick={() => handleOpenReject(p.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm"
                         >
                           <XCircle className="h-3.5 w-3.5" />
                           Rechazar
@@ -345,12 +363,12 @@ export default function ProcuraPanel({
 
                   {/* Rejection form (inline) */}
                   {isRejectingThis && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
+                    <div className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-4 space-y-3 shadow-sm">
                       <div className="flex items-center gap-2 text-red-700">
                         <AlertTriangle className="h-4 w-4 shrink-0" />
                         <span className="text-xs font-black">Rechazar cuadro comparativo</span>
                       </div>
-                      <p className="text-xs text-red-600/80 font-medium">
+                      <p className="text-xs text-red-600/80 font-medium leading-relaxed">
                         Se eliminarán todas las propuestas cargadas y el proyecto regresará a <strong>Carga de Propuestas de Contratistas</strong> para que los Analistas inicien una nueva ronda.
                       </p>
                       <div>
@@ -370,7 +388,7 @@ export default function ProcuraPanel({
                           type="button"
                           onClick={handleCancelReject}
                           disabled={isRejecting}
-                          className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                          className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all duration-200 disabled:opacity-50 cursor-pointer"
                         >
                           Cancelar
                         </button>
@@ -378,7 +396,7 @@ export default function ProcuraPanel({
                           type="button"
                           onClick={() => handleConfirmReject(p.id)}
                           disabled={isRejecting || !rejectReason.trim()}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md shadow-red-600/20 transition disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 rounded-xl shadow-md shadow-red-600/20 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         >
                           <XCircle className="h-3.5 w-3.5" />
                           {isRejecting ? "Rechazando..." : "Confirmar rechazo"}
@@ -389,7 +407,7 @@ export default function ProcuraPanel({
 
                   {/* Proposals Spreadsheet Comparer */}
                   {!isRejectingThis && (
-                    <div className="border border-slate-100 rounded-xl bg-white overflow-hidden">
+                    <div className="border border-slate-100 rounded-xl bg-white overflow-hidden shadow-xs">
                       <Table
                         columns={[
                           {
@@ -398,14 +416,14 @@ export default function ProcuraPanel({
                             render: (prop) => (
                               <>
                                 <div className="font-bold text-slate-800 text-[12px]">{prop.contractorName}</div>
-                                <div className="font-mono text-[9px] text-sky-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
+                                <div className="font-mono text-[9px] text-emerald-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
                                 <div className="text-[10px] text-slate-400 mt-1 max-w-xs truncate font-medium" title={prop.description}>{prop.description}</div>
                               </>
                             ),
                           },
                           { key: "materialCost", label: "Insumos/Materiales", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">${prop.materialCost.toLocaleString("en-US")}</span> },
                           { key: "laborCost", label: "Mano de Obra", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">${prop.laborCost.toLocaleString("en-US")}</span> },
-                          { key: "totalCost", label: "Costo Total", align: "right", render: (prop) => <span className="font-mono font-black text-slate-900 text-sm">${prop.totalCost.toLocaleString("en-US")}</span> },
+                          { key: "totalCost", label: "Costo Total", align: "right", render: (prop) => <span className="font-mono font-black text-emerald-700 text-sm">${prop.totalCost.toLocaleString("en-US")}</span> },
                           { key: "deliveryWeeks", label: "Entrega", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks} semanas</span> },
                           {
                             key: "advance",
@@ -426,7 +444,7 @@ export default function ProcuraPanel({
                               <button
                                 id={`btn-hire-${p.id}-${prop.contractorCode}`}
                                 onClick={() => onSelectContractor(p.id, prop.contractorCode, prop.id)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-xl shadow-md shadow-sky-500/10 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-0.5"
                               >
                                 <ShieldCheck className="h-4 w-4" />
                                 Adjudicar

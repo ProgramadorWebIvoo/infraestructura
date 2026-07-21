@@ -48,33 +48,35 @@
 
 17. **REALIZAR** ✅ El modal de calificación de proveedores aun no usa el componente generico de modales.
 
-18. **REALIZAR** Mejorar estilos del enlace publico.
+18. **REALIZAR** ✅ Mejorar estilos del enlace publico.
+
+19. **REALIZAR** ✅ Seguridad reforzada a los enlaces publicos.
+
+20. **REALIZAR** ✅ La navbar y la topbar desaparecen en pantallas de entre 780px a 870px.
+
+21. **REALIZAR / URGENTE** ✅ Funcion de busqueda en la tabla de AUDITORIA y POLLING.
+
+22. **REALIZAR** ✅ Mejorar estilos visuales de todas las vistas del sistema.
+
+23. **REALIZAR** ✅ Modificar el elemento Card de peticiones de departamente debe tener un tamaño estatico con 'overflow-y-auto'
+
+24. **REALIZAR** ✅ En el apartado de infraestructura, justo donde el departamento puede realizar las peticiones no permite ver los detalles de esa petición realizada
 
 # PENDIENTE ----
 
-1. **REALIZAR** Los proveedores se registran a través de un enlace público de la web, sin embargo no existe manera de poder configurar o cambiar el estatus del proveedor, en caso por ejemplo que uno ya no esté disponible, cierre o no sea aceptado más por la empresa, ¿cómo se cambiaría el estatus?
+1. **REALIZAR** Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.)
 
-2. **REALIZAR** Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.)
+2. **CRÍTICO** No existe un panel GENERAL para realizar la configuración y creación de datos IMPRESCINDIBLES como Materiales, Proveedores, IAs
 
-3. **CRÍTICO** No existe un panel GENERAL para realizar la configuración y creación de datos IMPRESCINDIBLES como Materiales, Proveedores, IAs
-
-4. **REALIZAR / URGENTE** Funcion de busqueda en la tabla de AUDITORIA y POLLING
-
-5. **REALIZAR** En el apartado de infraestructura, justo donde el departamento puede realizar las peticiones no permite ver los detalles de esa petición realizada
-
-6. **PRIORITARIO** Analizar, Evaluar y refactorizar la tabla de auditoria (FRONT), esto debido a que la tabla a pesar de complir con su rol, el superusuario si desea buscar es una modificación, un proyecto, responsable de realización de flujo, etc, tendra que consultar la misma que encuentra anidada todas los logs sin clasificación ni división.
-
-7. **REALIZAR** Modificar el elemento Card para que tenga una variante de tamaño estatica con 'overflow-y-auto'
-
-8. **URGENTE** Realizar las pestañas debidas de configuracióon para:
+3. **URGENTE** Realizar las pestañas debidas de configuracióon para:
     - Proveedores.
     - Usuarios.
     - Materiales.
     - IA Models.
 
-9. **REALIZAR** Seguridad reforzada a los enlaces publicos.
+4. **URGENTE** Mejoras de seguridad y traza de error para los IA providers.
 
-10. **REALIZAR** La navbar y la tobar desaparecen en pantallas de entre 780px a 870px
+5. **URGENTE** Parece que con las refactorizaciones se paso por alto dos puntos, A: la api key de los providers de IA se esta filttrando por errores de laravel y las URL. B: El provider de Gemini no esta conectando de la manera que es debida.
 
 # AUDITORIAS A REALIZAR ---
 

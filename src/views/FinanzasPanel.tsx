@@ -82,7 +82,7 @@ export default function FinanzasPanel({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Left Card: Pending Advance payments */}
-        <Card className="max-h-115 overflow-y-auto scroll-smooth">
+        <Card className="border-l-4 border-l-rose-400 max-h-115 overflow-y-auto scroll-smooth">
           <SectionHeader
             icon={<Coins className="h-5 w-5" />}
             title="Liberación de Anticipos Pactados (Inicio Obra)"
@@ -109,12 +109,12 @@ export default function FinanzasPanel({
                         <span className="text-[9px] font-mono font-bold text-slate-400">{p.id}</span>
                         <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h4>
                       </div>
-                      <span className="text-[9px] font-mono bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg font-bold">
+                      <span className="text-[9px] font-mono bg-gradient-to-br from-amber-50 to-amber-100/50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg font-bold">
                         Anticipo Pendiente
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-slate-100 text-xs">
+                    <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-gradient-to-br from-rose-50/40 to-white border border-rose-100/60 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Contratista adjudicado:</span>
                         <span className="font-bold text-slate-800">{winner.contractorName}</span>
@@ -140,7 +140,7 @@ export default function FinanzasPanel({
                     <button
                       id={`btn-pay-advance-${p.id}`}
                       onClick={() => onPayAdvance(p.id, advAmount)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-md shadow-rose-500/10 transition-colors cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-700 hover:to-rose-600 text-white rounded-xl shadow-md shadow-rose-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-rose-500/30 hover:-translate-y-0.5"
                     >
                       <CreditCard className="h-4 w-4" />
                       Liberar Desembolso de Anticipo Bancario
@@ -153,7 +153,7 @@ export default function FinanzasPanel({
         </Card>
 
         {/* Right Card: Final Settlements */}
-        <Card className="max-h-115 overflow-y-auto scroll-smooth">
+        <Card className="border-l-4 border-l-sky-400 max-h-115 overflow-y-auto scroll-smooth">
           <SectionHeader
             icon={<DollarSign className="h-5 w-5" />}
             title="Finiquitos y Liquidaciones de Cierre (100%)"
@@ -181,12 +181,12 @@ export default function FinanzasPanel({
                         <span className="text-[9px] font-mono font-bold text-slate-400">{p.id}</span>
                         <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h4>
                       </div>
-                      <span className="text-[9px] font-mono bg-sky-50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded-lg font-bold">
+                      <span className="text-[9px] font-mono bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded-lg font-bold">
                         Aprobación de Calidad OK
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-slate-100 text-xs">
+                    <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-gradient-to-br from-sky-50/40 to-white border border-sky-100/60 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Contratista ejecutor:</span>
                         <span className="font-bold text-slate-800">{winner.contractorName}</span>
@@ -211,7 +211,7 @@ export default function FinanzasPanel({
                     <button
                       id={`btn-pay-final-${p.id}`}
                       onClick={() => onPayFinal(p.id, balanceDue)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-md shadow-sky-500/10 transition-colors cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-700 hover:to-sky-600 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
                     >
                       <CreditCard className="h-4 w-4" />
                       Aprobar y Transferir Finiquito de Obra
@@ -226,22 +226,19 @@ export default function FinanzasPanel({
       </div>
 
       {/* Financial ledger */}
-      <Card className="max-h-115 overflow-y-auto scroll-smooth">
-        <div className="p-0 border-b border-slate-100 flex items-center justify-between mb-0">
-          <div>
-            <h3 className="font-sans font-bold text-slate-900 text-sm">Libro Diario de Egresos y Transferencias</h3>
-            <p className="text-xs text-slate-500 font-medium">Historial detallado de desembolsos bancarios directos realizados por el sistema.</p>
-          </div>
-          <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full uppercase">
-            Libro Banco ({paidLedger.length} TXS)
-          </span>
-        </div>
+      <Card className="border-l-4 border-l-slate-400 max-h-115 overflow-y-auto scroll-smooth">
+        <SectionHeader
+          icon={<ArrowUpRight className="h-5 w-5" />}
+          title="Libro Diario de Egresos y Transferencias"
+          description="Historial detallado de desembolsos bancarios directos realizados por el sistema."
+          color="slate"
+        />
 
         <Table
           columns={[
-            { key: "voucher", label: "ID Voucher", render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-rose-500 shrink-0" />{tx.voucher}</span> },
+            { key: "voucher", label: "ID Voucher", render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-slate-400 shrink-0" />{tx.voucher}</span> },
             { key: "title", label: "Ref. Obra", render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
-            { key: "type", label: "Tipo Egreso", render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-rose-50 text-rose-700 border border-rose-100" : "bg-sky-50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
+            { key: "type", label: "Tipo Egreso", render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 border border-rose-100" : "bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
             { key: "contractorCode", label: "Proveedor (Código)", render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
             { key: "date", label: "Fecha Pago", render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
             { key: "amount", label: "Monto Desembolsado", align: "right", render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },

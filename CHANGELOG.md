@@ -1,5 +1,84 @@
 # CHANGELOG
 
+## [2026-07-21] — Fix: Providers de IA — ConnectionException no capturado + failover + visibilidad de errores
+
+- Tipo: fix + feature
+- Qué:
+  - **ConnectionException no capturado (causa raíz del 500)** — `Illuminate\Http\Client\ConnectionException` extiende `HttpClientException → Exception`, NO `RuntimeException`. El `catch (RuntimeException $e)` en `AIEvaluationService::evaluate()` y `AIEvaluationController::evaluate()` no lo capturaba, provocando un 500 en vez de un 503 con failover. Cambiado a `catch (\Throwable $e)` en ambos.
+  - **Typo en `evaluateWithProvider`** — `$this->attempLog` → `$this->attemptLog` (2 ocurrencias). El log de intentos forzado se escribía en una propiedad inexistente y se devolvía vacío.
+  - **Try/catch en `evaluateWithProvider` (forced provider)** — La ruta de proveedor forzado no tenía manejo de excepciones. Ahora captura `\Throwable`, registra en el log y re-lanza como `RuntimeException` con el provider original como `$previous`.
+  - **HTTP retry en los 3 providers** — Agregado `->retry(2, 1000)` a las llamadas `Http::post()` en `OpenAIProvider`, `GeminiProvider` y `AnthropicProvider`. Los timeouts transitorios ahora reintentan automáticamente antes de failover.
+  - **Timeout aumentado de 30s a 60s** — `AI_TIMEOUT` en `config/ai.php` y `.env` pasado de 30 a 60. Las evaluaciones de propuestas con múltiples contratistas necesitan más tiempo.
+  - **`attemptLog` en respuesta de error** — El controlador ahora incluye `attemptLog` en la respuesta JSON de error (503), mostrando qué proveedores se intentaron y sus errores.
+  - **Frontend: parseo de errores 503** — `api.ts` ahora parsea el cuerpo JSON de respuestas 503 y extrae `error` + `attemptLog`, adjuntándolos al objeto `Error`. Antes mostraba un genérico "Error interno del servidor".
+  - **Frontend: visibilidad del failover** — `EvaluacionInteligenteModal.tsx` muestra el `attemptLog` del backend (éxitos y fallos de cada proveedor) en el log de failover, tanto en caso de éxito como de error. `AIEvaluationResult` incluye `attemptLog?`.
+  - **`.env.example` actualizado** — Agregadas las variables de configuración de AI (`AI_TIMEOUT`, `OPENAI_*`, `GEMINI_*`, `ANTHROPIC_*`).
+- Por qué / causa raíz: El error `cURL error 28 (timeout)` lanzaba `ConnectionException` que no era capturado por el `catch (RuntimeException)`, resultando en 500 y sin información de qué proveedores se intentaron. El frontend mostraba un error genérico sin el log de failover.
+- Archivos:
+  - `infraestructura-back/app/Services/AI/AIEvaluationService.php` — catch \Throwable, typo fix, try/catch forced provider
+  - `infraestructura-back/app/Http/Controllers/Api/AIEvaluationController.php` — catch \Throwable, attemptLog en error response
+  - `infraestructura-back/app/Services/AI/Providers/OpenAIProvider.php` — +retry
+  - `infraestructura-back/app/Services/AI/Providers/GeminiProvider.php` — +retry
+  - `infraestructura-back/app/Services/AI/Providers/AnthropicProvider.php` — +retry
+  - `infraestructura-back/config/ai.php` — timeout default 30→60
+  - `infraestructura-back/.env` — AI_TIMEOUT=60
+  - `infraestructura-back/.env.example` — vars AI agregadas
+  - `src/services/api.ts` — parseo 503 + attemptLog en Error
+  - `src/services/aiEvaluationService.ts` — attemptLog en AIEvaluationResult
+  - `src/components/Modals/EvaluacionInteligenteModal.tsx` — mostrar attemptLog del backend
+
+## [2026-07-21] — Fix: aiEvaluationService no retornaba resultados por desenvolvimiento doble de apiFetch
+
+- Tipo: fix
+- Qué:
+  - **Doble desenvolvimiento de `json.data`** — `apiFetch()` ya desenvuelve `json.data ?? json`, retornando el objeto interno directamente. Pero `aiEvaluationService.ts` seguía esperando la estructura `{ success, data }` completa y verificaba `!result.success || !result.data`. Como el resultado ya era el `AIEvaluationResult` interno (sin campos `success`/`data`), la condición siempre era verdadera y lanzaba "La evaluación no devolvió resultados" aunque el backend respondiera 200 OK con todos los datos.
+  - Eliminada la interfaz `AIEvaluationResponse` (ya no usada).
+  - `apiFetch<AIEvaluationResult>` retorna directamente el resultado; el manejo de errores (503) lo hace `apiFetch` lanzando `Error` con el mensaje del backend.
+- Por qué / causa raíz: Después del refactor de `api.ts` que agregó el desenvolvimiento automático de `json.data`, `aiEvaluationService.ts` no se actualizó, manteniendo la lógica obsoleta de verificación de `success`/`data`.
+- Archivos: `src/services/aiEvaluationService.ts`
+
+## [2026-07-21] — Mejora visual de FinanzasPanel
+
+- Tipo: refactor (visual)
+- Qué:
+  - **Cards con border-l accent** — Anticipos con `border-l-4 border-l-rose-400`, Liquidaciones con `border-l-4 border-l-sky-400`, Libro Diario con `border-l-4 border-l-slate-400`.
+  - **Botones CTA con gradientes** — Reemplazados `bg-rose-500`/`bg-sky-500` planos por `bg-gradient-to-r from-{color}-600 to-{color}-500`, `shadow-md shadow-{color}-500/20`, `hover:shadow-lg hover:shadow-{color}-500/30 hover:-translate-y-0.5`.
+  - **Paneles de detalle con gradientes** — Grid de info de anticipos ahora usa `bg-gradient-to-br from-rose-50/40 to-white border border-rose-100/60`. Grid de liquidaciones usa `from-sky-50/40 to-white border border-sky-100/60`.
+  - **Badges con gradientes** — "Anticipo Pendiente" usa `from-amber-50 to-amber-100/50`, "Aprobación de Calidad OK" usa `from-sky-50 to-sky-100/50`.
+  - **Libro Diario con SectionHeader** — Header custom reemplazado por `<SectionHeader>` con `color="slate"` e icono `ArrowUpRight`, unificando el patrón con las demás vistas.
+  - **Badges de tipo en tabla** — Tipo Egreso usa `bg-gradient-to-br` en vez de bg plano para consistencia con el design language.
+  - **Icono voucher** — Cambiado de `text-rose-500` a `text-slate-400` para alinearse con el tema slate del ledger.
+- Por qué: FinanzasPanel era la única vista sin border-l accent, con botones planos sin gradientes ni sombras, paneles de info sin gradientes, y header custom del ledger sin SectionHeader. Estaba visualmente desalineado con CierreObra, Infraestructura y Procura.
+- Archivos: `src/views/FinanzasPanel.tsx`
+
+## [2026-07-21] — Mejora visual de Cierre de Obra
+
+- Tipo: refactor (visual)
+- Qué:
+  - **Card de revisión de cálculos** — `border-l-4 border-l-sky-400`, selector con gradient activo y `contentVisibility: auto` para scroll performance, detalle de inversión con gradient bg y bullets en materiales, submit button con gradient y hover translate.
+  - **Card de auditoría de fin de obra** — `border-l-4 border-l-emerald-400`, items en `bg-white` con hover `border-emerald-200`, botón de certificación con gradient emerald y shadow, scroll container con `will-change` y cada item con `contain`.
+  - **Info box flujo de retornos** — `border-l-4 border-l-slate-400`, `bg-white`, pasos numerados con badge circular, layout más limpio.
+- Archivos: `src/views/CierreObraPanel.tsx`
+
+## [2026-07-21] — Mejora visual completa de Infraestructura/Mantenimiento
+
+- Tipo: refactor (visual)
+- Qué:
+  - **Formulario de creación** — `border-l-4 border-l-sky-400`, botones de tipo con gradient y shadow en active, submit button con gradient `from-sky-500 to-sky-600` y hover animations.
+  - **Configurar materiales** — `border-l-4 border-l-emerald-400`, header con icon container (mismo patrón que Presidencia), tabs rediseñados como toggle pills con fondo `bg-slate-100/60`, form background con `bg-gradient-to-br from-emerald-50/30 to-white`, botón Agregar en emerald.
+  - **Columna derecha** — Dark info card con `border-l-4 border-l-sky-400`, icon container, steps con badge circular. Lista de peticiones con `border-l-4 border-l-slate-400`, header unificado, items con hover shadow, empty state, max-height scroll.
+- Archivos: `src/views/InfraestructuraMantenimientoPanel.tsx`
+
+## [2026-07-21] — Auditoría: buscador con filtro por rol + modal de detalles
+
+- Tipo: feature
+- Qué:
+  - **AuditInspectModal** — Nuevo componente en `src/components/Modals/AuditInspectModal.tsx` que muestra todos los campos de un `AuditLog` en formato limpio y legible (proyecto, acción, detalles completos, metadatos).
+  - **Columnas de auditoría simplificadas** — `PresidenciaDashboard.tsx` reemplazó las 7 columnas originales (incluyendo projectTitle, projectId, details) por 4 columnas compactas (timestamp, rol, usuario, acción) más un botón "Inspeccionar" en cada fila que abre el modal.
+  - Se eliminaron los truncamientos (`line-clamp`) y la sobrecarga visual de la tabla de trazabilidad.
+  - **Buscador con filtro por rol y rango de fechas** — Nueva barra de búsqueda en la tabla de auditoría que permite buscar por acción, proyecto, usuario o detalles. Además, filtro por rol (Presidencia, Infraestructura, Cierre de Obra, Procura, Analistas, Finanzas, Sistema) y filtro por rango de fechas (desde/hasta) con inputs de tipo `date`, todo con el mismo patrón de UI que el Master de Obras.
+- Archivos: `src/components/Modals/AuditInspectModal.tsx` (nuevo), `src/views/PresidenciaDashboard.tsx`
+
 ## [2026-07-21] — Fixes post-testing: CSP, sanitización XSS, rate limiting, token refresh
 
 - Tipo: fix

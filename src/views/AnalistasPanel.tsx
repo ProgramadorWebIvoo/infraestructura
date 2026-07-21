@@ -127,7 +127,7 @@ export default function AnalistasPanel({
       
       {/* Left panel: Active Licitations and Adder */}
       <div className="lg:col-span-7 space-y-6">
-        <Card>
+        <Card className="border-l-4 border-l-emerald-400">
           <SectionHeader
             icon={<FileSpreadsheet className="h-5 w-5" />}
             title="Carga de Propuestas de Contratistas"
@@ -148,7 +148,7 @@ export default function AnalistasPanel({
                   id="analistas-project-selector"
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-semibold text-slate-800"
+                  className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-semibold text-slate-800 cursor-pointer"
                 >
                   <option value="">-- Seleccionar Obra Aprobada para Licitación --</option>
                   {pendingLicitacion.map((p) => (
@@ -162,11 +162,13 @@ export default function AnalistasPanel({
               {activeProject && (
                 <div className="space-y-5 pt-2">
                   {/* Adder Form */}
-                  <form onSubmit={handleAddProposal} className="p-5 bg-slate-50/80 rounded-xl border border-slate-100 space-y-4">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <Users className="h-4 w-4 text-sky-500 stroke-[2.5]" />
-                      Registrar Oferta del Proveedor
-                    </h4>
+                  <form onSubmit={handleAddProposal} className="p-5 bg-gradient-to-br from-emerald-50/30 to-white rounded-xl border border-emerald-100/60 space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-emerald-100/60">
+                      <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                        <Users className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-800">Registrar Oferta del Proveedor</h4>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
@@ -175,7 +177,7 @@ export default function AnalistasPanel({
                           id="analistas-contractor"
                           value={contractorCode}
                           onChange={(e) => setContractorCode(e.target.value)}
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 text-slate-700 font-bold"
+                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-bold cursor-pointer"
                         >
                           {contractors.map((c) => (
                             <option key={c.code} value={c.code}>
@@ -226,7 +228,7 @@ export default function AnalistasPanel({
                           id="analistas-advance"
                           value={advancePercent}
                           onChange={(e) => setAdvancePercent(parseInt(e.target.value))}
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 text-slate-700 font-bold"
+                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-bold cursor-pointer"
                         >
                           <option value="10">10%</option>
                           <option value="20">20%</option>
@@ -245,18 +247,18 @@ export default function AnalistasPanel({
                         placeholder="Ej. Suministro total de cables, incluye garantía y flete."
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-sky-500 text-slate-700 font-medium"
+                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-medium"
                       />
                     </div>
 
-                    <div className="flex justify-between items-center pt-3 border-t border-slate-200/60">
+                    <div className="flex justify-between items-center pt-3 border-t border-emerald-100/60">
                       <div className="text-xs font-bold text-slate-700">
-                        Costo Total Oferta: <span className="font-mono text-sky-700 text-sm font-black">${(Number(materialCost) + Number(laborCost)).toLocaleString()}</span>
+                        Costo Total Oferta: <span className="font-mono text-emerald-700 text-sm font-black">${(Number(materialCost) + Number(laborCost)).toLocaleString()}</span>
                       </div>
                       <button
                         id="btn-analistas-add-bid"
                         type="submit"
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-100 hover:bg-sky-100 rounded-xl transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm"
                       >
                         <Plus className="h-4 w-4" />
                         Agregar al Cuadro
@@ -272,7 +274,7 @@ export default function AnalistasPanel({
 
       {/* Right panel: Comparative Table Preview & Submission */}
       <div className="lg:col-span-5 space-y-6">
-        <Card hoverable={false}>
+        <Card hoverable={false} className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<Award className="h-5 w-5" />}
             title="Cuadro Comparativo Digital"
@@ -287,7 +289,7 @@ export default function AnalistasPanel({
             />
           ) : (
             <div className="space-y-4">
-              <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 text-xs">
+              <div className="p-4 bg-gradient-to-br from-sky-50/50 to-white rounded-xl border border-sky-100/60 text-xs">
                 <span className="font-bold text-sky-900 block mb-1">Techo de Inversión Aprobado:</span>
                 <span className="font-mono font-black text-sky-700 text-base">
                   ${activeProject.approvedInvestmentAmount?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -303,7 +305,7 @@ export default function AnalistasPanel({
                   <button
                     onClick={handleImport}
                     disabled={isImporting}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
                     title="Importar propuestas recibidas desde el portal de proveedores"
                   >
                     {isImporting ? (
@@ -314,18 +316,25 @@ export default function AnalistasPanel({
                     {isImporting ? "Importando..." : "Traer del portal"}
                   </button>
                 </div>
-                <div className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1">
+                <div
+                  className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1"
+                  style={{ willChange: "scroll-position" }}
+                >
                   {activeProject.proposals?.map((prop) => (
-                    <div key={prop.id} className="p-3.5 border border-slate-100 bg-white rounded-xl flex items-center justify-between gap-3 shadow-xs hover:border-slate-200 transition-colors">
+                    <div
+                      key={prop.id}
+                      className="p-3.5 border border-slate-100 bg-white rounded-xl flex items-center justify-between gap-3 shadow-xs hover:border-emerald-200 hover:shadow-sm transition-all duration-200"
+                      style={{ contentVisibility: "auto", contain: "layout style paint" }}
+                    >
                       <div>
                         <div className="font-bold text-slate-800 text-xs">{prop.contractorName}</div>
                         <div className="text-[10px] text-slate-400 font-medium mt-0.5">Plazo: {prop.deliveryWeeks} sem | Anticipo: {prop.negotiatedAdvancePercent}%</div>
-                        <div className="font-mono text-[11px] text-sky-600 font-bold mt-1">${prop.totalCost.toLocaleString()} USD</div>
+                        <div className="font-mono text-[11px] text-emerald-600 font-bold mt-1">${prop.totalCost.toLocaleString()} USD</div>
                       </div>
                       <button
                         id={`btn-delete-proposal-${prop.id}`}
                         onClick={() => onRemoveProposal(activeProject.id, prop.id)}
-                        className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 p-2 rounded-xl transition-colors shrink-0 cursor-pointer"
+                        className="text-rose-400 hover:bg-rose-50 hover:text-rose-600 p-2 rounded-xl transition-colors shrink-0 cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -346,7 +355,7 @@ export default function AnalistasPanel({
                   <button
                     id="btn-analistas-submit-comparative"
                     onClick={handleSubmit}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-xl shadow-md shadow-sky-500/10 transition-all cursor-pointer transform hover:scale-[1.01]"
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
                   >
                     <Send className="h-4 w-4" />
                     Enviar Cuadro de Comparación a Gerencia Procura

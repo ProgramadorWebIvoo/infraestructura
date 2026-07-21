@@ -82,7 +82,7 @@ export default function CierreObraPanel({
 
       {/* SECTION 1: Pending Technical Reviews */}
       <div className="lg:col-span-7 space-y-6">
-        <Card>
+        <Card className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<Calculator className="h-5 w-5" />}
             title="Cierre de Obra: Revisión de Cálculos y Planos"
@@ -102,7 +102,10 @@ export default function CierreObraPanel({
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                   Seleccionar Expediente a Revisar:
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth">
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth"
+                  style={{ willChange: "scroll-position" }}
+                >
                   {pendingReview.map((p) => (
                     <button
                       id={`cierre-select-${p.id}`}
@@ -112,14 +115,19 @@ export default function CierreObraPanel({
                         setSelectedProjectId(p.id);
                         setCierreNotes(`Cálculos de materiales verificados. Las cantidades indicadas para ${p.materials.length} insumos son correctas y corresponden a las necesidades técnicas de la obra en ${p.location}.`);
                       }}
-                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${selectedProjectId === p.id
-                          ? "border-sky-500 bg-sky-50/50 text-sky-950 ring-2 ring-sky-100"
-                          : "border-slate-200 bg-white hover:border-sky-400 hover:bg-slate-50/50"
-                        }`}
+                      style={{ contentVisibility: "auto", contain: "layout style paint" }}
+                      className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                        selectedProjectId === p.id
+                          ? "border-sky-500 bg-gradient-to-br from-sky-50 to-white text-sky-950 ring-2 ring-sky-100 shadow-sm"
+                          : "border-slate-200 bg-white hover:border-sky-400 hover:bg-slate-50/50 hover:shadow-sm"
+                      }`}
                     >
                       <div className="font-mono text-[9px] font-bold text-sky-600 mb-1">{p.id}</div>
                       <div className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</div>
-                      <div className="text-[10px] text-slate-500 mt-1.5 font-medium">{p.location}</div>
+                      <div className="text-[10px] text-slate-500 mt-1.5 font-medium flex items-center gap-1">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {p.location}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -128,18 +136,23 @@ export default function CierreObraPanel({
               {/* Form details */}
               {activeProject && (
                 <form onSubmit={handleSubmitReview} className="border-t border-slate-100 pt-5 space-y-5">
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2.5 text-xs">
+                  <div className="p-4 bg-gradient-to-br from-sky-50/40 to-white rounded-xl border border-sky-100/60 space-y-2.5 text-xs">
                     <h5 className="font-bold text-slate-700 flex items-center justify-between">
-                      <span>Detalles de Inversión Propuesta:</span>
+                      <span className="flex items-center gap-1.5">
+                        <Calculator className="h-3.5 w-3.5 text-sky-500" />
+                        Detalles de Inversión Propuesta:
+                      </span>
                       <span className="font-mono text-sky-600 font-black">${formatNumber(activeProject.estimatedTotal)}</span>
                     </h5>
-                    <p className="text-slate-600 leading-relaxed italic">&quot;{activeProject.description}&quot;</p>
-                    <div className="pt-3 border-t border-slate-200/60">
+                    <p className="text-slate-600 leading-relaxed italic border-l-2 border-sky-200 pl-3">&quot;{activeProject.description}&quot;</p>
+                    <div className="pt-3 border-t border-sky-100">
                       <span className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Materiales Solicitados:</span>
-                      <ul className="mt-1.5 space-y-1 text-slate-600 list-disc list-inside font-medium">
+                      <ul className="mt-1.5 space-y-1 text-slate-600 font-medium">
                         {activeProject.materials.map((m) => (
-                          <li key={m.id}>
-                            {m.name} - <span className="font-mono font-bold text-slate-700">{m.quantity} {m.unit}</span>
+                          <li key={m.id} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                            <span>{m.name}</span>
+                            <span className="font-mono font-bold text-slate-700 ml-auto">{m.quantity} {m.unit}</span>
                           </li>
                         ))}
                       </ul>
@@ -195,7 +208,7 @@ export default function CierreObraPanel({
                     <button
                       id="btn-cierre-submit-review"
                       type="submit"
-                      className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition-all shadow-md shadow-sky-500/10 cursor-pointer transform hover:scale-[1.02]"
+                      className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl transition-all duration-200 shadow-md shadow-sky-500/20 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
                     >
                       <Upload className="h-4 w-4" />
                       Guardar y Enviar a Procura
@@ -210,7 +223,7 @@ export default function CierreObraPanel({
 
       {/* SECTION 2: Work Completion & Quality Verification */}
       <div className="lg:col-span-5 space-y-6">
-        <Card className="max-h-70 overflow-y-auto scroll-smooth">
+        <Card className="border-l-4 border-l-emerald-400">
           <SectionHeader
             icon={<BadgeCheck className="h-5 w-5" />}
             title="Auditoría de Fin de Obra"
@@ -221,17 +234,24 @@ export default function CierreObraPanel({
           {pendingCompletionVerify.length === 0 ? (
             <EmptyState message="No hay obras en ejecución o pendientes de entrega técnica en este momento." />
           ) : (
-            <div className="space-y-4">
+            <div
+              className="space-y-4 max-h-80 overflow-y-auto pr-1"
+              style={{ willChange: "scroll-position" }}
+            >
               {pendingCompletionVerify.map((p) => {
                 const isUnderAudit = p.status === ProjectStatus.VERIFICANDO_FINALIZACION;
                 return (
-                  <div key={p.id} className="p-4 border border-slate-100 bg-slate-50/50 rounded-xl space-y-3 hover:bg-slate-50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div>
+                  <div
+                    key={p.id}
+                    className="p-4 border border-slate-100 bg-white rounded-xl space-y-3 hover:border-emerald-200 hover:shadow-sm transition-all duration-200"
+                    style={{ contentVisibility: "auto", contain: "layout style paint" }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
                         <span className="text-[9px] font-mono font-bold text-slate-400">{p.id}</span>
-                        <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h4>
+                        <h4 className="text-xs font-bold text-slate-800 line-clamp-1 mt-0.5">{p.title}</h4>
                         <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-1 font-medium">
-                          <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                          <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           {p.location}
                         </div>
                       </div>
@@ -241,14 +261,14 @@ export default function CierreObraPanel({
                       />
                     </div>
 
-                    <div className="bg-white p-3 rounded-lg border border-slate-100 text-[11px] text-slate-600 space-y-1 font-medium">
-                      <div>
-                        <span className="font-bold text-slate-400">Contratista: </span>
-                        <span className="font-mono text-sky-700 font-bold">{p.selectedContractorCode || "Sin código"}</span>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-[11px] text-slate-600 space-y-1 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400">Contratista:</span>
+                        <span className="font-mono text-emerald-700 font-bold">{p.selectedContractorCode || "Sin código"}</span>
                       </div>
                       {p.cierreObraNotes && (
-                        <p className="mt-1.5 text-slate-500 border-t border-slate-100 pt-1.5 leading-snug">
-                          <strong>Revisión Inicial: </strong>{p.cierreObraNotes}
+                        <p className="mt-2 text-slate-500 border-t border-slate-200/60 pt-2 leading-snug">
+                          <span className="font-bold text-slate-500">Revisión Inicial:</span> {p.cierreObraNotes}
                         </p>
                       )}
                     </div>
@@ -256,7 +276,7 @@ export default function CierreObraPanel({
                     <button
                       id={`btn-verify-quality-${p.id}`}
                       onClick={() => onVerifyCompletion(p.id)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-600/10 transition-colors cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md shadow-emerald-600/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
                     >
                       <BadgeCheck className="h-4 w-4" />
                       Certificar Calidad y Autorizar Pago
@@ -269,19 +289,32 @@ export default function CierreObraPanel({
         </Card>
 
         {/* Detailed returns documentation info box */}
-        <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 text-xs space-y-3 text-slate-600 leading-relaxed">
-          <h5 className="font-bold text-slate-800 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
-            <HelpCircle className="h-4 w-4 text-sky-500" />
-            Flujo de Retornos en Cierre de Obra:
-          </h5>
-          <p className="font-medium">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 text-xs space-y-3 text-slate-600 leading-relaxed shadow-sm border-l-4 border-l-slate-400">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-slate-100 rounded-xl">
+              <HelpCircle className="h-4 w-4 text-sky-500" />
+            </div>
+            <h5 className="font-bold text-slate-800 text-sm">
+              Flujo de Retornos
+            </h5>
+          </div>
+          <p className="font-medium text-slate-500">
             De acuerdo con los procedimientos operativos de IVOO:
           </p>
-          <ul className="list-disc list-inside space-y-1.5 text-slate-500 font-medium">
-            <li>Cierre de Obra realiza la cubicación de materiales y planos de ingeniería iniciales.</li>
-            <li>Al finalizar el trabajo, audita físicamente la obra y certifica si cumple con los estándares estipulados.</li>
-            <li>Su aprobación final viaja a la Base de Datos para que <strong className="text-slate-700 font-bold">Finanzas</strong> proceda con la liberación del finiquito.</li>
-          </ul>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="flex items-center justify-center w-5 h-5 rounded-md bg-sky-50 text-sky-600 font-mono text-[9px] font-black shrink-0 mt-0.5">1</span>
+              <span className="text-slate-500 font-medium leading-relaxed">Cierre de Obra realiza la cubicación de materiales y planos de ingeniería iniciales.</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex items-center justify-center w-5 h-5 rounded-md bg-sky-50 text-sky-600 font-mono text-[9px] font-black shrink-0 mt-0.5">2</span>
+              <span className="text-slate-500 font-medium leading-relaxed">Al finalizar el trabajo, audita físicamente la obra y certifica si cumple con los estándares estipulados.</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex items-center justify-center w-5 h-5 rounded-md bg-amber-50 text-amber-600 font-mono text-[9px] font-black shrink-0 mt-0.5">3</span>
+              <span className="text-slate-500 font-medium leading-relaxed">Su aprobación final viaja a la Base de Datos para que <strong className="text-slate-700">Finanzas</strong> proceda con la liberación del finiquito.</span>
+            </div>
+          </div>
         </div>
       </div>
 

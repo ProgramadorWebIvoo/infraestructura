@@ -75,9 +75,10 @@ export async function apiFetch<T = unknown>(
 
   const text = await response.text();
 
-  if (!response.ok) {
+    if (!response.ok) {
     const status = response.status;
     let message: string;
+    let attemptLog: string[] | undefined;
 
     if (status === 401) {
       message = "Sesión expirada. Inicia sesión nuevamente.";
@@ -96,13 +97,23 @@ export async function apiFetch<T = unknown>(
       }
     } else if (status === 429) {
       message = "Demasiadas solicitudes. Intenta nuevamente en un minuto.";
+    } else if (status === 503) {
+      try {
+        const body = JSON.parse(text);
+        message = body.error ?? "Error en la evaluación de IA. Intenta más tarde.";
+        attemptLog = body.attemptLog;
+      } catch {
+        message = "Error en la evaluación de IA. Intenta más tarde.";
+      }
     } else if (status >= 500) {
       message = "Error interno del servidor. Intenta más tarde.";
     } else {
       message = `Error del servidor (${status}).`;
     }
 
-    throw new Error(message);
+    const error = new Error(message) as Error & { attemptLog?: string[] };
+    if (attemptLog) error.attemptLog = attemptLog;
+    throw error;
   }
 
   // Si el backend renovó el token via RefreshSanctumToken middleware, lo persistimos

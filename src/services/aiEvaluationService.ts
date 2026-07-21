@@ -28,6 +28,7 @@ export interface AIEvaluationResult {
   riskFactors: string[];
   recommendation: string;
   providerUsed: AIProviderUsed;
+  attemptLog?: string[];
 }
 
 /** Cuerpo enviado al backend. */
@@ -51,13 +52,6 @@ interface AIEvaluationPayload {
     description: string;
   }>;
   provider?: 'chatgpt' | 'gemini' | 'claude';
-}
-
-/** Respuesta cruda del backend. */
-interface AIEvaluationResponse {
-  success: boolean;
-  data?: AIEvaluationResult;
-  error?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,15 +91,11 @@ export async function evaluateProposals(
 
   if (provider) payload.provider = provider;
 
-  const result = await apiFetch<AIEvaluationResponse>("/ai/evaluate-proposals", {
+  const result = await apiFetch<AIEvaluationResult>("/ai/evaluate-proposals", {
     method: "POST",
     token: authToken,
     body: JSON.stringify(payload),
   });
 
-  if (!result.success || !result.data) {
-    throw new Error(result.error ?? "La evaluación no devolvió resultados.");
-  }
-
-  return result.data;
+  return result;
 }

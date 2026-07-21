@@ -7,7 +7,7 @@ interface MobileTopBarProps {
 
 export default function MobileTopBar({ user, onMenuClick }: MobileTopBarProps) {
   return (
-    <header className="bg-[#0F172A] text-white border-b border-slate-800/80 shadow-sm relative overflow-hidden md:hidden">
+    <header className="bg-[#0F172A] text-white border-b border-slate-800/80 shadow-sm relative overflow-hidden lg:hidden">
       {/* Gradient blur accent */}
       <div className="absolute top-0 right-0 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/3 translate-x-1/4" />
 

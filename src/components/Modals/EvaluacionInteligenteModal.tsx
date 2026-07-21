@@ -127,6 +127,11 @@ export default function EvaluacionInteligenteModal({
 
       const data = await evaluateProposals(project, proposals, authToken, providerParam);
 
+      // Mostrar el log de failover del backend (qué proveedores se intentaron)
+      if (data.attemptLog && data.attemptLog.length > 0) {
+        data.attemptLog.forEach((entry) => log(entry));
+      }
+
       log(`✅ Evaluación completada por ${PROVIDER_META[data.providerUsed].label}`);
       setResult(data);
       setCurrentProvider(data.providerUsed);
@@ -134,6 +139,12 @@ export default function EvaluacionInteligenteModal({
     } catch (err: any) {
       const message = err?.message ?? "Error desconocido al evaluar propuestas.";
       log(`❌ Error: ${message}`);
+
+      // Mostrar el log de failover del backend en caso de error
+      if (err?.attemptLog && err.attemptLog.length > 0) {
+        err.attemptLog.forEach((entry: string) => log(entry));
+      }
+
       setErrorMsg(message);
       setStatus("error");
     }

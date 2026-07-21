@@ -213,7 +213,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
             >
               {({ isActive }) => (
                 <>
-                  <Settings className={sidebarIconClass(isActive, "text-slate-300")} />
+                  <UserCog className={sidebarIconClass(isActive, "text-slate-300")} />
                   <span>Proveedores</span>
                 </>
               )}
@@ -229,7 +229,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
             >
               {({ isActive }) => (
                 <>
-                  <UserCog className={sidebarIconClass(isActive)} />
+                  <Settings className={sidebarIconClass(isActive)} />
                   <span>Usuarios</span>
                 </>
               )}
