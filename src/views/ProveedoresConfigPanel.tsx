@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import {
   Building2,
   CheckCircle,
@@ -27,6 +28,7 @@ import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
 import { useToast } from "../components/UI/Toast";
 import { apiFetch } from "../services/api";
+import { containerVariants, itemVariants } from "../animations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -349,9 +351,9 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
   ];
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
       {/* ── Header ── */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-700">
             <UserCog className="h-3.5 w-3.5" />
@@ -371,10 +373,10 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           <Plus className="h-4 w-4" />
           Nuevo proveedor
         </button>
-      </div>
+      </motion.div>
 
       {/* ── Table card ── */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
+      <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -403,7 +405,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           maxHeight="35rem"
           pageSize={20}
         />
-      </div>
+      </motion.div>
 
       {/* ── Create / Edit Modal ── */}
       <Modal
@@ -540,6 +542,6 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           )}
         </div>
       </Modal>
-    </div>
+    </motion.div>
   );
 }

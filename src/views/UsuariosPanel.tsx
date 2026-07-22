@@ -31,6 +31,7 @@ import {
 import StatusBadge from "../components/UI/StatusBadge";
 import { useToast } from "../components/UI/Toast";
 import { useUsuarios, type UserRecord, type UpdateUserPayload } from "../hooks/useUsuarios";
+import { containerVariants, itemVariants } from "../animations";
 
 const ROLES = [
   { value: "SUPERADMIN", label: "Super Administrador" },
@@ -44,16 +45,6 @@ const ROLES = [
 ];
 
 // ── Motion variants ──────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { when: "beforeChildren" as const, staggerChildren: 0.04 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 10, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 260, damping: 24 } },
-};
-
 const bannerVariants = {
   hidden: { opacity: 0, height: 0, marginBottom: 0 },
   visible: { opacity: 1, height: "auto", marginBottom: 20, transition: { duration: 0.25, ease: "easeOut" as const } },

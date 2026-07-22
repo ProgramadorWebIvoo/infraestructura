@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { Contractor, Project, ProjectStatus, SupplierMaterialProposal } from "../types";
 import { useToast } from "../components/UI/Toast";
@@ -18,11 +19,15 @@ import {
   Mail,
   Package,
   Pencil,
+  Plus,
   RotateCcw,
   Search,
+  Send,
   Star,
+  UserCheck,
   Users,
 } from "lucide-react";
+import { containerVariants, itemVariants } from "../animations";
 import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
 import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
@@ -167,10 +172,10 @@ export default function ProveedoresRegistrados({
 
   return (
     <>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
         {/* Header */}
-        <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
+        <motion.div variants={itemVariants} className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-700">
               <Users className="h-3.5 w-3.5" />
@@ -189,10 +194,10 @@ export default function ProveedoresRegistrados({
             <ExternalLink className="h-4 w-4" />
             Abrir registro publico
           </Link>
-        </div>
+        </motion.div>
 
         {/* Contractor table */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
+        <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full md:w-96">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -240,10 +245,10 @@ export default function ProveedoresRegistrados({
             containerClassName="pr-2"
             pageSize={20}
           />
-        </div>
+        </motion.div>
 
         {/* Supplier material proposals table */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
+        <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -341,7 +346,16 @@ export default function ProveedoresRegistrados({
                         </div>
                       </button>
 
-                      {isExpanded && (
+                      <AnimatePresence>
+                        {isExpanded && (
+                        <motion.div
+                          key={`proposal-${proposal.id}`}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.22, ease: "easeOut" }}
+                          className="overflow-hidden"
+                        >
                         <div className="px-5 pb-5 space-y-3">
                           <div className="rounded-xl bg-gradient-to-br from-indigo-50/40 to-white border border-indigo-100/60 p-3 text-xs">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -409,16 +423,18 @@ export default function ProveedoresRegistrados({
                             />
                           </div>
                         </div>
-                      )}
+                        </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   );
                 })
               )}
             </div>
           )}
-        </div>
+        </motion.div>
 
-      </div>
+      </motion.div>
 
       {/* ── Rating Modal ── */}
       <Modal
@@ -429,7 +445,7 @@ export default function ProveedoresRegistrados({
         infoLine={editingContractor?.code}
         icon={<Star className="h-5 w-5" />}
         iconColor="amber"
-        maxWidth="max-w-sm"
+        maxWidth="max-w-lg"
         closeDisabled={isSaving}
         footer={
           <div className="flex justify-end gap-2">
@@ -501,7 +517,7 @@ export default function ProveedoresRegistrados({
         infoLine={inviteModalContractor?.contact}
         icon={<Link2 className="h-5 w-5" />}
         iconColor="purple"
-        maxWidth="max-w-md"
+        maxWidth="max-w-lg"
       >
         {/* Project selector (always visible) */}
         <div>

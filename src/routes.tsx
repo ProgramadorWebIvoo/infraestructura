@@ -29,6 +29,7 @@ export const ROUTES = {
   CATALOGOS: "/catalogos",
   USUARIOS: "/usuarios",
   CONFIG_PROVEEDORES: "/config-proveedores",
+  CONFIG_MATERIALES: "/config-materiales",
   REGISTRO_PROVEEDORES: "/registro-proveedores",
   PROPUESTA_MATERIALES: "/propuesta-materiales/:token",
 } as const;

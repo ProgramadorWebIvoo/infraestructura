@@ -4,6 +4,7 @@
  */
 
 import { useState, type ReactNode } from "react";
+import { motion } from "motion/react";
 import { Project, ProjectStatus, AuditLog } from "../types";
 import {
   DollarSign,
@@ -21,6 +22,7 @@ import StatusBadge from "../components/UI/StatusBadge";
 import { Table, type Column } from "../components/UI/Table";
 import { getRoleColor } from "../utils";
 import AuditInspectModal from "../components/Modals/AuditInspectModal";
+import { containerVariants, itemVariants } from "../animations";
 
 interface PresidenciaDashboardProps {
   projects: Project[];
@@ -263,10 +265,10 @@ export default function PresidenciaDashboard({
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={<DollarSign className="h-5 w-5" />} label="Presupuesto Aprobado" accent="text-sky-400" borderAccent="border-l-sky-500" variant="dark">
           <h3 className="text-2xl font-black font-mono bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">${fmt(totalApprovedInvestment)}</h3>
           <p className="text-[10px] text-slate-400 mt-1 font-medium">Inversión autorizada en Base de Datos</p>
@@ -301,10 +303,10 @@ export default function PresidenciaDashboard({
             </span>
           </div>
         </KpiCard>
-      </div>
+      </motion.div>
 
       {/* Distribution chart */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
+      <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
         <div className="flex items-center gap-2 mb-5">
           <span className="w-1 h-5 rounded-full bg-sky-400" />
           <h4 className="font-mono font-bold text-[10px] uppercase tracking-widest text-slate-400">
@@ -320,10 +322,10 @@ export default function PresidenciaDashboard({
             <DistributionBar color="bg-slate-400" label="Mantenimiento" count={mantCount} percent={mantPercent} />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Audit logs */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
+      <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
         <div className="p-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -402,10 +404,10 @@ export default function PresidenciaDashboard({
           rowHoverClass="hover:bg-sky-50/30"
           pageSize={25}
         />
-      </div>
+      </motion.div>
 
       {/* Master table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
+      <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
         <div className="p-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="flex items-center gap-3">
@@ -462,14 +464,14 @@ export default function PresidenciaDashboard({
           containerClassName="border border-slate-100 rounded-lg"
           pageSize={15}
         />
-      </div>
+      </motion.div>
 
       <AuditInspectModal
         isOpen={!!inspectedAuditLog}
         log={inspectedAuditLog}
         onClose={() => setInspectedAuditLog(null)}
       />
-    </div>
+    </motion.div>
   );
 }
 

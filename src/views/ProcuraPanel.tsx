@@ -6,6 +6,7 @@
  */
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Project, ProjectStatus, ProjectDocument } from "../types";
 import { useToast } from "../components/UI/Toast";
 import {
@@ -30,6 +31,7 @@ import NumericInput from "../components/UI/NumericInput";
 import EmptyState from "../components/UI/EmptyState";
 import { Table, type Column } from "../components/UI/Table";
 import { formatNumber } from "../utils";
+import { containerVariants, itemVariants } from "../animations";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -189,9 +191,10 @@ export default function ProcuraPanel({
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
       {/* SECTION 1: Pending Investment Approvals */}
+      <motion.div variants={itemVariants}>
       <Card className="border-l-4 border-l-purple-400">
         <SectionHeader
           icon={<TrendingUp className="h-5 w-5" />}
@@ -235,8 +238,17 @@ export default function ProcuraPanel({
               </div>
             </div>
 
-            {activeReviewProject && (
-              <form onSubmit={handleApproveInvestmentSubmit} className="border-t border-slate-100 pt-5 space-y-5">
+            <AnimatePresence>
+              {activeReviewProject && (
+                <motion.form
+                  key="review-form"
+                  onSubmit={handleApproveInvestmentSubmit}
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="border-t border-slate-100 pt-5 space-y-5 overflow-hidden"
+                >
                 <div className="p-4 bg-gradient-to-br from-purple-50/40 to-white rounded-xl text-xs space-y-2 border border-purple-100/60 font-medium">
                   <div className="flex justify-between items-center">
                     <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
@@ -293,13 +305,16 @@ export default function ProcuraPanel({
                     Autorizar Presupuesto y Enviar a Licitación
                   </button>
                 </div>
-              </form>
+              </motion.form>
             )}
+            </AnimatePresence>
           </div>
         )}
       </Card>
+      </motion.div>
 
       {/* SECTION 2: Bid Evaluation & Final Hiring Decision */}
+      <motion.div variants={itemVariants}>
       <Card className="border-l-4 border-l-emerald-400">
         <SectionHeader
           icon={<Users className="h-5 w-5" />}
@@ -362,8 +377,17 @@ export default function ProcuraPanel({
                   </div>
 
                   {/* Rejection form (inline) */}
-                  {isRejectingThis && (
-                    <div className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-4 space-y-3 shadow-sm">
+                  <AnimatePresence>
+                    {isRejectingThis && (
+                      <motion.div
+                        key="reject-form"
+                        initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                        animate={{ opacity: 1, height: "auto", marginBottom: 0 }}
+                        exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                      <div className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-4 space-y-3 shadow-sm">
                       <div className="flex items-center gap-2 text-red-700">
                         <AlertTriangle className="h-4 w-4 shrink-0" />
                         <span className="text-xs font-black">Rechazar cuadro comparativo</span>
@@ -403,7 +427,9 @@ export default function ProcuraPanel({
                         </button>
                       </div>
                     </div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Proposals Spreadsheet Comparer */}
                   {!isRejectingThis && (
@@ -464,6 +490,7 @@ export default function ProcuraPanel({
           </div>
         )}
       </Card>
+      </motion.div>
 
       {/* AI Evaluation Modal */}
       {aiEvalProject && (
@@ -477,7 +504,7 @@ export default function ProcuraPanel({
         />
       )}
 
-    </div>
+    </motion.div>
   );
 }
 

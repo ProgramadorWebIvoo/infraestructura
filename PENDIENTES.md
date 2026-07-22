@@ -64,27 +64,26 @@
 
 25. **URGENTE** ✅ Parece que con las refactorizaciones se paso por alto dos puntos, A: la api key de los providers de IA se esta filttrando por errores de laravel y las URL. B: El provider de Gemini no esta conectando de la manera que es debida.
 
+29. **REALIZAR** ✅ Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.)
+
+30. ✅ Verificacion de estado de polling.
 # PENDIENTE ----
 
-1. **REALIZAR** Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.)
-
-2. **CRÍTICO** No existe un panel GENERAL para realizar la configuración y creación de datos IMPRESCINDIBLES como Materiales, Proveedores, IAs
-
-3. **URGENTE** Realizar las pestañas debidas de configuracióon para:
+1. **URGENTE** Realizar las pestañas debidas de configuracióon para:
     - Proveedores.
     - Usuarios.
     - Materiales.
     - IA Models.
 
-4. **URGENTE** Mejoras de seguridad y traza de error para los IA providers. (Probar casos cuando envia .txt, .csv o .md)
+2. **URGENTE** Mejoras de seguridad y traza de error para los IA providers. (Probar casos cuando envia .txt, .csv o .md)
 
-5. Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
+3. Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
 
-6. Creo y sospecho que la tabla de provedores de la misma vista no tiene Polling activo
+4. Mejorar y testear sistema de Restablecimiento de Contraseñas.
 
-7. Verificacion de estado de polling.
+5. Hay selects que estan propensos a acumular muchisima información como materiales, proveedores, etc. Es esencial realizar como instancia una accion que en vez de abrir un select abra un modal capaz de mostrar una tabla con paginacion y buscador de los registros seleccionables.
 
-9. Mejorar y testear sistema de Restablecimiento de Contraseñas.
+6. **REALIZAR** Mejorar estilos visuales del mobile
 
 # AUDITORIAS A REALIZAR ---
 
@@ -101,3 +100,5 @@
 3. **PRUEBAS** Realizar pruebas Unitarias a todo el sistema.
 
 4. **PRUEBAS** Realizar pruebas de Polling al sistema.
+
+5. **PRUEBAS** Realizar pruebas de seguridad entre roles y CRUD a la nuevas vistas de Configuración.

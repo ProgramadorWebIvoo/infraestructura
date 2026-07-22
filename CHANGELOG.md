@@ -1,5 +1,91 @@
 # CHANGELOG
 
+## [2026-07-22] — Animaciones smooth en expansiones de Cards/Contenedores (5 vistas)
+
+- Tipo: feature + refactor
+- Qué:
+  - **ProcuraPanel.tsx:** El formulario de autorización de inversión (`activeReviewProject`) y el formulario de rechazo (`isRejectingThis`) ahora usan `AnimatePresence` + `motion.div` con animación de opacidad + altura (`0.22s easeOut`), eliminando el salto visual abrupto.
+  - **ProveedoresRegistrados.tsx:** El detalle expandible de cada propuesta (`expandedProposal`) ahora usa `AnimatePresence` + `motion.div` con `height`/`opacity` animados.
+  - **CierreObraPanel.tsx:** El formulario de revisión de cálculos (`activeProject`) ahora usa `AnimatePresence` + `motion.form` con transición smooth.
+  - **AnalistasPanel.tsx:** El panel de registro de ofertas (`activeProject`) ahora usa `AnimatePresence` + `motion.div` con transición smooth.
+  - **Patrón usado en todos:** `initial={{ opacity: 0, height: 0 }}` → `animate={{ opacity: 1, height: "auto" }}` con `duration: 0.22, ease: "easeOut"`, y overflow-hidden para evitar saltos de layout. Sin sacrificar velocidad de apertura.
+- Por qué / causa raíz: Las expansiones condicionales (`{cond && <Componente/>}`) se renderizaban instantáneamente sin transición, dando una sensación abrupta que degradaba la UX, especialmente en el flujo de Procura (Gerencia de Procura).
+- Archivos:
+  - `src/views/ProcuraPanel.tsx`
+  - `src/views/ProveedoresRegistrados.tsx`
+  - `src/views/CierreObraPanel.tsx`
+  - `src/views/AnalistasPanel.tsx`
+  - `CHANGELOG.md` — actualizado
+
+## [2026-07-22] — Animaciones stagger/spring aplicadas a todas las vistas autenticadas
+
+- Tipo: feature + refactor
+- Qué:
+  - **src/animations.ts:** [NUEVO] Variantes compartidas `containerVariants` (staggerChildren: 0.08, delayChildren: 0.15) y `itemVariants` (spring: stiffness 100, damping 15) extraídas del patrón usado originalmente en UsuariosPanel.
+  - **UsuariosPanel.tsx:** Refactorizado para importar variantes desde `src/animations.ts` en lugar de definiciones inline.
+  - Vistas con animaciones aplicadas (root `motion.div` + secciones principales con `itemVariants`):
+    - ProveedoresConfigPanel, MaterialConfigPanel, PresidenciaDashboard, FinanzasPanel, ProcuraPanel, ProveedoresRegistrados, InfraestructuraMantenimientoPanel, CierreObraPanel, AnalistasPanel
+  - **CierreObraPanel.tsx:** Corregidos cierres de `motion.div` de SECTION 2 y root (estaban como `</div>`) para que cierren correctamente.
+  - **InfraestructuraMantenimientoPanel.tsx:** Corregido cierre de left column (`</div>` → `</motion.div>`).
+  - **ProveedoresRegistrados.tsx:** Corregidos cierres de header (`</div>` → `</motion.div>`), contractor table (`<div>` → `<motion.div>`), proposals section (`</div>` → `</motion.div>`).
+  - **AnalistasPanel.tsx:** Envueltas ambas columnas en `motion.div` con `itemVariants`. Corregidos cierres de left column y right column.
+- Por qué / causa raíz: Las vistas tenían estilos de animación inconsistentes (solo UsuariosPanel tenía la entrada animada). Se estandarizó el patrón de entrada fade+slide-up con stagger en todas las vistas, eliminando duplicación de variantes y logrando una experiencia visual cohesiva.
+- Archivos:
+  - `src/animations.ts` — [NUEVO]
+  - `src/views/UsuariosPanel.tsx` — refactor
+  - `src/views/ProveedoresConfigPanel.tsx`
+  - `src/views/MaterialConfigPanel.tsx`
+  - `src/views/PresidenciaDashboard.tsx`
+  - `src/views/FinanzasPanel.tsx`
+  - `src/views/ProcuraPanel.tsx`
+  - `src/views/ProveedoresRegistrados.tsx`
+  - `src/views/InfraestructuraMantenimientoPanel.tsx`
+  - `src/views/CierreObraPanel.tsx`
+  - `src/views/AnalistasPanel.tsx`
+  - `CHANGELOG.md` — actualizado
+
+## [2026-07-22] — Fix: canAccess no detectaba nuevas rutas por stale closure en useCallback
+
+- Tipo: fix
+- Qué:
+  - **useRouting.ts:** Eliminados los wrappers `useCallback` de `canAccess` y `firstAllowedRoute`. Al estar el objeto `roleAccess` definido a nivel de módulo, `useCallback` capturaba el array original del closure en el momento de la primera ejecución. Si el módulo se recargaba (HMR/rebuild) con nuevas rutas, el closure seguía apuntando al objeto `roleAccess` antiguo, y `includes()` no encontraba las rutas nuevas. Ahora son funciones planas que siempre leen el `roleAccess` actual del módulo.
+- Por qué / causa raíz: Al agregar `/config-materiales` al `roleAccess`, SUPERADMIN no podía acceder porque `canAccess("/config-materiales")` seguía evaluando contra el array anterior (sin la ruta nueva) debido al closure congelado por `useCallback`.
+- Archivos: `src/hooks/useRouting.ts`
+
+## [2026-07-22] — Nueva pestaña: Configuración Materiales (CRUD + soft delete)
+
+- Tipo: feature
+- Qué:
+  - **Backend — MaterialController:** Nuevo controlador con 5 endpoints para administración del catálogo de materiales:
+    - `GET /api/materials/config` — listado completo con nombre, unidad, precio, estado y timestamps
+    - `POST /api/materials/config` — creación de material con validación de unique (name + unit)
+    - `GET /api/materials/config/{material}` — detalle individual
+    - `PATCH /api/materials/config/{material}` — actualización de datos y estado
+    - `POST /api/materials/config/{material}/toggle-status` — alterna is_active (true → false → true)
+  - **Backend — Routes:** 5 rutas registradas bajo middleware `role:SUPERADMIN,ADMIN` en el grupo de configuración.
+  - **Frontend — Ruta `/config-materiales`:** Nueva constante `ROUTES.CONFIG_MATERIALES`, con `ProtectedRoute` y acceso para roles SUPERADMIN/ADMIN.
+  - **Frontend — MaterialConfigPanel.tsx:** Panel completo de gestión de materiales:
+    - Tabla con 6 columnas (ID, nombre, unidad, precio est., estado, acciones)
+    - Búsqueda por nombre o unidad
+    - Botón "Nuevo material" con modal de creación (nombre, unidad, precio)
+    - Edición inline vía modal con los mismos campos + toggle de estado (Activo/Inactivo)
+    - Toggle de estado con spinner por fila
+    - Badge de estado (Activo/Inactivo) con colores diferenciados (emerald/slate)
+    - Paginación de 20 registros
+    - Diseño consistente con el ecosistema (border-l accent emerald, gradientes, Table component)
+  - **Frontend — SidebarNav:** El ítem "Material" en el dropdown de Configuración ya no es un placeholder deshabilitado con badge "Próx"; ahora es un NavLink funcional a `/config-materiales` con estilo emerald.
+  - **Frontend — roleAccess:** SUPERADMIN y ADMIN incluyen `/config-materiales` en sus rutas permitidas.
+- Por qué: El dropdown de configuración tenía el ítem "Material" como placeholder deshabilitado ("Próx"). Se necesitaba un panel CRUD para administrar el catálogo maestro de materiales (crear, editar, activar/desactivar), usando soft delete (is_active) en lugar de eliminación física.
+- Archivos:
+  - `infraestructura-back/app/Http/Controllers/Api/MaterialController.php` — [NUEVO]
+  - `infraestructura-back/routes/api.php` — +5 rutas admin + import
+  - `src/routes.tsx` — +ROUTES.CONFIG_MATERIALES
+  - `src/hooks/useRouting.ts` — +/config-materiales en SUPERADMIN/ADMIN
+  - `src/views/MaterialConfigPanel.tsx` — [NUEVO]
+  - `src/components/UI/SidebarNav.tsx` — "Material" de placeholder → NavLink
+  - `src/App.tsx` — +ruta CONFIG_MATERIALES con ProtectedRoute
+  - `CHANGELOG.md` — actualizado
+
 ## [2026-07-22] — Fix: Proveedores operativos solo muestran ACTIVE + polling en useContractors
 
 - Tipo: fix

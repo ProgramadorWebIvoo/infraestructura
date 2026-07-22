@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Project, ProjectStatus, Contractor, Proposal } from "../types";
 import { useToast } from "../components/UI/Toast";
 import { 
@@ -19,6 +20,7 @@ import {
   LayoutList,
   Loader2
 } from "lucide-react";
+import { containerVariants, itemVariants } from "../animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
@@ -123,10 +125,10 @@ export default function AnalistasPanel({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <motion.div className="grid grid-cols-1 lg:grid-cols-12 gap-6" variants={containerVariants} initial="hidden" animate="visible">
       
       {/* Left panel: Active Licitations and Adder */}
-      <div className="lg:col-span-7 space-y-6">
+      <motion.div variants={itemVariants} className="lg:col-span-7 space-y-6">
         <Card className="border-l-4 border-l-emerald-400">
           <SectionHeader
             icon={<FileSpreadsheet className="h-5 w-5" />}
@@ -159,8 +161,16 @@ export default function AnalistasPanel({
                 </select>
               </div>
 
-              {activeProject && (
-                <div className="space-y-5 pt-2">
+              <AnimatePresence>
+                {activeProject && (
+                  <motion.div
+                    key="analistas-project-detail"
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="space-y-5 pt-2 overflow-hidden"
+                  >
                   {/* Adder Form */}
                   <form onSubmit={handleAddProposal} className="p-5 bg-gradient-to-br from-emerald-50/30 to-white rounded-xl border border-emerald-100/60 space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-emerald-100/60">
@@ -265,15 +275,16 @@ export default function AnalistasPanel({
                       </button>
                     </div>
                   </form>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           )}
         </Card>
-      </div>
+      </motion.div>
 
       {/* Right panel: Comparative Table Preview & Submission */}
-      <div className="lg:col-span-5 space-y-6">
+      <motion.div variants={itemVariants} className="lg:col-span-5 space-y-6">
         <Card hoverable={false} className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<Award className="h-5 w-5" />}
@@ -368,9 +379,9 @@ export default function AnalistasPanel({
             </div>
           )}
         </Card>
-      </div>
+      </motion.div>
 
-    </div>
+    </motion.div>
   );
 }
 

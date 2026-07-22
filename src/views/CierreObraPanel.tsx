@@ -6,6 +6,7 @@
  */
 
 import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Project, ProjectStatus } from "../types";
 import { useToast } from "../components/UI/Toast";
 import {
@@ -19,6 +20,7 @@ import {
   FileSpreadsheet,
   Map,
 } from "lucide-react";
+import { containerVariants, itemVariants } from "../animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
@@ -78,10 +80,10 @@ export default function CierreObraPanel({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <motion.div className="grid grid-cols-1 lg:grid-cols-12 gap-6" variants={containerVariants} initial="hidden" animate="visible">
 
       {/* SECTION 1: Pending Technical Reviews */}
-      <div className="lg:col-span-7 space-y-6">
+      <motion.div variants={itemVariants} className="lg:col-span-7 space-y-6">
         <Card className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<Calculator className="h-5 w-5" />}
@@ -134,8 +136,17 @@ export default function CierreObraPanel({
               </div>
 
               {/* Form details */}
-              {activeProject && (
-                <form onSubmit={handleSubmitReview} className="border-t border-slate-100 pt-5 space-y-5">
+              <AnimatePresence>
+                {activeProject && (
+                  <motion.form
+                    key="cierre-review-form"
+                    onSubmit={handleSubmitReview}
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="border-t border-slate-100 pt-5 space-y-5 overflow-hidden"
+                  >
                   <div className="p-4 bg-gradient-to-br from-sky-50/40 to-white rounded-xl border border-sky-100/60 space-y-2.5 text-xs">
                     <h5 className="font-bold text-slate-700 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
@@ -214,15 +225,16 @@ export default function CierreObraPanel({
                       Guardar y Enviar a Procura
                     </button>
                   </div>
-                </form>
+                </motion.form>
               )}
+              </AnimatePresence>
             </div>
           )}
         </Card>
-      </div>
+      </motion.div>
 
       {/* SECTION 2: Work Completion & Quality Verification */}
-      <div className="lg:col-span-5 space-y-6">
+      <motion.div variants={itemVariants} className="lg:col-span-5 space-y-6">
         <Card className="border-l-4 border-l-emerald-400">
           <SectionHeader
             icon={<BadgeCheck className="h-5 w-5" />}
@@ -316,9 +328,9 @@ export default function CierreObraPanel({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-    </div>
+    </motion.div>
   );
 }
 

@@ -273,15 +273,20 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
                     )}
                   </NavLink>
 
-                  {/* Material (pending) */}
-                  <span
-                    className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold border-l-2 border-transparent text-slate-600 opacity-50 cursor-not-allowed select-none"
-                    title="Próximamente"
+                  {/* Material */}
+                  <NavLink
+                    to="/config-materiales"
+                    id="sidebar-config-materiales"
+                    onClick={onClose}
+                    className={navLinkClass("bg-emerald-600", "border-emerald-400")}
                   >
-                    <Package className="h-[18px] w-[18px] shrink-0 text-slate-600" />
-                    <span className="flex-1">Material</span>
-                    <span className="text-[9px] font-mono uppercase tracking-wider text-slate-500 bg-slate-800/60 px-1.5 py-0.5 rounded">Próx</span>
-                  </span>
+                    {({ isActive }) => (
+                      <>
+                        <Package className={sidebarIconClass(isActive)} />
+                        <span>Material</span>
+                      </>
+                    )}
+                  </NavLink>
 
                   {/* IA Models (pending) */}
                   <span
@@ -289,7 +294,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
                     title="Próximamente"
                   >
                     <Brain className="h-[18px] w-[18px] shrink-0 text-slate-600" />
-                    <span className="flex-1">IA Models</span>
+                    <span className="flex-1">Modelos de IA</span>
                     <span className="text-[9px] font-mono uppercase tracking-wider text-slate-500 bg-slate-800/60 px-1.5 py-0.5 rounded">Próx</span>
                   </span>
                 </div>

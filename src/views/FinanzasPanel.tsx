@@ -5,6 +5,7 @@
  * Panel de Finanzas: liberación de anticipos + liquidaciones finales + libro diario.
  */
 
+import { motion } from "motion/react";
 import { DollarSign, CheckCircle, CreditCard, ArrowUpRight, Coins } from "lucide-react";
 import { Project, ProjectStatus } from "../types";
 import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
@@ -13,6 +14,7 @@ import SectionHeader from "../components/UI/SectionHeader";
 import EmptyState from "../components/UI/EmptyState";
 import { Table, type Column } from "../components/UI/Table";
 import { formatNumber } from "../utils";
+import { containerVariants, itemVariants } from "../animations";
 
 interface FinanzasPanelProps {
   projects: Project[];
@@ -76,10 +78,10 @@ export default function FinanzasPanel({
   paidLedger.sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
       {/* 2 Column Operations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Left Card: Pending Advance payments */}
         <Card className="border-l-4 border-l-rose-400 max-h-115 overflow-y-auto scroll-smooth">
@@ -223,9 +225,10 @@ export default function FinanzasPanel({
           )}
         </Card>
 
-      </div>
+      </motion.div>
 
       {/* Financial ledger */}
+      <motion.div variants={itemVariants}>
       <Card className="border-l-4 border-l-slate-400 max-h-115 overflow-y-auto scroll-smooth">
         <SectionHeader
           icon={<ArrowUpRight className="h-5 w-5" />}
@@ -250,8 +253,9 @@ export default function FinanzasPanel({
           pageSize={20}
         />
       </Card>
+      </motion.div>
 
-    </div>
+    </motion.div>
   );
 }
 

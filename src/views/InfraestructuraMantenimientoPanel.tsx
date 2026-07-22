@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { motion } from "motion/react";
 import { Project, MaterialItem } from "../types";
 import {
   Plus,
@@ -19,6 +20,7 @@ import {
   MapPin,
   Eye,
 } from "lucide-react";
+import { containerVariants, itemVariants } from "../animations";
 import { SkeletonCard, SkeletonBlock } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
@@ -127,10 +129,10 @@ export default function InfraestructuraMantenimientoPanel({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-6" variants={containerVariants} initial="hidden" animate="visible">
 
       {/* Left 2 Columns: Creation Form */}
-      <div className="lg:col-span-2 space-y-6">
+      <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
         <Card className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<FilePlus2 className="h-5 w-5" />}
@@ -383,10 +385,10 @@ export default function InfraestructuraMantenimientoPanel({
             />
           </div>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Right Column: Info + Existing Requests */}
-      <div className="space-y-6">
+      <motion.div variants={itemVariants} className="space-y-6">
         <div className="bg-slate-900 text-slate-300 rounded-2xl p-6 border border-slate-800 shadow-md border-l-4 border-l-sky-400">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-sky-500/10 rounded-xl">
@@ -471,14 +473,14 @@ export default function InfraestructuraMantenimientoPanel({
             </div>
           </Card>
         </div>
-      </div>
+      </motion.div>
 
       <InspectRequestModal
         isOpen={!!inspectedRequest}
         project={inspectedRequest}
         onClose={() => setInspectedRequest(null)}
       />
-    </div>
+    </motion.div>
   );
 }
 

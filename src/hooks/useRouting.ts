@@ -7,11 +7,9 @@
  * Separado de useAuth para respetar SRP.
  */
 
-import { useCallback } from "react";
-
 export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores"],
-  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores"],
+  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales"],
+  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales"],
   PRESIDENCIA:    ["/presidencia", "/catalogos"],
   INFRAESTRUCTURA:["/presidencia", "/infraestructura"],
   CIERRE_DE_OBRA: ["/presidencia", "/cierre-obra"],
@@ -24,21 +22,15 @@ export const roleAccess: Record<string, string[]> = {
 export function useRoleAccess(role: string | undefined) {
   const activeRole = role; // sin fallback — si no hay rol, canAccess es false
 
-  const canAccess = useCallback(
-    (path: string) => {
-      if (!activeRole) return false;
-      return (roleAccess[activeRole] ?? roleAccess["INFRAESTRUCTURA"]).includes(path);
-    },
-    [activeRole],
-  );
+  const canAccess = (path: string) => {
+    if (!activeRole) return false;
+    return (roleAccess[activeRole] ?? roleAccess["INFRAESTRUCTURA"]).includes(path);
+  };
 
-  const firstAllowedRoute = useCallback(
-    (r: string | undefined): string | null => {
-      if (!r) return null;
-      return roleAccess[r]?.[0] ?? null;
-    },
-    [],
-  );
+  const firstAllowedRoute = (r: string | undefined): string | null => {
+    if (!r) return null;
+    return roleAccess[r]?.[0] ?? null;
+  };
 
   return { activeRole, canAccess, firstAllowedRoute };
 }

@@ -20,6 +20,7 @@ import FinanzasPanel from "./views/FinanzasPanel";
 import MaterialesProveedores from "./views/MaterialesProveedores";
 import ProveedoresRegistrados from "./views/ProveedoresRegistrados";
 import ProveedoresConfigPanel from "./views/ProveedoresConfigPanel";
+import MaterialConfigPanel from "./views/MaterialConfigPanel";
 import PropuestaMaterialesPublica from "./views/PropuestaMaterialesPublica";
 import UsuariosPanel from "./views/UsuariosPanel";
 import LoginScreen from "./views/LoginScreen";
@@ -312,6 +313,14 @@ function AppRoutes() {
                   element={
                     <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_PROVEEDORES)} redirectTo={fallbackRoute}>
                       <ProveedoresConfigPanel authToken={authToken} onContractorMutated={() => loadContractors()} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path={ROUTES.CONFIG_MATERIALES}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_MATERIALES)} redirectTo={fallbackRoute}>
+                      <MaterialConfigPanel authToken={authToken} />
                     </ProtectedRoute>
                   }
                 />
