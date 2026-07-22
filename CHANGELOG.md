@@ -1,5 +1,49 @@
 # CHANGELOG
 
+## [2026-07-22] — Fix: Proveedores operativos solo muestran ACTIVE + polling en useContractors
+
+- Tipo: fix
+- Qué:
+  - **Backend — SupportController@contractors():** Agregado `->where('status', 'ACTIVE')` para que el endpoint `GET /api/contractors` solo devuelva contratistas activos. Los inactivos y pendientes ya no aparecen en las vistas operativas (ProveedoresRegistrados, AnalistasPanel). El endpoint de configuración (`/contractors/config`) no se ve afectado y sigue retornando todos.
+  - **Frontend — useContractors.ts:** Agregado polling (30s) con deduplication por firma (código+nombre+rating) y silencio en errores de poll, siguiendo el mismo patrón de useProjectsData y useProveedores. Mantiene la tabla actualizada cuando se registra un nuevo proveedor vía portal público o se modifica desde configuración.
+- Por qué / causa raíz: El endpoint `GET /api/contractors` no filtraba por status, retornando todos los contratistas (PENDING_REVIEW, ACTIVE, INACTIVE) a las vistas operativas, lo que podía causar problemas con soft-delete y mostrar proveedores no aptos para selección/invitación. Además, la tabla no tenía polling, por lo que nuevos registros del portal público no se reflejaban sin refresh manual.
+- Archivos:
+  - `infraestructura-back/app/Http/Controllers/Api/SupportController.php` — filter ACTIVE
+  - `src/hooks/useContractors.ts` — +polling 30s con dedupe + silent poll errors
+
+## [2026-07-22] — Nueva pestaña: Configuración Proveedores (CRUD + gestión de estado)
+
+- Tipo: feature
+- Qué:
+  - **Backend — ContractorController:** Nuevo controlador con 5 endpoints para administración del catálogo de proveedores:
+    - `GET /api/contractors/config` — listado completo con origen, estado y timestamps
+    - `POST /api/contractors/config` — creación de proveedor con origen INTERNAL
+    - `GET /api/contractors/config/{contractor}` — detalle individual
+    - `PATCH /api/contractors/config/{contractor}` — actualización de datos y estado
+    - `POST /api/contractors/config/{contractor}/toggle-status` — ciclo PENDING_REVIEW → ACTIVE → INACTIVE → ACTIVE
+  - **Backend — Routes:** 5 rutas registradas bajo middleware `role:SUPERADMIN,ADMIN` en el grupo de configuración.
+  - **Frontend — Ruta `/config-proveedores`:** Nueva constante `ROUTES.CONFIG_PROVEEDORES`, con `ProtectedRoute` y acceso para roles SUPERADMIN/ADMIN.
+  - **Frontend — ProveedoresConfigPanel.tsx:** Panel completo de gestión de proveedores:
+    - Tabla con 8 columnas (código, nombre, especialidad, contacto, rating, origen, estado, acciones)
+    - Búsqueda por nombre/código/especialidad/contacto
+    - Botón "Nuevo proveedor" con modal de creación (nombre, especialidad, contacto, rating, estado)
+    - Edición inline vía modal con los mismos campos
+    - Toggle de estado con spinner por fila
+    - Badges de origen (Interno, Portal público, Seed) y estado (Activo/Inactivo/Pendiente) con colores diferenciados
+    - Paginación de 20 registros
+    - Diseño consistente (border-l accent, gradientes, Table component)
+  - **Frontend — SidebarNav:** El ítem "Proveedores" en el dropdown de Configuración ya no está deshabilitado; ahora es un NavLink funcional a `/config-proveedores` con estilo indigo.
+- Por qué: El dropdown de configuración tenía el ítem "Proveedores" como placeholder deshabilitado ("Próx"). Se necesitaba un panel CRUD para administrar el catálogo maestro de proveedores (crear, editar, activar/desactivar), separado de la vista operativa de ProveedoresRegistrados (`/catalogos`).
+- Archivos:
+  - `infraestructura-back/app/Http/Controllers/Api/ContractorController.php` — [NUEVO]
+  - `infraestructura-back/routes/api.php` — +5 rutas admin
+  - `src/routes.tsx` — +ROUTES.CONFIG_PROVEEDORES
+  - `src/hooks/useRouting.ts` — +/config-proveedores en SUPERADMIN/ADMIN
+  - `src/views/ProveedoresConfigPanel.tsx` — [NUEVO]
+  - `src/components/UI/SidebarNav.tsx` — "Proveedores" de disabled span → NavLink
+  - `src/App.tsx` — +ruta CONFIG_PROVEEDORES con ProtectedRoute
+  - `CHANGELOG.md` — actualizado
+
 ## [2026-07-22] — Sidebar: dropdown de configuración (Usuarios, Proveedores, Material, IA Models)
 
 - Tipo: refactor

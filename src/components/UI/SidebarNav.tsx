@@ -258,15 +258,20 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
                     )}
                   </NavLink>
 
-                  {/* Proveedores (pending) */}
-                  <span
-                    className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold border-l-2 border-transparent text-slate-600 opacity-50 cursor-not-allowed select-none"
-                    title="Próximamente"
+                  {/* Proveedores */}
+                  <NavLink
+                    to="/config-proveedores"
+                    id="sidebar-config-proveedores"
+                    onClick={onClose}
+                    className={navLinkClass("bg-indigo-600", "border-indigo-400")}
                   >
-                    <UserCog className="h-[18px] w-[18px] shrink-0 text-slate-600" />
-                    <span className="flex-1">Proveedores</span>
-                    <span className="text-[9px] font-mono uppercase tracking-wider text-slate-500 bg-slate-800/60 px-1.5 py-0.5 rounded">Próx</span>
-                  </span>
+                    {({ isActive }) => (
+                      <>
+                        <UserCog className={sidebarIconClass(isActive)} />
+                        <span>Proveedores</span>
+                      </>
+                    )}
+                  </NavLink>
 
                   {/* Material (pending) */}
                   <span

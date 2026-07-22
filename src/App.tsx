@@ -19,6 +19,7 @@ import AnalistasPanel from "./views/AnalistasPanel";
 import FinanzasPanel from "./views/FinanzasPanel";
 import MaterialesProveedores from "./views/MaterialesProveedores";
 import ProveedoresRegistrados from "./views/ProveedoresRegistrados";
+import ProveedoresConfigPanel from "./views/ProveedoresConfigPanel";
 import PropuestaMaterialesPublica from "./views/PropuestaMaterialesPublica";
 import UsuariosPanel from "./views/UsuariosPanel";
 import LoginScreen from "./views/LoginScreen";
@@ -77,6 +78,7 @@ function AppRoutes() {
     setContractors,
     handleAddContractor,
     handleUpdateContractorRating,
+    loadContractors,
     resetContractors,
   } = useContractors(authToken, showToast);
 
@@ -302,6 +304,14 @@ function AppRoutes() {
                   element={
                     <ProtectedRoute canAccess={canAccess(ROUTES.CATALOGOS)} redirectTo={fallbackRoute}>
                       <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} isLoading={isLoadingApi} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path={ROUTES.CONFIG_PROVEEDORES}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_PROVEEDORES)} redirectTo={fallbackRoute}>
+                      <ProveedoresConfigPanel authToken={authToken} onContractorMutated={() => loadContractors()} />
                     </ProtectedRoute>
                   }
                 />

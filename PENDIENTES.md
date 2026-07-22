@@ -80,6 +80,12 @@
 
 5. Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
 
+6. Creo y sospecho que la tabla de provedores de la misma vista no tiene Polling activo
+
+7. Verificacion de estado de polling.
+
+9. Mejorar y testear sistema de Restablecimiento de Contraseñas.
+
 # AUDITORIAS A REALIZAR ---
 
 1. **AUDITORIA** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.

@@ -10,8 +10,8 @@
 import { useCallback } from "react";
 
 export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios"],
-  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios"],
+  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores"],
+  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores"],
   PRESIDENCIA:    ["/presidencia", "/catalogos"],
   INFRAESTRUCTURA:["/presidencia", "/infraestructura"],
   CIERRE_DE_OBRA: ["/presidencia", "/cierre-obra"],
