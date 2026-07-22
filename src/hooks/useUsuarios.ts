@@ -7,9 +7,10 @@
  * POST /users/{id}/toggle-status, POST /users/{id}/send-reset-link.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { apiFetch } from "../services/api";
 import type { ShowToast } from "./useProjects";
+import { usePolledFetch } from "./usePolledFetch";
 
 export interface UserRecord {
   id: number | string;
@@ -27,28 +28,18 @@ export interface UpdateUserPayload {
 }
 
 export function useUsuarios(authToken: string, showToast: ShowToast) {
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadUsers = useCallback(async () => {
-    if (!authToken) {
-      setIsLoading(false);
-      return;
-    }
-    try {
-      const data = await apiFetch<UserRecord[]>("/users", { token: authToken });
-      setUsers(data);
-    } catch (error) {
-      console.error(error);
-      showToast("No se pudo cargar el listado de usuarios.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authToken, showToast]);
-
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  const { data: users, setData: setUsers, isLoading, refresh: loadUsers } =
+    usePolledFetch<UserRecord>({
+      authToken,
+      showToast,
+      fetcher: useCallback(() => apiFetch<UserRecord[]>("/users", { token: authToken }), [authToken]),
+      getSignature: useCallback(
+        (data: UserRecord[]) => data.map(u => [u.id, u.name, u.email, u.role, u.status].join(":")).join("|"),
+        [],
+      ),
+      errorMessage: "No se pudo cargar el listado de usuarios.",
+      interval: 30000,
+    });
 
   const handleCreateUser = useCallback(
     async (payload: {
