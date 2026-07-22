@@ -8,8 +8,8 @@
  */
 
 export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales"],
-  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales"],
+  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
+  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
   PRESIDENCIA:    ["/presidencia", "/catalogos"],
   INFRAESTRUCTURA:["/presidencia", "/infraestructura"],
   CIERRE_DE_OBRA: ["/presidencia", "/cierre-obra"],

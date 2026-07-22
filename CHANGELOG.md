@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## [2026-07-22] — Módulo de Configuración de IA (Dashboard, LLM Selector, API Keys CRUD)
+- Tipo: feature + security
+- Qué:
+  - **Backend — Migraciones:** 2 nuevas tablas:
+    - `ai_configurations` — almacena proveedor, modelo, API key cifrada (AES-256-GCM), fallback, orden.
+    - `ai_usage_logs` — tracking de tokens, costos, tiempos de respuesta por petición.
+  - **Backend — Modelos:** `AiConfiguration` con accessor/mutator que cifra/descifra `api_key` transparentemente via `Crypt::encryptString/decryptString`. Método `getMaskedApiKey()` que retorna solo últimos 4 caracteres. `AiUsageLog` con casts y relación a User.
+  - **Backend — AiConfigurationService:** Servicio puente que lee configs activas desde DB con cache, fallback a `config/ai.php` si no hay registros. `syncToCache()` persiste cambios en tiempo real sin reinicio de servidor.
+  - **Backend — AIEvaluationService modificado:** Ahora usa `AiConfigurationService` para registrar providers. Si hay configs en DB, las usa con prioridad; si no, cae al archivo de configuración (backward compatible).
+  - **Backend — AiConfigController:** 8 endpoints:
+    - CRUD completo sobre `ai_configurations` (index, store, show, update, destroy)
+    - `POST /{id}/test` — Health check real contra OpenAI/Anthropic/Gemini (petición liviana de validación)
+    - `GET /usage` — Analytics agregados por día, proveedor y modelo (totales, tokens, costos, tasa de éxito)
+    - `POST /sync` — Sincroniza DB → cache runtime (sin reinicio)
+  - **Backend — Routes:** 8 rutas bajo middleware `role:SUPERADMIN,ADMIN` en grupo `ai/config`.
+  - **Frontend — useAIConfig hook:** Hook completo con tipos, CRUD, test de conexión, carga de usage analytics y sync.
+  - **Frontend — AIConfigPanel view:** Panel de 2 secciones:
+    - *Dashboard de Uso:* KPI cards (peticiones, tokens, costo, tasa de éxito), gráfico de barras SVG de consumo diario, desglose por proveedor con barras de progreso. Selector de período (7/30/90 días).
+    - *LLM Selector + API Keys:* Tabla con proveedor, modelo (mono), API key enmascarada, estado activo, badge de respaldo, acciones (test connection, editar, toggle activo, eliminar). Modal de creación/edición con selector de proveedor, modelo, API key (campo password con toggle visibilidad), base URL, max tokens, toggles activo/fallback.
+  - **Frontend — Rutas:** `ROUTES.CONFIG_IA = "/config-ia"` registrada en `routes.tsx`, `roleAccess` (SUPERADMIN/ADMIN), `App.tsx` con `ProtectedRoute`, `SidebarNav` (reemplazado placeholder "Próx" por NavLink funcional con estilo violeta).
+- Por qué / causa raíz: La configuración de proveedores de IA (API keys, modelos) estaba hardcodeada en `.env` y `config/ai.php`. No existía interfaz para administrar credenciales, seleccionar modelos dinámicamente, ni monitorear el consumo. Las API keys viajaban en texto plano en la BD (`.env`). Se requería centralizar, cifrar y exponer métricas de uso.
+- Archivos:
+  - `infraestructura-back/database/migrations/2026_07_22_000002_create_ai_configurations_table.php` — [NUEVO]
+  - `infraestructura-back/database/migrations/2026_07_22_000003_create_ai_usage_logs_table.php` — [NUEVO]
+  - `infraestructura-back/app/Models/AiConfiguration.php` — [NUEVO]
+  - `infraestructura-back/app/Models/AiUsageLog.php` — [NUEVO]
+  - `infraestructura-back/app/Services/AI/AiConfigurationService.php` — [NUEVO]
+  - `infraestructura-back/app/Services/AI/AIEvaluationService.php` — modificado (usa AiConfigurationService)
+  - `infraestructura-back/app/Http/Controllers/Api/AiConfigController.php` — [NUEVO]
+  - `infraestructura-back/routes/api.php` — +8 rutas
+  - `src/hooks/useAIConfig.ts` — [NUEVO]
+  - `src/views/AIConfigPanel.tsx` — [NUEVO]
+  - `src/routes.tsx` — +ROUTES.CONFIG_IA
+  - `src/hooks/useRouting.ts` — +/config-ia en SUPERADMIN/ADMIN
+  - `src/App.tsx` — +import + ruta ProtectedRoute
+  - `src/components/UI/SidebarNav.tsx` — "Modelos de IA" de placeholder → NavLink
+  - `CHANGELOG.md` — actualizado
+
 ## [2026-07-22] — Fix: no se podía cambiar el rol de usuario en el panel de edición
 
 - Tipo: fix

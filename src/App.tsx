@@ -21,6 +21,7 @@ import MaterialesProveedores from "./views/MaterialesProveedores";
 import ProveedoresRegistrados from "./views/ProveedoresRegistrados";
 import ProveedoresConfigPanel from "./views/ProveedoresConfigPanel";
 import MaterialConfigPanel from "./views/MaterialConfigPanel";
+import AIConfigPanel from "./views/AIConfigPanel";
 import PropuestaMaterialesPublica from "./views/PropuestaMaterialesPublica";
 import UsuariosPanel from "./views/UsuariosPanel";
 import LoginScreen from "./views/LoginScreen";
@@ -321,6 +322,14 @@ function AppRoutes() {
                   element={
                     <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_MATERIALES)} redirectTo={fallbackRoute}>
                       <MaterialConfigPanel authToken={authToken} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path={ROUTES.CONFIG_IA}
+                  element={
+                    <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_IA)} redirectTo={fallbackRoute}>
+                      <AIConfigPanel authToken={authToken} />
                     </ProtectedRoute>
                   }
                 />

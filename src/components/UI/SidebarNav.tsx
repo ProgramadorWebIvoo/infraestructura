@@ -288,15 +288,20 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
                     )}
                   </NavLink>
 
-                  {/* IA Models (pending) */}
-                  <span
-                    className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold border-l-2 border-transparent text-slate-600 opacity-50 cursor-not-allowed select-none"
-                    title="Próximamente"
+                  {/* IA Models */}
+                  <NavLink
+                    to="/config-ia"
+                    id="sidebar-config-ia"
+                    onClick={onClose}
+                    className={navLinkClass("bg-violet-600", "border-violet-400")}
                   >
-                    <Brain className="h-[18px] w-[18px] shrink-0 text-slate-600" />
-                    <span className="flex-1">Modelos de IA</span>
-                    <span className="text-[9px] font-mono uppercase tracking-wider text-slate-500 bg-slate-800/60 px-1.5 py-0.5 rounded">Próx</span>
-                  </span>
+                    {({ isActive }) => (
+                      <>
+                        <Brain className={sidebarIconClass(isActive)} />
+                        <span>Modelos de IA</span>
+                      </>
+                    )}
+                  </NavLink>
                 </div>
               )}
             </div>
