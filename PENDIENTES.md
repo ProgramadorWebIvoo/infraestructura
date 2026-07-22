@@ -62,6 +62,8 @@
 
 24. **REALIZAR** ✅ En el apartado de infraestructura, justo donde el departamento puede realizar las peticiones no permite ver los detalles de esa petición realizada
 
+25. **URGENTE** ✅ Parece que con las refactorizaciones se paso por alto dos puntos, A: la api key de los providers de IA se esta filttrando por errores de laravel y las URL. B: El provider de Gemini no esta conectando de la manera que es debida.
+
 # PENDIENTE ----
 
 1. **REALIZAR** Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.)
@@ -74,9 +76,9 @@
     - Materiales.
     - IA Models.
 
-4. **URGENTE** Mejoras de seguridad y traza de error para los IA providers.
+4. **URGENTE** Mejoras de seguridad y traza de error para los IA providers. (Probar casos cuando envia .txt, .csv o .md)
 
-5. **URGENTE** Parece que con las refactorizaciones se paso por alto dos puntos, A: la api key de los providers de IA se esta filttrando por errores de laravel y las URL. B: El provider de Gemini no esta conectando de la manera que es debida.
+5. Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
 
 # AUDITORIAS A REALIZAR ---
 
@@ -85,6 +87,7 @@
 2. **AUDITORIA** Auditoria completa para el enlace publico generado para los proveedores, Tanto en el Backend como en el Frontend.
 
 # PRUEBAS A REALIZAR ---- 
+
 1. **PRUEBAS** Realizar pruebas a todas las funciones y rutas de la app después de la normalización de la conexión a la API
 
 2. **PRUEBAS** Realizar pruebas de expiración y funcionalidad a los tokens Sanctum

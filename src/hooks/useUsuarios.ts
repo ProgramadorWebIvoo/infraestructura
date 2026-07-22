@@ -2,8 +2,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Hook de usuarios del sistema. Extraído de UsuariosPanel:
- * GET /users + POST /users.
+ * Hook de usuarios del sistema.
+ * GET /users, POST /users, PATCH /users/{id},
+ * POST /users/{id}/toggle-status, POST /users/{id}/send-reset-link.
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -15,7 +16,14 @@ export interface UserRecord {
   name: string;
   email: string;
   role: string;
+  status: "Active" | "Inactive";
   created_at?: string;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  status?: "Active" | "Inactive";
 }
 
 export function useUsuarios(authToken: string, showToast: ShowToast) {
@@ -67,10 +75,70 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
     [authToken, showToast],
   );
 
+  const handleUpdateUser = useCallback(
+    async (id: number | string, payload: UpdateUserPayload): Promise<UserRecord> => {
+      try {
+        const updated = await apiFetch<UserRecord>(`/users/${id}`, {
+          method: "PATCH",
+          token: authToken,
+          body: JSON.stringify(payload),
+        });
+        setUsers(prev => prev.map(u => (u.id === id ? updated : u)));
+        showToast("Usuario actualizado correctamente.", "success");
+        return updated;
+      } catch (err) {
+        const message = (err as Error).message || "Error al actualizar el usuario.";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [authToken, showToast],
+  );
+
+  const handleToggleUserStatus = useCallback(
+    async (id: number | string): Promise<"Active" | "Inactive"> => {
+      try {
+        const result = await apiFetch<{ id: number | string; status: "Active" | "Inactive" }>(
+          `/users/${id}/toggle-status`,
+          { method: "POST", token: authToken },
+        );
+        setUsers(prev => prev.map(u => (u.id === id ? { ...u, status: result.status } : u)));
+        const label = result.status === "Active" ? "activado" : "desactivado";
+        showToast(`Usuario ${label} correctamente.`, "success");
+        return result.status;
+      } catch (err) {
+        const message = (err as Error).message || "Error al cambiar el estado del usuario.";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [authToken, showToast],
+  );
+
+  const handleSendPasswordReset = useCallback(
+    async (id: number | string): Promise<void> => {
+      try {
+        await apiFetch<{ message: string }>(`/users/${id}/send-reset-link`, {
+          method: "POST",
+          token: authToken,
+        });
+        showToast("Link de restablecimiento enviado al correo del usuario.", "success");
+      } catch (err) {
+        const message = (err as Error).message || "Error al enviar el link.";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [authToken, showToast],
+  );
+
   return {
     users,
     isLoading,
     loadUsers,
     handleCreateUser,
+    handleUpdateUser,
+    handleToggleUserStatus,
+    handleSendPasswordReset,
   };
 }

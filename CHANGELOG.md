@@ -1,5 +1,92 @@
 # CHANGELOG
 
+## [2026-07-22] — Sidebar: dropdown de configuración (Usuarios, Proveedores, Material, IA Models)
+
+- Tipo: refactor
+- Qué:
+  - **Dropdown "Configuración"** — Reemplazado el NavLink de Usuarios (comentado) por un botón desplegable con icono `Settings` y chevron animado (`rotate-180` al abrir).
+  - **Sub-items activos:** Usuarios (`/usuarios`) y Proveedores (`/catalogos`) como NavLinks funcionales con estilo consistente al resto de la sidebar.
+  - **Sub-items pendientes:** Material e IA Models renderizados como `<span>` deshabilitados (opacity 50%, cursor-not-allowed, badge "Próx") para indicar que están próximos, sin generar navegación a rutas inexistentes.
+  - **Permisos:** El dropdown completo se muestra bajo el mismo guard `canAccess("/usuarios")` que el link original.
+- Por qué: El navbar de usuarios necesitaba convertirse en un menú de opciones configurables. Los items Material e IA Models son vistas pendientes de crear; se marcan como "Próx" en vez de crear rutas placeholder.
+- Archivos: `src/components/UI/SidebarNav.tsx`
+
+## [2026-07-22] — CRUD usuarios: status, update, toggle, password reset link
+
+- Tipo: feature
+- Qué:
+  - **Backend — Migración:** `add_status_to_users_table` agrega columna `status` (string, default 'Active') a la tabla `users`.
+  - **Backend — User model:** +`status` en `$fillable`, scopes `active()`/`inactive()`, helpers `isActive()`/`isInactive()`, override `sendPasswordResetNotification()` para usar frontend URL.
+  - **Backend — AuthController:** login bloqueado si el usuario está `Inactive` (mensaje "Esta cuenta ha sido desactivada.").
+  - **Backend — UserController:** 3 nuevos métodos:
+    - `update()` — PATCH /users/{user}: actualiza name, email, status (validación individual con `sometimes`).
+    - `toggleStatus()` — POST /users/{user}/toggle-status: alterna Active/Inactive, revoca tokens al desactivar.
+    - `sendResetLink()` — POST /users/{user}/send-reset-link: envía email con link de restablecimiento usando `Password::sendResetLink()`.
+  - **Backend — Custom Notification:** `UserPasswordReset` con frontend URL desde `config('app.frontend_url')`, asunto y cuerpo en español.
+  - **Backend — Routes:** 3 rutas nuevas dentro del grupo `role:SUPERADMIN,ADMIN`.
+  - **Frontend — useUsuarios.ts:** 3 nuevos métodos (`handleUpdateUser`, `handleToggleUserStatus`, `handleSendPasswordReset`) con actualización optimista del estado local.
+  - **Frontend — UsuariosPanel.tsx:**
+    - **Status visual:** badge "Activo" (verde) / "Inactivo" (gris) con indicador circular en cada usuario.
+    - **Usuarios inactivos:** opacidad reducida (50% → 70% hover) para diferenciarlos visualmente.
+    - **Edición inline:** clic en lápiz expande la fila con inputs para nombre, email y select de status; botones Guardar/Cancelar con loading state.
+    - **Toggle status:** botón con icono `UserX`/`RotateCcw` que activa/desactiva al usuario; spinner durante la operación.
+    - **Password reset:** botón `Send` que envía el link; deshabilitado si el usuario está inactivo.
+    - **Per-user loading:** `togglingId`/`sendingId` evita interferencia entre operaciones simultáneas.
+- Por qué / causa raíz: El panel de usuarios solo tenía Create, faltaban Update (nombre, correo, status), soft delete (desactivar usuario) y envío de link de restablecimiento de contraseña.
+- Archivos:
+  - `infraestructura-back/database/migrations/2026_07_22_000001_add_status_to_users_table.php` — [NUEVO]
+  - `infraestructura-back/app/Models/User.php`
+  - `infraestructura-back/app/Notifications/UserPasswordReset.php` — [NUEVO]
+  - `infraestructura-back/app/Http/Controllers/Api/UserController.php`
+  - `infraestructura-back/app/Http/Controllers/Api/AuthController.php`
+  - `infraestructura-back/routes/api.php`
+  - `infraestructura-back/config/app.php`
+  - `infraestructura/src/hooks/useUsuarios.ts`
+  - `infraestructura/src/views/UsuariosPanel.tsx`
+
+## [2026-07-22] — Mejora visual completa de UsuariosPanel
+
+- Tipo: refactor (visual)
+- Qué:
+  - **Header del panel** — Icono con gradiente `from-sky-500 to-sky-600` en vez de flat `bg-sky-500`.
+  - **Formulario** — `border-l-4 border-l-sky-400`; icono de cabecera con gradiente, borde y sombra.
+  - **Banners success/error** — `border-l-4` (emerald/rose), fondo con gradiente, icono decorativo (`CheckCircle`/`XCircle`).
+  - **Inputs** — `pointer-events-none` en íconos, `transition-all duration-200`, `focus:shadow-sm`, `placeholder:text-slate-400`.
+  - **Select de rol** — ChevronDown decorativo superpuesto con `pointer-events-none`.
+  - **Botón submit** — Gradiente `from-sky-600 to-sky-500`, `shadow-md`, `hover:shadow-lg hover:-translate-y-0.5`, spinner animado en estado loading.
+  - **Feedback de validación** — Hint "contraseñas no coinciden" con icono `XCircle` inline.
+  - **Lista de usuarios** — `border-l-4 border-l-indigo-400`; cabecera con gradiente `from-indigo-50/30 to-white`.
+  - **Badge de conteo** — Gradiente `from-indigo-50 to-white` con `shadow-xs`.
+  - **Loading spinner** — Más grande (w-8/h-8), color indigo, borde más grueso.
+  - **Empty state** — Icon container con gradiente, borde, sombra y textos refinados.
+  - **Items de usuario** — Hover con gradiente `from-indigo-50/30 to-white`, avatar con gradiente y sombra que se intensifica en hover, nombre oscurece en hover.
+- Por qué: UsuariosPanel era visualmente plana (sin border-l accents, sin gradientes en botones, iconos o fondos) y se veía desalineada con el design language del sistema (FinanzasPanel, CierreObraPanel, InfraestructuraMantenimientoPanel).
+- Archivos: `src/views/UsuariosPanel.tsx`
+
+## [2026-07-22] — Sidebar: scrollbar custom integrada al tema oscuro
+
+- Tipo: style
+- Qué:
+  - Agregada clase `.sidebar-scrollbar` en `index.css` con scrollbar delgada (6px), track transparente y thumb `slate-400/15` que se intensifica a `slate-400/30` en hover.
+  - `@supports (scrollbar-color: auto)` para Firefox con `scrollbar-width: thin`.
+  - Aplicada al `<nav>` del sidebar.
+- Por qué: La scrollbar nativa del sidebar (tema oscuro `#0F172A`) se veía fuera de estilo — track blanco/genérico que rompía la inmersión visual.
+- Archivos: `src/index.css`, `src/components/UI/SidebarNav.tsx`
+
+## [2026-07-21] — Mejora visual de ProveedoresRegistrados
+
+- Tipo: refactor (visual)
+- Qué:
+  - **border-l-4 accent** — Header card con `border-l-4 border-l-sky-400`; ambas table cards (contratistas y propuestas) con `border-l-4 border-l-indigo-400`, alineándose con el design language de FinanzasPanel, CierreObraPanel e InfraestructuraMantenimientoPanel.
+  - **Botones CTA con gradientes** — "Abrir registro publico" (`from-sky-600 to-sky-500`), "Guardar evaluacion" (`from-amber-600 to-amber-500`), "Generar enlace unico" (`from-indigo-600 to-indigo-500`), "Copiar enlace" (`from-emerald-600 to-emerald-500` / `from-indigo-600 to-indigo-500`), todos con `shadow-md`, `hover:shadow-lg`, `hover:-translate-y-0.5` y `transition-all duration-200`.
+  - **Badges con gradientes** — Rating badge (`from-amber-50 to-amber-100/50`), proposal ID badge (`from-indigo-50 to-indigo-100/50`), total count badges (`from-slate-50 to-white`), footer de items table (`from-slate-50 to-white`).
+  - **Proposal expanded detail box** — `bg-gradient-to-br from-indigo-50/40 to-white border border-indigo-100/60` en vez de bg plano.
+  - **Generated link box** — `bg-gradient-to-br from-emerald-50/40 to-white border border-emerald-200/60` en el modal de invitación.
+  - **Action icon buttons** — Edit rating y invite buttons con `hover:shadow-md hover:-translate-y-0.5` y `transition-all duration-200`.
+  - **Botones secundarios** — Cancelar y reset buttons con `transition-all duration-200 hover:shadow-md`.
+- Por qué: ProveedoresRegistrados era la única vista con cards sin border-l accent, botones CTA planos sin gradientes ni sombras, y badges sin gradientes. Estaba visualmente desalineada con el resto del sistema.
+- Archivos: `src/views/ProveedoresRegistrados.tsx`
+
 ## [2026-07-21] — Fix: Providers de IA — ConnectionException no capturado + failover + visibilidad de errores
 
 - Tipo: fix + feature
