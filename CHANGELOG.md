@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## [2026-07-22] — Fix: no se podía cambiar el rol de usuario en el panel de edición
+
+- Tipo: fix
+- Qué:
+  - **Backend — UserController@update:** Agregado `role` a las reglas de validación (`Rule::in(VALID_ROLES)`) y asignación condicional en el método `update()`.
+  - **Frontend — useUsuarios.ts:** Agregado `role?: string` a la interfaz `UpdateUserPayload`.
+  - **Frontend — UsuariosPanel.tsx:** Agregado estado `editRole`, inicializado en `startEditing()` e incluido en el payload de `saveEditing()`. Nueva fila en el panel de edición inline con selector de roles (mismos roles que el formulario de creación).
+- Por qué / causa raíz: El panel de edición inline de usuarios solo permitía cambiar nombre, email y estado. No había campo para cambiar el rol, y el backend no lo aceptaba en el endpoint `PATCH /users/{id}`.
+- Archivos:
+  - `infraestructura-back/app/Http/Controllers/Api/UserController.php`
+  - `src/hooks/useUsuarios.ts`
+  - `src/views/UsuariosPanel.tsx`
+  - `CHANGELOG.md` — actualizado
+
+## [2026-07-22] — Buscador + filtro por estado en lista de usuarios
+
+- Tipo: feature
+- Qué:
+  - **UsuariosPanel.tsx:** Agregada barra de búsqueda (por nombre o correo) con icono Search y filtro de estado (Todos/Activos/Inactivos) debajo del header de la lista. El conteo de usuarios muestra `filtrados / total` cuando hay filtros activos. El empty state diferencia "No hay usuarios registrados" vs "Sin resultados" cuando los filtros no coinciden.
+- Por qué / causa raíz: Al crecer el número de usuarios, no había forma de buscar por nombre/correo ni filtrar por estado sin hacer scroll manual sobre toda la lista.
+- Archivos:
+  - `src/views/UsuariosPanel.tsx`
+  - `CHANGELOG.md` — actualizado
+
 ## [2026-07-22] — Animaciones smooth en expansiones de Cards/Contenedores (5 vistas)
 
 - Tipo: feature + refactor

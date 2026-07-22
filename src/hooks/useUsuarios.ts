@@ -24,6 +24,7 @@ export interface UserRecord {
 export interface UpdateUserPayload {
   name?: string;
   email?: string;
+  role?: string;
   status?: "Active" | "Inactive";
 }
 

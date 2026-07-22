@@ -27,6 +27,7 @@ import {
   UserX,
   Loader2,
   Sparkles,
+  Search,
 } from "lucide-react";
 import StatusBadge from "../components/UI/StatusBadge";
 import { useToast } from "../components/UI/Toast";
@@ -85,11 +86,25 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editStatus, setEditStatus] = useState<"Active" | "Inactive">("Active");
+  const [editRole, setEditRole] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // ── Per-user loading flags ────────────────────────────────────────────
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [sendingId, setSendingId] = useState<number | string | null>(null);
+
+  // ── Search / filter state ─────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
+
+  const filteredUsers = users.filter(u => {
+    const matchesSearch =
+      !searchQuery.trim() ||
+      u.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    const matchesStatus = statusFilter === "all" || u.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -134,6 +149,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
     setEditName(user.name);
     setEditEmail(user.email);
     setEditStatus(user.status);
+    setEditRole(user.role);
   };
 
   const cancelEditing = () => {
@@ -146,6 +162,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
     const payload: UpdateUserPayload = {};
     if (editName.trim()) payload.name = editName.trim();
     if (editEmail.trim()) payload.email = editEmail.trim();
+    if (editRole) payload.role = editRole;
     payload.status = editStatus;
 
     try {
@@ -384,17 +401,41 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
           variants={itemVariants}
           className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col border-l-4 border-l-indigo-400"
         >
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-gradient-to-r from-indigo-50/30 to-white rounded-tr-2xl">
-            <h3 className="text-sm font-black text-slate-950">Usuarios del sistema</h3>
-            <motion.span
-              key={users.length}
-              initial={{ scale: 1.3, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="text-[10px] font-bold font-mono text-indigo-600 bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 px-2.5 py-1 rounded-full shadow-xs"
-            >
-              {users.length} {users.length === 1 ? "usuario" : "usuarios"}
-            </motion.span>
+          <div className="px-6 py-4 border-b border-slate-100 shrink-0 bg-gradient-to-r from-indigo-50/30 to-white rounded-tr-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-950">Usuarios del sistema</h3>
+              <motion.span
+                key={filteredUsers.length}
+                initial={{ scale: 1.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="text-[10px] font-bold font-mono text-indigo-600 bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 px-2.5 py-1 rounded-full shadow-xs"
+              >
+                {filteredUsers.length}{filteredUsers.length !== users.length ? ` / ${users.length}` : ""} {filteredUsers.length === 1 ? "usuario" : "usuarios"}
+              </motion.span>
+            </div>
+
+            {/* Search + filter bar */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text" value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por nombre o correo..."
+                  className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-[11px] font-medium text-slate-700 outline-hidden transition-all duration-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 placeholder:text-slate-400"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value as "all" | "Active" | "Inactive")}
+                className="rounded-lg border border-slate-200 bg-white py-1.5 pl-2.5 pr-7 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-hidden transition-all duration-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 appearance-none"
+              >
+                <option value="all">Todos</option>
+                <option value="Active">Activos</option>
+                <option value="Inactive">Inactivos</option>
+              </select>
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
@@ -415,7 +456,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                   <p className="text-[11px] text-slate-400 font-medium">Cargando usuarios...</p>
                 </div>
               </motion.div>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0, y: 10 }}
@@ -432,9 +473,13 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                   >
                     <Users className="h-6 w-6 text-slate-400" />
                   </motion.div>
-                  <p className="text-sm font-bold text-slate-500">No hay usuarios registrados</p>
-                  <p className="text-[11px] text-slate-400 max-w-[180px]">
-                    Crea el primer usuario usando el formulario de la izquierda.
+                  <p className="text-sm font-bold text-slate-500">
+                    {users.length === 0 ? "No hay usuarios registrados" : "Sin resultados"}
+                  </p>
+                  <p className="text-[11px] text-slate-400 max-w-[220px]">
+                    {users.length === 0
+                      ? "Crea el primer usuario usando el formulario de la izquierda."
+                      : "Ningún usuario coincide con los filtros aplicados."}
                   </p>
                 </div>
               </motion.div>
@@ -447,7 +492,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                 className="divide-y divide-slate-100 overflow-y-auto flex-1"
               >
                 <AnimatePresence mode="popLayout">
-                  {users.map((user, index) => {
+                  {filteredUsers.map((user, index) => {
                     const isEditing = editingId === user.id;
                     const isInactive = user.status === "Inactive";
                     const isToggling = togglingId === user.id;
@@ -629,6 +674,24 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                                         <option value="Inactive">Inactivo</option>
                                       </select>
                                     </div>
+                                  </div>
+                                </div>
+
+                                {/* Role selector row */}
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-white text-indigo-600 shadow-xs border border-indigo-100">
+                                    <Shield className="h-3.5 w-3.5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <select
+                                      value={editRole}
+                                      onChange={e => setEditRole(e.target.value)}
+                                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 appearance-none"
+                                    >
+                                      {ROLES.map(r => (
+                                        <option key={r.value} value={r.value}>{r.label}</option>
+                                      ))}
+                                    </select>
                                   </div>
                                 </div>
 
