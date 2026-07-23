@@ -128,6 +128,10 @@ export function useAIConfig(authToken: string) {
   const [usage, setUsage] = useState<AiUsageData | null>(null);
   const [isUsageLoading, setIsUsageLoading] = useState(true);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [syncIsError, setSyncIsError] = useState(false);
+
+  const authTokenRef = useRef(authToken);
+  authTokenRef.current = authToken;
 
   const prevToken = useRef(authToken);
 
@@ -142,16 +146,17 @@ export function useAIConfig(authToken: string) {
 
   // Load configs
   const loadConfigs = useCallback(async () => {
-    if (!authToken) return;
+    const token = authTokenRef.current;
+    if (!token) return;
     try {
-      const data = await apiFetch<AiConfigRecord[]>("/ai/config", { token: authToken });
+      const data = await apiFetch<AiConfigRecord[]>("/ai/config", { token });
       setConfigs(data);
     } catch (err) {
       logError("useAIConfig.loadConfigs", err);
     } finally {
       setIsLoading(false);
     }
-  }, [authToken]);
+  }, []);
 
   useEffect(() => {
     loadConfigs();
@@ -159,67 +164,75 @@ export function useAIConfig(authToken: string) {
 
   // Load usage
   const loadUsage = useCallback(async (days = 30) => {
-    if (!authToken) return;
+    const token = authTokenRef.current;
+    if (!token) return;
     setIsUsageLoading(true);
     try {
-      const data = await apiFetch<AiUsageData>(`/ai/config/usage?days=${days}`, { token: authToken });
+      const data = await apiFetch<AiUsageData>(`/ai/config/usage?days=${days}`, { token });
       setUsage(data);
     } catch (err) {
       logError("useAIConfig.loadUsage", err);
     } finally {
       setIsUsageLoading(false);
     }
-  }, [authToken]);
+  }, []);
 
   // Create config
   const createConfig = useCallback(async (form: AiConfigForm): Promise<AiConfigRecord> => {
+    const token = authTokenRef.current;
     const created = await apiFetch<AiConfigRecord>("/ai/config", {
       method: "POST",
-      token: authToken,
+      token,
       body: JSON.stringify(form),
     });
     setConfigs((prev) => [...prev, created]);
     return created;
-  }, [authToken]);
+  }, []);
 
   // Update config
   const updateConfig = useCallback(async (id: number, form: Partial<AiConfigForm>): Promise<AiConfigRecord> => {
+    const token = authTokenRef.current;
     const updated = await apiFetch<AiConfigRecord>(`/ai/config/${id}`, {
       method: "PATCH",
-      token: authToken,
+      token,
       body: JSON.stringify(form),
     });
     setConfigs((prev) => prev.map((c) => (c.id === id ? updated : c)));
     return updated;
-  }, [authToken]);
+  }, []);
 
   // Delete config
   const deleteConfig = useCallback(async (id: number): Promise<void> => {
-    await apiFetch(`/ai/config/${id}`, { method: "DELETE", token: authToken });
+    const token = authTokenRef.current;
+    await apiFetch(`/ai/config/${id}`, { method: "DELETE", token });
     setConfigs((prev) => prev.filter((c) => c.id !== id));
-  }, [authToken]);
+  }, []);
 
   // Test config
   const testConfig = useCallback(async (id: number): Promise<{ success: boolean; message: string }> => {
-    return apiFetch(`/ai/config/${id}/test`, { method: "POST", token: authToken });
-  }, [authToken]);
+    const token = authTokenRef.current;
+    return apiFetch(`/ai/config/${id}/test`, { method: "POST", token });
+  }, []);
 
   // Sync to runtime
   const syncConfig = useCallback(async () => {
+    const token = authTokenRef.current;
     setSyncMessage(null);
+    setSyncIsError(false);
     try {
       const result = await apiFetch<{ message: string; activeConfigs: number }>("/ai/config/sync", {
         method: "POST",
-        token: authToken,
+        token,
       });
       setSyncMessage(result.message);
       return result;
     } catch (err) {
       const msg = (err as Error).message || "Error al sincronizar.";
       setSyncMessage(msg);
+      setSyncIsError(true);
       throw err;
     }
-  }, [authToken]);
+  }, []);
 
   return {
     configs,
@@ -227,6 +240,7 @@ export function useAIConfig(authToken: string) {
     usage,
     isUsageLoading,
     syncMessage,
+    syncIsError,
     loadConfigs,
     loadUsage,
     createConfig,
@@ -235,5 +249,6 @@ export function useAIConfig(authToken: string) {
     testConfig,
     syncConfig,
     setSyncMessage,
+    setSyncIsError,
   };
 }

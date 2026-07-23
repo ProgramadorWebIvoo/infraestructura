@@ -42,6 +42,8 @@ describe("useAuth", () => {
   beforeEach(() => {
     localStorage.clear();
     mockApiFetch.mockReset();
+    // Default: session validation on mount succeeds (returns user)
+    mockApiFetch.mockResolvedValue({ user: { name: "Test", email: "test@ivoo.local", role: "ADMIN" } });
   });
 
   afterEach(() => {

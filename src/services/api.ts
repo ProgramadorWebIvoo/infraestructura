@@ -135,7 +135,7 @@ export async function apiFetch<T = unknown>(
 
 /**
  * Wrapper para descarga de archivos (blob).
- * No parsea JSON, devuelve el blob directamente.
+ * Sigue el mismo patrón de error handling que apiFetch.
  */
 export async function apiDownload(
   path: string,
@@ -154,7 +154,15 @@ export async function apiDownload(
   });
 
   if (!response.ok) {
-    throw new Error(`Error al descargar (${response.status})`);
+    let message: string;
+    try {
+      const text = await response.text();
+      const body = JSON.parse(text);
+      message = body.message ?? body.error ?? `Error al descargar (${response.status})`;
+    } catch {
+      message = `Error al descargar (${response.status})`;
+    }
+    throw new Error(message);
   }
 
   return response.blob();

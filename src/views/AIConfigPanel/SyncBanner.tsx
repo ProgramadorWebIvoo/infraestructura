@@ -3,9 +3,11 @@ import { AlertCircle, CheckCircle, X } from "lucide-react";
 
 export default function SyncBanner({
   message,
+  isError,
   onDismiss,
 }: {
   message: string | null;
+  isError?: boolean;
   onDismiss: () => void;
 }) {
   if (!message) return null;
@@ -15,12 +17,12 @@ export default function SyncBanner({
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
       className={`flex items-center gap-2 rounded-xl border-l-4 px-4 py-3 text-xs font-semibold ${
-        message.includes("Error")
+        isError
           ? "border-l-rose-400 bg-rose-50 text-rose-700"
           : "border-l-emerald-400 bg-emerald-50 text-emerald-700"
       }`}
     >
-      {message.includes("Error") ? (
+      {isError ? (
         <AlertCircle className="h-4 w-4 shrink-0" />
       ) : (
         <CheckCircle className="h-4 w-4 shrink-0" />

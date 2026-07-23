@@ -24,6 +24,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     usage,
     isUsageLoading,
     syncMessage,
+    syncIsError,
     loadUsage,
     createConfig,
     updateConfig,
@@ -31,6 +32,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     testConfig,
     syncConfig,
     setSyncMessage,
+    setSyncIsError,
   } = useAIConfig(authToken);
 
   const [usageDays, setUsageDays] = useState(30);
@@ -170,7 +172,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-      <SyncBanner message={syncMessage} onDismiss={() => setSyncMessage(null)} />
+      <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={() => { setSyncMessage(null); setSyncIsError(false); }} />
 
       <UsageDashboard
         usage={usage}

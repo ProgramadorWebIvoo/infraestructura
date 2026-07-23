@@ -76,17 +76,21 @@
 
 32.  **REALIZAR** ✅ Hay selects que estan propensos a acumular muchisima información como materiales, proveedores, etc. Es esencial realizar como instancia una accion que en vez de abrir un select abra un modal capaz de mostrar una tabla con paginacion y buscador de los registros seleccionables.
 
+33. **REALIZAR** ✅ Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
+
+34. **URGENTE** ✅ Mejoras de seguridad y traza de error para los IA providers. (Probar casos cuando envia .txt, .csv o .md)
+
+35. **AUDITORIA** ✅ Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
+
+36. **AUDITORIA** ✅ Auditoria completa para el enlace publico generado para los proveedores, Tanto en el Backend como en el Frontend.
+
 # PENDIENTE ----
 
-2. **URGENTE** Mejoras de seguridad y traza de error para los IA providers. (Probar casos cuando envia .txt, .csv o .md)
-
-3. **REALIZAR** Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
+NULL 
 
 # AUDITORIAS A REALIZAR ---
 
-1. **AUDITORIA** Realizar nuevas Auditorias en el FRONTEND y en el BACKEND de la aplicación.
-
-2. **AUDITORIA** Auditoria completa para el enlace publico generado para los proveedores, Tanto en el Backend como en el Frontend.
+1. **AUDITORIA** Despues de realizar todas las pruebas y auditorias anteriores es necesario realizar una nueva auditoria con Claude PRO
 
 # PRUEBAS A REALIZAR ---- 
 

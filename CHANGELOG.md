@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## [2026-07-23] — Auditoría y refactor del sistema de IA: limpieza, tipado, extracción de sub-vistas
+- Tipo: refactor + fix
+- Qué: Auditoría integral del código frontend relacionado con IA. Se detectaron y corrigieron 8 puntos:
+  1. **Payload de evaluación AI no incluía documentos del proyecto** — revertido por instrucción del usuario (no enviar docs a la IA). El código queda limpio sin referencias a documentos en el payload.
+  2. **Delay artificial de 800ms en EvaluacionInteligenteModal** — Eliminado `await delay(800)` que bloqueaba la UX antes de arrancar la evaluación.
+  3. **`err: any` en 2 catch blocks** — Reemplazado por `err: unknown` con cast tipado a `Error & { attemptLog?: string[] }`.
+  4. **EvaluacionInteligenteModal.tsx (679 líneas)** — Extraído a directorio con 6 archivos separados: `index.tsx` (orquestador), `IdleView.tsx`, `LoadingView.tsx`, `ResultView.tsx`, `ErrorView.tsx`, `constants.ts`, `types.ts`. El archivo original queda como re-export para backward compatibility.
+  5. **apiDownload con error handling mínimo** — Mejorado para parsear `body.message ?? body.error` del servidor, mismo patrón que `apiFetch`.
+  6. **Enmascaramiento de API key en AIConfigTable** — Corregido bug: keys de ≤8 caracteres se mostraban sin enmascarar (ahora se enmascaran completamente).
+  7. **useAIConfig: recreación de callbacks en cada cambio de authToken** — Cambiado Patrón de `useCallback([authToken])` a ref-based (`authTokenRef.current`) para evitar recreación innecesaria de los 7 métodos en cada render.
+  8. **SyncBanner detectaba error por `message.includes("Error")`** — Reemplazado por prop booleana `isError`, evitando falsos positivos con mensajes en español que contengan la palabra "Error".
+- Por qué / causa raíz: El sistema de IA frontend tenía código espagueti en el modal de evaluación (679 líneas), tipos inseguros (`any`), artefacto UX (delay 800ms), y patrones inconsistentes de manejo de errores y memoización.
+- Archivos:
+  - `src/components/Modals/EvaluacionInteligenteModal.tsx` — re-export
+  - `src/components/Modals/EvaluacionInteligenteModal/index.tsx` — [NUEVO] orquestador
+  - `src/components/Modals/EvaluacionInteligenteModal/IdleView.tsx` — [NUEVO]
+  - `src/components/Modals/EvaluacionInteligenteModal/LoadingView.tsx` — [NUEVO]
+  - `src/components/Modals/EvaluacionInteligenteModal/ResultView.tsx` — [NUEVO]
+  - `src/components/Modals/EvaluacionInteligenteModal/ErrorView.tsx` — [NUEVO]
+  - `src/components/Modals/EvaluacionInteligenteModal/constants.ts` — [NUEVO]
+  - `src/components/Modals/EvaluacionInteligenteModal/types.ts` — [NUEVO]
+  - `src/hooks/useAIConfig.ts` — refactor (ref-based token, syncIsError)
+  - `src/services/api.ts` — apiDownload mejorado
+  - `src/views/AIConfigPanel/AIConfigTable.tsx` — fix enmascaramiento
+  - `src/views/AIConfigPanel/SyncBanner.tsx` — prop isError
+  - `src/views/AIConfigPanel/index.tsx` — syncIsError integrado
+
+## [2026-07-23] — Fix: Token expiration no funcionaba al volver de PC apagado/suspensión
+- Tipo: fix + security
+- Qué: Se corrigieron 3 problemas concurrentes que impedían la expiración correcta de sesión:
+  1. **Backend — AuthController.php**: `createToken()` se llamaba sin `$expiresAt`, dejando `expires_at=NULL` en DB. Sanctum igual valida por `created_at + config.expiration`, pero el middleware `RefreshSanctumToken` usaba `$token->expires_at` para la gracia de 60s. Ahora se pasa `now()->addMinutes(config('sanctum.expiration'))` explícitamente.
+  2. **Frontend — useAuth.ts**: No había validación de sesión al montar la app. Si el usuario tenía un token en localStorage, se daba por autenticado sin consultar al backend, incluso si el token había expirado (>24h) o sido revocado. Ahora al montar con token guardado se llama `GET /api/user`; si falla (401), se limpia la sesión. Mientras valida, `isValidatingSession=true` impide renderizar el layout autenticado.
+  3. **Frontend — useAuth.ts**: El inactivity timeout de 30min usaba `setTimeout`, que el navegador congela cuando el PC duerme o el tab pasa a segundo plano. Al volver, el timer reanudaba desde donde se quedó, no desde el tiempo real transcurrido. Reemplazado por:
+     - `setInterval` cada 15s que compara `Date.now() - lastActivityRef.current >= SESSION_TIMEOUT_MS`
+     - Listener `visibilitychange` para chequear inmediatamente al volver al tab
+  4. **Frontend — App.tsx**: Agregada pantalla de carga ("Verificando sesión…") mientras `isValidatingSession` está activo, evitando el flash del layout autenticado con token expirado.
+- Por qué / causa raíz: Tres causas concurrentes: (a) token sin `expires_at` en DB, (b) frontend confiaba ciegamente en localStorage sin validar contra backend, (c) `setTimeout` se congela durante suspensión del sistema/tab.
+- Archivos:
+  - `infraestructura-back/app/Http/Controllers/Api/AuthController.php`
+  - `src/hooks/useAuth.ts`
+  - `src/App.tsx`
+
 ## [2026-07-23] — Fix: 5 componentes violaban Rules of Hooks, nested button, autocomplete
 - Tipo: fix
 - Qué: Se corrigieron 3 categorías de errores de consola:

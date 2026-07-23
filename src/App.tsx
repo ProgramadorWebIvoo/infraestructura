@@ -70,6 +70,7 @@ function AppRoutes() {
   const {
     authToken,
     authUser,
+    isValidatingSession,
     handleLogin,
     handleLogout: authLogout,
   } = useAuth();
@@ -170,6 +171,18 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to={ROUTES.REGISTRO_PROVEEDORES} replace />} />
         </Routes>
       </ErrorBoundary>
+    );
+  }
+
+  // ---- Validando sesión guardada (token en localStorage, consultando backend) ----
+  if (isValidatingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
+          <p className="text-sm font-medium">Verificando sesión…</p>
+        </div>
+      </div>
     );
   }
 
