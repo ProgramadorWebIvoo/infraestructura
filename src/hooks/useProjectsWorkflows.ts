@@ -10,6 +10,7 @@ import { useCallback } from "react";
 import type { Project, Proposal } from "../types";
 import { ProjectStatus } from "../types";
 import { apiFetch } from "../services/api";
+import { logError } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 
 interface UseProjectsWorkflowsOptions {
@@ -39,7 +40,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleAddProject", error);
         showToast("No se pudo registrar la obra en Laravel.", "error");
       }
     },
@@ -68,7 +69,7 @@ export function useProjectsWorkflows({
         const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token: authToken });
         syncProject(refreshed);
       } catch (error) {
-        console.error(error);
+        logError("handleReviewProject", error);
         showToast("No se pudo guardar la revisión técnica.", "error");
       }
     },
@@ -86,7 +87,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleApproveInvestment", error);
         showToast("No se pudo aprobar la inversión.", "error");
       }
     },
@@ -103,7 +104,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleSelectContractor", error);
         throw error;
       }
     },
@@ -120,7 +121,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleRejectProposals", error);
         showToast("No se pudo rechazar el cuadro comparativo.", "error");
       }
     },
@@ -138,7 +139,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleAddProposal", error);
         showToast("No se pudo cargar la propuesta.", "error");
       }
     },
@@ -154,7 +155,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleRemoveProposal", error);
         showToast("No se pudo eliminar la propuesta.", "error");
       }
     },
@@ -170,7 +171,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handleSubmitComparative", error);
         showToast("No se pudo enviar el cuadro comparativo.", "error");
       }
     },
@@ -211,7 +212,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handlePayAdvance", error);
         showToast("No se pudo registrar el anticipo.", "error");
       }
     },
@@ -228,7 +229,7 @@ export function useProjectsWorkflows({
         });
         syncProject(project);
       } catch (error) {
-        console.error(error);
+        logError("handlePayFinal", error);
         showToast("No se pudo registrar el pago final.", "error");
       }
     },
@@ -252,7 +253,7 @@ export function useProjectsWorkflows({
         );
         syncProject(updated);
       } catch (error) {
-        console.error(error);
+        logError("handleVerifyCompletion", error);
         showToast("No se pudo actualizar la verificación de cierre.", "error");
       }
     },

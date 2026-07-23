@@ -23,7 +23,9 @@ import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
 import { useToast } from "../components/UI/Toast";
 import { apiFetch } from "../services/api";
+import { logError } from "../services/logger";
 import { containerVariants, itemVariants } from "../animations";
+import SelectModal from "../components/UI/SelectModal";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,6 +55,12 @@ const EMPTY_FORM: MaterialForm = {
   isActive: true,
 };
 
+// Status options for SelectModal
+const statusOptions = [
+  { value: 1, label: "Activo", description: "Material disponible en obras", raw: true },
+  { value: 0, label: "Inactivo", description: "Material oculto (soft delete)", raw: false },
+];
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -71,6 +79,7 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<MaterialForm>(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
   // ---- Toggle state ----
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -92,7 +101,7 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
       const data = await apiFetch<ConfigMaterial[]>("/materials/config", { token: authToken });
       setMaterials(data);
     } catch (error) {
-      console.error(error);
+      logError("MaterialConfigPanel.loadMaterials", error);
       showToast("No se pudieron cargar los materiales.", "error");
     } finally {
       setIsLoading(false);
@@ -450,29 +459,21 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Estado
               </label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
-                  className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
-                    form.isActive
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-slate-200 bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {form.isActive ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <XCircle className="h-4 w-4" />
-                  )}
-                  {form.isActive ? "Activo" : "Inactivo"}
-                </button>
-                <span className="text-[11px] font-medium text-slate-400">
-                  {form.isActive
-                    ? "El material está disponible en obras."
-                    : "El material estará oculto (soft delete)."}
-                </span>
-              </div>
+              <SelectModal
+                isOpen={isStatusModalOpen}
+                onClose={() => setIsStatusModalOpen(false)}
+                onOpen={() => setIsStatusModalOpen(true)}
+                onSelect={(opt) => setForm((f) => ({ ...f, isActive: opt.value === 1 }))}
+                options={statusOptions}
+                selectedValue={form.isActive ? 1 : 0}
+                triggerLabel={form.isActive ? "Activo" : "Inactivo"}
+                title="Seleccionar Estado"
+                infoLine={`${statusOptions.length} opciones disponibles`}
+                icon={<Package className="h-5 w-5" />}
+                iconColor="emerald"
+                maxWidth="max-w-md"
+                searchPlaceholder="Buscar estado..."
+              />
             </div>
           )}
         </div>

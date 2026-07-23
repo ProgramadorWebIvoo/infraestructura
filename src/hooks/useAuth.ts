@@ -50,15 +50,12 @@ export function useAuth() {
   });
 
   // Registrar handler para renovación silenciosa de token via X-Refresh-Token
-  // Se ejecuta una sola vez al montar el hook.
-  const [handlerRegistered] = useState(() => {
+  useEffect(() => {
     setTokenRefreshHandler((newToken: string) => {
       localStorage.setItem(STORAGE_TOKEN, newToken);
       setAuthToken(newToken);
     });
-    return true;
-  });
-  void handlerRegistered; // usado solo para asegurar ejecución única
+  }, []);
 
   // ── Session timeout por inactividad ──
   const lastActivityRef = useRef(Date.now());

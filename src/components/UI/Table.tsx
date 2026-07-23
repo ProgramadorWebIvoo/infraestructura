@@ -51,6 +51,15 @@ export interface TableProps<T> {
   rowHoverClass?: string;
   /** When true, rows alternate bg-white / bg-slate-50/40 */
   alternating?: boolean;
+
+  // Row click handler
+  /** Called when a row is clicked. Receives the row data and index. */
+  onRowClick?: (row: T, index: number) => void;
+  /** Called when a row is double-clicked. Receives the row data and index. */
+  onRowDoubleClick?: (row: T, index: number) => void;
+  /** Optional: custom class for selected row */
+  selectedRowKey?: string | number;
+  selectedRowClass?: string;
 }
 
 // ─── Component ───
@@ -71,6 +80,10 @@ export function Table<T>({
   stickyHeader = false,
   rowHoverClass = "hover:bg-slate-50/50",
   alternating = true,
+  onRowClick,
+  onRowDoubleClick,
+  selectedRowKey,
+  selectedRowClass = "bg-sky-50 ring-1 ring-sky-200",
 }: TableProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -299,28 +312,34 @@ export function Table<T>({
                       {emptyState ?? emptyMessage}
                     </td>
                   </tr>
-                ) : (
-                  paginatedData.map((row, index) => (
-                    <tr
-                      key={rowKey(row, index)}
-                      className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass}`}
-                      style={{ contentVisibility: "auto", contain: "layout style paint" }}
-                    >
-                      {columns.map((col) => (
-                        <td
-                          key={col.key}
-                          className={`py-3.5 px-4 ${tdAlign(col)} ${col.className ?? ""}`}
-                          style={col.width ? { width: col.width } : undefined}
-                        >
-                          {col.render ? (
-                            col.render(row, index)
-                          ) : (
-                            <DefaultCell value={row[col.key as keyof T]} />
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
+) : (
+                  paginatedData.map((row, index) => {
+                    const key = rowKey(row, index);
+                    const isSelected = selectedRowKey != null && key === selectedRowKey;
+                    return (
+                      <tr
+                        key={key}
+                        className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass} ${isSelected ? selectedRowClass : ""}`}
+                        style={{ contentVisibility: "auto", contain: "layout style paint" }}
+                        onClick={() => onRowClick?.(row, index)}
+                        onDoubleClick={() => onRowDoubleClick?.(row, index)}
+                      >
+                        {columns.map((col) => (
+                          <td
+                            key={col.key}
+                            className={`py-3.5 px-4 ${tdAlign(col)} ${col.className ?? ""}`}
+                            style={col.width ? { width: col.width } : undefined}
+                          >
+                            {col.render ? (
+                              col.render(row, index)
+                            ) : (
+                              <DefaultCell value={row[col.key as keyof T]} />
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
               {footer && <tfoot className="bg-slate-50 font-bold border-t border-slate-200">{footer}</tfoot>}

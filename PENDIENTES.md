@@ -67,23 +67,20 @@
 29. **REALIZAR** ✅ Buscador para Usuarios en el sistema, Edición (No se puede hacer SoftDelete, No hay posibilidad de cambio de contraseña tampoco.)
 
 30. ✅ Verificacion de estado de polling.
-# PENDIENTE ----
 
-1. **URGENTE** Realizar las pestañas debidas de configuracióon para:
+31. **URGENTE** ✅ Realizar las pestañas debidas de configuracióon para:
     - Proveedores.
     - Usuarios.
     - Materiales.
     - IA Models.
 
+32.  **REALIZAR** ✅ Hay selects que estan propensos a acumular muchisima información como materiales, proveedores, etc. Es esencial realizar como instancia una accion que en vez de abrir un select abra un modal capaz de mostrar una tabla con paginacion y buscador de los registros seleccionables.
+
+# PENDIENTE ----
+
 2. **URGENTE** Mejoras de seguridad y traza de error para los IA providers. (Probar casos cuando envia .txt, .csv o .md)
 
-3. Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
-
-4. Mejorar y testear sistema de Restablecimiento de Contraseñas.
-
-5. Hay selects que estan propensos a acumular muchisima información como materiales, proveedores, etc. Es esencial realizar como instancia una accion que en vez de abrir un select abra un modal capaz de mostrar una tabla con paginacion y buscador de los registros seleccionables.
-
-6. **REALIZAR** Mejorar estilos visuales del mobile
+3. **REALIZAR** Me he dado cuenta que si mantengo la pc apagada y la pagina cerrada pareciera que la expiracion de tokens no funciona correctamente y la conexion cuando entro se mantiene activa.
 
 # AUDITORIAS A REALIZAR ---
 
@@ -102,3 +99,7 @@
 4. **PRUEBAS** Realizar pruebas de Polling al sistema.
 
 5. **PRUEBAS** Realizar pruebas de seguridad entre roles y CRUD a la nuevas vistas de Configuración.
+
+6. **PRUEBAS** Realizar pruebas al sistema de Restablecimiento de Contraseñas.
+
+7. **PRUEBAS** Realizar pruebas al sistema de ModalSelect

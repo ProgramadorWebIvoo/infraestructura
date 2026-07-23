@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { Project, ProjectStatus, AuditLog } from "../types";
 import {
@@ -219,29 +219,35 @@ export default function PresidenciaDashboard({
 
   // ── Derived stats ──
   const totalProjectsCount = projects.length;
-  const completedProjects = projects.filter(p => p.status === ProjectStatus.COMPLETADO_PAGADO);
-  const activeProjects = projects.filter(p => p.status !== ProjectStatus.COMPLETADO_PAGADO && p.status !== ProjectStatus.CREADO);
+  const completedProjects = useMemo(() => projects.filter(p => p.status === ProjectStatus.COMPLETADO_PAGADO), [projects]);
+  const activeProjects = useMemo(() => projects.filter(p => p.status !== ProjectStatus.COMPLETADO_PAGADO && p.status !== ProjectStatus.CREADO), [projects]);
 
-  let totalApprovedInvestment = 0;
-  let totalReleasedFunds = 0;
-  projects.forEach(p => {
-    totalApprovedInvestment += p.approvedInvestmentAmount ?? p.estimatedTotal;
-    if (p.advancePaidAmount) totalReleasedFunds += p.advancePaidAmount;
-    if (p.finalPaidAmount) totalReleasedFunds += p.finalPaidAmount;
-  });
-  const pendingFunds = Math.max(0, totalApprovedInvestment - totalReleasedFunds);
-  const releasedPercent = Math.round((totalReleasedFunds / (totalApprovedInvestment || 1)) * 100);
+  const { totalApprovedInvestment, totalReleasedFunds, pendingFunds, releasedPercent } = useMemo(() => {
+    let totalApprovedInvestment = 0;
+    let totalReleasedFunds = 0;
+    projects.forEach(p => {
+      totalApprovedInvestment += p.approvedInvestmentAmount ?? p.estimatedTotal;
+      if (p.advancePaidAmount) totalReleasedFunds += p.advancePaidAmount;
+      if (p.finalPaidAmount) totalReleasedFunds += p.finalPaidAmount;
+    });
+    return {
+      totalApprovedInvestment,
+      totalReleasedFunds,
+      pendingFunds: Math.max(0, totalApprovedInvestment - totalReleasedFunds),
+      releasedPercent: Math.round((totalReleasedFunds / (totalApprovedInvestment || 1)) * 100),
+    };
+  }, [projects]);
 
-  const filteredProjects = projects.filter(p => {
+  const filteredProjects = useMemo(() => projects.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || p.status === statusFilter;
     const matchesType = typeFilter === "ALL" || p.type === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
-  });
+  }), [projects, searchTerm, statusFilter, typeFilter]);
 
-  const filteredAuditLogs = auditLogs.filter(log => {
+  const filteredAuditLogs = useMemo(() => auditLogs.filter(log => {
     const term = auditSearchTerm.toLowerCase();
     const matchesSearch = !term
       || log.action.toLowerCase().includes(term)
@@ -254,7 +260,7 @@ export default function PresidenciaDashboard({
     const matchesDateFrom = !auditDateFrom || logDate >= auditDateFrom;
     const matchesDateTo = !auditDateTo || logDate <= auditDateTo;
     return matchesSearch && matchesRole && matchesDateFrom && matchesDateTo;
-  });
+  }), [auditLogs, auditSearchTerm, auditRoleFilter, auditDateFrom, auditDateTo]);
 
   const infraCount = projects.filter(p => p.type === "INFRAESTRUCTURA").length;
   const mantCount = projects.filter(p => p.type === "MANTENIMIENTO").length;

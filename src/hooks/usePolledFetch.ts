@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePolling } from "./usePolling";
+import { logError } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 
 interface UsePolledFetchOptions<T> {
@@ -73,7 +74,7 @@ export function usePolledFetch<T>({
       setData(result);
     } catch (error) {
       if (opts?.isPoll) return; // silencioso en poll
-      console.error(error);
+      logError("usePolledFetch", error);
       showToast(errorMessageRef.current, "error");
     } finally {
       if (!opts?.isPoll) setIsLoading(false);

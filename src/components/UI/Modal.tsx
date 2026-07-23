@@ -6,7 +6,6 @@
  * Centraliza la estructura común de todos los modales del sistema.
  */
 
-//@ts-ignore
 import { createPortal } from "react-dom";
 import { type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -16,7 +15,7 @@ import { X } from "lucide-react";
 // Props
 // ---------------------------------------------------------------------------
 
-type MaxWidth = "max-w-lg" | "max-w-xl" | "max-w-2xl" | "max-w-3xl" | "max-w-4xl";
+type MaxWidth = "max-w-sm" | "max-w-md" | "max-w-lg" | "max-w-xl" | "max-w-2xl" | "max-w-3xl" | "max-w-4xl";
 
 interface ModalProps {
   isOpen: boolean;

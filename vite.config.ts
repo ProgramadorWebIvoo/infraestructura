@@ -27,7 +27,8 @@ export default defineConfig(() => {
           "font-src 'self'; " +
           "form-action 'self'; " +
           "base-uri 'self'; " +
-          "frame-ancestors 'none';",
+          "frame-ancestors 'none'; " +
+          "report-uri /csp-violation;",
       },
     },
     test: {

@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Project, AuditLog } from "../types";
 import { apiFetch } from "../services/api";
+import { logError } from "../services/logger";
 import { INITIAL_PROJECTS, INITIAL_AUDIT_LOGS } from "../data";
 import type { ShowToast } from "./useProjects";
 import { usePolling } from "./usePolling";
@@ -57,7 +58,7 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
       setAuditLogs(audit);
     } catch (error) {
       if (opts?.isPoll) return; // silencioso en poll
-      console.error(error);
+      logError("useProjectsData", error);
       setProjects(INITIAL_PROJECTS);
       setAuditLogs(INITIAL_AUDIT_LOGS);
       showToast("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");

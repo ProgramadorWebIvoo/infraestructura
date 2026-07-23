@@ -28,7 +28,9 @@ import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
 import { useToast } from "../components/UI/Toast";
 import { apiFetch } from "../services/api";
+import { logError } from "../services/logger";
 import { containerVariants, itemVariants } from "../animations";
+import SelectModal from "../components/UI/SelectModal";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,16 +64,23 @@ const EMPTY_FORM: ContractorForm = {
   status: "ACTIVE",
 };
 
-const STATUS_BADGE: Record<string, { label: string; class: string }> = {
-  ACTIVE:         { label: "Activo",        class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  INACTIVE:       { label: "Inactivo",      class: "bg-slate-100 text-slate-500 border-slate-200" },
-  PENDING_REVIEW: { label: "Pendiente",     class: "bg-amber-50 text-amber-700 border-amber-200" },
-};
+// Status options for SelectModal
+const STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Activo", description: "Proveedor activo y disponible para licitaciones", raw: "ACTIVE" },
+  { value: "INACTIVE", label: "Inactivo", description: "Proveedor desactivado temporalmente", raw: "INACTIVE" },
+  { value: "PENDING_REVIEW", label: "Pendiente de revisión", description: "Proveedor pendiente de aprobación", raw: "PENDING_REVIEW" },
+];
 
 const SOURCE_BADGE: Record<string, { label: string; class: string }> = {
   INTERNAL:      { label: "Interno",        class: "bg-sky-50 text-sky-700 border-sky-200" },
   PUBLIC_PORTAL: { label: "Portal público", class: "bg-indigo-50 text-indigo-700 border-indigo-200" },
   SEED:          { label: "Seed",           class: "bg-slate-100 text-slate-500 border-slate-200" },
+};
+
+const STATUS_BADGE: Record<string, { label: string; class: string }> = {
+  ACTIVE:         { label: "Activo",              class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  INACTIVE:       { label: "Inactivo",            class: "bg-red-50 text-red-700 border-red-200" },
+  PENDING_REVIEW: { label: "Pendiente de revisión", class: "bg-amber-50 text-amber-700 border-amber-200" },
 };
 
 // ---------------------------------------------------------------------------
@@ -92,6 +101,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<ContractorForm>(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
   // ---- Toggle state ----
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
@@ -113,7 +123,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
       const data = await apiFetch<ConfigContractor[]>("/contractors/config", { token: authToken });
       setContractors(data);
     } catch (error) {
-      console.error(error);
+      logError("ProveedoresConfigPanel.loadContractors", error);
       showToast("No se pudieron cargar los proveedores.", "error");
     } finally {
       setIsLoading(false);
@@ -521,15 +531,21 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Estado
               </label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ContractorForm["status"] }))}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-              >
-                <option value="ACTIVE">Activo</option>
-                <option value="INACTIVE">Inactivo</option>
-                <option value="PENDING_REVIEW">Pendiente de revisión</option>
-              </select>
+              <SelectModal
+                isOpen={isStatusModalOpen}
+                onClose={() => setIsStatusModalOpen(false)}
+                onOpen={() => setIsStatusModalOpen(true)}
+                onSelect={(opt) => setForm((f) => ({ ...f, status: opt.value as ContractorForm["status"] }))}
+                options={STATUS_OPTIONS}
+                selectedValue={form.status}
+                triggerLabel="Seleccionar estado..."
+                title="Seleccionar Estado"
+                infoLine={`${STATUS_OPTIONS.length} opciones disponibles`}
+                icon={<Shield className="h-5 w-5" />}
+                iconColor="amber"
+                maxWidth="max-w-md"
+                searchPlaceholder="Buscar estado..."
+              />
             </div>
           </div>
 

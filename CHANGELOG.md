@@ -1191,6 +1191,9 @@
 - `src/services/api.ts` — Cliente HTTP centralizado (apiFetch, apiDownload)
 - `src/services/aiEvaluationService.ts` — Servicio de llamada a backend Laravel para evaluación IA con failover
 - `src/types.ts` — Interfaces `Project`, `Proposal`, `Contractor`, `ProjectStatus` y más
+- `src/services/logger.ts` — Logging centralizado (`logError`, `logWarn`, `logInfo`) con prefijo `[IVOO]`
+- `src/components/ErrorBoundary.tsx` — Error boundary con UI de fallback y botón reintentar
+- `mobile/types.ts`, `mobile/api.ts`, `mobile/styles.ts`, `mobile/hooks/`, `mobile/components/` — App mobile refactorizada en módulos
 - `src/components/SkeletonLoader.tsx` — Primitivas de skeleton loading (SkeletonBlock, SkeletonCard, SkeletonTable, etc.)
 - `src/data.ts` — ⚠️ Datos de respaldo legacy (por limpiar — ver PENDIENTES.md)
 - `mobile/App.tsx` — App mobile React Native con los mismos paneles (lectura y acciones básicas)
@@ -1348,6 +1351,23 @@ Se definió e inició la implementación del sistema de Evaluación Inteligente 
 **Causa raíz:** No existía análisis cualitativo automatizado para la selección de contratistas. La decisión se tomaba solo con datos cuantitativos (precio, plazo, % anticipo) sin considerar factores contextuales ni análisis financiero profundo.
 
 ---
+
+## [2026-07-23] — Fix: STATUS_BADGE not defined en ProveedoresConfigPanel
+
+- Tipo: fix
+- Qué:
+  - Agregada constante `STATUS_BADGE` con entradas para ACTIVE, INACTIVE y PENDING_REVIEW (label + clases Tailwind), ubicada después de `SOURCE_BADGE`.
+- Por qué / causa raíz: La columna "Estado" de la tabla de proveedores referenciaba `STATUS_BADGE[c.status]` en su render, pero la constante nunca fue definida. `SOURCE_BADGE` existía pero su equivalente para status no, causando el ReferenceError en runtime.
+- Archivos: `src/views/ProveedoresConfigPanel.tsx`
+
+## [2026-07-23] — Mejora visual: card "Base de datos unificada" (oculta en mobile) + footer
+
+- Tipo: refactor
+- Qué:
+  - **Card "Base de datos unificada":** Ocultada en mobile (`hidden sm:flex`). Agregado icono `Database` de lucide-react junto al badge. Fondo con gradiente `from-sky-50/40 to-white` para mejor jerarquía visual.
+  - **Footer:** Rediseñado con dos secciones (brand + links). Incluye icono IVOO con gradiente, separadores `|`, y año dinámico. Fondo con gradiente `from-white to-slate-50/60`. Estructura responsive (columnas en mobile, fila en desktop).
+- Por qué / causa raíz: La card ocupaba espacio innecesario en viewports móviles. El footer era una línea de texto plana sin identidad de marca ni estructura visual.
+- Archivos: `src/App.tsx`
 
 ## [2026-07-16] — Implementación Frontend
 
@@ -1532,3 +1552,59 @@ ANTHROPIC_API_KEY=sk-ant-...
 - `src/App.tsx` — `<main>`: `min-w-0 overflow-x-auto`; route wrapper: `min-w-0 overflow-x-auto` (sin `transition-all`) — se mantienen como safety net
 - `src/components/CierreObraPanel.tsx` — fix aplicado (ver entrada 2026-07-17)
 - `src/index.css` — limpio (sin cambios pendientes)
+
+## [2026-07-23] — Clean code: refactor auditoría frontend (hallazgos resueltos)
+
+- Tipo: refactor + fix
+- Qué:
+  - **package.json**: `name` corregido de `react-example` a `ivoo-gestion-infraestructura`
+  - **useAuth.ts**: eliminado antipatrón `handlerRegistered` con `useState` → reemplazado por `useEffect(() => {...}, [])`
+  - **Modal.tsx**: eliminado `@ts-ignore` en import `createPortal` (redundante)
+  - **ErrorBoundary**: creado `src/components/ErrorBoundary.tsx` con UI de fallback y botón reintentar
+  - **logger.ts**: creado `src/services/logger.ts` con `logError`, `logWarn`, `logInfo` y prefijo `[IVOO]`
+  - **console.error → logError**: reemplazados en 6 hooks y 2 vistas (useProjectsWorkflows, usePolledFetch, useProjectsData, useAIConfig, MaterialConfigPanel, ProveedoresConfigPanel)
+  - **PresidenciaDashboard**: `totalApprovedInvestment`, `totalReleasedFunds`, `pendingFunds`, `releasedPercent` envueltos en `useMemo` (fix bug: vars no retornadas del memo)
+  - **aiEvaluationService.ts**: creado tipo `AIEvaluationProposalPayload` con `Pick` eliminando duplicación de campos
+  - **LoginScreen**: componente `Spinner` inline eliminado, reemplazado por `<Loader2>` de lucide-react
+  - **CSP**: agregado `report-uri /csp-violation` en `vite.config.ts`
+  - **AIConfigPanel**: dividido en 7 sub-componentes en `src/views/AIConfigPanel/` (index, UsageDashboard, AIConfigTable, AIConfigFormModal, SyncBanner, KpiCard, MiniBarChart, ProviderIcon) — entry point original re-exporta desde index
+  - **mobile/App.tsx**: refactorizado de 1165→228 líneas, dividido en types, api, styles, hooks, y 17 componentes
+  - **App.tsx**: lazy loading (`React.lazy`) + `Suspense` con `RouteFallback` — revertido por bug de spinner en cada navegación
+  - **SelectModal.tsx + Modal.tsx + Table.tsx**: tipos ampliados (`maxWidth` con `max-w-sm`/`max-w-md`, `value` acepta `boolean` en SelectModalOption, `rowKey` acepta `boolean`)
+  - **MaterialConfigPanel.tsx**: `statusOptions` cambiado de `boolean` a `1`/`0` para compatibilidad con `SelectModalOption<boolean>`
+  - **PropuestaMaterialesPublica.tsx + ProveedoresConfigPanel.tsx**: pre-existing errors resueltos (maxWidth type)
+  - **tsc --noEmit**: 0 errores
+- Por qué / causa raíz: Auditoría frontend halló 24 hallazgos; esta sesión resuelve los pendientes de clean code, refactor y errores de tipo preexistentes.
+- Archivos:
+  - `package.json`
+  - `src/hooks/useAuth.ts`
+  - `src/components/UI/Modal.tsx`
+  - `src/components/ErrorBoundary.tsx` — [NUEVO]
+  - `src/services/logger.ts` — [NUEVO]
+  - `src/hooks/useProjectsWorkflows.ts`
+  - `src/hooks/usePolledFetch.ts`
+  - `src/hooks/useProjectsData.ts`
+  - `src/hooks/useAIConfig.ts`
+  - `src/views/PresidenciaDashboard.tsx`
+  - `src/views/LoginScreen.tsx`
+  - `src/services/aiEvaluationService.ts`
+  - `vite.config.ts`
+  - `src/views/AIConfigPanel.tsx` → `src/views/AIConfigPanel/index.tsx`
+  - `src/views/AIConfigPanel/UsageDashboard.tsx` — [NUEVO]
+  - `src/views/AIConfigPanel/AIConfigTable.tsx` — [NUEVO]
+  - `src/views/AIConfigPanel/AIConfigFormModal.tsx` — [NUEVO]
+  - `src/views/AIConfigPanel/SyncBanner.tsx` — [NUEVO]
+  - `src/views/AIConfigPanel/KpiCard.tsx` — [NUEVO]
+  - `src/views/AIConfigPanel/MiniBarChart.tsx` — [NUEVO]
+  - `src/views/AIConfigPanel/ProviderIcon.tsx` — [NUEVO]
+  - `src/views/MaterialConfigPanel.tsx`
+  - `src/views/ProveedoresConfigPanel.tsx`
+  - `mobile/App.tsx`
+  - `mobile/types.ts` — [NUEVO]
+  - `mobile/api.ts` — [NUEVO]
+  - `mobile/styles.ts` — [NUEVO]
+  - `mobile/hooks/useAuth.ts` — [NUEVO]
+  - `mobile/components/` (17 archivos) — [NUEVOS]
+  - `src/App.tsx`
+  - `src/components/UI/SelectModal.tsx`
+  - `src/components/UI/Table.tsx`

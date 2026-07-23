@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Database } from "lucide-react";
 
 // Views
 import PresidenciaDashboard from "./views/PresidenciaDashboard";
@@ -31,6 +32,7 @@ import SidebarNav from "./components/UI/SidebarNav";
 import MobileTopBar from "./components/UI/MobileTopBar";
 import InspectProjectModal from "./components/Modals/InspectProjectModal";
 import { ToastProvider, useToast } from "./components/UI/Toast";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Hooks por dominio
 import { useAuth } from "./hooks/useAuth";
@@ -152,19 +154,21 @@ function AppRoutes() {
   // ---- Public routes (sin auth) ----
   if (isPublicRoute(location.pathname)) {
     return (
-      <Routes>
-        <Route
-          path={ROUTES.REGISTRO_PROVEEDORES}
-          element={
-            <MaterialesProveedores
-              contractorsCount={contractors.length}
-              onAddContractor={handleAddContractor}
-            />
-          }
-        />
-        <Route path={ROUTES.PROPUESTA_MATERIALES} element={<PropuestaMaterialesPublica />} />
-        <Route path="*" element={<Navigate to={ROUTES.REGISTRO_PROVEEDORES} replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route
+            path={ROUTES.REGISTRO_PROVEEDORES}
+            element={
+              <MaterialesProveedores
+                contractorsCount={contractors.length}
+                onAddContractor={handleAddContractor}
+              />
+            }
+          />
+          <Route path={ROUTES.PROPUESTA_MATERIALES} element={<PropuestaMaterialesPublica />} />
+          <Route path="*" element={<Navigate to={ROUTES.REGISTRO_PROVEEDORES} replace />} />
+        </Routes>
+      </ErrorBoundary>
     );
   }
 
@@ -199,166 +203,187 @@ function AppRoutes() {
   // ---- Layout autenticado ----
   const fallbackRoute = firstAllowedRoute(authUser.role) as string;
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
 
-      <SidebarNav
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-        user={authUser}
-        onLogout={handleLogout}
-        canAccess={canAccess}
-      />
+          <SidebarNav
+            isOpen={isMobileSidebarOpen}
+            onClose={() => setIsMobileSidebarOpen(false)}
+            user={authUser}
+            onLogout={handleLogout}
+            canAccess={canAccess}
+          />
 
-      {/* Main Container Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+          {/* Main Container Area */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-screen">
 
-        <MobileTopBar
-          user={authUser}
-          onMenuClick={() => setIsMobileSidebarOpen(true)}
-        />
+            <MobileTopBar
+              user={authUser}
+              onMenuClick={() => setIsMobileSidebarOpen(true)}
+            />
 
-        {/* Main Workspace Body */}
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            {/* Main Workspace Body */}
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-          {/* Dynamic Role Indicator Notification */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-xs gap-3 border-l-4 border-l-sky-400">
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-600 ring-1 ring-sky-200/50">
-                <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-                Base de datos unificada
-              </span>
-              <span className="font-semibold text-slate-700">{projects.length} Obras</span>
-              <span className="text-slate-300 hidden sm:inline">&bull;</span>
-              <span className="font-semibold text-slate-700">{contractors.length} Proveedores</span>
-            </div>
-            <div className="inline-flex items-center gap-1.5 self-start sm:self-auto text-[11px] font-mono font-bold bg-gradient-to-r from-slate-100 to-slate-50 text-slate-600 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-xs shadow-emerald-500/40" />
-              Terminal: {activeRole}
-            </div>
+              {/* Dynamic Role Indicator Notification — hidden on mobile */}
+              <div className="hidden sm:flex flex-col sm:flex-row sm:items-center justify-between bg-gradient-to-br from-sky-50/40 to-white px-5 py-4 rounded-2xl border border-slate-200 shadow-xs gap-3 border-l-4 border-l-sky-400">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs text-slate-500">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-600 ring-1 ring-sky-200/50">
+                    <Database className="h-3 w-3 text-sky-500" />
+                    Base de datos unificada
+                  </span>
+                  <span className="font-semibold text-slate-700">{projects.length} Obras</span>
+                  <span className="text-slate-300 hidden sm:inline">&bull;</span>
+                  <span className="font-semibold text-slate-700">{contractors.length} Proveedores</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 self-start sm:self-auto text-[11px] font-mono font-bold bg-gradient-to-r from-slate-100 to-slate-50 text-slate-600 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-xs shadow-emerald-500/40" />
+                  Terminal: {activeRole}
+                </div>
+              </div>
+
+              {/* Route-driven module rendering with smooth view transitions */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={location.pathname}
+                  initial="initial"
+                  animate="enter"
+                  exit="exit"
+                  variants={pageVariants}
+                  transition={pageTransition}
+                  className="min-w-0"
+                >
+                  <Routes location={location}>
+                    <Route
+                      path={ROUTES.HOME}
+                      element={<Navigate to={fallbackRoute} replace />}
+                    />
+                    <Route
+                      path={ROUTES.PRESIDENCIA}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
+                          <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={(p) => setInspectedProject(p)} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.INFRAESTRUCTURA}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
+                          <InfraestructuraMantenimientoPanel onAddProject={handleAddProject} projects={projects} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.CIERRE_OBRA}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.CIERRE_OBRA)} redirectTo={fallbackRoute}>
+                          <CierreObraPanel projects={projects} onReviewProject={handleReviewProject} onVerifyCompletion={handleVerifyCompletion} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.PROCURA}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.PROCURA)} redirectTo={fallbackRoute}>
+                          <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.ANALISTAS}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
+                          <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} onImportSupplierProposals={handleImportSupplierProposals} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.FINANZAS}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.FINANZAS)} redirectTo={fallbackRoute}>
+                          <FinanzasPanel projects={projects} onPayAdvance={handlePayAdvance} onPayFinal={handlePayFinal} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.CATALOGOS}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.CATALOGOS)} redirectTo={fallbackRoute}>
+                          <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} isLoading={isLoadingApi} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.CONFIG_PROVEEDORES}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_PROVEEDORES)} redirectTo={fallbackRoute}>
+                          <ProveedoresConfigPanel authToken={authToken} onContractorMutated={() => loadContractors()} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.CONFIG_MATERIALES}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_MATERIALES)} redirectTo={fallbackRoute}>
+                          <MaterialConfigPanel authToken={authToken} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.CONFIG_IA}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_IA)} redirectTo={fallbackRoute}>
+                          <AIConfigPanel authToken={authToken} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.USUARIOS}
+                      element={
+                        <ProtectedRoute canAccess={canAccess(ROUTES.USUARIOS)} redirectTo={fallbackRoute}>
+                          <UsuariosPanel authToken={authToken} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="*" element={<Navigate to={fallbackRoute} replace />} />
+                  </Routes>
+                </motion.div>
+              </AnimatePresence>
+
+            </main>
+
+            {/* Inspect Modal */}
+            <InspectProjectModal isOpen={!!inspectedProject} project={inspectedProject} onClose={() => setInspectedProject(null)} />
+
+            {/* Footer */}
+            <footer className="mt-12 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/60">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                  {/* Brand */}
+                  <div className="inline-flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-xs">
+                      <Database className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="font-bold text-slate-700">IVOO</span>
+                    <span className="text-slate-300">|</span>
+                    <span>Gestión de Infraestructura</span>
+                  </div>
+
+                  {/* Links */}
+                  <div className="flex items-center gap-4">
+                    <span>&copy; {new Date().getFullYear()}</span>
+                    <span className="text-slate-300 hidden sm:inline">&bull;</span>
+                    <span>Organigrama Integrado IVOO</span>
+                    <span className="text-slate-300 hidden sm:inline">&bull;</span>
+                    <span>Todos los derechos reservados.</span>
+                  </div>
+                </div>
+              </div>
+            </footer>
+
           </div>
-
-          {/* Route-driven module rendering with smooth view transitions */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial="initial"
-              animate="enter"
-              exit="exit"
-              variants={pageVariants}
-              transition={pageTransition}
-              className="min-w-0"
-            >
-              <Routes location={location}>
-                <Route
-                  path={ROUTES.HOME}
-                  element={<Navigate to={fallbackRoute} replace />}
-                />
-                <Route
-                  path={ROUTES.PRESIDENCIA}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
-                      <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={(p) => setInspectedProject(p)} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.INFRAESTRUCTURA}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
-                      <InfraestructuraMantenimientoPanel onAddProject={handleAddProject} projects={projects} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.CIERRE_OBRA}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.CIERRE_OBRA)} redirectTo={fallbackRoute}>
-                      <CierreObraPanel projects={projects} onReviewProject={handleReviewProject} onVerifyCompletion={handleVerifyCompletion} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.PROCURA}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.PROCURA)} redirectTo={fallbackRoute}>
-                      <ProcuraPanel projects={projects} onApproveInvestment={handleApproveInvestment} onSelectContractor={handleSelectContractor} onRejectProposals={handleRejectProposals} authToken={authToken} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.ANALISTAS}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
-                      <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={handleAddProposal} onRemoveProposal={handleRemoveProposal} onSubmitComparative={handleSubmitComparative} onImportSupplierProposals={handleImportSupplierProposals} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.FINANZAS}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.FINANZAS)} redirectTo={fallbackRoute}>
-                      <FinanzasPanel projects={projects} onPayAdvance={handlePayAdvance} onPayFinal={handlePayFinal} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.CATALOGOS}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.CATALOGOS)} redirectTo={fallbackRoute}>
-                      <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={handleUpdateContractorRating} isLoading={isLoadingApi} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.CONFIG_PROVEEDORES}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_PROVEEDORES)} redirectTo={fallbackRoute}>
-                      <ProveedoresConfigPanel authToken={authToken} onContractorMutated={() => loadContractors()} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.CONFIG_MATERIALES}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_MATERIALES)} redirectTo={fallbackRoute}>
-                      <MaterialConfigPanel authToken={authToken} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.CONFIG_IA}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_IA)} redirectTo={fallbackRoute}>
-                      <AIConfigPanel authToken={authToken} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path={ROUTES.USUARIOS}
-                  element={
-                    <ProtectedRoute canAccess={canAccess(ROUTES.USUARIOS)} redirectTo={fallbackRoute}>
-                      <UsuariosPanel authToken={authToken} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to={fallbackRoute} replace />} />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
-
-        </main>
-
-        {/* Inspect Modal */}
-        <InspectProjectModal isOpen={!!inspectedProject} project={inspectedProject} onClose={() => setInspectedProject(null)} />
-
-        {/* Footer copyright */}
-        <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500 font-medium">
-          <div className="max-w-7xl mx-auto px-4">
-            IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()} &bull; Organigrama Integrado IVOO &bull; Todos los derechos reservados.
-          </div>
-        </footer>
-
-      </div>
-    </div>
+        </div>
+    </ErrorBoundary>
   );
 }

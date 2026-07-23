@@ -19,6 +19,7 @@ import {
   DollarSign,
   MapPin,
   Eye,
+  Search,
 } from "lucide-react";
 import { containerVariants, itemVariants } from "../animations";
 import { SkeletonCard, SkeletonBlock } from "../components/SkeletonLoader";
@@ -28,6 +29,7 @@ import NumericInput from "../components/UI/NumericInput";
 import AlertBanner from "../components/UI/AlertBanner";
 import { Table, type Column } from "../components/UI/Table";
 import InspectRequestModal from "../components/Modals/InspectRequestModal";
+import SelectModal from "../components/UI/SelectModal";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;
@@ -52,6 +54,7 @@ export default function InfraestructuraMantenimientoPanel({
 
   // Material adder states
   const [selectedCatalogIndex, setSelectedCatalogIndex] = useState(0);
+  const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialQty, setMaterialQty] = useState<number | "">(1);
   const [customMaterialName, setCustomMaterialName] = useState("");
   const [customMaterialUnit, setCustomMaterialUnit] = useState("Unidad");
@@ -275,16 +278,29 @@ export default function InfraestructuraMantenimientoPanel({
             {!isCustomMaterial ? (
               <div className="md:col-span-2">
                 <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Seleccionar Material</label>
-                <select
-                  id="select-material"
-                  value={selectedCatalogIndex}
-                  onChange={(e) => setSelectedCatalogIndex(Number(e.target.value))}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-700"
-                >
-                  {materialsCatalog.map((mat, i) => (
-                    <option key={i} value={i}>{mat.name} (${mat.estimatedUnitPrice} / {mat.unit})</option>
-                  ))}
-                </select>
+                <SelectModal
+                  isOpen={isMaterialModalOpen}
+                  onClose={() => setIsMaterialModalOpen(false)}
+                  onOpen={() => setIsMaterialModalOpen(true)}
+                  onSelect={(opt) => {
+                    setSelectedCatalogIndex(opt.raw.index);
+                    setIsMaterialModalOpen(false);
+                  }}
+                  options={materialsCatalog.map((mat, i) => ({
+                    value: i,
+                    label: mat.name,
+                    description: `${mat.estimatedUnitPrice} / ${mat.unit}`,
+                    raw: { ...mat, index: i },
+                  }))}
+                  selectedValue={selectedCatalogIndex}
+                  triggerLabel="Seleccionar material del catálogo..."
+                  title="Seleccionar Material del Catálogo"
+                  infoLine={`${materialsCatalog.length} materiales disponibles`}
+                  icon={<Package className="h-5 w-5" />}
+                  iconColor="emerald"
+                  searchPlaceholder="Buscar por nombre, unidad o precio..."
+                  maxWidth="max-w-2xl"
+                />
               </div>
             ) : (
               <>

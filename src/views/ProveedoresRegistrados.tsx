@@ -32,6 +32,7 @@ import { SkeletonBlock, SkeletonTable } from "../components/SkeletonLoader";
 import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
 import { useProveedores } from "../hooks/useProveedores";
+import SelectModal from "../components/UI/SelectModal";
 
 interface ProveedoresRegistradosProps {
   contractors: Contractor[];
@@ -61,6 +62,7 @@ export default function ProveedoresRegistrados({
   // Invite modal state
   const [inviteModalContractor, setInviteModalContractor] = useState<Contractor | null>(null);
   const [inviteProjectId, setInviteProjectId] = useState("");
+  const [isInviteProjectModalOpen, setIsInviteProjectModalOpen] = useState(false);
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
   const [generatedToken, setGeneratedToken] = useState("");
   const [generatedProjectTitle, setGeneratedProjectTitle] = useState("");
@@ -119,12 +121,14 @@ export default function ProveedoresRegistrados({
     setGeneratedToken("");
     setGeneratedProjectTitle("");
     setLinkCopied(false);
+    setIsInviteProjectModalOpen(true);
   };
 
   const handleCloseInviteModal = () => {
     setInviteModalContractor(null);
     setGeneratedToken("");
     setLinkCopied(false);
+    setIsInviteProjectModalOpen(false);
   };
 
   const handleResetInviteProject = () => {
@@ -132,6 +136,7 @@ export default function ProveedoresRegistrados({
     setGeneratedToken("");
     setGeneratedProjectTitle("");
     setLinkCopied(false);
+    setIsInviteProjectModalOpen(true);
   };
 
   const handleGenerateInvite = async () => {
@@ -521,29 +526,30 @@ export default function ProveedoresRegistrados({
       >
         {/* Project selector (always visible) */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Obra activa *
-          </label>
-          <select
-            value={inviteProjectId}
-            onChange={(e) => {
-              setInviteProjectId(e.target.value);
-              setGeneratedToken("");
-              setLinkCopied(false);
+          <SelectModal
+            isOpen={isInviteProjectModalOpen}
+            onClose={() => setIsInviteProjectModalOpen(false)}
+            onOpen={() => setIsInviteProjectModalOpen(true)}
+            onSelect={(opt) => {
+              setInviteProjectId(opt.value as string);
+              setIsInviteProjectModalOpen(false);
             }}
+            options={activeProjects.map((p) => ({
+              value: p.id,
+              label: p.title,
+              description: p.id,
+              raw: p,
+            }))}
+            selectedValue={inviteProjectId}
+            triggerLabel="Seleccionar obra activa"
+            title="Seleccionar Obra"
+            infoLine={`${activeProjects.length} obras disponibles`}
+            icon={<Package className="h-5 w-5" />}
+            iconColor="indigo"
+            searchPlaceholder="Buscar por título, ID o ubicación..."
+            maxWidth="max-w-xl"
             disabled={!!generatedToken}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
-          >
-            <option value="">-- Seleccione una obra --</option>
-            {activeProjects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.id} — {p.title}
-              </option>
-            ))}
-          </select>
-          {activeProjects.length === 0 && (
-            <p className="mt-1.5 text-[11px] text-slate-400 font-medium">No hay obras activas disponibles.</p>
-          )}
+          />
         </div>
 
         {/* Result: generated link */}

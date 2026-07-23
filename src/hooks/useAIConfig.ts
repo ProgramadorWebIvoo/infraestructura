@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../services/api";
+import { logError } from "../services/logger";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -146,7 +147,7 @@ export function useAIConfig(authToken: string) {
       const data = await apiFetch<AiConfigRecord[]>("/ai/config", { token: authToken });
       setConfigs(data);
     } catch (err) {
-      console.error("🔍 Error loading AI configs:", err);
+      logError("useAIConfig.loadConfigs", err);
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +165,7 @@ export function useAIConfig(authToken: string) {
       const data = await apiFetch<AiUsageData>(`/ai/config/usage?days=${days}`, { token: authToken });
       setUsage(data);
     } catch (err) {
-      console.error("🔍 Error loading AI usage:", err);
+      logError("useAIConfig.loadUsage", err);
     } finally {
       setIsUsageLoading(false);
     }

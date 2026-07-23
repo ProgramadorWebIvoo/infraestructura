@@ -31,6 +31,13 @@ export interface AIEvaluationResult {
   attemptLog?: string[];
 }
 
+/** Tipo de propuesta para enviar al backend (derivado de Proposal). */
+type AIEvaluationProposalPayload = Pick<Proposal,
+  "id" | "contractorCode" | "contractorName" | "contractorRating" |
+  "materialCost" | "laborCost" | "totalCost" | "deliveryWeeks" |
+  "negotiatedAdvancePercent" | "description"
+>;
+
 /** Cuerpo enviado al backend. */
 interface AIEvaluationPayload {
   projectId: string;
@@ -39,18 +46,7 @@ interface AIEvaluationPayload {
   projectLocation: string;
   projectType: string;
   approvedInvestmentAmount: number;
-  proposals: Array<{
-    id: string;
-    contractorCode: string;
-    contractorName: string;
-    contractorRating: number; // 1.0–5.0
-    materialCost: number;
-    laborCost: number;
-    totalCost: number;
-    deliveryWeeks: number;
-    negotiatedAdvancePercent: number;
-    description: string;
-  }>;
+  proposals: AIEvaluationProposalPayload[];
   provider?: 'chatgpt' | 'gemini' | 'claude';
 }
 
@@ -75,7 +71,7 @@ export async function evaluateProposals(
     projectLocation: project.location,
     projectType: project.type,
     approvedInvestmentAmount: project.approvedInvestmentAmount ?? 0,
-    proposals: proposals.map((p) => ({
+    proposals: proposals.map<AIEvaluationProposalPayload>((p) => ({
       id: p.id,
       contractorCode: p.contractorCode,
       contractorName: p.contractorName,

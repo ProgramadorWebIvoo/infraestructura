@@ -18,10 +18,12 @@ import {
   ShieldCheck,
   Loader2,
   Trash2,
+  Search,
 } from "lucide-react";
 import { SupplierMaterialProposalItem } from "../types";
 import { apiFetch } from "../services/api";
 import NumericInput from "../components/UI/NumericInput";
+import SelectModal from "../components/UI/SelectModal";
 
 /** Elimina etiquetas HTML/XML del string para prevenir XSS en renderizados posteriores. */
 function sanitize(value: string): string {
@@ -58,6 +60,12 @@ interface ItemRow extends Omit<SupplierMaterialProposalItem, 'unitPrice' | 'quan
 
 type DurationUnit = "dias" | "semanas" | "meses";
 
+const DURATION_UNITS: { value: DurationUnit; label: string; description: string }[] = [
+  { value: "dias", label: "Días", description: "Plazo en días" },
+  { value: "semanas", label: "Semanas", description: "Plazo en semanas" },
+  { value: "meses", label: "Meses", description: "Plazo en meses" },
+];
+
 export default function PropuestaMaterialesPublica() {
   const { showToast } = useToast();
   const { token } = useParams<{ token: string }>();
@@ -69,6 +77,7 @@ export default function PropuestaMaterialesPublica() {
   const [items, setItems] = useState<ItemRow[]>([]);
   const [estimatedDays, setEstimatedDays] = useState<number | "">("");
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("dias");
+  const [isDurationUnitModalOpen, setIsDurationUnitModalOpen] = useState(false);
   const [generalNotes, setGeneralNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState("");
@@ -468,16 +477,29 @@ export default function PropuestaMaterialesPublica() {
                   />
                 </div>
                 <div className="w-36">
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Unidad</label>
-                  <select
-                    value={durationUnit}
-                    onChange={(e) => setDurationUnit(e.target.value as DurationUnit)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-semibold text-slate-700 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                  >
-                    <option value="dias">Dias</option>
-                    <option value="semanas">Semanas</option>
-                    <option value="meses">Meses</option>
-                  </select>
+                  <SelectModal
+                    isOpen={isDurationUnitModalOpen}
+                    onClose={() => setIsDurationUnitModalOpen(false)}
+                    onOpen={() => setIsDurationUnitModalOpen(true)}
+                    onSelect={(opt) => {
+                      setDurationUnit(opt.value as DurationUnit);
+                      setIsDurationUnitModalOpen(false);
+                    }}
+                    options={DURATION_UNITS.map((u) => ({
+                      value: u.value,
+                      label: u.label,
+                      description: u.description,
+                      raw: u,
+                    }))}
+                    selectedValue={durationUnit}
+                    triggerLabel={durationUnit}
+                    title="Unidad de tiempo"
+                    infoLine="Seleccione la unidad para el plazo estimado"
+                    icon={<Clock className="h-5 w-5" />}
+                    iconColor="sky"
+                    searchPlaceholder="Buscar unidad..."
+                    maxWidth="max-w-sm"
+                  />
                 </div>
               </div>
             </div>

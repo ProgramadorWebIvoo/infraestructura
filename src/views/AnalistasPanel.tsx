@@ -18,7 +18,8 @@ import {
   Award,
   FolderOpen,
   LayoutList,
-  Loader2
+  Loader2,
+  Search,
 } from "lucide-react";
 import { containerVariants, itemVariants } from "../animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock } from "../components/SkeletonLoader";
@@ -26,6 +27,7 @@ import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import NumericInput from "../components/UI/NumericInput";
 import EmptyState from "../components/UI/EmptyState";
+import SelectModal from "../components/UI/SelectModal";
 
 interface ImportResult {
   message: string;
@@ -56,7 +58,9 @@ export default function AnalistasPanel({
   if (isLoading) return <AnalistasSkeleton />;
   // States
   const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
+  const [isContractorModalOpen, setIsContractorModalOpen] = useState(false);
   const [materialCost, setMaterialCost] = useState<number | "">(1000);
   const [laborCost, setLaborCost] = useState<number | "">(800);
   const [deliveryWeeks, setDeliveryWeeks] = useState<number | "">(2);
@@ -68,6 +72,22 @@ export default function AnalistasPanel({
 
   const pendingLicitacion = projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA);
   const activeProject = pendingLicitacion.find(p => p.id === selectedProjectId);
+
+  // Project options for SelectModal
+  const projectOptions = pendingLicitacion.map(p => ({
+    value: p.id,
+    label: p.title,
+    description: `${p.id} · ${p.location} · $${p.approvedInvestmentAmount?.toLocaleString("en-US") ?? "—"} Max`,
+    raw: p,
+  }));
+
+  // Contractor options for SelectModal
+  const contractorOptions = contractors.map(c => ({
+    value: c.code,
+    label: c.name,
+    description: `${c.code} · ${c.specialty} · Rating: ${c.rating.toFixed(1)}`,
+    raw: c,
+  }));
 
   const handleAddProposal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,22 +163,24 @@ export default function AnalistasPanel({
             />
           ) : (
             <div className="space-y-4">
-              {/* Select Project */}
+              {/* Select Project - using SelectModal */}
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Seleccionar Expediente a Cotizar:</label>
-                <select
-                  id="analistas-project-selector"
-                  value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-semibold text-slate-800 cursor-pointer"
-                >
-                  <option value="">-- Seleccionar Obra Aprobada para Licitación --</option>
-                  {pendingLicitacion.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.id} - {p.title} (${p.approvedInvestmentAmount?.toLocaleString("en-US")} Max)
-                    </option>
-                  ))}
-                </select>
+                <SelectModal
+                  isOpen={isProjectModalOpen}
+                  onClose={() => setIsProjectModalOpen(false)}
+                  onOpen={() => setIsProjectModalOpen(true)}
+                  onSelect={(opt) => setSelectedProjectId(opt.value as string)}
+                  options={projectOptions}
+                  selectedValue={selectedProjectId}
+                  triggerLabel="Seleccionar obra..."
+                  title="Seleccionar Expediente"
+                  infoLine={`${projectOptions.length} obras en licitación`}
+                  icon={<FileSpreadsheet className="h-5 w-5" />}
+                  iconColor="emerald"
+                  maxWidth="max-w-2xl"
+                  searchPlaceholder="Buscar por título, ID, ubicación..."
+                />
               </div>
 
               <AnimatePresence>
@@ -183,18 +205,21 @@ export default function AnalistasPanel({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Proveedor / Contratista</label>
-                        <select
-                          id="analistas-contractor"
-                          value={contractorCode}
-                          onChange={(e) => setContractorCode(e.target.value)}
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-bold cursor-pointer"
-                        >
-                          {contractors.map((c) => (
-                            <option key={c.code} value={c.code}>
-                              {c.name} ({c.code})
-                            </option>
-                          ))}
-                        </select>
+                        <SelectModal
+                          isOpen={isContractorModalOpen}
+                          onClose={() => setIsContractorModalOpen(false)}
+                          onOpen={() => setIsContractorModalOpen(true)}
+                          onSelect={(opt) => setContractorCode(opt.value as string)}
+                          options={contractorOptions}
+                          selectedValue={contractorCode}
+                          triggerLabel="Seleccionar proveedor..."
+                          title="Seleccionar Proveedor"
+                          infoLine={`${contractorOptions.length} proveedores disponibles`}
+                          icon={<Users className="h-5 w-5" />}
+                          iconColor="sky"
+                          maxWidth="max-w-xl"
+                          searchPlaceholder="Buscar por nombre, código, especialidad..."
+                        />
                       </div>
 
                       <div>
