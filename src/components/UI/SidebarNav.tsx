@@ -333,6 +333,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
           {/* Logout */}
           <button
             id="btn-logout"
+            role="menuitem"
             onClick={onLogout}
             className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white hover:translate-x-0.5"
           >
