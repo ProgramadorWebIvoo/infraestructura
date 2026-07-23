@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## [2026-07-23] — Sprint 4.3: Push notifications — Expo Notifications + backend Laravel
+- Tipo: feature
+- Qué: Implementado sistema de push notifications completo:
+  - **Mobile**: `expo-notifications` + `expo-device` instalados
+  - **`useNotifications` hook**: solicita permisos, obtiene Expo push token, lo registra en `POST /push-tokens` del backend (con almacenamiento local para evitar re-registros), configura handler de foreground, escucha taps en frío y en caliente
+  - **`NotificationHandler` component**: wrapper que interpreta `{ screen, projectId }` del payload de la notificación y navega: si `screen=proveedores` cambia a esa pestaña; si `projectId` abre el modal del proyecto
+  - **Backend Laravel** (`infraestructura-back`): migración `push_tokens` (`2026_07_23_000001_create_push_tokens_table`), modelo `PushToken`, controller `PushTokenController` (store/destroy), servicio `ExpoPushService` (envía a Expo API con chunking de 100), canal `ExpoChannel`, notificación `ProjectStatusChanged` (se dispara desde `ProjectObserver::updated` cuando `status` cambia), rutas `POST/DELETE /api/push-tokens` en grupo `auth:sanctum`, registro de canal + observer en `AppServiceProvider`
+- Por qué / causa raíz: los usuarios mobile no recibían alertas de cambios de estado en proyectos.
+- Archivos: `mobile/package.json`, `mobile/hooks/useNotifications.ts`, `mobile/components/NotificationHandler.tsx`, `mobile/App.tsx`, y en `infraestructura-back`: migración, `app/Models/PushToken.php`, `app/Services/ExpoPushService.php`, `app/Notifications/Channels/ExpoChannel.php`, `app/Notifications/ProjectStatusChanged.php`, `app/Http/Controllers/Api/PushTokenController.php`, `app/Observers/ProjectObserver.php`, `routes/api.php`, `app/Providers/AppServiceProvider.php`
+
+## [2026-07-23] — Sprint 4.2: Offline queue — persistencia y reprocesamiento de mutaciones sin conexión
+- Tipo: feature
+- Qué: Implementado sistema offline queue para la app mobile:
+  - Agregado `@react-native-async-storage/async-storage` para persistencia
+  - Creado `useOfflineQueue` hook: cola FIFO en AsyncStorage con reprocesamiento automático cada 30s + al reabrir la app
+  - `execMutation` captura errores de red (TypeError) y encola la acción con su path, method, body y query keys a invalidar
+  - Errores de API (4xx/5xx) se descartan silenciosamente (mismo comportamiento que `syncProjectAction` original)
+  - Creado `OfflineBanner`: barra naranja con conteo de pendientes + botón "Reintentar"; cuando procesa, cambia a amarillo con "Sincronizando…"
+- Por qué / causa raíz: las operaciones de escritura fallaban silenciosamente sin conexión. Ahora se encolan y reprocesan automáticamente.
+- Archivos: `mobile/package.json`, `mobile/hooks/useOfflineQueue.ts`, `mobile/components/OfflineBanner.tsx`, `mobile/App.tsx`
+
+## [2026-07-23] — Sprint 4.1: React Navigation + TanStack Query en mobile
+- Tipo: feature
+- Qué: Migrada la capa de datos y navegación de la app mobile:
+  - Agregado `@react-navigation/native`, `@react-navigation/native-stack`, `@tanstack/react-query`, `react-native-screens`
+  - Creados hooks `useProjects`, `useContractors`, `useMaterials`, `useAuditLogs` con `useQuery` (staleTime: 30-60s, enabled por token)
+  - Eliminado `loadData()` manual + 4 `useState` de datos en App.tsx — reemplazado por TanStack Query
+  - Eliminado `syncProjectAction()` — reemplazado por `execMutation()` + `queryClient.invalidateQueries`
+  - App envuelta en `QueryClientProvider` + `NavigationContainer`/`Stack.Navigator`
+  - Pull-to-refresh usa `queryClient.invalidateQueries` en lugar de recargar manual
+  - Screens componentes siguen recibiendo datos por props (sin cambios en su interfaz)
+- Por qué / causa raíz: React Navigation prepara el terreno para deep linking, transiciones y navegación real entre pantallas. TanStack Query elimina estado manual, agrega caché, deduplicación y refresco automático.
+- Archivos: `mobile/package.json`, `mobile/App.tsx`, `mobile/hooks/useProjects.ts`, `mobile/hooks/useContractors.ts`, `mobile/hooks/useMaterials.ts`, `mobile/hooks/useAuditLogs.ts`
+
 ## [2026-07-23] — Sprint 3.2: Contraste badges — text-slate-400 → text-slate-600 mínimo
 - Tipo: accessibility
 - Qué: Corregido contraste en badges con `text-slate-400` sobre fondos claros (ratio ~2.8:1, WCAG AA requiere ≥4.5:1):

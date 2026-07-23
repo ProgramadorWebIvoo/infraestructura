@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
-  Alert,
   RefreshControl,
   ScrollView,
 } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 
 import { API_BASE_URL } from "./config";
 import { requestJson } from "./api";
 import { useAuth } from "./hooks/useAuth";
-import type { Screen, Project, Contractor, MaterialItem, AuditLog } from "./types";
+import { useProjects } from "./hooks/useProjects";
+import { useContractors } from "./hooks/useContractors";
+import { useMaterials } from "./hooks/useMaterials";
+import { useAuditLogs } from "./hooks/useAuditLogs";
+import { useOfflineQueue } from "./hooks/useOfflineQueue";
+import type { Screen, Project, Contractor } from "./types";
 
 import AppShell from "./components/AppShell";
+import OfflineBanner from "./components/OfflineBanner";
+import NotificationHandler from "./components/NotificationHandler";
 import LoginScreen from "./components/LoginScreen";
 import PublicContractorScreen from "./components/PublicContractorScreen";
 import PresidenciaScreen from "./components/PresidenciaScreen";
@@ -24,67 +33,58 @@ import ProjectModal from "./components/ProjectModal";
 import StatsStrip from "./components/StatsStrip";
 import styles from "./styles";
 
-export default function App() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const Stack = createNativeStackNavigator();
+
+function MainScreen() {
   const { token, user, login, logout } = useAuth();
+  const queryClient = useQueryClient();
   const [screen, setScreen] = useState<Screen>("presidencia");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [contractors, setContractors] = useState<Contractor[]>([]);
-  const [materials, setMaterials] = useState<MaterialItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-      loadData();
+  const { data: projects = [], isFetching: projectsFetching } = useProjects(token);
+  const { data: contractors = [], isFetching: contractorsFetching } = useContractors(token);
+  const { data: materials = [] } = useMaterials(token);
+  const { data: auditLogs = [] } = useAuditLogs(token);
+  const { queueLength, isProcessing: queueProcessing, enqueue, processQueue } = useOfflineQueue(token);
+
+  const handleNotificationTap = useCallback((data: { screen?: string; projectId?: string }) => {
+    if (data.screen === "proveedores") {
+      setScreen("proveedores");
+    } else if (data.projectId) {
+      const match = projects.find((p: Project) => p.id === data.projectId);
+      if (match) setSelectedProject(match);
     }
-  }, [token]);
+  }, [projects]);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [projectsJson, contractorsJson, materialsJson, auditJson] = await Promise.all([
-        requestJson(token, "/projects"),
-        requestJson(token, "/contractors"),
-        requestJson(token, "/materials"),
-        requestJson(token, "/audit-logs"),
-      ]);
+  const isRefreshing = projectsFetching || contractorsFetching;
 
-      setProjects(projectsJson?.data ?? projectsJson);
-      setContractors(contractorsJson?.data ?? contractorsJson);
-      setMaterials(materialsJson?.data ?? materialsJson);
-      setAuditLogs(auditJson?.data ?? auditJson);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("API no disponible", "No se pudo conectar con Laravel. Revisa la URL en mobile/App.tsx.");
-    } finally {
-      setIsLoading(false);
-    }
+  const refreshAll = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      queryClient.invalidateQueries({ queryKey: ["contractors"] }),
+      queryClient.invalidateQueries({ queryKey: ["materials"] }),
+      queryClient.invalidateQueries({ queryKey: ["auditLogs"] }),
+    ]);
   };
 
-  const syncProjectAction = async (path: string, options: RequestInit = {}) => {
-    const json = await requestJson(token, path, options);
-    const project = json?.data ?? json;
-    setProjects((current) => [project, ...current.filter((item) => item.id !== project.id)]);
-    setSelectedProject((current) => (current?.id === project.id ? project : current));
-    await loadAudit();
-  };
-
-  const loadAudit = async () => {
-    try {
-      const auditJson = await requestJson(token, "/audit-logs");
-      setAuditLogs(auditJson?.data ?? auditJson);
-    } catch {
-      // Audit refresh is helpful, but should not block the main action.
-    }
+  const invalidateAfterMutation = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      queryClient.invalidateQueries({ queryKey: ["auditLogs"] }),
+    ]);
   };
 
   const handleLogout = async () => {
     await logout();
-    setProjects([]);
-    setContractors([]);
-    setMaterials([]);
-    setAuditLogs([]);
     setScreen("presidencia");
   };
 
@@ -99,9 +99,31 @@ export default function App() {
       throw new Error(await response.text());
     }
 
-    const contractor = await response.json();
-    setContractors((current) => [...current.filter((item) => item.code !== contractor.code), contractor]);
-    return contractor as Contractor;
+    const contractor = (await response.json()) as Contractor;
+    queryClient.invalidateQueries({ queryKey: ["contractors"] });
+    return contractor;
+  };
+
+  const execMutation = async (path: string, options: RequestInit = {}, description?: string) => {
+    try {
+      const json = await requestJson(token, path, options);
+      const project: Project = json?.data ?? json;
+      setSelectedProject((current) => (current?.id === project.id ? project : current));
+      await invalidateAfterMutation();
+    } catch (error) {
+      const isNetworkError =
+        error instanceof TypeError || (error instanceof Error && /network|fetch/i.test(error.message));
+      if (isNetworkError && token) {
+        enqueue({
+          path,
+          method: options.method ?? "POST",
+          body: options.body as string | undefined,
+          description: description ?? path.split("/").pop() ?? path,
+          invalidateKeys: [["projects"], ["auditLogs"]],
+        });
+      }
+      // API errors (4xx/5xx) — silent, same as original syncProjectAction
+    }
   };
 
   if (!token && screen !== "registro") {
@@ -120,11 +142,13 @@ export default function App() {
       onLogout={token ? handleLogout : undefined}
       canUsePrivateScreens={Boolean(token)}
     >
+      <NotificationHandler token={token} onNavigate={handleNotificationTap} />
+      <OfflineBanner pendingCount={queueLength} isProcessing={queueProcessing} onProcessNow={processQueue} />
       {screen === "registro" ? (
         <PublicContractorScreen count={contractors.length} onRegister={registerPublicContractor} />
       ) : (
         <ScrollView
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadData} />}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshAll} />}
           contentContainerStyle={styles.content}
         >
           <StatsStrip projects={projects} contractors={contractors} />
@@ -136,7 +160,7 @@ export default function App() {
               projects={projects}
               materials={materials}
               onCreateProject={(body) =>
-                syncProjectAction("/projects", { method: "POST", body: JSON.stringify(body) })
+                execMutation("/projects", { method: "POST", body: JSON.stringify(body) })
               }
             />
           )}
@@ -144,7 +168,7 @@ export default function App() {
             <CierreScreen
               projects={projects}
               onReview={(projectId) =>
-                syncProjectAction(`/projects/${projectId}/review`, {
+                execMutation(`/projects/${projectId}/review`, {
                   method: "POST",
                   body: JSON.stringify({
                     notes: "Revisión técnica registrada desde la app mobile.",
@@ -154,7 +178,7 @@ export default function App() {
                 })
               }
               onVerify={(project) =>
-                syncProjectAction(
+                execMutation(
                   `/projects/${project.id}/${project.status === "EN_EJECUCION" ? "report-finished" : "verify-completion"}`,
                   {
                     method: "POST",
@@ -171,7 +195,7 @@ export default function App() {
             <ProcuraScreen
               projects={projects}
               onApprove={(project) =>
-                syncProjectAction(`/projects/${project.id}/approve-investment`, {
+                execMutation(`/projects/${project.id}/approve-investment`, {
                   method: "POST",
                   body: JSON.stringify({
                     notes: "Inversión aprobada desde mobile.",
@@ -180,7 +204,7 @@ export default function App() {
                 })
               }
               onSelectContractor={(project, proposal) =>
-                syncProjectAction(`/projects/${project.id}/select-contractor`, {
+                execMutation(`/projects/${project.id}/select-contractor`, {
                   method: "POST",
                   body: JSON.stringify({ contractorCode: proposal.contractorCode, proposalId: proposal.id }),
                 })
@@ -192,7 +216,7 @@ export default function App() {
               projects={projects}
               contractors={contractors}
               onAddProposal={(project, contractor) =>
-                syncProjectAction(`/projects/${project.id}/proposals`, {
+                execMutation(`/projects/${project.id}/proposals`, {
                   method: "POST",
                   body: JSON.stringify({
                     contractorCode: contractor.code,
@@ -205,14 +229,14 @@ export default function App() {
                   }),
                 })
               }
-              onSubmit={(project) => syncProjectAction(`/projects/${project.id}/submit-comparative`, { method: "POST" })}
+              onSubmit={(project) => execMutation(`/projects/${project.id}/submit-comparative`, { method: "POST" })}
             />
           )}
           {screen === "finanzas" && (
             <FinanzasScreen
               projects={projects}
               onPay={(project, paymentType, amount) =>
-                syncProjectAction(`/projects/${project.id}/payments`, {
+                execMutation(`/projects/${project.id}/payments`, {
                   method: "POST",
                   body: JSON.stringify({ paymentType, amount }),
                 })
@@ -224,5 +248,17 @@ export default function App() {
       )}
       <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
     </AppShell>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Main" component={MainScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </QueryClientProvider>
   );
 }
