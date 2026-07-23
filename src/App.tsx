@@ -6,7 +6,7 @@
  * las rutas con control de acceso por rol.
  */
 
-import { lazy, Suspense, useCallback, useEffect } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 // Views — lazy-loaded for route-level code-splitting
@@ -52,6 +52,32 @@ function FullScreenFallback() {
       <div className="flex flex-col items-center gap-4 text-slate-400">
         <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
         <p className="text-sm font-medium">Cargando módulo…</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pantalla de validación de sesión. Se muestra brevemente mientras se
+ * verifica el token almacenado contra el backend. Lanza una notificación
+ * toast para informar al usuario sin ocupar toda la atención visual.
+ */
+function SessionValidationScreen() {
+  const { showToast } = useToast();
+  const notified = useRef(false);
+  useEffect(() => {
+    if (notified.current) return;
+    notified.current = true;
+    showToast("Verificando sesión almacenada…", "info");
+  }, [showToast]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-5xl font-black tracking-tight text-slate-300 select-none">
+          IVOO
+        </span>
+        <span className="text-sm font-medium text-slate-400">Cargando…</span>
       </div>
     </div>
   );
@@ -174,14 +200,7 @@ function AppRoutes() {
 
   // ---- Validando sesión guardada (token en localStorage, consultando backend) ----
   if (isValidatingSession) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-4 text-slate-400">
-          <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
-          <p className="text-sm font-medium">Verificando sesión…</p>
-        </div>
-      </div>
-    );
+    return <SessionValidationScreen />;
   }
 
   // ---- No autenticado ----

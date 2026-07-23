@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { getErrorMessage } from "../services/logger";
 import {
   Users,
   UserPlus,
@@ -138,7 +139,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
       setPasswordConfirmation("");
       setRole("INFRAESTRUCTURA");
     } catch (err) {
-      setErrorMsg((err as Error).message || "Error al registrar el usuario.");
+      setErrorMsg(getErrorMessage(err, "Error al registrar el usuario."));
     } finally {
       setIsSubmitting(false);
     }

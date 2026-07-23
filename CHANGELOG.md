@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## [2026-07-23] — Reemplazo pantalla verificación sesión por notificación toast + splash minimal
+- Tipo: refactor (UX)
+- Qué: La pantalla de "Verificando sesión…" (spinner + texto) se reemplazó por:
+  - **`SessionValidationScreen`**: splash minimal con logo "IVOO" + "Cargando…" (sin spinner)
+  - **Toast notification**: "Verificando sesión almacenada…" aparece como notificación en esquinita
+- Por qué: El usuario solicitó que la verificación de sesión sea tipo notificación en vez de pantalla bloqueante completa.
+- Nota: Se mantiene el bloqueo temprano (early return) porque los hooks de datos (`useProjects`, `useContractors`, `useCatalog`) se ejecutan incondicionalmente en `AppRoutes` y dispararían llamadas API con un token potencialmente inválido si no se bloquea, causando toasts de error antes de redirigir al login.
+- Archivos: `src/App.tsx`
+
+## [2026-07-23] — Fix skeleton infinito tras login — 3 hooks
+- Tipo: fix
+- Qué: Corregido bug donde los skeleton loaders se quedaban forever tras iniciar sesión (sin recargar manual la web).
+- Causa raíz: En el refactor a refs con `[]` deps, `loadProjects`/`internalLoad`/`loadConfigs` se volvieron estables. El mount-effect (`useEffect(() => fn(), [fn])`) solo corre una vez. En el mount inicial con `authToken = ""`, las fn retornan early. Al hacer login, `authToken` cambia pero las fn no se re-ejecutan porque son estables — el effect no se dispara. El polling tampoco baja `isLoading` (usa `isPoll=true` que saltea `setIsLoading(false)`).
+- Fix: En el `useEffect` que monitorea `prevToken → authToken`, ahora también se llama a la función de fetch cuando el token transiciona de falsy a truthy, y se movió dicho effect DESPUÉS de la definición de la fn para evitar TDZ (Temporal Dead Zone) en el arreglo de dependencias.
+- Archivos: `src/hooks/useProjectsData.ts`, `src/hooks/usePolledFetch.ts`, `src/hooks/useAIConfig.ts`
+
+## [2026-07-23] — Reubicación componentes AIConfigPanel — views/ → components/
+- Tipo: refactor
+- Qué: Se movieron 3 componentes de `views/AIConfigPanel/` a sus ubicaciones correctas según la convención del proyecto:
+  - `AIConfigFormModal.tsx` → `components/Modals/AIConfigFormModal.tsx`
+  - `MiniBarChart.tsx` → `components/UI/MiniBarChart.tsx`
+  - `KpiCard.tsx` → `components/UI/KpiCard.tsx`
+- Se actualizaron imports en `views/AIConfigPanel/index.tsx` y `views/AIConfigPanel/UsageDashboard.tsx`.
+- `KpiCard` inline de `PresidenciaDashboard.tsx` se mantiene como local (interfaz estructuralmente incompatible con la versión compartida).
+- Verificación: `tsc --noEmit` sin errores de source.
+- Archivos: movidos 3, editados 2.
+
+## [2026-07-23] — Auditoría frontend — Fix race conditions, type imports, getErrorMessage, accesibilidad
+- Tipo: refactor + fix + security
+- Qué:
+  - **Fix race condition en `usePolledFetch`**: `authTokenRef` + `showToastRef` — callbacks con dependencias vacías leen token/showToast desde refs. Elimina recreación del callback en cada cambio de token y previene usar token stale en fetch en curso.
+  - **Fix race condition en `useProjectsData`**: mismo patrón ref-based que `usePolledFetch`.
+  - **Fix race condition en `useProjectsWorkflows`**: mismo patrón ref-based. Todos los handlers ahora leen `authToken`, `showToast`, `syncProject`, `refreshAuditLogs` y `getProject` desde refs en lugar de closure. Dependencias vacías en todos los `useCallback`.
+  - **Type imports separados (11 archivos)**: Separados `import type` de `import` en PresidenciaDashboard, CierreObraPanel, InfraestructuraMantenimientoPanel, InteractiveOrganigrama, AnalistasPanel, ProveedoresRegistrados, FinanzasPanel, ProcuraPanel, data.ts, aiEvaluationService, EvaluacionInteligenteModal/index.
+  - **`getErrorMessage()` helper en `logger.ts`**: Nueva función que extrae mensaje legible desde `unknown` (Error, string, objeto). Reemplazados 16 `(err as Error).message` en: useAIConfig, useProveedores, useUsuarios, MaterialConfigPanel, AIConfigPanel/index, ProveedoresConfigPanel, UsuariosPanel.
+  - **`role="menuitem"` en logout**: SidebarNav.tsx — botón de cerrar sesión ahora con rol semántico.
+  - **`aria-label` en filtros**: PresidenciaDashboard — 5 inputs/selects de búsqueda y filtros ahora tienen `aria-label`.
+- Verificación: `tsc --noEmit` sin errores de source (solo error preexistente en test de Modal).
+- Archivos: `src/hooks/usePolledFetch.ts`, `src/hooks/useProjectsData.ts`, `src/hooks/useProjectsWorkflows.ts`, `src/services/logger.ts`, `src/components/UI/SidebarNav.tsx`, `src/views/PresidenciaDashboard.tsx`, `src/views/CierreObraPanel.tsx`, `src/views/InfraestructuraMantenimientoPanel.tsx`, `src/components/InteractiveOrganigrama.tsx`, `src/views/AnalistasPanel.tsx`, `src/views/ProveedoresRegistrados.tsx`, `src/views/FinanzasPanel.tsx`, `src/views/ProcuraPanel.tsx`, `src/data.ts`, `src/services/aiEvaluationService.ts`, `src/components/Modals/EvaluacionInteligenteModal/index.tsx`, `src/hooks/useAIConfig.ts`, `src/hooks/useProveedores.ts`, `src/hooks/useUsuarios.ts`, `src/views/MaterialConfigPanel.tsx`, `src/views/AIConfigPanel/index.tsx`, `src/views/ProveedoresConfigPanel.tsx`, `src/views/UsuariosPanel.tsx`
+
 ## [2026-07-23] — Sprint 4.3: Push notifications — Expo Notifications + backend Laravel
 - Tipo: feature
 - Qué: Implementado sistema de push notifications completo:
