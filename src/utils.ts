@@ -2,57 +2,23 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Funciones utilitarias compartidas.
+ * Utilidades web. Re-exporta las funciones compartidas desde @ivoo/shared
+ * y agrega las específicas del frontend (colores Tailwind, etc.).
  */
 
-import type { Project, SupplierMaterialProposal } from "./types";
+// Re-export de funciones compartidas (platform-agnostic)
+export {
+  delay,
+  formatCurrency,
+  formatNumber,
+  formatFileSize,
+  proposalTotal,
+  STATUS_LABELS,
+  getStatusLabel,
+} from "@ivoo/shared";
 
 // ---------------------------------------------------------------------------
-// Tiempo
-// ---------------------------------------------------------------------------
-
-export function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// ---------------------------------------------------------------------------
-// Formato monetario
-// ---------------------------------------------------------------------------
-
-export function formatCurrency(amount: number, currency = "USD"): string {
-  return amount.toLocaleString("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-/** Versión sin símbolo de moneda (solo número formateado). */
-export function formatNumber(amount: number): string {
-  return amount.toLocaleString("en-US", { minimumFractionDigits: 2 });
-}
-
-// ---------------------------------------------------------------------------
-// Archivos
-// ---------------------------------------------------------------------------
-
-export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-// ---------------------------------------------------------------------------
-// Cálculos
-// ---------------------------------------------------------------------------
-
-export function proposalTotal(p: SupplierMaterialProposal): number {
-  return p.items.reduce((sum, i) => sum + i.totalPrice, 0);
-}
-
-// ---------------------------------------------------------------------------
-// Mapa de colores por rol (unificado)
+// Mapa de colores por rol (web — clases Tailwind)
 // ---------------------------------------------------------------------------
 
 export const ROLE_COLORS: Record<string, string> = {
@@ -73,7 +39,7 @@ export function getRoleColor(role: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Mapa de colores por estado de proyecto
+// Mapa de colores por estado de proyecto (web — clases Tailwind)
 // ---------------------------------------------------------------------------
 
 export const STATUS_COLORS: Record<string, string> = {
@@ -91,19 +57,3 @@ export const STATUS_COLORS: Record<string, string> = {
 export function getStatusColor(status: string): string {
   return STATUS_COLORS[status] ?? "bg-slate-50 text-slate-700 border-slate-200";
 }
-
-// ---------------------------------------------------------------------------
-// Etiquetas de estado legibles
-// ---------------------------------------------------------------------------
-
-export const STATUS_LABELS: Record<string, string> = {
-  CREADO: "Creado",
-  REVISADO_CIERRE: "Revisado (Cierre)",
-  CONFIRMADO_PROCURA: "Confirmado (Procura)",
-  COMPARATIVA_ENVIADA: "Comparativa Enviada",
-  CONTRATADO: "Contratado",
-  EN_EJECUCION: "En Ejecución",
-  VERIFICANDO_FINALIZACION: "Verificando",
-  LISTO_PAGO_FINAL: "Listo para Pago Final",
-  COMPLETADO_PAGADO: "Completado",
-};

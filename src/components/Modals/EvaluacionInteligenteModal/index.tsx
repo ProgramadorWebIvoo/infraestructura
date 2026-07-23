@@ -199,7 +199,7 @@ export default function EvaluacionInteligenteModal({
             laborCost: p.laborCost,
             totalCost: p.totalCost,
             deliveryWeeks: p.deliveryWeeks,
-            contractorRating: p.contractorRating,
+            contractorRating: p.contractorRating ?? null,
           }))}
           onStart={runEvaluation}
           selectedProvider={selectedProvider}

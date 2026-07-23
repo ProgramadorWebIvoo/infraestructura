@@ -19,11 +19,20 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@ivoo/shared": [
+        "./packages/shared/src"
+      ],
+      "@ivoo/shared/*": [
+        "./packages/shared/src/*"
       ]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "types": ["vite/client"]
   },
+  "references": [
+    { "path": "./packages/shared" }
+  ],
   "exclude": ["mobile", "node_modules", "dist"]
 }

@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## [2026-07-23] — Mobile consume @ivoo/shared — Fase 2 del shared package
+- Tipo: refactor
+- Qué: `mobile/types.ts` ahora re-exporta tipos desde `@ivoo/shared` (ProjectStatus, MaterialItem, Proposal, Project, Contractor, AuditLog) mediante relative path `../packages/shared/src/types`. Se mantienen los tipos específicos de mobile (Screen, screens, statusLabels, statusColors). `mobile/api.ts` ahora delega en `apiFetch` de `@ivoo/shared`, inicializando `setApiBaseUrl` desde `config.ts`. `requestJson` mantiene la misma firma `(token, path, options?)` para compatibilidad con App.tsx y componentes.
+- Por qué / causa raíz: Cierre del punto 10 del plan de acción — eliminar duplicación de tipos y lógica HTTP entre web y mobile.
+- Archivos: `mobile/types.ts`, `mobile/api.ts`
+
+## [2026-07-23] — Shared Package @ivoo/shared — types, utils, api platform-agnostic
+- Tipo: refactor
+- Qué: Extraído el código compartido entre web y mobile a un paquete `packages/shared` (`@ivoo/shared`) en un monorepo con npm workspaces + TypeScript project references. Contiene:
+  - `src/types.ts` — Tipos unificados (ProjectStatus como const+type, MaterialItem, Proposal, Project, Contractor, AuditLog, SupplierMaterialProposal)
+  - `src/utils.ts` — delay, formatCurrency, formatNumber, formatFileSize, proposalTotal, STATUS_LABELS, getStatusLabel
+  - `src/api.ts` — apiFetch, apiDownload, setApiBaseUrl, setTokenRefreshHandler (agnóstico, sin dependencias de plataforma)
+  - `src/index.ts` — barrel export
+- Web (`src/`): `types.ts`, `utils.ts`, `services/api.ts` ahora son re-exports desde `@ivoo/shared` + extensiones web (ROLE_COLORS, STATUS_COLORS, init de API_BASE_URL desde VITE_API_URL)
+- Configuración del monorepo: `package.json` con workspaces, `tsconfig.json` con references + paths alias, `vite.config.ts` con resolve alias
+- Todos los tipos existentes preservados (ProjectStatus es dual type+value para compatibilidad con `ProjectStatus.CREADO`)
+- Fix: api.ts re-export usa import + export separados (export from no crea binding local)
+- 206 tests pasando, build de Vite exitoso
+- Por qué / causa raíz: Duplicación de tipos, utilidades y lógica de API entre web (`src/`) y mobile (`mobile/`). Cada cambio requería modificar ambos lados. Un shared package centraliza el código platform-agnostic y elimina la divergencia.
+- Archivos: `packages/shared/package.json` [NUEVO], `packages/shared/tsconfig.json` [NUEVO], `packages/shared/src/index.ts` [NUEVO], `packages/shared/src/types.ts` [NUEVO], `packages/shared/src/utils.ts` [NUEVO], `packages/shared/src/api.ts` [NUEVO], `package.json`, `tsconfig.json`, `vite.config.ts`, `src/types.ts`, `src/utils.ts`, `src/services/api.ts`, `src/components/Modals/EvaluacionInteligenteModal/index.tsx`
+
+## [2026-07-23] — Virtualización en Table — @tanstack/react-virtual, threshold >100
+- Tipo: performance
+- Qué: Agregada virtualización de filas en `Table.tsx` vía `@tanstack/react-virtual`. Nueva prop `virtualizeThreshold` (default `Infinity`, disabled). Cuando `data.length > virtualizeThreshold` Y `maxHeight` está configurado, la tabla cambia a renderizado virtualizado: solo las filas visibles en el viewport se renderizan (~10 de overscan), el scroll reemplaza la paginación, y el tbody usa `display: block` con posicionamiento absoluto para mantener el rendimiento con datasets grandes. El comportamiento legacy (paginación, renderizado completo) no se modifica. Los 25 tests existentes de Table siguen pasando sin cambios.
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) detectó que tablas grandes (ej. libro diario, proveedores) renderizan todos los nodos DOM aunque no estén visibles. Sprint 2 punto 9 del plan de acción.
+- Archivos: `src/components/UI/Table.tsx`, `package.json`
+
+## [2026-07-23] — Extraer AuthenticatedLayout — sacar 200+ líneas de App.tsx
+- Tipo: refactor
+- Qué: Extraído el shell visual del layout autenticado a `src/components/Layout/AuthenticatedLayout.tsx` (~158 líneas). El layout ahora es un componente con props tipadas que recibe las rutas como `children`. AppRoutes pasó de 440 → 329 líneas. El layout maneja internamente: `isMobileSidebarOpen`, `prefersReducedMotion`, `pageVariants/Transition`, y el Suspense + AnimatePresence con transiciones de página. También se lazy-loadeó `InspectProjectModal` dentro del layout (solo se descarga al abrir el modal).
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) señaló App.tsx monolítico (404 líneas). Sprint 2 punto 8 del plan de acción.
+- Archivos: `src/App.tsx`, `src/components/Layout/AuthenticatedLayout.tsx` [NUEVO]
+
+## [2026-07-23] — Code-splitting por ruta — React.lazy + Suspense en App.tsx
+- Tipo: performance
+- Qué: Reemplazados los 14 imports estáticos de vistas en `App.tsx` por `React.lazy(() => import(...))`. Agregados 3 boundaries `<Suspense>`: (1) rutas públicas, (2) login (unauthenticated), (3) layout autenticado (contenido dentro del `<main>`, sidebar visible). Cada vista ahora es un chunk independiente que se carga bajo demanda. Fallbacks visuales consistentes con el diseño actual (spinner centrado "Cargando módulo…").
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) detectó que todo el bundle (~200KB gz) cargaba al inicio. Sin code-splitting por ruta. Sprint 2 punto 7 del plan de acción.
+- Archivos: `src/App.tsx`
+
 ## [2026-07-23] — Vitest coverage — @vitest/coverage-v8, threshold 70% lines
 - Tipo: testing
 - Qué: Configurado coverage de Vitest con `@vitest/coverage-v8`. Umbrales: lines/functions/branches/statements ≥ 70%. Excluidos: `node_modules/`, `dist/`, `src/test/`, `src/main.tsx`, `src/vite-env.d.ts`, `*.d.ts`, `*.config.*`, `**/index.ts`. Script `npm run test:coverage` añadido.

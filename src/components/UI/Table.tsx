@@ -3,7 +3,8 @@
 // footer, scroll containers, sorting, pagination
 
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 // ─── Types ───
 
@@ -60,6 +61,10 @@ export interface TableProps<T> {
   /** Optional: custom class for selected row */
   selectedRowKey?: string | number;
   selectedRowClass?: string;
+
+  /** When data.length > this threshold AND maxHeight is set, enable row
+   *  virtualization via @tanstack/react-virtual. Default Infinity (disabled). */
+  virtualizeThreshold?: number;
 }
 
 // ─── Component ───
@@ -84,10 +89,12 @@ export function Table<T>({
   onRowDoubleClick,
   selectedRowKey,
   selectedRowClass = "bg-sky-50 ring-1 ring-sky-200",
+  virtualizeThreshold = Infinity,
 }: TableProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const paginationEnabled = pageSize != null && pageSize > 0;
   const limit = paginationEnabled ? pageSize! : data.length;
@@ -147,6 +154,17 @@ export function Table<T>({
     if (p < 1 || p > totalPages) return;
     setCurrentPage(p);
   };
+
+  // ── Virtualization ──
+
+  const shouldVirtualize = virtualizeThreshold !== Infinity && sortedData.length > virtualizeThreshold && maxHeight != null && maxHeight !== "";
+
+  const virtualizer = useVirtualizer({
+    count: shouldVirtualize ? sortedData.length : 0,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 44,
+    overscan: 10,
+  });
 
   // ── Render helpers ──
 
@@ -270,13 +288,14 @@ export function Table<T>({
   return (
     <div className={containerClassName}>
       <div
+        ref={scrollRef}
         className={`overflow-x-auto ${maxHeight ? "overflow-y-auto" : ""}`}
         style={{
           ...(maxHeight ? { maxHeight } : {}),
           willChange: "scroll-position",
         }}
       >
-        <table className={`w-full text-left text-xs border-collapse ${className}`}>
+        <table className={`w-full text-left text-xs border-collapse ${className}`} style={shouldVirtualize ? { tableLayout: "fixed" } : undefined}>
           <thead>
             <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
               {columns.map((col) => (
@@ -314,23 +333,31 @@ export function Table<T>({
             <SkeletonRows />
           ) : (
             <>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedData.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-medium italic">
-                      {emptyState ?? emptyMessage}
-                    </td>
-                  </tr>
-) : (
-                  paginatedData.map((row, index) => {
-                    const key = rowKey(row, index);
+              {/* ── Virtualized tbody (solo cuando hay >100 filas y maxHeight) ── */}
+              {shouldVirtualize && sortedData.length > 0 ? (
+                <tbody
+                  style={{ display: "block", height: `${virtualizer.getTotalSize()}px`, position: "relative" }}
+                >
+                  {virtualizer.getVirtualItems().map((virtualItem) => {
+                    const row = sortedData[virtualItem.index];
+                    const key = rowKey(row, virtualItem.index);
                     const isSelected = selectedRowKey != null && key === selectedRowKey;
                     return (
                       <tr
                         key={key}
-                        className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass} ${isSelected ? selectedRowClass : ""}`}
-                        onClick={() => onRowClick?.(row, index)}
-                        onDoubleClick={() => onRowDoubleClick?.(row, index)}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: `${virtualItem.size}px`,
+                          transform: `translateY(${virtualItem.start}px)`,
+                          display: "table",
+                          tableLayout: "fixed",
+                        }}
+                        className={`${alternating ? (virtualItem.index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass} ${isSelected ? selectedRowClass : ""}`}
+                        onClick={() => onRowClick?.(row, virtualItem.index)}
+                        onDoubleClick={() => onRowDoubleClick?.(row, virtualItem.index)}
                       >
                         {columns.map((col) => (
                           <td
@@ -339,7 +366,7 @@ export function Table<T>({
                             style={col.width ? { width: col.width } : undefined}
                           >
                             {col.render ? (
-                              col.render(row, index)
+                              col.render(row, virtualItem.index)
                             ) : (
                               <DefaultCell value={row[col.key as keyof T]} />
                             )}
@@ -347,16 +374,53 @@ export function Table<T>({
                         ))}
                       </tr>
                     );
-                  })
-                )}
-              </tbody>
+                  })}
+                </tbody>
+              ) : (
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedData.length === 0 ? (
+                    <tr>
+                      <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-medium italic">
+                        {emptyState ?? emptyMessage}
+                      </td>
+                    </tr>
+) : (
+                    paginatedData.map((row, index) => {
+                      const key = rowKey(row, index);
+                      const isSelected = selectedRowKey != null && key === selectedRowKey;
+                      return (
+                        <tr
+                          key={key}
+                          className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass} ${isSelected ? selectedRowClass : ""}`}
+                          onClick={() => onRowClick?.(row, index)}
+                          onDoubleClick={() => onRowDoubleClick?.(row, index)}
+                        >
+                          {columns.map((col) => (
+                            <td
+                              key={col.key}
+                              className={`py-3.5 px-4 ${tdAlign(col)} ${col.className ?? ""}`}
+                              style={col.width ? { width: col.width } : undefined}
+                            >
+                              {col.render ? (
+                                col.render(row, index)
+                              ) : (
+                                <DefaultCell value={row[col.key as keyof T]} />
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              )}
               {footer && <tfoot className="bg-slate-50 font-bold border-t border-slate-200">{footer}</tfoot>}
             </>
           )}
         </table>
       </div>
 
-      <PaginationBar />
+      {!shouldVirtualize && <PaginationBar />}
     </div>
   );
 }

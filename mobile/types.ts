@@ -1,80 +1,27 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Tipos para la app mobile. Re-exporta tipos compartidos desde
+ * @ivoo/shared y agrega los específicos de mobile (navegación, colores).
+ */
+
 import { Ionicons } from "@expo/vector-icons";
 
-export type ProjectStatus =
-  | "CREADO"
-  | "REVISADO_CIERRE"
-  | "CONFIRMADO_PROCURA"
-  | "COMPARATIVA_ENVIADA"
-  | "CONTRATADO"
-  | "EN_EJECUCION"
-  | "VERIFICANDO_FINALIZACION"
-  | "LISTO_PAGO_FINAL"
-  | "COMPLETADO_PAGADO";
+// Re-export de tipos compartidos (platform-agnostic)
+// Usamos relative path porque mobile (Expo/Metro) no está en el workspace de npm.
+export { ProjectStatus } from "../packages/shared/src/types";
+export type {
+  MaterialItem,
+  Proposal,
+  Project,
+  Contractor,
+  AuditLog,
+} from "../packages/shared/src/types";
 
-export type MaterialItem = {
-  id?: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  estimatedUnitPrice: number;
-};
-
-export type Proposal = {
-  id: string;
-  contractorCode: string;
-  contractorName: string;
-  materialCost: number;
-  laborCost: number;
-  totalCost: number;
-  deliveryWeeks: number;
-  negotiatedAdvancePercent: number;
-  description: string;
-};
-
-export type Project = {
-  id: string;
-  title: string;
-  type: "INFRAESTRUCTURA" | "MANTENIMIENTO";
-  description: string;
-  location: string;
-  createdDate: string;
-  status: ProjectStatus;
-  materials: MaterialItem[];
-  estimatedTotal: number;
-  cierreObraNotes?: string | null;
-  calculationsAdded?: boolean;
-  blueprintsCount?: number;
-  procuraReviewNotes?: string | null;
-  approvedInvestmentAmount?: number | null;
-  proposals?: Proposal[];
-  selectedContractorCode?: string | null;
-  selectedProposalId?: string | null;
-  advancePaidAmount?: number | null;
-  advancePaidDate?: string | null;
-  finalPaidAmount?: number | null;
-  finalPaidDate?: string | null;
-  qualityVerified?: boolean;
-  completionVerifiedDate?: string | null;
-};
-
-export type Contractor = {
-  code: string;
-  name: string;
-  specialty: string;
-  rating: number;
-  contact: string;
-  status?: string;
-};
-
-export type AuditLog = {
-  id: string;
-  projectId: string;
-  projectTitle: string;
-  role: string;
-  action: string;
-  timestamp: string;
-  details?: string;
-};
+// ---------------------------------------------------------------------------
+// Navegación — específico de mobile
+// ---------------------------------------------------------------------------
 
 export type Screen =
   | "presidencia"
@@ -96,6 +43,12 @@ export const screens: Array<{ key: Screen; label: string; icon: keyof typeof Ion
   { key: "proveedores", label: "Proveedores", icon: "construct" },
   { key: "registro", label: "Registro", icon: "person-add" },
 ];
+
+// ---------------------------------------------------------------------------
+// Etiquetas y colores de estado — específicos de mobile (labels más cortos)
+// ---------------------------------------------------------------------------
+
+import type { ProjectStatus } from "../packages/shared/src/types";
 
 export const statusLabels: Record<ProjectStatus, string> = {
   CREADO: "Creado",
