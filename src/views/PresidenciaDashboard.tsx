@@ -5,7 +5,8 @@
 
 import { useState, useMemo, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { Project, ProjectStatus, AuditLog } from "../types";
+import { ProjectStatus } from "../types";
+import type { Project, AuditLog } from "../types";
 import {
   DollarSign,
   Layers,
@@ -358,39 +359,43 @@ export default function PresidenciaDashboard({
           </div>
           {/* ── Search + filter bar ── */}
           <div className="flex flex-wrap gap-2.5 mt-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  id="audit-search"
+                  type="text"
+                  placeholder="Buscar por acción, proyecto, usuario o detalles..."
+                  value={auditSearchTerm}
+                  onChange={(e) => setAuditSearchTerm(e.target.value)}
+                  aria-label="Buscar en auditoría"
+                  className="pl-10 pr-3.5 py-2 w-full text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-semibold text-slate-700"
+                />
+              </div>
               <input
-                id="audit-search"
-                type="text"
-                placeholder="Buscar por acción, proyecto, usuario o detalles..."
-                value={auditSearchTerm}
-                onChange={(e) => setAuditSearchTerm(e.target.value)}
-                className="pl-10 pr-3.5 py-2 w-full text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-semibold text-slate-700"
+                id="audit-date-from"
+                type="date"
+                value={auditDateFrom}
+                onChange={(e) => setAuditDateFrom(e.target.value)}
+                aria-label="Fecha desde"
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
+                title="Fecha desde"
               />
-            </div>
-            <input
-              id="audit-date-from"
-              type="date"
-              value={auditDateFrom}
-              onChange={(e) => setAuditDateFrom(e.target.value)}
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-              title="Fecha desde"
-            />
-            <input
-              id="audit-date-to"
-              type="date"
-              value={auditDateTo}
-              onChange={(e) => setAuditDateTo(e.target.value)}
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-              title="Fecha hasta"
-            />
-            <select
-              id="audit-filter-role"
-              value={auditRoleFilter}
-              onChange={(e) => setAuditRoleFilter(e.target.value)}
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
-            >
+              <input
+                id="audit-date-to"
+                type="date"
+                value={auditDateTo}
+                onChange={(e) => setAuditDateTo(e.target.value)}
+                aria-label="Fecha hasta"
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
+                title="Fecha hasta"
+              />
+              <select
+                id="audit-filter-role"
+                value={auditRoleFilter}
+                onChange={(e) => setAuditRoleFilter(e.target.value)}
+                aria-label="Filtrar por rol"
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
+              >
               <option value="ALL">Todos los Roles</option>
               <option value="PRESIDENCIA">Presidencia</option>
               <option value="INFRAESTRUCTURA">Infraestructura</option>
@@ -437,6 +442,7 @@ export default function PresidenciaDashboard({
                   placeholder="Buscar por obra o código..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Buscar obras"
                   className="pl-10 pr-3.5 py-2 w-full text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-semibold text-slate-700"
                 />
               </div>
@@ -444,6 +450,7 @@ export default function PresidenciaDashboard({
                 id="filter-type"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
+                aria-label="Filtrar por tipo"
                 className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
               >
                 <option value="ALL">Todos los Tipos</option>
@@ -454,6 +461,7 @@ export default function PresidenciaDashboard({
                 id="filter-status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
+                aria-label="Filtrar por estado"
                 className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
               >
                 <option value="ALL">Todos los Estados</option>

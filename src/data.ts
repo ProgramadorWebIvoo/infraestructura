@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Project, ProjectStatus, Contractor, AuditLog } from "./types";
+import { ProjectStatus } from "./types";
+import type { Project, Contractor, AuditLog } from "./types";
 
 export const INITIAL_CONTRACTORS: Contractor[] = [
   {

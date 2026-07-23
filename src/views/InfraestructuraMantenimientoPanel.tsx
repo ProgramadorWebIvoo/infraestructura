@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import { Project, MaterialItem } from "../types";
+import type { Project, MaterialItem } from "../types";
 import {
   Plus,
   Trash2,

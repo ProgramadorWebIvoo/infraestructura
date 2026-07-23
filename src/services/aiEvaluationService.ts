@@ -7,7 +7,7 @@
  * que orquesta ChatGPT → Gemini → Claude con failover automático.
  */
 
-import { Project, Proposal } from "../types";
+import type { Project, Proposal } from "../types";
 import { apiFetch } from "./api";
 
 // ---------------------------------------------------------------------------

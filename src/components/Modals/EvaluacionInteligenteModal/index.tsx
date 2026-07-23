@@ -11,7 +11,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { motion } from "motion/react";
 import { BrainCircuit, CheckCircle } from "lucide-react";
 import Modal from "../../UI/Modal";
-import { Project, Proposal } from "../../../types";
+import type { Project, Proposal } from "../../../types";
 import {
   evaluateProposals,
   AIEvaluationResult,

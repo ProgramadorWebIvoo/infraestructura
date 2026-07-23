@@ -8,7 +8,8 @@
 import { useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { DollarSign, CheckCircle, CreditCard, ArrowUpRight, Coins, Search } from "lucide-react";
-import { Project, ProjectStatus } from "../types";
+import { ProjectStatus } from "../types";
+import type { Project } from "../types";
 import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";

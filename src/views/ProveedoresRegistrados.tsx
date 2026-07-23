@@ -6,7 +6,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
-import { Contractor, Project, ProjectStatus, SupplierMaterialProposal } from "../types";
+import { ProjectStatus } from "../types";
+import type { Contractor, Project, SupplierMaterialProposal } from "../types";
 import { useToast } from "../components/UI/Toast";
 import {
   ChevronDown,

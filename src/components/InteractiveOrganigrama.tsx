@@ -4,7 +4,8 @@
  */
 
 import React from "react";
-import { Project, ProjectStatus } from "../types";
+import { ProjectStatus } from "../types";
+import type { Project } from "../types";
 import { 
   Building2, 
   Database, 

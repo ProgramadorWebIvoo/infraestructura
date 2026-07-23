@@ -7,7 +7,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Project, ProjectStatus } from "../types";
+import { ProjectStatus } from "../types";
+import type { Project } from "../types";
 import { useToast } from "../components/UI/Toast";
 import {
   FileText,
