@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
 // ---------------------------------------------------------------------------
 // Mock apiFetch
@@ -17,7 +17,7 @@ import { useAuth } from "./useAuth";
 const mockApiFetch = vi.fn();
 const mockSetTokenRefreshHandler = vi.fn();
 
-vi.mock("../services/api", () => ({
+vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
   setTokenRefreshHandler: (...args: unknown[]) => mockSetTokenRefreshHandler(...args),
 }));

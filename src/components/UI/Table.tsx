@@ -173,7 +173,7 @@ export function Table<T>({
   const SkeletonRows = () => (
     <tbody>
       {Array.from({ length: skeletonRowCount }).map((_, r) => (
-        <tr key={r} className="border-b border-slate-50">
+        <tr key={r} data-testid="skeleton-row" className="border-b border-slate-50">
           {columns.map((col) => (
             <td key={col.key} className={`py-3.5 px-4 ${tdAlign(col)}`}>
               <div

@@ -217,6 +217,7 @@ export default function FileDropZone({
           type="file"
           multiple
           accept={accept}
+          data-testid="file-input"
           className="hidden"
           onChange={(e) => {
             if (e.target.files) addFiles(e.target.files);

@@ -86,7 +86,7 @@
 
 # PENDIENTE ----
 
-NULL 
+1. **REALIZAR** Limpiar el bundle y eliminar las dependencias inutilizadas.
 
 # AUDITORIAS A REALIZAR ---
 

@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## [2026-07-23] — Vitest coverage — @vitest/coverage-v8, threshold 70% lines
+- Tipo: testing
+- Qué: Configurado coverage de Vitest con `@vitest/coverage-v8`. Umbrales: lines/functions/branches/statements ≥ 70%. Excluidos: `node_modules/`, `dist/`, `src/test/`, `src/main.tsx`, `src/vite-env.d.ts`, `*.d.ts`, `*.config.*`, `**/index.ts`. Script `npm run test:coverage` añadido.
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) requería coverage ≥ 70% en Sprint 1. Cobertura actual: Lines 90.64%, Branches 75.64%, Functions 86.11%, Statements 87.89% — ya supera umbrales.
+- Archivos: `vite.config.ts`, `package.json`
+
+## [2026-07-23] — Referrer-Policy + Permissions-Policy headers (vite dev + backend)
+- Tipo: security
+- Qué: Agregados headers `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy: camera=(), microphone=(), geolocation=()` al dev server de Vite (`vite.config.ts`) y al middleware backend `AddCspHeaders.php` (repo `infraestructura-back`).
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) detectó ausencia de ambos headers. `Referrer-Policy` controla información de referrer en navegación cross-origin. `Permissions-Policy` deshabilita APIs sensibles (cámara, micrófono, geolocalización) que la app no usa.
+- Archivos: `vite.config.ts`, `infraestructura-back/app/Http/Middleware/AddCspHeaders.php`
+
+## [2026-07-23] — CSP producción sin 'unsafe-inline' — vite.config.ts condicional por mode
+- Tipo: security
+- Qué: CSP en `vite.config.ts` ahora es condicional por `mode` (development vs production). En desarrollo: `script-src 'self' 'unsafe-inline'` (necesario para HMR de Vite). En producción: `script-src 'self'` sin `'unsafe-inline'`, cumpliendo CSP estricto. El header CSP se sirve desde el dev server en dev y desde el middleware backend (`AddCspHeaders.php`) en producción.
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) detectó CSP en desarrollo con `'unsafe-inline'` hardcodeado. En producción el header lo sirve el backend, pero el dev server servía CSP inseguro. Fix: condicional por `mode` en `defineConfig(({mode}) => ...)`.
+- Archivos: `vite.config.ts`
+
+## [2026-07-23] — Tests unitarios: 159 tests, todos pasando, cobertura ≥70%
+- Tipo: testing
+- Qué: Completados tests unitarios del Sprint 1 de auditoría. 159 tests en 9 archivos (usePolledFetch, usePolling, useAuth, LoginScreen, Table, Modal, ConfirmDialog, SelectModal, FileDropZone). Todos pasando con cobertura: Statements 88.46%, Branches 84.51%, Functions 85.03%, Lines 91.85%. Instalado `@vitest/coverage-v8` con umbrales ≥70%. Agregado `data-testid` a componentes clave (modal-backdrop, modal-icon, skeleton-row, file-input, spinner, alert-triangle, check-circle).
+- Por qué / causa raíz: Auditoría interna (AUDITORIA_INTERNA_FRONT_2026-07-23) Sprint 1 requería tests unitarios con cobertura ≥70%. Se corrigieron múltiples issues de mocking (motion/react, createPortal), compatibilidad con React 19 (act desde "react"), focus trap en jsdom (solo wrap-around), y timing en hooks.
+- Archivos: `vite.config.ts`, `package.json`, `src/components/UI/Modal.tsx`, `src/components/UI/Table.tsx`, `src/components/UI/FileDropZone.tsx`, `src/components/UI/ConfirmDialog.tsx`, `src/components/UI/SelectModal.tsx`, más 9 archivos de test
+
+## [2026-07-23] — Tests críticos: api.ts (27 tests) + routing/permisos (17 tests)
+- Tipo: testing
+- Qué: Agregados 47 tests unitarios sobre:
+  - `api.ts` (27 tests): apiFetch con todos los status codes (200, 204, 401, 403, 404, 422, 429, 503, 500, otros), extracción de errores Laravel, attemptLog en 503, refresh token vía X-Refresh-Token, headers Authorization/Content-Type, mezcla de headers custom, respuestas vacías. apiDownload con éxito, error, body message.
+  - `useRouting.ts` (11 tests): canAccess por rol (SUPERADMIN, PRESIDENCIA, undefined, rol inexistente con fallback), firstAllowedRoute, activeRole. Verificación estática de roleAccess (consistencia entre roles, rutas con /).
+  - `routes.tsx` (9 tests): isPublicRoute para rutas públicas y privadas, ProtectedRoute render/redirect.
+- Por qué / causa raíz: Servicio central api.ts y lógica de permisos son puntos críticos sin tests. Un error en api.ts afecta toda la app; un error en permisos puede exponer rutas. Estos tests aseguran regression en cada cambio.
+- Archivos: `src/__tests__/services/api.test.ts` [NUEVO], `src/__tests__/hooks/useRouting.test.ts` [NUEVO], `src/__tests__/routes.test.tsx` [NUEVO]
+
+## [2026-07-23] — Tests movidos a src/__tests__/ con estructura de directorios espejo
+- Tipo: refactor
+- Qué: Los 9 archivos de test fueron movidos de sus ubicaciones junto al código fuente a un directorio centralizado `src/__tests__/` que refleja la estructura de `src/`. Los imports relativos (`./Component`) fueron reemplazados por imports absolutos vía alias `@/`. Se actualizó `coverage.exclude` en `vite.config.ts` para excluir `src/__tests__/`.
+- Por qué / causa raíz: Orden y claridad — un solo directorio de tests facilita la navegación y evita contaminar el árbol de código fuente con archivos de testing.
+- Archivos: `vite.config.ts`, 9 archivos de test movidos de `src/hooks/`, `src/views/`, `src/components/UI/` a `src/__tests__/{hooks,views,components/UI}/`
+
 ## [2026-07-23] — Auditoría y refactor del sistema de IA: limpieza, tipado, extracción de sub-vistas
 - Tipo: refactor + fix
 - Qué: Auditoría integral del código frontend relacionado con IA. Se detectaron y corrigieron 8 puntos:
