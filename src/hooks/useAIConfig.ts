@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { logError, getErrorMessage } from "../services/logger";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,15 +135,6 @@ export function useAIConfig(authToken: string) {
 
   const prevToken = useRef(authToken);
 
-  // Reset loading on login
-  useEffect(() => {
-    if (!prevToken.current && authToken) {
-      setIsLoading(true);
-      setIsUsageLoading(true);
-    }
-    prevToken.current = authToken;
-  }, [authToken]);
-
   // Load configs
   const loadConfigs = useCallback(async () => {
     const token = authTokenRef.current;
@@ -157,10 +148,6 @@ export function useAIConfig(authToken: string) {
       setIsLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    loadConfigs();
-  }, [loadConfigs]);
 
   // Load usage
   const loadUsage = useCallback(async (days = 30) => {
@@ -176,6 +163,21 @@ export function useAIConfig(authToken: string) {
       setIsUsageLoading(false);
     }
   }, []);
+
+  // Reset loading + disparar fetch cuando el token pasa de falsy → truthy (login)
+  useEffect(() => {
+    if (!prevToken.current && authToken) {
+      setIsLoading(true);
+      setIsUsageLoading(true);
+      loadConfigs();
+      loadUsage();
+    }
+    prevToken.current = authToken;
+  }, [authToken, loadConfigs, loadUsage]);
+
+  useEffect(() => {
+    loadConfigs();
+  }, [loadConfigs]);
 
   // Create config
   const createConfig = useCallback(async (form: AiConfigForm): Promise<AiConfigRecord> => {
@@ -227,7 +229,7 @@ export function useAIConfig(authToken: string) {
       setSyncMessage(result.message);
       return result;
     } catch (err) {
-      const msg = (err as Error).message || "Error al sincronizar.";
+      const msg = getErrorMessage(err, "Error al sincronizar.");
       setSyncMessage(msg);
       setSyncIsError(true);
       throw err;

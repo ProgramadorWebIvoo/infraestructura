@@ -9,8 +9,22 @@
 
 const PREFIX = "[IVOO]";
 
+/**
+ * Extrae un mensaje legible desde cualquier tipo de error.
+ * Útil en catch blocks donde `err` es `unknown`.
+ */
+export function getErrorMessage(error: unknown, fallback = "Error inesperado."): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return fallback;
+  }
+}
+
 export function logError(context: string, error: unknown, ...args: unknown[]): void {
-  const msg = error instanceof Error ? error.message : String(error);
+  const msg = getErrorMessage(error);
   console.error(`${PREFIX} ${context}:`, msg, ...args);
 }
 

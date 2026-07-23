@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { containerVariants } from "../../animations";
 import { useToast } from "../../components/UI/Toast";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import { getErrorMessage } from "../../services/logger";
 import {
   useAIConfig,
   type AiConfigRecord,
@@ -13,7 +14,7 @@ import {
 import SyncBanner from "./SyncBanner";
 import UsageDashboard from "./UsageDashboard";
 import AIConfigTable from "./AIConfigTable";
-import AIConfigFormModal from "./AIConfigFormModal";
+import AIConfigFormModal from "../../components/Modals/AIConfigFormModal";
 
 export default function AIConfigPanel({ authToken }: { authToken: string }) {
   const { showToast } = useToast();
@@ -114,7 +115,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
       }
       handleCloseModal();
     } catch (err) {
-      showToast((err as Error).message || "Error al guardar.", "error");
+      showToast(getErrorMessage(err, "Error al guardar."), "error");
     } finally {
       setIsSaving(false);
     }
@@ -130,7 +131,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
         showToast(result.message, "error");
       }
     } catch (err) {
-      showToast((err as Error).message || "Error al probar conexión.", "error");
+      showToast(getErrorMessage(err, "Error al probar conexión."), "error");
     } finally {
       setTestingId(null);
     }
@@ -143,7 +144,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
       await deleteConfig(id);
       showToast("Configuración eliminada.", "success");
     } catch (err) {
-      showToast((err as Error).message || "Error al eliminar.", "error");
+      showToast(getErrorMessage(err, "Error al eliminar."), "error");
     } finally {
       setDeletingId(null);
     }
@@ -155,7 +156,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
       await syncConfig();
       showToast("Configuración sincronizada en tiempo real.", "success");
     } catch (err) {
-      showToast((err as Error).message || "Error al sincronizar.", "error");
+      showToast(getErrorMessage(err, "Error al sincronizar."), "error");
     } finally {
       setIsSyncing(false);
     }
@@ -166,7 +167,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
       await updateConfig(c.id, { isActive: !c.isActive });
       showToast(`Modelo ${c.isActive ? "desactivado" : "activado"}.`, "success");
     } catch (err) {
-      showToast((err as Error).message || "Error al cambiar estado.", "error");
+      showToast(getErrorMessage(err, "Error al cambiar estado."), "error");
     }
   };
 

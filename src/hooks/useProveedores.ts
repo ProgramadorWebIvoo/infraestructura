@@ -9,6 +9,7 @@
 import { useCallback } from "react";
 import type { SupplierMaterialProposal } from "../types";
 import { apiFetch } from "../services/api";
+import { getErrorMessage } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 
@@ -42,7 +43,7 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
         showToast(`Invitación enviada a ${payload.supplierContact}`, "success");
         return data;
       } catch (err) {
-        const message = (err as Error).message || "Error al enviar la invitación.";
+        const message = getErrorMessage(err, "Error al enviar la invitación.");
         showToast(message, "error");
         throw err;
       }

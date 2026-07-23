@@ -29,7 +29,7 @@ import Modal from "../components/UI/Modal";
 import ConfirmDialog from "../components/UI/ConfirmDialog";
 import { useToast } from "../components/UI/Toast";
 import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { logError, getErrorMessage } from "../services/logger";
 import { containerVariants, itemVariants } from "../animations";
 import SelectModal from "../components/UI/SelectModal";
 
@@ -213,7 +213,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
       }
       handleCloseModal();
     } catch (err) {
-      showToast((err as Error).message || "Error al guardar el proveedor.", "error");
+      showToast(getErrorMessage(err, "Error al guardar el proveedor."), "error");
     } finally {
       setIsSaving(false);
     }
@@ -236,7 +236,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
       showToast(`Proveedor ${result.status === "ACTIVE" ? "activado" : result.status === "INACTIVE" ? "desactivado" : "pendiente"}.`, "success");
       onContractorMutated?.();
     } catch (err) {
-      showToast((err as Error).message || "Error al cambiar estado.", "error");
+      showToast(getErrorMessage(err, "Error al cambiar estado."), "error");
     } finally {
       setTogglingCode(null);
     }

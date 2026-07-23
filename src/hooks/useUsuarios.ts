@@ -9,6 +9,7 @@
 
 import { useCallback } from "react";
 import { apiFetch } from "../services/api";
+import { getErrorMessage } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 
@@ -59,7 +60,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         setUsers(prev => [created, ...prev]);
         return created;
       } catch (err) {
-        const message = (err as Error).message || "Error al registrar el usuario.";
+        const message = getErrorMessage(err, "Error al registrar el usuario.");
         showToast(message, "error");
         throw err;
       }
@@ -79,7 +80,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         showToast("Usuario actualizado correctamente.", "success");
         return updated;
       } catch (err) {
-        const message = (err as Error).message || "Error al actualizar el usuario.";
+        const message = getErrorMessage(err, "Error al actualizar el usuario.");
         showToast(message, "error");
         throw err;
       }
@@ -99,7 +100,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         showToast(`Usuario ${label} correctamente.`, "success");
         return result.status;
       } catch (err) {
-        const message = (err as Error).message || "Error al cambiar el estado del usuario.";
+        const message = getErrorMessage(err, "Error al cambiar el estado del usuario.");
         showToast(message, "error");
         throw err;
       }
@@ -116,7 +117,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         });
         showToast("Link de restablecimiento enviado al correo del usuario.", "success");
       } catch (err) {
-        const message = (err as Error).message || "Error al enviar el link.";
+        const message = getErrorMessage(err, "Error al enviar el link.");
         showToast(message, "error");
         throw err;
       }
