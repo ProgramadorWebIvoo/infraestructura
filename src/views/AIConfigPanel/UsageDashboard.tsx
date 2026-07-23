@@ -3,8 +3,8 @@ import { Activity, Brain, Database, Loader2 } from "lucide-react";
 import { itemVariants } from "../../animations";
 import { PROVIDER_LABELS } from "../../hooks/useAIConfig";
 import type { AiUsageData } from "../../hooks/useAIConfig";
-import KpiCard from "./KpiCard";
-import MiniBarChart from "./MiniBarChart";
+import KpiCard from "../../components/UI/KpiCard";
+import MiniBarChart from "../../components/UI/MiniBarChart";
 
 const providerColors: Record<string, string> = {
   openai: "bg-emerald-500",
