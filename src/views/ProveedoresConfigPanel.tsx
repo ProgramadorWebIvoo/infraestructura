@@ -372,9 +372,9 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
             <UserCog className="h-3.5 w-3.5" />
             Configuración
           </div>
-          <h2 className="font-sans text-lg font-black tracking-tight text-slate-900">
+          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
             Proveedores
-          </h2>
+          </h1>
           <p className="text-xs font-medium text-slate-500">
             Catálogo maestro de proveedores. Crea, edita y administra el estado de cada registro.
           </p>

@@ -195,20 +195,20 @@ export default function SelectModal<T>({
         <span className="truncate text-left">
           {selectedOption ? selectedOption.label : triggerLabel}
         </span>
-        {selectedOption && allowDeselect && (
-          <span
-            onClick={handleDeselect}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleDeselect(e as unknown as React.MouseEvent); }}
-            className="ml-2 shrink-0 rounded-lg p-0.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
-            aria-label="Deseleccionar"
-          >
-            <X className="h-3.5 w-3.5" />
-          </span>
-        )}
         <Search className={`h-4 w-4 shrink-0 ${disabled ? "text-slate-300" : "text-slate-400"}`} />
       </button>
+
+      {/* Deselect — sibling del trigger para evitar nested interactive */}
+      {selectedOption && allowDeselect && (
+        <button
+          type="button"
+          onClick={handleDeselect}
+          className="shrink-0 rounded-lg p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors border border-slate-200"
+          aria-label="Deseleccionar"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
 
       {/* Modal */}
       <Modal

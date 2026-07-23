@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## [2026-07-23] — Sprint 3.2: Contraste badges — text-slate-400 → text-slate-600 mínimo
+- Tipo: accessibility
+- Qué: Corregido contraste en badges con `text-slate-400` sobre fondos claros (ratio ~2.8:1, WCAG AA requiere ≥4.5:1):
+  - `IdleView.tsx`: Rating badge sin valor — `bg-slate-50 text-slate-400` → `bg-slate-100 text-slate-600`
+  - `InteractiveOrganigrama.tsx`: Etiquetas Infraestructura/Mantenimiento — `text-slate-400 bg-white` → `text-slate-600 bg-white`
+  - `KpiCard.tsx`: Icon container — `bg-slate-50 text-slate-400` → `bg-slate-100 text-slate-600`
+- Por qué / causa raíz: WCAG 1.4.3 — contraste insuficiente en badges. Auditoría interna Sprint 3 — punto 13 del plan de acción.
+- Archivos: `src/components/Modals/EvaluacionInteligenteModal/IdleView.tsx`, `src/components/InteractiveOrganigrama.tsx`, `src/views/AIConfigPanel/KpiCard.tsx`
+
+## [2026-07-23] — Sprint 3.4: SelectModal + SidebarNav accesibilidad
+- Tipo: accessibility
+- Qué:
+  - **SelectModal**: Eliminado `<span role="button">` anidado dentro del `<button>` trigger (HTML inválido). El botón de deselección ahora es un `<button>` hermano del trigger.
+  - **SidebarNav**: Agregado `aria-label="Menú principal"` al `<nav>`. Dropdown de Configuración ahora tiene `aria-expanded` en el toggle, `role="menu"` + `aria-orientation="vertical"` en el contenedor, y `role="menuitem"` en cada NavLink hijo.
+- Por qué / causa raíz: WCAG 2.4.3 (focus order) + WCAG 2.1.1 (nested interactive). Auditoría interna Sprint 3 — puntos 15 del plan de acción.
+- Archivos: `src/components/UI/SelectModal.tsx`, `src/components/UI/SidebarNav.tsx`
+
+## [2026-07-23] — Sprint 3.3: aria-describedby en validaciones inline
+- Tipo: accessibility
+- Qué: Agregados `id`, `aria-describedby` y `aria-invalid` a inputs con validación inline:
+  - `MaterialesProveedores.tsx`: 3 campos (nombre, especialidad, correo) ahora vinculan el mensaje de error mediante `aria-describedby` y marcan `aria-invalid` cuando corresponden.
+  - `UsuariosPanel.tsx`: Confirmación de contraseña ahora tiene `id`, `aria-describedby` y `aria-invalid`.
+  - `AlertBanner.tsx`: Agregado `role="alert"` para tipo error/warning, `role="status"` para success/info.
+- Por qué / causa raíz: WCAG 3.3.2 — inputs con error solo visual (color rojo), sin vínculo accesible entre input y mensaje de error. Auditoría interna Sprint 3 — punto 14 del plan de acción.
+- Archivos: `src/views/MaterialesProveedores.tsx`, `src/views/UsuariosPanel.tsx`, `src/components/UI/AlertBanner.tsx`
+
+## [2026-07-23] — Sprint 3.1: Auditoría heading hierarchy — normalizada en todas las vistas
+- Tipo: accessibility
+- Qué: Normalizada la jerarquía de encabezados (WCAG 1.3.1) en todas las vistas:
+  - `SectionHeader.tsx`: `<h3>` → `<h2>` (corrige "h3 sin h2 padre" en 5 vistas: Finanzas, Procura, CierreObra, Analistas, Infraestructura/Mantenimiento)
+  - Títulos de vista `<h2>` → `<h1>` visible: UsuariosPanel, ProveedoresRegistrados, MaterialConfigPanel, ProveedoresConfigPanel, AIConfigTable, UsageDashboard, ErrorBoundary
+  - `PresidenciaDashboard`: Agregado `<h1 class="sr-only">`, KPI values `<h3>` → `<span>`, secciones `<h3>` → `<h2>`
+  - Agregados `<h1 class="sr-only">` como título de página en CierreObraPanel, AnalistasPanel, InfraestructuraMantenimientoPanel, FinanzasPanel, ProcuraPanel
+- Por qué / causa raíz: WCAG 1.3.1 — heading hierarchy inconsistente (algunas vistas usaban h3 sin h2 padre). Auditoría interna Sprint 3 — punto 12 del plan de acción.
+- Archivos: `src/components/UI/SectionHeader.tsx`, `src/views/UsuariosPanel.tsx`, `src/views/ProveedoresRegistrados.tsx`, `src/views/MaterialConfigPanel.tsx`, `src/views/ProveedoresConfigPanel.tsx`, `src/views/AIConfigPanel/AIConfigTable.tsx`, `src/views/AIConfigPanel/UsageDashboard.tsx`, `src/views/PresidenciaDashboard.tsx`, `src/views/FinanzasPanel.tsx`, `src/views/ProcuraPanel.tsx`, `src/views/CierreObraPanel.tsx`, `src/views/AnalistasPanel.tsx`, `src/views/InfraestructuraMantenimientoPanel.tsx`, `src/components/ErrorBoundary.tsx`
+
 ## [2026-07-23] — Mobile consume @ivoo/shared — Fase 2 del shared package
 - Tipo: refactor
 - Qué: `mobile/types.ts` ahora re-exporta tipos desde `@ivoo/shared` (ProjectStatus, MaterialItem, Proposal, Project, Contractor, AuditLog) mediante relative path `../packages/shared/src/types`. Se mantienen los tipos específicos de mobile (Screen, screens, statusLabels, statusColors). `mobile/api.ts` ahora delega en `apiFetch` de `@ivoo/shared`, inicializando `setApiBaseUrl` desde `config.ts`. `requestJson` mantiene la misma firma `(token, path, options?)` para compatibilidad con App.tsx y componentes.

@@ -106,6 +106,8 @@ export default function FinanzasPanel({
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
+      <h1 className="sr-only">Finanzas</h1>
+
       {/* 2 Column Operations */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 

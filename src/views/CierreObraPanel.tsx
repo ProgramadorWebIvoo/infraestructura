@@ -93,6 +93,7 @@ export default function CierreObraPanel({
 
       {/* SECTION 1: Pending Technical Reviews */}
       <motion.div variants={itemVariants} className="lg:col-span-7 space-y-6">
+        <h1 className="sr-only">Cierre de Obra</h1>
         <Card className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<Calculator className="h-5 w-5" />}

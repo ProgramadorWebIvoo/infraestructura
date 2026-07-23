@@ -314,9 +314,9 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
             <Package className="h-3.5 w-3.5" />
             Configuración
           </div>
-          <h2 className="font-sans text-lg font-black tracking-tight text-slate-900">
+          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
             Materiales
-          </h2>
+          </h1>
           <p className="text-xs font-medium text-slate-500">
             Catálogo maestro de materiales. Crea, edita y administra el estado de cada registro.
           </p>

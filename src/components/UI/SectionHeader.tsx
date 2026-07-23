@@ -35,7 +35,7 @@ export default function SectionHeader({ icon, title, description, color = "sky" 
         {icon}
       </div>
       <div>
-        <h3 className="font-sans font-bold text-slate-900 text-base">{title}</h3>
+        <h2 className="font-sans font-bold text-slate-900 text-base">{title}</h2>
         <p className="text-xs text-slate-500 font-medium">{description}</p>
       </div>
     </div>

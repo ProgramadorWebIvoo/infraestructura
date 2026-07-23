@@ -198,6 +198,8 @@ export default function ProcuraPanel({
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
+      <h1 className="sr-only">Procura</h1>
+
       {/* SECTION 1: Pending Investment Approvals */}
       <motion.div variants={itemVariants}>
       <Card className="border-l-4 border-l-purple-400">

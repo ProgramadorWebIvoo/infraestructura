@@ -208,6 +208,8 @@ export default function RegistroProveedoresPublico({
                 onBlur={() => setTouched((prev) => ({ ...prev, name: true }))}
                 placeholder="Ej. Servicios Integrales Delta"
                 aria-required="true"
+                aria-invalid={nameError || undefined}
+                aria-describedby={nameError ? "public-provider-name-error" : undefined}
                 className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 placeholder:text-slate-300 focus:ring-2 focus:ring-sky-100 ${
                   nameError
                     ? "border-rose-300 focus:border-rose-400"
@@ -215,7 +217,7 @@ export default function RegistroProveedoresPublico({
                 }`}
               />
               {nameError && (
-                <p className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
+                <p id="public-provider-name-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
                   El nombre de la empresa es obligatorio.
                 </p>
               )}
@@ -239,6 +241,8 @@ export default function RegistroProveedoresPublico({
                 onBlur={() => setTouched((prev) => ({ ...prev, specialty: true }))}
                 placeholder="Ej. Electricidad, climatizacion, obra civil"
                 aria-required="true"
+                aria-invalid={specialtyError || undefined}
+                aria-describedby={specialtyError ? "public-provider-specialty-error" : undefined}
                 className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 placeholder:text-slate-300 focus:ring-2 focus:ring-sky-100 ${
                   specialtyError
                     ? "border-rose-300 focus:border-rose-400"
@@ -246,7 +250,7 @@ export default function RegistroProveedoresPublico({
                 }`}
               />
               {specialtyError && (
-                <p className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
+                <p id="public-provider-specialty-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
                   La especialidad tecnica es obligatoria.
                 </p>
               )}
@@ -272,6 +276,8 @@ export default function RegistroProveedoresPublico({
                   onBlur={() => setTouched((prev) => ({ ...prev, contact: true }))}
                   placeholder="contacto@empresa.com"
                   aria-required="true"
+                  aria-invalid={contactError || undefined}
+                  aria-describedby={contactError ? "public-provider-contact-error" : undefined}
                   className={`w-full rounded-xl border bg-white py-3 pl-10 pr-3.5 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 placeholder:text-slate-300 focus:ring-2 focus:ring-sky-100 ${
                     contactError
                       ? "border-rose-300 focus:border-rose-400"
@@ -280,7 +286,7 @@ export default function RegistroProveedoresPublico({
                 />
               </div>
               {contactError && (
-                <p className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
+                <p id="public-provider-contact-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
                   Ingresa un correo electronico valido.
                 </p>
               )}

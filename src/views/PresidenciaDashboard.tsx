@@ -273,15 +273,18 @@ export default function PresidenciaDashboard({
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
 
+      {/* Page title for screen readers */}
+      <h1 className="sr-only">Presidencia</h1>
+
       {/* KPI Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={<DollarSign className="h-5 w-5" />} label="Presupuesto Aprobado" accent="text-sky-400" borderAccent="border-l-sky-500" variant="dark">
-          <h3 className="text-2xl font-black font-mono bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">${fmt(totalApprovedInvestment)}</h3>
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">${fmt(totalApprovedInvestment)}</span>
           <p className="text-[10px] text-slate-400 mt-1 font-medium">Inversión autorizada en Base de Datos</p>
         </KpiCard>
 
         <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} label="Fondos Liquidados" accent="text-sky-600" borderAccent="border-l-sky-400">
-          <h3 className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">${fmt(totalReleasedFunds)}</h3>
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">${fmt(totalReleasedFunds)}</span>
           <div className="flex items-center gap-1.5 mt-2">
             <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
               <div className="bg-gradient-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-1000" style={{ width: `${releasedPercent}%` }} />
@@ -291,13 +294,13 @@ export default function PresidenciaDashboard({
         </KpiCard>
 
         <KpiCard icon={<Clock className="h-5 w-5" />} label="Compromisos Pendientes" accent="text-rose-500" borderAccent="border-l-rose-400">
-          <h3 className="text-2xl font-black font-mono bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent">${fmt(pendingFunds)}</h3>
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent">${fmt(pendingFunds)}</span>
           <p className="text-[10px] text-slate-400 mt-1 font-medium">Fondos retenidos por ejecutar o pagar</p>
         </KpiCard>
 
         <KpiCard icon={<Layers className="h-5 w-5" />} label="Estado de Proyectos" accent="text-sky-600" borderAccent="border-l-sky-400">
           <div className="flex items-baseline gap-1">
-            <h3 className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{totalProjectsCount}</h3>
+            <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{totalProjectsCount}</span>
             <span className="text-[10px] text-slate-400 font-bold uppercase">Totales</span>
           </div>
           <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-500 font-bold">
@@ -339,7 +342,7 @@ export default function PresidenciaDashboard({
                 <Activity className="h-4 w-4 text-sky-500 animate-pulse" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Trazabilidad en Tiempo Real</h3>
+                <h2 className="font-bold text-slate-900 text-sm">Trazabilidad en Tiempo Real</h2>
                 <p className="text-[11px] text-slate-500 font-medium">Auditoría Base de Datos • Logs de Control del Sistema</p>
               </div>
             </div>
@@ -421,7 +424,7 @@ export default function PresidenciaDashboard({
                 <Layers className="h-4 w-4 text-sky-500" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Master de Obras e Infraestructuras</h3>
+                <h2 className="font-bold text-slate-900 text-sm">Master de Obras e Infraestructuras</h2>
                 <p className="text-[11px] text-slate-500 font-medium">Visualización integrada de presupuestos, materiales, contratistas asignados y flujos.</p>
               </div>
             </div>

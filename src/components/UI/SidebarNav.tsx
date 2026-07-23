@@ -107,7 +107,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
         </div>
 
         {/* ── Sidebar Navigation Items ────────────────────────────────────── */}
-        <nav className="sidebar-scrollbar flex-1 overflow-y-auto py-6 px-4 space-y-1">
+        <nav aria-label="Menú principal" className="sidebar-scrollbar flex-1 overflow-y-auto py-6 px-4 space-y-1">
           <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest px-3 mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-500/60 animate-pulse" />
             Flujos de Trabajo
@@ -231,6 +231,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               <button
                 onClick={() => setIsConfigOpen((prev) => !prev)}
                 className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 border-transparent text-slate-400 hover:bg-slate-900/50 hover:text-white hover:translate-x-0.5 w-full text-left"
+                aria-expanded={isConfigOpen}
               >
                 <Settings className="h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:rotate-[3deg] text-slate-400 group-hover:text-white" />
                 <span className="flex-1">Configuración</span>
@@ -242,9 +243,10 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               </button>
 
               {isConfigOpen && (
-                <div className="ml-3 space-y-0.5 border-l border-slate-800/60 pl-3 pt-0.5">
+                <div role="menu" aria-orientation="vertical" className="ml-3 space-y-0.5 border-l border-slate-800/60 pl-3 pt-0.5">
                   {/* Usuarios */}
                   <NavLink
+                    role="menuitem"
                     to="/usuarios"
                     id="sidebar-usuarios"
                     onClick={onClose}
@@ -260,6 +262,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
 
                   {/* Proveedores */}
                   <NavLink
+                    role="menuitem"
                     to="/config-proveedores"
                     id="sidebar-config-proveedores"
                     onClick={onClose}
@@ -275,6 +278,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
 
                   {/* Material */}
                   <NavLink
+                    role="menuitem"
                     to="/config-materiales"
                     id="sidebar-config-materiales"
                     onClick={onClose}
@@ -290,6 +294,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
 
                   {/* IA Models */}
                   <NavLink
+                    role="menuitem"
                     to="/config-ia"
                     id="sidebar-config-ia"
                     onClick={onClose}

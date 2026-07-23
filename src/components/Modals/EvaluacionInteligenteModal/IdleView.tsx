@@ -53,7 +53,7 @@ const IDLE_COLUMNS: Column<ProposalRow>[] = [
       const rating = p.contractorRating;
       const colorClass =
         rating == null
-          ? "bg-slate-50 text-slate-400"
+          ? "bg-slate-100 text-slate-600"
           : rating >= 4
             ? "bg-emerald-50 text-emerald-700"
             : rating >= 3

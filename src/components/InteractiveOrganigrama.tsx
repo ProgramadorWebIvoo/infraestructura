@@ -241,7 +241,7 @@ export default function InteractiveOrganigrama({
                   )}
                 </button>
                 <div className="h-3 w-0.5 bg-slate-300"></div>
-                <div className="text-[9px] font-mono font-bold text-slate-400 bg-white px-2 py-0.5 border border-slate-200 rounded-lg">
+                <div className="text-[9px] font-mono font-bold text-slate-600 bg-white px-2 py-0.5 border border-slate-200 rounded-lg">
                   Mantenimiento
                 </div>
               </div>

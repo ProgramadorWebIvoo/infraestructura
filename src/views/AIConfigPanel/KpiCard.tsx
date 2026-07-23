@@ -19,7 +19,7 @@ export default function KpiCard({
           <p className="mt-1 text-lg font-black text-slate-900">{value}</p>
           {sub && <p className="text-[10px] font-medium text-slate-400">{sub}</p>}
         </div>
-        <div className="rounded-lg bg-slate-50 p-2 text-slate-400">{icon}</div>
+        <div className="rounded-lg bg-slate-100 p-2 text-slate-600">{icon}</div>
       </div>
     </div>
   );

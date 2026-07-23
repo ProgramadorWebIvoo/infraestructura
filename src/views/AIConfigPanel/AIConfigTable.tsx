@@ -173,9 +173,9 @@ export default function AIConfigTable({
             <Sliders className="h-3.5 w-3.5" />
             LLM Selector
           </div>
-          <h2 className="font-sans text-lg font-black tracking-tight text-slate-900">
+          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
             Modelos de IA
-          </h2>
+          </h1>
           <p className="text-xs font-medium text-slate-500">
             Selección dinámica de modelos por proveedor. Los cambios se aplican en tiempo real sin reinicio.
           </p>

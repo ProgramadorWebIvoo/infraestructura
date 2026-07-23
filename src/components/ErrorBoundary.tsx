@@ -43,7 +43,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="h-7 w-7 text-red-600" aria-hidden="true" />
             </div>
-            <h2 className="text-lg font-black text-slate-800">Algo salió mal</h2>
+            <h1 className="text-lg font-black text-slate-800">Algo salió mal</h1>
             <p className="text-sm text-slate-500 leading-relaxed">
               Ocurrió un error inesperado al cargar esta sección.
               Puedes intentar recargar la página o contactar al administrador.

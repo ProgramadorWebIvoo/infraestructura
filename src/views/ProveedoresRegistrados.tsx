@@ -186,7 +186,7 @@ export default function ProveedoresRegistrados({
               <Users className="h-3.5 w-3.5" />
               Base de proveedores
             </div>
-            <h2 className="font-sans text-lg font-black tracking-tight text-slate-900">Proveedores registrados</h2>
+            <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">Proveedores registrados</h1>
             <p className="text-xs font-medium text-slate-500">
               Consulte las empresas recibidas desde el portal publico de registro.
             </p>

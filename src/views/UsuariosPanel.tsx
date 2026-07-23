@@ -215,7 +215,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
         </div>
         <div>
-          <h2 className="text-lg font-black tracking-tight text-slate-900">Gestión de Usuarios</h2>
+           <h1 className="text-lg font-black tracking-tight text-slate-900">Gestión de Usuarios</h1>
           <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
             Registro y administración de accesos
           </p>
@@ -334,16 +334,20 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   <input
+                    id="user-password-confirm"
                     type={showPassword ? "text" : "password"} required value={passwordConfirmation}
                     autoComplete="new-password"
                     onChange={e => setPasswordConfirmation(e.target.value)}
                     placeholder="Repita la contraseña"
+                    aria-invalid={(password && passwordConfirmation && password !== passwordConfirmation) || undefined}
+                    aria-describedby={(password && passwordConfirmation && password !== passwordConfirmation) ? "user-password-confirm-error" : undefined}
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3.5 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:shadow-sm placeholder:text-slate-400"
                   />
                 </div>
                 <AnimatePresence>
                   {password && passwordConfirmation && password !== passwordConfirmation && (
                     <motion.p
+                      id="user-password-confirm-error"
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}

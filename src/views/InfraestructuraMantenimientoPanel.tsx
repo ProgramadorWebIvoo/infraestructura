@@ -143,6 +143,7 @@ export default function InfraestructuraMantenimientoPanel({
 
       {/* Left 2 Columns: Creation Form */}
       <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
+        <h1 className="sr-only">Infraestructura / Mantenimiento</h1>
         <Card className="border-l-4 border-l-sky-400">
           <SectionHeader
             icon={<FilePlus2 className="h-5 w-5" />}

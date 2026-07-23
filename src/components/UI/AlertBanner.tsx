@@ -49,6 +49,7 @@ export default function AlertBanner({ type, message, icon, className = "" }: Ale
 
   return (
     <div
+      role={type === "error" || type === "warning" ? "alert" : "status"}
       className={`flex items-center gap-2.5 text-xs ${s.bg} ${s.text} ${s.border} p-3.5 rounded-xl font-medium border ${className}`}
     >
       {icon ?? s.defaultIcon}

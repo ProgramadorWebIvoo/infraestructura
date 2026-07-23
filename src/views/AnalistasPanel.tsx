@@ -151,6 +151,7 @@ export default function AnalistasPanel({
       
       {/* Left panel: Active Licitations and Adder */}
       <motion.div variants={itemVariants} className="lg:col-span-7 space-y-6">
+        <h1 className="sr-only">Analistas</h1>
         <Card className="border-l-4 border-l-emerald-400">
           <SectionHeader
             icon={<FileSpreadsheet className="h-5 w-5" />}

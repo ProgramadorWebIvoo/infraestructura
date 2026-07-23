@@ -31,9 +31,9 @@ export default function UsageDashboard({
             <Activity className="h-3.5 w-3.5" />
             Analytics
           </div>
-          <h2 className="font-sans text-lg font-black tracking-tight text-slate-900">
+          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
             Dashboard de Uso
-          </h2>
+          </h1>
           <p className="text-xs font-medium text-slate-500">
             Monitoreo de consumo de tokens, peticiones y costos por proveedor.
           </p>
