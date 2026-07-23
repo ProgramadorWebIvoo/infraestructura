@@ -26,14 +26,8 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
 
   const lastSig = useRef("");
   const prevToken = useRef(authToken);
-
-  // Resetear loading cuando el token pasa de falsy → truthy (login)
-  useEffect(() => {
-    if (!prevToken.current && authToken) {
-      setIsLoading(true);
-    }
-    prevToken.current = authToken;
-  }, [authToken]);
+  const authTokenRef = useRef(authToken);
+  authTokenRef.current = authToken;
 
   const signatureOf = (projects: Project[], audit: AuditLog[]) =>
     projects
@@ -42,14 +36,18 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
     "#" +
     audit.map(a => a.id).join("|");
 
+  // Lee authToken/showToast desde refs para evitar race conditions si cambian durante un fetch
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
   const loadProjects = useCallback(async (opts?: { isPoll?: boolean }) => {
-    if (!authToken) {
+    const token = authTokenRef.current;
+    if (!token) {
       return; // sin token no hay fetch, pero NO se baja isLoading para que al llegar el token se muestre skeleton
     }
     try {
       const [projectsData, audit] = await Promise.all([
-        apiFetch<Project[]>("/projects", { token: authToken }),
-        apiFetch<AuditLog[]>("/audit-logs", { token: authToken }),
+        apiFetch<Project[]>("/projects", { token }),
+        apiFetch<AuditLog[]>("/audit-logs", { token }),
       ]);
       const sig = signatureOf(projectsData, audit);
       if (opts?.isPoll && sig === lastSig.current) return; // dedupe: evita re-render cada tick
@@ -61,12 +59,22 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
       logError("useProjectsData", error);
       setProjects(INITIAL_PROJECTS);
       setAuditLogs(INITIAL_AUDIT_LOGS);
-      showToast("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
+      showToastRef.current("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
     } finally {
       if (!opts?.isPoll) setIsLoading(false);
     }
-  }, [authToken, showToast]);
+  }, []); // sin dependencias — todo vía refs para evitar recreación y race conditions
 
+  // Resetear loading + disparar fetch cuando el token pasa de falsy → truthy (login)
+  useEffect(() => {
+    if (!prevToken.current && authToken) {
+      setIsLoading(true);
+      loadProjects();
+    }
+    prevToken.current = authToken;
+  }, [authToken, loadProjects]);
+
+  // Carga inicial
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);

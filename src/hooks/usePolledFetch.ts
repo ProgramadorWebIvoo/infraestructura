@@ -43,6 +43,8 @@ export function usePolledFetch<T>({
 
   const lastSig = useRef("");
   const prevToken = useRef(authToken);
+  const authTokenRef = useRef(authToken);
+  authTokenRef.current = authToken;
 
   // Refencias para evitar dependencias en loadData
   const fetcherRef = useRef(fetcher);
@@ -52,17 +54,13 @@ export function usePolledFetch<T>({
   useEffect(() => { getSignatureRef.current = getSignature; }, [getSignature]);
   useEffect(() => { errorMessageRef.current = errorMessage; }, [errorMessage]);
 
-  // Resetear loading cuando el token pasa de falsy → truthy (login)
-  useEffect(() => {
-    if (!prevToken.current && authToken) {
-      setIsLoading(true);
-    }
-    prevToken.current = authToken;
-  }, [authToken]);
-
   // Carga interna (acepta flag isPoll para comportamiento distinto)
+  // Lee authToken desde ref para evitar race conditions si el token cambia durante un fetch
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
   const internalLoad = useCallback(async (opts?: { isPoll?: boolean }) => {
-    if (!authToken) {
+    const token = authTokenRef.current;
+    if (!token) {
       setIsLoading(false);
       return;
     }
@@ -75,11 +73,20 @@ export function usePolledFetch<T>({
     } catch (error) {
       if (opts?.isPoll) return; // silencioso en poll
       logError("usePolledFetch", error);
-      showToast(errorMessageRef.current, "error");
+      showToastRef.current(errorMessageRef.current, "error");
     } finally {
       if (!opts?.isPoll) setIsLoading(false);
     }
-  }, [authToken, showToast]);
+  }, []); // sin dependencias — todo vía refs para evitar recreación y race conditions
+
+  // Resetear loading + disparar fetch cuando el token pasa de falsy → truthy (login)
+  useEffect(() => {
+    if (!prevToken.current && authToken) {
+      setIsLoading(true);
+      internalLoad();
+    }
+    prevToken.current = authToken;
+  }, [authToken, internalLoad]);
 
   // Carga inicial
   useEffect(() => {

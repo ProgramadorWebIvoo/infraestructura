@@ -6,7 +6,7 @@
  * Todos los handlers mutan via apiFetch y luego syncProject().
  */
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Project, Proposal } from "../types";
 import { ProjectStatus } from "../types";
 import { apiFetch } from "../services/api";
@@ -21,165 +21,206 @@ interface UseProjectsWorkflowsOptions {
   getProject: (id: string) => Project | undefined;
 }
 
-export function useProjectsWorkflows({
-  authToken,
-  showToast,
-  syncProject,
-  refreshAuditLogs,
-  getProject,
-}: UseProjectsWorkflowsOptions) {
+/**
+ * Workflows de proyectos agrupados por dominio de negocio.
+ *
+ * Cada handler muta el backend via apiFetch con el token desde una ref,
+ * para evitar race conditions si el token se refresca (X-Refresh-Token)
+ * mientras una mutación está en curso.
+ *
+ * IMPORTANTE: Todos los handlers usan la respuesta del backend (Project)
+ * para syncProject, garantizando que el estado local refleja el servidor.
+ */
+export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
+  // Refs para evitar race conditions por cambio de token/showToast durante fetch
+  const authTokenRef = useRef(options.authToken);
+  authTokenRef.current = options.authToken;
+  const showToastRef = useRef(options.showToast);
+  showToastRef.current = options.showToast;
+  const syncProjectRef = useRef(options.syncProject);
+  syncProjectRef.current = options.syncProject;
+  const refreshAuditLogsRef = useRef(options.refreshAuditLogs);
+  refreshAuditLogsRef.current = options.refreshAuditLogs;
+  const getProjectRef = useRef(options.getProject);
+  getProjectRef.current = options.getProject;
 
   // ── Infraestructura / Mantenimiento ───────────────────────────────
   const handleAddProject = useCallback(
     async (newProj: Omit<Project, "id" | "createdDate" | "status">) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>("/projects", {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify(newProj),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleAddProject", error);
-        showToast("No se pudo registrar la obra en Laravel.", "error");
+        show("No se pudo registrar la obra en Laravel.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [], // sin dependencias — todo vía refs
   );
 
   const handleReviewProject = useCallback(
     async (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify({ notes, blueprintsCount: planFiles.length, calculationsAdded: calcFiles.length > 0 }),
         });
-        syncProject(project);
+        sync(project);
 
         const uploadGroup = async (files: File[], type: "PLANO" | "CALC") => {
           if (files.length === 0) return;
           const form = new FormData();
           form.append("document_type", type);
           files.forEach(f => form.append("files[]", f));
-          await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token: authToken, body: form });
+          await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
         };
 
         await Promise.all([uploadGroup(planFiles, "PLANO"), uploadGroup(calcFiles, "CALC")]);
-        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token: authToken });
-        syncProject(refreshed);
+        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(refreshed);
       } catch (error) {
         logError("handleReviewProject", error);
-        showToast("No se pudo guardar la revisión técnica.", "error");
+        show("No se pudo guardar la revisión técnica.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   // ── Procura ─────────────────────────────────────────────────────────
   const handleApproveInvestment = useCallback(
     async (projectId: string, notes: string, approvedAmount: number) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/approve-investment`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify({ notes, approvedInvestmentAmount: approvedAmount }),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleApproveInvestment", error);
-        showToast("No se pudo aprobar la inversión.", "error");
+        show("No se pudo aprobar la inversión.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   const handleSelectContractor = useCallback(
     async (projectId: string, contractorCode: string, proposalId: string) => {
+      const token = authTokenRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/select-contractor`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify({ contractorCode, proposalId }),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleSelectContractor", error);
         throw error;
       }
     },
-    [authToken, syncProject],
+    [],
   );
 
   const handleRejectProposals = useCallback(
     async (projectId: string, reason: string) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/reject-proposals`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify({ reason }),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleRejectProposals", error);
-        showToast("No se pudo rechazar el cuadro comparativo.", "error");
+        show("No se pudo rechazar el cuadro comparativo.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   // ── Analistas ──────────────────────────────────────────────────────
   const handleAddProposal = useCallback(
     async (projectId: string, proposal: Omit<Proposal, "id">) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/proposals`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify(proposal),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleAddProposal", error);
-        showToast("No se pudo cargar la propuesta.", "error");
+        show("No se pudo cargar la propuesta.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   const handleRemoveProposal = useCallback(
     async (projectId: string, proposalId: string) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/proposals/${proposalId}`, {
           method: "DELETE",
-          token: authToken,
+          token,
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleRemoveProposal", error);
-        showToast("No se pudo eliminar la propuesta.", "error");
+        show("No se pudo eliminar la propuesta.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   const handleSubmitComparative = useCallback(
     async (projectId: string) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/submit-comparative`, {
           method: "POST",
-          token: authToken,
+          token,
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handleSubmitComparative", error);
-        showToast("No se pudo enviar el cuadro comparativo.", "error");
+        show("No se pudo enviar el cuadro comparativo.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   const handleImportSupplierProposals = useCallback(
     async (projectId: string): Promise<{ message: string; imported: number; skipped: number }> => {
+      const token = authTokenRef.current;
+      const sync = syncProjectRef.current;
+      const refreshAudit = refreshAuditLogsRef.current;
       const json = await apiFetch<{
         message: string;
         imported: number;
@@ -187,59 +228,69 @@ export function useProjectsWorkflows({
         project?: { data?: Project } | Project;
       }>(`/projects/${projectId}/import-supplier-proposals`, {
         method: "POST",
-        token: authToken,
+        token,
       });
 
       if (json.project) {
         const project = (json.project as { data?: Project }).data ?? (json.project as Project);
-        syncProject(project);
+        sync(project);
       }
-      await refreshAuditLogs();
+      await refreshAudit();
 
       return { message: json.message, imported: json.imported ?? 0, skipped: json.skipped ?? 0 };
     },
-    [authToken, syncProject, refreshAuditLogs],
+    [],
   );
 
   // ── Finanzas ──────────────────────────────────────────────────────
   const handlePayAdvance = useCallback(
     async (projectId: string, amount: number) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify({ paymentType: "ADVANCE", amount }),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handlePayAdvance", error);
-        showToast("No se pudo registrar el anticipo.", "error");
+        show("No se pudo registrar el anticipo.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   const handlePayFinal = useCallback(
     async (projectId: string, amount: number) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
           method: "POST",
-          token: authToken,
+          token,
           body: JSON.stringify({ paymentType: "FINAL", amount }),
         });
-        syncProject(project);
+        sync(project);
       } catch (error) {
         logError("handlePayFinal", error);
-        showToast("No se pudo registrar el pago final.", "error");
+        show("No se pudo registrar el pago final.", "error");
       }
     },
-    [authToken, showToast, syncProject],
+    [],
   );
 
   // ── Cierre de Obra ───────────────────────────────────────────────
   const handleVerifyCompletion = useCallback(
     async (projectId: string) => {
-      const project = getProject(projectId);
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      const get = getProjectRef.current;
+      const project = get(projectId);
       const isStartingVerification = project?.status === ProjectStatus.EN_EJECUCION;
 
       try {
@@ -247,17 +298,17 @@ export function useProjectsWorkflows({
           `/projects/${projectId}/${isStartingVerification ? "report-finished" : "verify-completion"}`,
           {
             method: "POST",
-            token: authToken,
+            token,
             body: isStartingVerification ? undefined : JSON.stringify({ qualityVerified: true }),
           },
         );
-        syncProject(updated);
+        sync(updated);
       } catch (error) {
         logError("handleVerifyCompletion", error);
-        showToast("No se pudo actualizar la verificación de cierre.", "error");
+        show("No se pudo actualizar la verificación de cierre.", "error");
       }
     },
-    [authToken, showToast, syncProject, getProject],
+    [],
   );
 
   return {
