@@ -133,7 +133,7 @@ export default function PropuestaMaterialesPublica() {
         materialName: "",
         quantity: 1,
         unit: "",
-        unitPrice: 0,
+        unitPrice: "" as unknown as number,
         totalPrice: 0,
         notes: "",
         isCustom: true,

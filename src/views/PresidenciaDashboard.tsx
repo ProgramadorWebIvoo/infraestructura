@@ -159,7 +159,7 @@ function DonutChart({ percent, centerValue, centerLabel }: { percent: number; ce
   const gradientId = `donut-grad-${centerLabel.replace(/\s+/g, "")}`;
   return (
     <div className="relative flex items-center justify-center">
-      <svg width="170" height="170" className="transform -rotate-90 drop-shadow-sm">
+      <svg width="170" height="170" className="transform -rotate-90 drop-shadow-sm" role="img" aria-label={`Gráfico de distribución: ${centerLabel} ${centerValue}`}>
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#0ea5e9" />
@@ -206,8 +206,6 @@ export default function PresidenciaDashboard({
   onSelectProject,
   isLoading = false,
 }: PresidenciaDashboardProps) {
-  if (isLoading) return <PresidenciaSkeleton />;
-
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -261,6 +259,8 @@ export default function PresidenciaDashboard({
     const matchesDateTo = !auditDateTo || logDate <= auditDateTo;
     return matchesSearch && matchesRole && matchesDateFrom && matchesDateTo;
   }), [auditLogs, auditSearchTerm, auditRoleFilter, auditDateFrom, auditDateTo]);
+
+  if (isLoading) return <PresidenciaSkeleton />;
 
   const infraCount = projects.filter(p => p.type === "INFRAESTRUCTURA").length;
   const mantCount = projects.filter(p => p.type === "MANTENIMIENTO").length;

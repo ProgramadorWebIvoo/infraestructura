@@ -280,18 +280,27 @@ export function Table<T>({
           <thead>
             <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
               {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`
+                  <th
+                      key={col.key}
+                      className={`
                     py-3 px-4 text-[10px] uppercase tracking-wider whitespace-nowrap
                     ${thAlign(col)}
                     ${stickyHeader ? "sticky top-0 bg-slate-50 z-10" : ""}
                     ${col.sortable ? "cursor-pointer select-none hover:bg-slate-100/50" : ""}
                     ${col.className ?? ""}
                   `}
-                  style={col.width ? { width: col.width } : undefined}
-                  onClick={() => col.sortable && toggleSort(col.key)}
-                >
+                      style={col.width ? { width: col.width } : undefined}
+                      onClick={() => col.sortable && toggleSort(col.key)}
+                      aria-sort={
+                        col.sortable
+                          ? sortColumn === col.key
+                            ? sortDir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                          : undefined
+                      }
+                    >
                   <span className="inline-flex items-center">
                     {col.label}
                     <SortIcon column={col} />
@@ -320,7 +329,6 @@ export function Table<T>({
                       <tr
                         key={key}
                         className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass} ${isSelected ? selectedRowClass : ""}`}
-                        style={{ contentVisibility: "auto", contain: "layout style paint" }}
                         onClick={() => onRowClick?.(row, index)}
                         onDoubleClick={() => onRowDoubleClick?.(row, index)}
                       >

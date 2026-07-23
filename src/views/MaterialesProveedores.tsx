@@ -90,7 +90,7 @@ export default function RegistroProveedoresPublico({
           name: cleanName,
           specialty: cleanSpecialty,
           contact: cleanContact,
-          rating: 4.0,
+          // rating: no se envía desde el portal público; el backend asigna valor por defecto
         }),
       });
 

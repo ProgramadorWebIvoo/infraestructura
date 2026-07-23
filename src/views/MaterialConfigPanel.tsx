@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import { useToast } from "../components/UI/Toast";
 import { apiFetch } from "../services/api";
 import { logError } from "../services/logger";
@@ -83,6 +84,7 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
 
   // ---- Toggle state ----
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [confirmToggleId, setConfirmToggleId] = useState<number | null>(null);
 
   const prevToken = useRef(authToken);
 
@@ -187,6 +189,7 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
 
   // ---- Toggle status ----
   const handleToggleStatus = async (id: number) => {
+    setConfirmToggleId(null);
     setTogglingId(id);
     try {
       const result = await apiFetch<{ id: number; isActive: boolean }>(
@@ -279,7 +282,7 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => handleToggleStatus(m.id)}
+            onClick={() => setConfirmToggleId(m.id)}
             disabled={togglingId === m.id}
             className={`rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
               m.isActive
@@ -478,6 +481,20 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
           )}
         </div>
       </Modal>
+
+      {/* ── Confirm Toggle Status ── */}
+      <ConfirmDialog
+        isOpen={confirmToggleId !== null}
+        onClose={() => setConfirmToggleId(null)}
+        onConfirm={() => {
+          if (confirmToggleId !== null) handleToggleStatus(confirmToggleId);
+        }}
+        title="Cambiar estado del material"
+        message={`¿Estás seguro de ${materials.find(m => m.id === confirmToggleId)?.isActive ? "desactivar" : "activar"} este material? ${materials.find(m => m.id === confirmToggleId)?.isActive ? "Los proyectos existentes no se verán afectados, pero el material dejará de estar disponible para nuevas obras." : "El material volverá a estar disponible en el catálogo."}`}
+        variant="warning"
+        confirmLabel={materials.find(m => m.id === confirmToggleId)?.isActive ? "Desactivar" : "Activar"}
+        isLoading={togglingId === confirmToggleId}
+      />
     </motion.div>
   );
 }

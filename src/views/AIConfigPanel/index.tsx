@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { containerVariants } from "../../animations";
 import { useToast } from "../../components/UI/Toast";
+import ConfirmDialog from "../../components/UI/ConfirmDialog";
 import {
   useAIConfig,
   type AiConfigRecord,
@@ -48,6 +49,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
   const [testingId, setTestingId] = useState<number | null>(null);
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -133,6 +135,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
   };
 
   const handleDelete = async (id: number) => {
+    setConfirmDeleteId(null);
     setDeletingId(id);
     try {
       await deleteConfig(id);
@@ -184,10 +187,24 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
         isSyncing={isSyncing}
         onTest={handleTest}
         onEdit={handleOpenEdit}
-        onDelete={handleDelete}
+        onDelete={(id) => setConfirmDeleteId(id)}
         onToggleActive={handleToggleActive}
         onSync={handleSync}
         onCreateNew={handleOpenCreate}
+      />
+
+      {/* ── Confirm Delete ── */}
+      <ConfirmDialog
+        isOpen={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => {
+          if (confirmDeleteId !== null) handleDelete(confirmDeleteId);
+        }}
+        title="Eliminar configuración de IA"
+        message="¿Estás seguro de eliminar esta configuración? Esta acción no se puede deshacer."
+        variant="danger"
+        confirmLabel="Eliminar"
+        isLoading={deletingId === confirmDeleteId}
       />
 
       <AIConfigFormModal

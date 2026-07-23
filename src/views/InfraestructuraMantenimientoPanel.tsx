@@ -44,8 +44,6 @@ export default function InfraestructuraMantenimientoPanel({
   materialsCatalog,
   isLoading = false,
 }: InfraestructuraMantenimientoPanelProps) {
-  if (isLoading) return <InfraestructuraSkeleton />;
-
   // Form states
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"INFRAESTRUCTURA" | "MANTENIMIENTO">("INFRAESTRUCTURA");
@@ -68,6 +66,7 @@ export default function InfraestructuraMantenimientoPanel({
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Auto-clear success message after 4s
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -79,6 +78,8 @@ export default function InfraestructuraMantenimientoPanel({
       };
     }
   }, [successMsg]);
+
+  if (isLoading) return <InfraestructuraSkeleton />;
 
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,23 +113,29 @@ export default function InfraestructuraMantenimientoPanel({
 
   const materialsSubtotal = addedMaterials.reduce((sum, m) => sum + m.quantity * m.estimatedUnitPrice, 0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!title.trim()) { setErrorMsg("El título del proyecto o trabajo es obligatorio."); return; }
     if (!location.trim()) { setErrorMsg("La ubicación exacta es obligatoria."); return; }
     if (!description.trim()) { setErrorMsg("Por favor, proporciona una descripción del trabajo."); return; }
     if (addedMaterials.length === 0) { setErrorMsg("Debes agregar al menos un material o servicio a la petición."); return; }
 
-    onAddProject({
-      title, type, description, location,
-      materials: addedMaterials.map((m, index) => ({ id: `m-new-${index}-${Date.now()}`, ...m })),
-      estimatedTotal: materialsSubtotal,
-    });
+    setIsSubmitting(true);
+    try {
+      onAddProject({
+        title, type, description, location,
+        materials: addedMaterials.map((m, index) => ({ id: `m-new-${index}-${Date.now()}`, ...m })),
+        estimatedTotal: materialsSubtotal,
+      });
 
-    setTitle(""); setDescription(""); setLocation("");
-    setAddedMaterials([]);
-    setSuccessMsg("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.");
-    setErrorMsg("");
+      setTitle(""); setDescription(""); setLocation("");
+      setAddedMaterials([]);
+      setSuccessMsg("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.");
+      setErrorMsg("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -213,8 +220,10 @@ export default function InfraestructuraMantenimientoPanel({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
+                  maxLength={2000}
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white font-medium text-slate-700"
                 />
+                <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{description.length}/2000</span>
               </div>
             </div>
 
@@ -225,10 +234,18 @@ export default function InfraestructuraMantenimientoPanel({
               <button
                 id="btn-submit-project"
                 type="submit"
-                className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                <Send className="h-4 w-4" />
-                Enviar Petición a Cierre de Obra
+                {isSubmitting ? (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {isSubmitting ? "Enviando..." : "Enviar Petición a Cierre de Obra"}
               </button>
             </div>
           </form>

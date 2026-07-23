@@ -32,6 +32,7 @@ import SidebarNav from "./components/UI/SidebarNav";
 import MobileTopBar from "./components/UI/MobileTopBar";
 import InspectProjectModal from "./components/Modals/InspectProjectModal";
 import { ToastProvider, useToast } from "./components/UI/Toast";
+import OfflineBanner from "./components/UI/OfflineBanner";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Hooks por dominio
@@ -204,6 +205,7 @@ function AppRoutes() {
   const fallbackRoute = firstAllowedRoute(authUser.role) as string;
   return (
     <ErrorBoundary>
+      <OfflineBanner />
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
 
           <SidebarNav

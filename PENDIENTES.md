@@ -103,3 +103,5 @@
 6. **PRUEBAS** Realizar pruebas al sistema de Restablecimiento de Contraseñas.
 
 7. **PRUEBAS** Realizar pruebas al sistema de ModalSelect
+
+8. **PRUEBAS** Realizar pruebas al entorno Native mobile de la App

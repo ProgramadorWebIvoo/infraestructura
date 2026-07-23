@@ -5,7 +5,7 @@
  * Panel de Cierre de Obra: revisión de cálculos/planos + auditoría de fin de obra.
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Project, ProjectStatus } from "../types";
 import { useToast } from "../components/UI/Toast";
@@ -26,6 +26,7 @@ import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import FileDropZone from "../components/UI/FileDropZone";
 import EmptyState from "../components/UI/EmptyState";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import StatusBadge from "../components/UI/StatusBadge";
 import { formatNumber } from "../utils";
 
@@ -43,12 +44,14 @@ export default function CierreObraPanel({
   isLoading = false,
 }: CierreObraPanelProps) {
   const { showToast } = useToast();
-  if (isLoading) return <CierreObraSkeleton />;
-
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [cierreNotes, setCierreNotes] = useState("");
   const [calcFiles, setCalcFiles] = useState<File[]>([]);
   const [planFiles, setPlanFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmVerifyId, setConfirmVerifyId] = useState<string | null>(null);
+
+  if (isLoading) return <CierreObraSkeleton />;
 
   const pendingReview = projects.filter(p => p.status === ProjectStatus.CREADO);
   const pendingCompletionVerify = projects.filter(
@@ -56,8 +59,9 @@ export default function CierreObraPanel({
   );
   const activeProject = pendingReview.find(p => p.id === selectedProjectId);
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!selectedProjectId) return;
     if (!cierreNotes.trim()) {
       showToast("Introduce notas técnicas o de revisión de cálculos.", "warning");
@@ -72,11 +76,16 @@ export default function CierreObraPanel({
       return;
     }
 
-    onReviewProject(selectedProjectId, cierreNotes, planFiles, calcFiles);
-    setSelectedProjectId("");
-    setCierreNotes("");
-    setCalcFiles([]);
-    setPlanFiles([]);
+    setIsSubmitting(true);
+    try {
+      await onReviewProject(selectedProjectId, cierreNotes, planFiles, calcFiles);
+      setSelectedProjectId("");
+      setCierreNotes("");
+      setCalcFiles([]);
+      setPlanFiles([]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -211,18 +220,28 @@ export default function CierreObraPanel({
                       placeholder="Indique los resultados de la revisión física, correcciones de cubicaciones de concreto, planos validados o andamiaje requerido."
                       value={cierreNotes}
                       onChange={(e) => setCierreNotes(e.target.value)}
+                      maxLength={1000}
                       className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white"
                     ></textarea>
+                    <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{cierreNotes.length}/1000</span>
                   </div>
 
                   <div className="flex justify-end pt-2">
                     <button
                       id="btn-cierre-submit-review"
                       type="submit"
-                      className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl transition-all duration-200 shadow-md shadow-sky-500/20 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
+                      disabled={isSubmitting}
+                      className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl transition-all duration-200 shadow-md shadow-sky-500/20 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                     >
-                      <Upload className="h-4 w-4" />
-                      Guardar y Enviar a Procura
+                      {isSubmitting ? (
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {isSubmitting ? "Guardando..." : "Guardar y Enviar a Procura"}
                     </button>
                   </div>
                 </motion.form>
@@ -287,7 +306,7 @@ export default function CierreObraPanel({
 
                     <button
                       id={`btn-verify-quality-${p.id}`}
-                      onClick={() => onVerifyCompletion(p.id)}
+                      onClick={() => setConfirmVerifyId(p.id)}
                       className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md shadow-emerald-600/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
                     >
                       <BadgeCheck className="h-4 w-4" />
@@ -330,6 +349,21 @@ export default function CierreObraPanel({
         </div>
       </motion.div>
 
+      {/* ── Confirm Verify Completion ── */}
+      <ConfirmDialog
+        isOpen={!!confirmVerifyId}
+        onClose={() => setConfirmVerifyId(null)}
+        onConfirm={() => {
+          if (confirmVerifyId) {
+            onVerifyCompletion(confirmVerifyId);
+            setConfirmVerifyId(null);
+          }
+        }}
+        title="Certificar Calidad"
+        message="¿Estás seguro de certificar la calidad de esta obra? Esta acción autorizará el pago final al contratista. Una vez certificada, no podrá revertirse."
+        variant="warning"
+        confirmLabel="Certificar y autorizar pago"
+      />
     </motion.div>
   );
 }

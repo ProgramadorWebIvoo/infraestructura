@@ -21,14 +21,13 @@ export default defineConfig(() => {
         'Content-Security-Policy':
           "default-src 'self'; " +
           "script-src 'self' 'unsafe-inline'; " +
-          "style-src 'self' 'unsafe-inline'; " +
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
           "connect-src 'self' https://infraestructuraback.ivoofix.com http://localhost:* ws://localhost:*; " +
           "img-src 'self' data:; " +
-          "font-src 'self'; " +
+          "font-src 'self' https://fonts.gstatic.com; " +
           "form-action 'self'; " +
           "base-uri 'self'; " +
-          "frame-ancestors 'none'; " +
-          "report-uri /csp-violation;",
+          "frame-ancestors 'none';",
       },
     },
     test: {

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Table, type Column } from "../components/UI/Table";
 import Modal from "../components/UI/Modal";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import { useToast } from "../components/UI/Toast";
 import { apiFetch } from "../services/api";
 import { logError } from "../services/logger";
@@ -105,6 +106,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
 
   // ---- Toggle state ----
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
+  const [confirmToggleCode, setConfirmToggleCode] = useState<string | null>(null);
 
   const prevToken = useRef(authToken);
 
@@ -219,6 +221,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
 
   // ---- Toggle status ----
   const handleToggleStatus = async (code: string) => {
+    setConfirmToggleCode(null);
     setTogglingCode(code);
     try {
       const result = await apiFetch<{ code: string; status: string }>(`/contractors/config/${code}/toggle-status`, {
@@ -329,7 +332,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => handleToggleStatus(c.code)}
+            onClick={() => setConfirmToggleCode(c.code)}
             disabled={togglingCode === c.code}
             className={`rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
               c.status === "ACTIVE"
@@ -558,6 +561,20 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           )}
         </div>
       </Modal>
+
+      {/* ── Confirm Toggle Status ── */}
+      <ConfirmDialog
+        isOpen={confirmToggleCode !== null}
+        onClose={() => setConfirmToggleCode(null)}
+        onConfirm={() => {
+          if (confirmToggleCode !== null) handleToggleStatus(confirmToggleCode);
+        }}
+        title="Cambiar estado del proveedor"
+        message={`¿Estás seguro de cambiar el estado de este proveedor?`}
+        variant="warning"
+        confirmLabel="Cambiar estado"
+        isLoading={togglingCode === confirmToggleCode}
+      />
     </motion.div>
   );
 }

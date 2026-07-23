@@ -27,6 +27,7 @@ import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import NumericInput from "../components/UI/NumericInput";
 import EmptyState from "../components/UI/EmptyState";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import SelectModal from "../components/UI/SelectModal";
 
 interface ImportResult {
@@ -55,7 +56,6 @@ export default function AnalistasPanel({
   isLoading = false,
 }: AnalistasPanelProps) {
   const { showToast } = useToast();
-  if (isLoading) return <AnalistasSkeleton />;
   // States
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -69,6 +69,9 @@ export default function AnalistasPanel({
 
   // Import supplier proposals state
   const [isImporting, setIsImporting] = useState(false);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
+
+  if (isLoading) return <AnalistasSkeleton />;
 
   const pendingLicitacion = projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA);
   const activeProject = pendingLicitacion.find(p => p.id === selectedProjectId);
@@ -140,8 +143,7 @@ export default function AnalistasPanel({
       showToast("Agrega al menos una propuesta antes de enviar el cuadro comparativo.", "warning");
       return;
     }
-    onSubmitComparative(selectedProjectId);
-    setSelectedProjectId("");
+    setConfirmSubmit(true);
   };
 
   return (
@@ -406,6 +408,22 @@ export default function AnalistasPanel({
         </Card>
       </motion.div>
 
+      {/* ── Confirm Submit Comparative ── */}
+      <ConfirmDialog
+        isOpen={confirmSubmit}
+        onClose={() => setConfirmSubmit(false)}
+        onConfirm={() => {
+          if (selectedProjectId) {
+            onSubmitComparative(selectedProjectId);
+            setSelectedProjectId("");
+          }
+          setConfirmSubmit(false);
+        }}
+        title="Enviar Cuadro Comparativo"
+        message={`¿Estás seguro de enviar el cuadro comparativo con ${activeProject?.proposals?.length ?? 0} propuestas a la Gerencia de Procura? Una vez enviado, Procura revisará las ofertas y procederá con la adjudicación.`}
+        variant="info"
+        confirmLabel="Enviar a Procura"
+      />
     </motion.div>
   );
 }

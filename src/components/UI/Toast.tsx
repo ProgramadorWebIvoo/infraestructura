@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -15,19 +15,43 @@ type ToastContextType = {
 const ToastContext = createContext<ToastContextType | null>(null);
 
 let nextId = 0;
+const MAX_TOASTS = 5;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = ++nextId;
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
+    setToasts(prev => {
+      const next = [...prev, { id, message, type }];
+      // Keep only the last MAX_TOASTS
+      if (next.length > MAX_TOASTS) {
+        const removed = next.splice(0, next.length - MAX_TOASTS);
+        // Clean up timers for removed toasts
+        removed.forEach(t => {
+          const timer = timersRef.current.get(t.id);
+          if (timer) {
+            clearTimeout(timer);
+            timersRef.current.delete(t.id);
+          }
+        });
+      }
+      return next;
+    });
+    const timer = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
+      timersRef.current.delete(id);
     }, 4000);
+    timersRef.current.set(id, timer);
   }, []);
 
   const dismiss = useCallback((id: number) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
@@ -49,7 +73,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ? "bg-amber-50 border-amber-200 text-amber-800"
                 : "bg-sky-50 border-sky-200 text-sky-800"
             }`}
-            role="alert"
+            role={toast.type === "error" ? "alert" : "status"}
+            aria-live={toast.type === "error" ? "assertive" : "polite"}
           >
             <span className="flex-1">{toast.message}</span>
             <button

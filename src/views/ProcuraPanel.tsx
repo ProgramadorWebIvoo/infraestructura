@@ -29,6 +29,7 @@ import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import NumericInput from "../components/UI/NumericInput";
 import EmptyState from "../components/UI/EmptyState";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import { Table, type Column } from "../components/UI/Table";
 import { formatNumber } from "../utils";
 import { containerVariants, itemVariants } from "../animations";
@@ -60,6 +61,10 @@ export default function ProcuraPanel({
   const [rejectingProjectId, setRejectingProjectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
+
+  // Confirm contractor selection
+  const [confirmSelect, setConfirmSelect] = useState<{ projectId: string; contractorCode: string; proposalId: string; contractorName: string } | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   // AI Evaluation modal state
   const [aiEvalProject, setAiEvalProject] = useState<Project | null>(null);
@@ -403,9 +408,11 @@ export default function ProcuraPanel({
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
                           rows={2}
+                          maxLength={500}
                           placeholder="Ej. Los precios presentados superan el presupuesto autorizado. Se requiere nueva ronda de licitación."
                           className="w-full rounded-xl border border-red-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-hidden focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none"
                         />
+                        <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{rejectReason.length}/500</span>
                       </div>
                       <div className="flex justify-end gap-2">
                         <button
@@ -469,7 +476,12 @@ export default function ProcuraPanel({
                             render: (prop) => (
                               <button
                                 id={`btn-hire-${p.id}-${prop.contractorCode}`}
-                                onClick={() => onSelectContractor(p.id, prop.contractorCode, prop.id)}
+                                onClick={() => setConfirmSelect({
+                                  projectId: p.id,
+                                  contractorCode: prop.contractorCode,
+                                  proposalId: prop.id,
+                                  contractorName: prop.contractorName,
+                                })}
                                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-0.5"
                               >
                                 <ShieldCheck className="h-4 w-4" />
@@ -491,6 +503,27 @@ export default function ProcuraPanel({
         )}
       </Card>
       </motion.div>
+
+      {/* ── Confirm Contractor Selection ── */}
+      <ConfirmDialog
+        isOpen={!!confirmSelect}
+        onClose={() => setConfirmSelect(null)}
+        onConfirm={async () => {
+          if (!confirmSelect) return;
+          setIsSelecting(true);
+          try {
+            await onSelectContractor(confirmSelect.projectId, confirmSelect.contractorCode, confirmSelect.proposalId);
+            setConfirmSelect(null);
+          } finally {
+            setIsSelecting(false);
+          }
+        }}
+        title="Adjudicar Contratista"
+        message={`¿Estás seguro de adjudicar el contrato a "${confirmSelect?.contractorName ?? ""}"? Esta acción seleccionará a este contratista como ganador y enviará el proyecto a Finanzas para liberación del anticipo.`}
+        variant="warning"
+        confirmLabel="Confirmar adjudicación"
+        isLoading={isSelecting}
+      />
 
       {/* AI Evaluation Modal */}
       {aiEvalProject && (

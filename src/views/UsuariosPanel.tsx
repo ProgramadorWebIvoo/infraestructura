@@ -311,6 +311,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                   <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   <input
                     type={showPassword ? "text" : "password"} required value={password}
+                    autoComplete="new-password"
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Mínimo 8 caracteres"
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:shadow-sm placeholder:text-slate-400"
@@ -334,6 +335,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                   <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                   <input
                     type={showPassword ? "text" : "password"} required value={passwordConfirmation}
+                    autoComplete="new-password"
                     onChange={e => setPasswordConfirmation(e.target.value)}
                     placeholder="Repita la contraseña"
                     className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3.5 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:shadow-sm placeholder:text-slate-400"
@@ -511,10 +513,8 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                           isEditing
                             ? "bg-gradient-to-r from-indigo-50/40 to-white shadow-inner"
                             : "hover:bg-gradient-to-r hover:from-indigo-50/30 hover:to-white"
-                        }`}
-                        style={{
-                          opacity: !isEditing && isInactive && !isToggling ? 0.5 : undefined,
-                        }}
+                        } ${!isEditing && isInactive ? "border-l-2 border-l-slate-300 opacity-60" : ""}`}
+                        aria-label={`Usuario ${user.name}, ${isInactive ? "inactivo" : "activo"}, rol ${roleLabel(user.role)}`}
                       >
                         {/* ── Default view ──────────────────────────────── */}
                         <AnimatePresence mode="wait">

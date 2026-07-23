@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## [2026-07-23] — Fix: 5 componentes violaban Rules of Hooks, nested button, autocomplete
+- Tipo: fix
+- Qué: Se corrigieron 3 categorías de errores de consola:
+  1. **Rules of Hooks violations** (causaban `"Expected static flag was missing"` y `"change in the order of Hooks"`):
+     - `CierreObraPanel`, `InfraestructuraMantenimientoPanel`, `FinanzasPanel`, `AnalistasPanel`, `PresidenciaDashboard`: tenían `if (isLoading) return <Skeleton />` ANTES de hooks. Movido después de todos los hooks. Esto también causaba los `[Violation] 'message' handler took Nms` del scheduler de React 19 (por re-renders innecesarios).
+  2. **Nested `<button>`** en `SelectModal.tsx`: el botón de deselección estaba dentro del botón trigger → HTML inválido. Cambiado a `<span role="button" tabIndex={0}>`.
+  3. **`autocomplete` missing** en inputs de password de `UsuariosPanel.tsx`: agregado `autoComplete="new-password"`.
+- Archivos: `CierreObraPanel.tsx`, `InfraestructuraMantenimientoPanel.tsx`, `FinanzasPanel.tsx`, `AnalistasPanel.tsx`, `PresidenciaDashboard.tsx`, `SelectModal.tsx`, `UsuariosPanel.tsx`
+
+## [2026-07-23] — Fix: CSP bloqueaba Google Fonts, report-uri 404, favicon missing
+- Tipo: fix
+- Qué: Tres errores de configuración:
+  1. **CSP bloqueaba Google Fonts** — `style-src` no incluía `https://fonts.googleapis.com` ni `font-src` incluía `https://fonts.gstatic.com`. Las reglas estaban tanto en HTTP header (vite.config.ts) como en `<meta http-equiv>` (index.html). Se unificó en el header del dev server y se agregaron los orígenes faltantes.
+  2. **report-uri /csp-violation sin handler** — El CSP incluía `report-uri /csp-violation` pero no existía endpoint → 404. Se eliminó la directiva.
+  3. **favicon.ico 404** — No existía archivo ni referencias. Se creó `public/favicon.svg` y se agregó `<link>` en index.html.
+- Archivos: `vite.config.ts`, `index.html`, `public/favicon.svg`
+
+## [2026-07-23] — Fix: Modal no renderizaba (focus trap causaba re-ejecución del effect en cada render)
+- Tipo: fix
+- Qué: `useEffect` en Modal.tsx dependía de `handleKeyDown` (useCallback con [onClose, closeDisabled]). Como `onClose` suele ser una arrow inline, cambiaba referencia en cada render → el effect limpiaba y se re-ejecutaba en cada render → la limpieza hacía `previousFocusRef.current?.focus()` robando el foco del modal, y `AnimatePresence` interrumpía la animación de entrada.
+- Cómo se corrigió: `handleKeyDown` ahora tiene deps vacías `[]` y lee `onClose` y `closeDisabled` desde refs (`onCloseRef` / `closeDisabledRef`). El `useEffect` solo depende de `[isOpen]`. Además se extrajo el selector `FOCUSABLE` a una constante con `:not(:disabled)` para evitar enfocar elementos deshabilitados.
+- Archivos: `src/components/UI/Modal.tsx`
+
+## [2026-07-23] — Auditoría UI/UX: Corrección de 22 puntos críticos, altos y medios
+- Tipo: feature + refactor + security + accessibility
+- Qué:
+  - **Nuevos componentes:**
+    - `ConfirmDialog` — Modal de confirmación reutilizable para acciones destructivas con variantes danger/warning/info y loading state.
+    - `OfflineBanner` — Banner global con detección de conectividad vía `useOnlineStatus` hook.
+    - `useOnlineStatus` — Hook que detecta `navigator.onLine` con eventos online/offline.
+    - `useSafeMotion` — Hook centralizado que respeta `prefers-reduced-motion` en todas las animaciones.
+    - `useDebounce` — Hook genérico de debounce (300ms default) para búsquedas.
+  - **Fix Modal:** Focus trap con Tab/Shift+Tab + cierre con Escape + `role="dialog"` + `aria-modal="true"` + auto-focus al abrir + retorno de foco al cerrar.
+  - **Fix Toast:** `role="status"` + `aria-live="polite"` para toasts no-críticos (success/info/warning), `role="alert"` solo para error. Límite de stacking a 5 toasts.
+  - **Fix Table:** `aria-sort` en columnas ordenables. Eliminado `contentVisibility: "auto"` que ocultaba contenido de lectores de pantalla.
+  - **Fix index.css:** `@media (prefers-reduced-motion: reduce)` global para respetar preferencia del sistema.
+  - **Confirmación en acciones críticas (7 vistas):**
+    - `FinanzasPanel` — ConfirmDialog en liberación de anticipos y pagos finales + estado `isPaying` con spinner.
+    - `ProcuraPanel` — ConfirmDialog en adjudicación de contratista + estado `isSelecting`.
+    - `AnalistasPanel` — ConfirmDialog en envío de cuadro comparativo.
+    - `CierreObraPanel` — ConfirmDialog en certificación de calidad + `isSubmitting` en revisión.
+    - `InfraestructuraMantenimientoPanel` — `isSubmitting` en submit del formulario con spinner.
+    - `MaterialConfigPanel` — ConfirmDialog en toggle de estado (activar/desactivar).
+    - `ProveedoresConfigPanel` — ConfirmDialog en toggle de estado.
+    - `AIConfigPanel` — ConfirmDialog en eliminación de configuración.
+  - **Accesibilidad:**
+    - `PresidenciaDashboard` — `aria-label` + `role="img"` en SVG donut chart.
+    - `ProveedoresRegistrados` — `aria-expanded` + `aria-controls` en acordeones de propuestas.
+    - `UsuariosPanel` — Indicador de usuario inactivo con `border-l-2` + `aria-label` (no solo opacidad).
+    - `AIConfigTable` — API key enmascarada en UI (solo últimos 4 caracteres visibles).
+  - **UX mejoras:**
+    - `FinanzasPanel` — Buscador en libro diario (por obra, proveedor, ID, voucher) con debounce.
+    - `AIConfigPanel/UsageDashboard` — Costos con 2 decimales (notación `< $0.01` para valores mínimos).
+    - `PropuestaMaterialesPublica` — Campo unitPrice default cambia de 0 a vacío.
+    - `MaterialesProveedores` — Eliminado `rating: 4.0` hardcodeado del registro público.
+    - Textareas clave con `maxLength` + contador de caracteres (descripción obra, notas cierre, motivo rechazo).
+  - **App.tsx:** Integración de `OfflineBanner` global en layout autenticado.
+- Por qué / causa raíz: Auditoría de UI/UX identificó 26 puntos de mejora. Sin confirmación en acciones destructivas, sin loading states en submits, sin manejo de foco en modales, sin detección offline, sin respeto a prefers-reduced-motion, inconsistencias de accesibilidad y validación.
+- Archivos: 22 archivos modificados, 4 nuevos (ConfirmDialog, OfflineBanner, useOnlineStatus, useSafeMotion, useDebounce).
+
 ## [2026-07-22] — Módulo de Configuración de IA (Dashboard, LLM Selector, API Keys CRUD)
 - Tipo: feature + security
 - Qué:

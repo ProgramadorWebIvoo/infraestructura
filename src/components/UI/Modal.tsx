@@ -7,9 +7,16 @@
  */
 
 import { createPortal } from "react-dom";
-import { type ReactNode } from "react";
+import { type ReactNode, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const FOCUSABLE =
+  'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"]):not(:disabled)';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -74,12 +81,68 @@ export default function Modal({
   iconColor = "amber",
 }: ModalProps) {
   const iconStyle = ICON_COLORS[iconColor] ?? ICON_COLORS.amber;
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // ── Keep mutable callbacks in refs so the effect never re-runs due to reference changes ──
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const closeDisabledRef = useRef(closeDisabled);
+  closeDisabledRef.current = closeDisabled;
+
+  // ── Focus trap + ESC key (stable reference, reads refs for latest values) ──
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape" && !closeDisabledRef.current) {
+      onCloseRef.current();
+      return;
+    }
+    if (e.key !== "Tab" || !modalRef.current) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    document.addEventListener("keydown", handleKeyDown);
+    // Focus first focusable element inside modal (deferred to let motion mount)
+    requestAnimationFrame(() => {
+      if (modalRef.current) {
+        const first = modalRef.current.querySelector<HTMLElement>(FOCUSABLE);
+        first?.focus();
+      }
+    });
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [isOpen]);
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={title ?? "Diálogo"}
+        >
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}

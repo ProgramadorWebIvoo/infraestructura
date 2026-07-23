@@ -62,9 +62,17 @@ export default function AIConfigTable({
     {
       key: "apiKey",
       label: "API Key",
-      render: (c) => (
-        <span className="font-mono text-[11px] text-slate-500 tracking-wider">{c.apiKey}</span>
-      ),
+      render: (c) => {
+        const keyStr = c.apiKey ?? "";
+        const masked = keyStr.length > 8
+          ? keyStr.slice(0, 4) + "\u2022".repeat(8) + keyStr.slice(-4)
+          : keyStr;
+        return (
+          <span className="font-mono text-[11px] text-slate-500 tracking-wider" title={keyStr.length > 0 ? "Clave enmascarada" : "Sin clave"}>
+            {keyStr ? masked : <span className="text-slate-300 italic">—</span>}
+          </span>
+        );
+      },
     },
     {
       key: "isActive",

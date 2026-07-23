@@ -196,14 +196,16 @@ export default function SelectModal<T>({
           {selectedOption ? selectedOption.label : triggerLabel}
         </span>
         {selectedOption && allowDeselect && (
-          <button
-            type="button"
+          <span
             onClick={handleDeselect}
-            className="ml-2 shrink-0 rounded-lg p-0.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleDeselect(e as unknown as React.MouseEvent); }}
+            className="ml-2 shrink-0 rounded-lg p-0.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
             aria-label="Deseleccionar"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </span>
         )}
         <Search className={`h-4 w-4 shrink-0 ${disabled ? "text-slate-300" : "text-slate-400"}`} />
       </button>

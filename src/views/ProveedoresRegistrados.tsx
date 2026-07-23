@@ -306,6 +306,8 @@ export default function ProveedoresRegistrados({
                         type="button"
                         onClick={() => setExpandedProposal(isExpanded ? null : proposal.id)}
                         className="w-full text-left px-5 py-4"
+                        aria-expanded={isExpanded}
+                        aria-controls={`proposal-detail-${proposal.id}`}
                       >
                         <div className="flex flex-wrap items-center gap-3">
                             <span className="rounded-lg border border-indigo-200 bg-gradient-to-br from-indigo-50 to-indigo-100/50 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-600">
@@ -354,6 +356,7 @@ export default function ProveedoresRegistrados({
                       <AnimatePresence>
                         {isExpanded && (
                         <motion.div
+                          id={`proposal-detail-${proposal.id}`}
                           key={`proposal-${proposal.id}`}
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}

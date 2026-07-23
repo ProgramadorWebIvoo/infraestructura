@@ -76,7 +76,7 @@ export default function UsageDashboard({
             <KpiCard
               icon={<Database className="h-5 w-5" />}
               label="Costo estimado"
-              value={`$${Number(usage?.totals?.total_cost ?? 0).toFixed(4)}`}
+              value={Number(usage?.totals?.total_cost ?? 0) < 0.01 ? "< $0.01" : `$${Number(usage?.totals?.total_cost ?? 0).toFixed(2)}`}
               color="border-l-emerald-400"
             />
             <KpiCard
@@ -130,7 +130,7 @@ export default function UsageDashboard({
                       </div>
                       <div className="flex justify-between text-[10px] text-slate-400">
                         <span>{p.requests} peticiones</span>
-                        <span>${Number(p.cost ?? 0).toFixed(4)}</span>
+                        <span>${Number(p.cost ?? 0) < 0.01 ? "< 0.01" : Number(p.cost ?? 0).toFixed(2)}</span>
                       </div>
                     </div>
                   ))

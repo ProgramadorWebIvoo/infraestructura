@@ -5,16 +5,19 @@
  * Panel de Finanzas: liberación de anticipos + liquidaciones finales + libro diario.
  */
 
+import { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { DollarSign, CheckCircle, CreditCard, ArrowUpRight, Coins } from "lucide-react";
+import { DollarSign, CheckCircle, CreditCard, ArrowUpRight, Coins, Search } from "lucide-react";
 import { Project, ProjectStatus } from "../types";
 import { SkeletonCard, SkeletonTable } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
 import EmptyState from "../components/UI/EmptyState";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import { Table, type Column } from "../components/UI/Table";
 import { formatNumber } from "../utils";
 import { containerVariants, itemVariants } from "../animations";
+import { useDebounce } from "../hooks/useDebounce";
 
 interface FinanzasPanelProps {
   projects: Project[];
@@ -29,6 +32,15 @@ export default function FinanzasPanel({
   onPayFinal,
   isLoading = false,
 }: FinanzasPanelProps) {
+  // ── Confirm dialogs state ──
+  const [confirmPayAdvance, setConfirmPayAdvance] = useState<{ projectId: string; amount: number; title: string } | null>(null);
+  const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
+
+  // ── Ledger search ──
+  const [ledgerSearch, setLedgerSearch] = useState("");
+  const debouncedLedgerSearch = useDebounce(ledgerSearch, 300);
+
   if (isLoading) return <FinanzasSkeleton />;
 
   const pendingAdvances = projects.filter(p => p.status === ProjectStatus.CONTRATADO);
@@ -76,6 +88,20 @@ export default function FinanzasPanel({
     }
   });
   paidLedger.sort((a, b) => b.date.localeCompare(a.date));
+
+  // Filter ledger by search
+  const filteredLedger = useMemo(() => {
+    if (!debouncedLedgerSearch) return paidLedger;
+    const q = debouncedLedgerSearch.toLowerCase();
+    return paidLedger.filter(
+      (tx) =>
+        tx.title.toLowerCase().includes(q) ||
+        tx.contractorCode.toLowerCase().includes(q) ||
+        tx.projectId.toLowerCase().includes(q) ||
+        tx.voucher.toLowerCase().includes(q) ||
+        tx.type.toLowerCase().includes(q),
+    );
+  }, [paidLedger, debouncedLedgerSearch]);
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
@@ -141,7 +167,7 @@ export default function FinanzasPanel({
 
                     <button
                       id={`btn-pay-advance-${p.id}`}
-                      onClick={() => onPayAdvance(p.id, advAmount)}
+                      onClick={() => setConfirmPayAdvance({ projectId: p.id, amount: advAmount, title: p.title })}
                       className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-700 hover:to-rose-600 text-white rounded-xl shadow-md shadow-rose-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-rose-500/30 hover:-translate-y-0.5"
                     >
                       <CreditCard className="h-4 w-4" />
@@ -212,7 +238,7 @@ export default function FinanzasPanel({
 
                     <button
                       id={`btn-pay-final-${p.id}`}
-                      onClick={() => onPayFinal(p.id, balanceDue)}
+                      onClick={() => setConfirmPayFinal({ projectId: p.id, amount: balanceDue, title: p.title })}
                       className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-700 hover:to-sky-600 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
                     >
                       <CreditCard className="h-4 w-4" />
@@ -229,7 +255,7 @@ export default function FinanzasPanel({
 
       {/* Financial ledger */}
       <motion.div variants={itemVariants}>
-      <Card className="border-l-4 border-l-slate-400 max-h-115 overflow-y-auto scroll-smooth">
+      <Card className="border-l-4 border-l-slate-400">
         <SectionHeader
           icon={<ArrowUpRight className="h-5 w-5" />}
           title="Libro Diario de Egresos y Transferencias"
@@ -237,24 +263,79 @@ export default function FinanzasPanel({
           color="slate"
         />
 
-        <Table
-          columns={[
-            { key: "voucher", label: "ID Voucher", render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-slate-400 shrink-0" />{tx.voucher}</span> },
-            { key: "title", label: "Ref. Obra", render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
-            { key: "type", label: "Tipo Egreso", render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 border border-rose-100" : "bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
-            { key: "contractorCode", label: "Proveedor (Código)", render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
-            { key: "date", label: "Fecha Pago", render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
-            { key: "amount", label: "Monto Desembolsado", align: "right", render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
-          ]}
-          data={paidLedger}
-          rowKey={(tx) => tx.id}
-          emptyMessage="Ninguna transferencia financiera ha sido efectuada aún."
-          isLoading={false}
-          pageSize={20}
-        />
+        {/* Ledger search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por obra, proveedor, ID, voucher..."
+            value={ledgerSearch}
+            onChange={(e) => setLedgerSearch(e.target.value)}
+            className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-slate-400 bg-white font-medium"
+            aria-label="Buscar en libro diario"
+          />
+        </div>
+
+        <div className="max-h-96 overflow-y-auto scroll-smooth">
+          <Table
+            columns={[
+              { key: "voucher", label: "ID Voucher", render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-slate-400 shrink-0" />{tx.voucher}</span> },
+              { key: "title", label: "Ref. Obra", render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
+              { key: "type", label: "Tipo Egreso", render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 border border-rose-100" : "bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
+              { key: "contractorCode", label: "Proveedor (Código)", render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
+              { key: "date", label: "Fecha Pago", render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
+              { key: "amount", label: "Monto Desembolsado", align: "right", render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+            ]}
+            data={filteredLedger}
+            rowKey={(tx) => tx.id}
+            emptyMessage="Ninguna transferencia financiera ha sido efectuada aún."
+            isLoading={false}
+            pageSize={20}
+          />
+        </div>
       </Card>
       </motion.div>
 
+      {/* ── Confirm Dialogs ── */}
+      <ConfirmDialog
+        isOpen={!!confirmPayAdvance}
+        onClose={() => setConfirmPayAdvance(null)}
+        onConfirm={async () => {
+          if (!confirmPayAdvance) return;
+          setIsPaying(true);
+          try {
+            await onPayAdvance(confirmPayAdvance.projectId, confirmPayAdvance.amount);
+            setConfirmPayAdvance(null);
+          } finally {
+            setIsPaying(false);
+          }
+        }}
+        title="Liberar Anticipo"
+        message={`¿Estás seguro de liberar el anticipo de $${formatNumber(confirmPayAdvance?.amount ?? 0)} para la obra "${confirmPayAdvance?.title ?? ""}"? Esta acción registrará el pago en el libro diario y cambiará el estado del proyecto a "En ejecución".`}
+        variant="warning"
+        confirmLabel="Liberar anticipo"
+        isLoading={isPaying}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmPayFinal}
+        onClose={() => setConfirmPayFinal(null)}
+        onConfirm={async () => {
+          if (!confirmPayFinal) return;
+          setIsPaying(true);
+          try {
+            await onPayFinal(confirmPayFinal.projectId, confirmPayFinal.amount);
+            setConfirmPayFinal(null);
+          } finally {
+            setIsPaying(false);
+          }
+        }}
+        title="Aprobar Pago Final"
+        message={`¿Estás seguro de aprobar el finiquito de $${formatNumber(confirmPayFinal?.amount ?? 0)} para la obra "${confirmPayFinal?.title ?? ""}"? Esta acción cerrará el ciclo financiero del proyecto.`}
+        variant="warning"
+        confirmLabel="Aprobar finiquito"
+        isLoading={isPaying}
+      />
     </motion.div>
   );
 }
