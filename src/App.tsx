@@ -83,13 +83,19 @@ function SessionValidationScreen() {
   );
 }
 
-export default function App() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AppProps = {
+  /** Router component to use. Defaults to BrowserRouter. Pass MemoryRouter in tests. */
+  router?: React.ComponentType<any>;
+};
+
+export default function App({ router: Router = BrowserRouter, ...routerProps }: AppProps & Record<string, unknown> = {}) {
   return (
-    <BrowserRouter>
+    <Router {...routerProps}>
       <ToastProvider>
         <AppRoutes />
       </ToastProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
 

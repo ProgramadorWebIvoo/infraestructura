@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [2026-07-24] — V2 Audit: All 379 tests passing — fixes to useAIConfig, useProjectsData, App.test.tsx
+- Tipo: testing
+- Qué: Corregidos 17 tests rotos distribuidos en 3 archivos, pasando de 362→379 tests, 0 fallos:
+  - **useAIConfig.test.ts (11 tests)**: Reescribito con patrón `waitForLoad` (flushAll microtasks) para resolver timing de `isLoading` en hooks con async effects. Eliminado `vi.waitFor` que nunca detectaba el cambio de estado.
+  - **useProjectsData.test.ts (9 tests)**: Mismo fix: reemplazado `vi.waitFor` → `flushAll()`. Corregidos tests de data fetching, fallback, deduplication, token lifecycle, polling y exposed API.
+  - **App.test.tsx (8 tests)**: 2 problemas corregidos:
+    1. Router anidado: App.tsx tenía `<BrowserRouter>` hardcodeado, tests lo envolvían en `<MemoryRouter>`. Refactor: App acepta prop opcional `router` (default BrowserRouter) + spread de props extra para `initialEntries`.
+    2. Lazy views no encontraban el mock vía data-testid: cambiado `screen.getByTestId` → `screen.findByTestId` + `flushAll()` para esperar que Suspense resuelva el lazy import.
+- Archivos: `src/App.tsx`, `src/__tests__/hooks/useAIConfig.test.ts`, `src/__tests__/hooks/useProjectsData.test.ts`, `src/__tests__/App.test.tsx`
+
+## [2026-07-24] — Actualización PENDIENTES.md con items de auditoría V1
+- Tipo: docs
+- Qué: Sincronizado `PENDIENTES.md` con los hallazgos de la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 / V1.md`). Se preservaron los items completados (✅ DONE) y se agregaron 21 nuevos items organizados por prioridad: 8 🔴 ALTA (tests faltantes), 8 🟡 MEDIA (refactors), 6 🟢 BAJA (mejoras/monitoreo). Se mantuvieron los items anteriores no cubiertos por V1, pruebas y auditorías pendientes.
+- Archivos: `PENDIENTES.md`
+
 ## [2026-07-23] — Reemplazo pantalla verificación sesión por notificación toast + splash minimal
 - Tipo: refactor (UX)
 - Qué: La pantalla de "Verificando sesión…" (spinner + texto) se reemplazó por:
