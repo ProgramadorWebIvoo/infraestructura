@@ -1,5 +1,6 @@
-import { Brain, Eye, EyeOff, Loader2, CheckCircle, XCircle, Shield } from "lucide-react";
+import { Brain, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
 import Modal from "../../components/UI/Modal";
+import Button from "../../components/UI/Button";
 import { PROVIDER_LABELS } from "../../hooks/useAIConfig";
 import type { AiConfigForm } from "../../hooks/useAIConfig";
 
@@ -43,30 +44,12 @@ export default function AIConfigFormModal({
       closeDisabled={isSaving}
       footer={
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:shadow-md disabled:opacity-50"
-          >
+          <Button variant="secondary" size="md" onClick={onClose} disabled={isSaving}>
             Cancelar
-          </button>
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-700 hover:to-indigo-600 hover:shadow-lg hover:shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Brain className="h-4 w-4" />
-                {mode === "create" ? "Crear" : "Guardar cambios"}
-              </>
-            )}
-          </button>
+          </Button>
+          <Button variant="primary" size="md" isLoading={isSaving} icon={<Brain className="h-4 w-4" />} onClick={onSave}>
+            {mode === "create" ? "Crear" : "Guardar cambios"}
+          </Button>
         </div>
       }
     >

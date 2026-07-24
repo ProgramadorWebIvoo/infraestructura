@@ -37,36 +37,26 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 29. ✅ **URGENTE** — Mejoras de seguridad y traza de error en IA providers.
 30. ✅ **AUDITORIA** — Auditorías FRONTEND y BACKEND realizadas.
 31. ✅ **AUDITORIA** — Auditoría completa enlace público (Backend + Frontend).
+32. ✅ **ALTA — Tests para `useProjectsWorkflows`** — 12 handlers de negocio cubiertos, 379 tests totales.
+33. ✅ **ALTA — Tests para `useProjectsData`** — Fetch, signature, polling y token lifecycle cubiertos.
+34. ✅ **ALTA — Tests para vistas principales** — PresidenciaDashboard, InfraestructuraMantenimientoPanel, CierreObraPanel, ProcuraPanel, AnalistasPanel, FinanzasPanel.
+35. ✅ **ALTA — Tests para hooks de dominio** — `useContractors`, `useCatalog`, `useProveedores`, `useUsuarios`, `useAIConfig`.
+36. ✅ **ALTA — Tests para `App.tsx`** — Orquestación principal con router, lazy views y roles.
+37. ✅ **ALTA — Tests para `AuthenticatedLayout`, `SidebarNav`, `Toast`** — Componentes de layout y UI.
+38. ✅ **ALTA — Tests para `InteractiveOrganigrama`** — Renderizado y conteo de pendientes por rol.
+39. ✅ **ALTA — Tests para hooks livianos** — `useOnlineStatus`, `useDebounce`, `useSafeMotion`.
+40. ✅ **MEDIA — Extraer subcomponentes de `App.tsx`** — `PublicRouteShell`, `AccessDeniedView`, `AuthenticatedRoutes` separados. App.tsx 354→231 líneas.
+41. ✅ **MEDIA — Unificar `KpiCard` duplicado** — Versión local de `PresidenciaDashboard` reemplazada por componente compartido `components/UI/KpiCard.tsx` con soporte de `children`, `variant` y `accent`.
+42. ✅ **MEDIA — Crear componente `Spinner` compartido** — `components/UI/Spinner.tsx` centraliza el SVG. Eliminadas 7 duplicaciones (3 inline + 4 border-based).
+43. ✅ **MEDIA — Extraer `useRateLimit` de `LoginScreen.tsx`** — Rate-limit con backoff exponencial movido a `hooks/useRateLimit.ts`. LoginScreen reducido ~23%.
+44. ✅ **MEDIA — Hacer genérica `signatureOf()` en `useProjectsData`** — Ahora acepta `signatureFn` opcional; default preserva comportamiento original.
+45. ✅ **MEDIA — Mover `getPendingCount()` a `utils/workflowStatus`** — Switch role→status extraído de `InteractiveOrganigrama`. Componente reducido ~25 líneas.
+46. ✅ **MEDIA — Reemplazar timeout manual de successMsg por Toast** — `InfraestructuraMantenimientoPanel` usa `showToast` en lugar de estado local + setTimeout.
+47. ✅ **MEDIA — Estandarizar botones en `AIConfigFormModal`** — Creado `components/UI/Button.tsx` con variantes primary/secondary/danger. AIConfigFormModal usa `<Button>`.
 
 ---
 
 ## 🔴 PENDIENTES — V1 Audit (24/07/2026)
-
-### 🔴 ALTA — Tests unitarios faltantes (brecha crítica)
-
-| # | Ítem | Archivos | Esfuerzo estimado |
-|---|------|----------|-------------------|
-| 1 | Tests para `useProjectsWorkflows` (12 handlers de negocio) | `src/hooks/useProjectsWorkflows.ts` | 2–3 días |
-| 2 | Tests para `useProjectsData` (fetch + signature + polling) | `src/hooks/useProjectsData.ts` | 1 día |
-| 3 | Tests para vistas principales (PresidenciaDashboard, InfraestructuraMantenimientoPanel, CierreObraPanel, ProcuraPanel, AnalistasPanel, FinanzasPanel) | `src/views/*` | 3–4 días |
-| 4 | Tests para hooks de dominio: `useContractors`, `useCatalog`, `useProveedores`, `useUsuarios`, `useAIConfig` | `src/hooks/*` | 2–3 días |
-| 5 | Tests para `App.tsx` (orquestación principal) | `src/App.tsx` | 1 día |
-| 6 | Tests para `AuthenticatedLayout`, `SidebarNav`, `Toast` | `src/components/Layout/*`, `src/components/UI/*` | 1 día |
-| 7 | Tests para `InteractiveOrganigrama` | `src/components/InteractiveOrganigrama.tsx` | 0.5 día |
-| 8 | Tests para hooks livianos: `useOnlineStatus`, `useDebounce`, `useSafeMotion` | `src/hooks/*` | 0.5 día |
-
-### 🟡 MEDIA — Refactor y deuda técnica
-
-| # | Ítem | Archivos | Esfuerzo |
-|---|------|----------|----------|
-| 9 | ✅ **Extraer subcomponentes de `App.tsx`** — `AppRoutes` tiene 247 líneas. Separar: public routes, session validation, unauthenticated, layout en subcomponentes | `src/App.tsx` | 0.5 día |
-| 10 | ✅ **Unificar `KpiCard` duplicado** — `PresidenciaDashboard.tsx` tenía implementación local incompatible con `components/UI/KpiCard.tsx`. Ahora usa el componente compartido. | `src/views/PresidenciaDashboard.tsx`, `src/components/UI/KpiCard.tsx` | 0.25 día |
-| 11 | ✅ **Crear componente `Spinner` compartido** — Patrón SVG `<circle...>` duplicado en múltiples vistas. Creado `components/UI/Spinner.tsx`, reemplazadas 7 instancias. | Varios `src/views/*` | 0.25 día |
-| 12 | ✅ **Extraer `useRateLimit` de `LoginScreen.tsx`** — Lógica de rate-limit extraída a `hooks/useRateLimit.ts`. LoginScreen reducido ~23%. | `src/views/LoginScreen.tsx` | 0.5 día |
-| 13 | **Hacer genérica `signatureOf()` en `useProjectsData`** — Hardcodea campos de proyecto; recibir función de firma por parámetro | `src/hooks/useProjectsData.ts` | 0.25 día |
-| 14 | **Mover `getPendingCount()` a servicio/hook de workflow status** — Switch con lógica de negocio duplicada en `InteractiveOrganigrama` | `src/components/InteractiveOrganigrama.tsx` | 0.25 día |
-| 15 | **Reemplazar timeout manual de successMsg por Toast** — `InfraestructuraMantenimientoPanel` usa estado local con setTimeout | `src/views/InfraestructuraMantenimientoPanel.tsx` | 0.25 día |
-| 16 | **Estandarizar botones en `AIConfigFormModal`** — Estilos de cancelar/guardar duplicados; usar variantes de componente `Button` compartido | `src/components/Modals/AIConfigFormModal.tsx` | 0.25 día |
 
 ### 🟢 BAJA — Mejoras y monitoreo
 

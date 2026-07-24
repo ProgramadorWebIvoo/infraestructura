@@ -14,27 +14,32 @@ import { INITIAL_PROJECTS, INITIAL_AUDIT_LOGS } from "../data";
 import type { ShowToast } from "./useProjects";
 import { usePolling } from "./usePolling";
 
+type SignatureFn = (projects: Project[], audit: AuditLog[]) => string;
+
+const defaultSignatureOf: SignatureFn = (projects, audit) =>
+  projects
+    .map(p => [p.id, p.status, p.proposals?.length ?? 0, p.advancePaidAmount ?? "", p.finalPaidAmount ?? "", p.qualityVerified ?? ""].join(":"))
+    .join("|") +
+  "#" +
+  audit.map(a => a.id).join("|");
+
 interface UseProjectsDataOptions {
   authToken: string;
   showToast: ShowToast;
+  /** Custom signature function for polling deduplication. Defaults to id/status/proposals/amounts. */
+  signatureFn?: SignatureFn;
 }
 
-export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions) {
+export function useProjectsData({ authToken, showToast, signatureFn }: UseProjectsDataOptions) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const signatureOf = signatureFn ?? defaultSignatureOf;
   const lastSig = useRef("");
   const prevToken = useRef(authToken);
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
-
-  const signatureOf = (projects: Project[], audit: AuditLog[]) =>
-    projects
-      .map(p => [p.id, p.status, p.proposals?.length ?? 0, p.advancePaidAmount ?? "", p.finalPaidAmount ?? "", p.qualityVerified ?? ""].join(":"))
-      .join("|") +
-    "#" +
-    audit.map(a => a.id).join("|");
 
   // Lee authToken/showToast desde refs para evitar race conditions si cambian durante un fetch
   const showToastRef = useRef(showToast);

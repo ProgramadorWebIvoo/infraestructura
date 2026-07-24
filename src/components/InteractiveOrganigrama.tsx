@@ -4,8 +4,8 @@
  */
 
 import React from "react";
-import { ProjectStatus } from "../types";
 import type { Project } from "../types";
+import { getPendingCount } from "../utils/workflowStatus";
 import { 
   Building2, 
   Database, 
@@ -30,34 +30,6 @@ export default function InteractiveOrganigrama({
   activeRole,
   onSelectRole,
 }: InteractiveOrganigramaProps) {
-  
-  // Calculate pending items per role
-  const getPendingCount = (role: string) => {
-    switch (role) {
-      case "CIERRE_DE_OBRA":
-        return projects.filter(
-          p => p.status === ProjectStatus.CREADO || p.status === ProjectStatus.VERIFICANDO_FINALIZACION
-        ).length;
-      case "PROCURA":
-        return projects.filter(
-          p => p.status === ProjectStatus.REVISADO_CIERRE || p.status === ProjectStatus.COMPARATIVA_ENVIADA
-        ).length;
-      case "ANALISTA":
-        return projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA).length;
-      case "FINANZAS":
-        return projects.filter(
-          p => p.status === ProjectStatus.CONTRATADO || p.status === ProjectStatus.LISTO_PAGO_FINAL
-        ).length;
-      case "INFRAESTRUCTURA":
-      case "MANTENIMIENTO":
-        return projects.filter(p => p.status === ProjectStatus.EN_EJECUCION).length;
-      case "PRESIDENCIA":
-        return projects.length;
-      default:
-        return 0;
-    }
-  };
-
   const rolesDetails = [
     {
       id: "PRESIDENCIA",
@@ -132,7 +104,7 @@ export default function InteractiveOrganigrama({
               <div className={`font-mono text-[10px] font-bold tracking-wider ${activeRole === "PRESIDENCIA" ? "text-sky-400" : "text-slate-500"}`}>PRESIDENCIA</div>
               <div className="font-sans font-semibold text-xs mt-0.5">Supervisión en Tiempo Real</div>
               <div className={`mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[9px] font-bold font-mono uppercase ${activeRole === "PRESIDENCIA" ? "bg-slate-800 text-sky-300" : "bg-sky-50 text-sky-700"}`}>
-                DB Master ({getPendingCount("PRESIDENCIA")})
+                DB Master ({getPendingCount(projects, "PRESIDENCIA")})
               </div>
             </button>
  
@@ -171,9 +143,9 @@ export default function InteractiveOrganigrama({
                 >
                   <div className={`font-mono text-[9px] font-bold ${activeRole === "CIERRE_DE_OBRA" ? "text-blue-200" : "text-blue-700"}`}>CIERRE DE OBRA</div>
                   <div className="text-[10px] font-medium mt-0.5">Revisión Técnica</div>
-                  {getPendingCount("CIERRE_DE_OBRA") > 0 && (
+                  {getPendingCount(projects, "CIERRE_DE_OBRA") > 0 && (
                     <span className={`mt-1.5 inline-block text-[9px] font-bold font-mono px-2 py-0.5 rounded-lg ${activeRole === "CIERRE_DE_OBRA" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-800"}`}>
-                      {getPendingCount("CIERRE_DE_OBRA")} Pend.
+                      {getPendingCount(projects, "CIERRE_DE_OBRA")} Pend.
                     </span>
                   )}
                 </button>
@@ -196,9 +168,9 @@ export default function InteractiveOrganigrama({
                 >
                   <div className={`font-mono text-[9px] font-bold ${activeRole === "PROCURA" ? "text-purple-200" : "text-purple-700"}`}>GERENCIA PROCURA</div>
                   <div className="text-[10px] font-medium mt-0.5">Inversión</div>
-                  {getPendingCount("PROCURA") > 0 && (
+                  {getPendingCount(projects, "PROCURA") > 0 && (
                     <span className={`mt-1.5 inline-block text-[9px] font-bold font-mono px-2 py-0.5 rounded-lg ${activeRole === "PROCURA" ? "bg-purple-700 text-white" : "bg-purple-50 text-purple-800"}`}>
-                      {getPendingCount("PROCURA")} Pend.
+                      {getPendingCount(projects, "PROCURA")} Pend.
                     </span>
                   )}
                 </button>
@@ -214,9 +186,9 @@ export default function InteractiveOrganigrama({
                 >
                   <div className={`font-mono text-[9px] font-bold ${activeRole === "ANALISTA" ? "text-emerald-200" : "text-emerald-700"}`}>ANALISTAS</div>
                   <div className="text-[10px] font-medium mt-0.5">Licitaciones</div>
-                  {getPendingCount("ANALISTA") > 0 && (
+                  {getPendingCount(projects, "ANALISTA") > 0 && (
                     <span className={`mt-1.5 inline-block text-[9px] font-bold font-mono px-2 py-0.5 rounded-lg ${activeRole === "ANALISTA" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-800"}`}>
-                      {getPendingCount("ANALISTA")} Licit.
+                      {getPendingCount(projects, "ANALISTA")} Licit.
                     </span>
                   )}
                 </button>
@@ -235,9 +207,9 @@ export default function InteractiveOrganigrama({
                 >
                   <div className={`font-mono text-[9px] font-bold ${activeRole === "FINANZAS" ? "text-rose-200" : "text-rose-700"}`}>FINANZAS</div>
                   <div className="text-[10px] font-medium mt-0.5">Fondos</div>
-                  {getPendingCount("FINANZAS") > 0 && (
+                  {getPendingCount(projects, "FINANZAS") > 0 && (
                     <span className={`mt-1.5 inline-block text-[9px] font-bold font-mono px-2 py-0.5 rounded-lg ${activeRole === "FINANZAS" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-800"}`}>
-                      {getPendingCount("FINANZAS")} Pagos
+                      {getPendingCount(projects, "FINANZAS")} Pagos
                     </span>
                   )}
                 </button>
@@ -286,7 +258,7 @@ export default function InteractiveOrganigrama({
                   {currentRoleInfo.statusLabel}
                 </div>
                 <div className="text-base font-black text-slate-900 font-mono mt-0.5">
-                  {getPendingCount(activeRole)} {getPendingCount(activeRole) === 1 ? "proyecto" : "proyectos"}
+                  {getPendingCount(projects, activeRole)} {getPendingCount(projects, activeRole) === 1 ? "proyecto" : "proyectos"}
                 </div>
               </div>
               <button

@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## [2026-07-24] — M-08: Crear componente Button compartido + estandarizar AIConfigFormModal
+- Tipo: refactor
+- Qué: Creado `src/components/UI/Button.tsx` como componente compartido de botón con 3 variantes (primary/secondary/danger) y 2 tamaños (sm/md). Soporta `isLoading` (muestra Spinner), `icon` y atributos HTML estándar.
+- `AIConfigFormModal.tsx`: reemplazados los 2 botones inline (Cancelar + Guardar) por `<Button variant="secondary">` y `<Button variant="primary" isLoading={isSaving}>`. Eliminada importación de `Loader2` (ya no necesario).
+- Archivos: `src/components/UI/Button.tsx` [NUEVO], `src/components/Modals/AIConfigFormModal.tsx`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando.
+
+## [2026-07-24] — M-07: Reemplazar successMsg manual por Toast en InfraestructuraMantenimientoPanel
+- Tipo: refactor
+- Qué: Eliminado el estado local `successMsg` con `setTimeout` de auto-clear (4s) en `InfraestructuraMantenimientoPanel.tsx`. Reemplazado por `showToast(msg, "success")` del sistema de Toast centralizado.
+- Cambios:
+  - Eliminados: `successMsg` state, `successTimerRef`, `useEffect` de auto-clear (~10 líneas)
+  - Eliminada importación de `CheckCircle` (lucide) y `useEffect`/`useRef` (React) — ya no necesarios
+  - Agregado: `useToast` + `showToast`
+  - `setSuccessMsg("Petición…")` → `showToast("Petición…", "success")`
+  - Eliminado `<AlertBanner type="success">` del JSX
+- Archivos: `src/views/InfraestructuraMantenimientoPanel.tsx`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando.
+
+## [2026-07-24] — M-06: Mover getPendingCount a utils/workflowStatus
+- Tipo: refactor
+- Qué: Extraída la función `getPendingCount` (switch role→status filter) de `InteractiveOrganigrama.tsx` a un nuevo módulo `src/utils/workflowStatus.ts`. El componente ahora importa la función compartida.
+- `InteractiveOrganigrama.tsx`: eliminados ~25 líneas de lógica local (~308→~283 líneas). También eliminada importación de `ProjectStatus` (ya no lo necesita directamente).
+- La función ahora recibe `projects` como primer argumento explícito (antes capturaba del closure) — más predecible, testeable y reusable por otros componentes/vistas.
+- Archivos: `src/utils/workflowStatus.ts` [NUEVO], `src/components/InteractiveOrganigrama.tsx`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando.
+
+## [2026-07-24] — M-05: Hacer genérica signatureOf en useProjectsData
+- Tipo: refactor
+- Qué: `signatureOf` (deduplicación vía firma para polling) ahora es configurable mediante la opción `signatureFn` en `UseProjectsDataOptions`. Si no se provee, usa la implementación default (backward compatible).
+- `defaultSignatureOf` extraída a nivel de módulo como función estable. `SignatureFn` type exportado para que callers puedan tipar su función personalizada.
+- `useProjectsData` ahora acepta `{ authToken, showToast, signatureFn? }`.
+- Archivos: `src/hooks/useProjectsData.ts`
+- Verificación: `tsc --noEmit` 0 errores (source), 379 tests pasando.
+
 ## [2026-07-24] — M-04: Extraer useRateLimit hook de LoginScreen
 - Tipo: refactor
 - Qué: Extraída la lógica de rate limiting (backoff exponencial con intentos fallidos, bloqueo con countdown, limpieza al desmontar) de `LoginScreen.tsx` a un hook reutilizable `src/hooks/useRateLimit.ts`.

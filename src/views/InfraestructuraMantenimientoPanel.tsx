@@ -5,14 +5,13 @@
  * Panel de Infraestructura / Mantenimiento: creación de peticiones de obra.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import type { Project, MaterialItem } from "../types";
 import {
   Plus,
   Trash2,
   Send,
-  CheckCircle,
   AlertCircle,
   FilePlus2,
   Package,
@@ -21,6 +20,7 @@ import {
   Eye,
   Search,
 } from "lucide-react";
+import { useToast } from "../components/UI/Toast";
 import { containerVariants, itemVariants } from "../animations";
 import Spinner from "../components/UI/Spinner";
 import { SkeletonCard, SkeletonBlock } from "../components/SkeletonLoader";
@@ -64,21 +64,10 @@ export default function InfraestructuraMantenimientoPanel({
   const [addedMaterials, setAddedMaterials] = useState<Omit<MaterialItem, "id">[]>([]);
 
   // Validation messages
-  const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Auto-clear success message after 4s
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  useEffect(() => {
-    if (successMsg) {
-      successTimerRef.current = setTimeout(() => setSuccessMsg(""), 4000);
-      return () => {
-        if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      };
-    }
-  }, [successMsg]);
+  const { showToast } = useToast();
 
   if (isLoading) return <InfraestructuraSkeleton />;
 
@@ -132,7 +121,7 @@ export default function InfraestructuraMantenimientoPanel({
 
       setTitle(""); setDescription(""); setLocation("");
       setAddedMaterials([]);
-      setSuccessMsg("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.");
+      showToast("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.", "success");
       setErrorMsg("");
     } finally {
       setIsSubmitting(false);
@@ -230,7 +219,6 @@ export default function InfraestructuraMantenimientoPanel({
             </div>
 
             {errorMsg && <AlertBanner type="error" message={errorMsg} icon={<AlertCircle className="h-4 w-4 shrink-0" />} />}
-            {successMsg && <AlertBanner type="success" message={successMsg} icon={<CheckCircle className="h-4 w-4 shrink-0" />} />}
 
             <div className="flex justify-end pt-2">
               <button
