@@ -8,15 +8,15 @@
  */
 
 export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
-  ADMIN:          ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
+  SUPERADMIN:     ["/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
+  ADMIN:          ["/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
   PRESIDENCIA:    ["/presidencia", "/catalogos"],
-  INFRAESTRUCTURA:["/presidencia", "/infraestructura"],
-  CIERRE_DE_OBRA: ["/presidencia", "/cierre-obra"],
-  PROCURA:        ["/presidencia", "/procura", "/catalogos"],
-  ANALISTA:       ["/presidencia", "/analistas"],
-  FINANZAS:       ["/presidencia", "/finanzas"],
-  CATALOGOS:      ["/presidencia", "/catalogos"],
+  INFRAESTRUCTURA:["/infraestructura"],
+  CIERRE_DE_OBRA: ["/cierre-obra"],
+  PROCURA:        ["/procura", "/catalogos"],
+  ANALISTA:       ["/analistas"],
+  FINANZAS:       ["/finanzas"],
+  CATALOGOS:      ["/catalogos"],
 };
 
 export function useRoleAccess(role: string | undefined) {

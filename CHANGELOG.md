@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## [2026-07-24] — Fix: Acceso a PRESIDENCIA solo para rol PRESIDENCIA
+- Tipo: fix + security
+- Qué: Eliminado acceso a `/presidencia` de todos los roles excepto `PRESIDENCIA` (y SUPERADMIN/ADMIN que ya no tienen acceso). Antes casi todos los roles (INFRAESTRUCTURA, CIERRE_DE_OBRA, PROCURA, ANALISTA, FINANZAS, CATALOGOS) tenían acceso a `/presidencia` en `roleAccess`.
+- Por qué / causa raíz: El objeto `roleAccess` en `useRouting.ts` otorgaba acceso a `/presidencia` a casi todos los roles. El requisito es que solo el rol `PRESIDENCIA` pueda acceder a la pestaña de Presidencia.
+- Archivos: `src/hooks/useRouting.ts`
+- Verificación: `tsc --noEmit` 0 errores, tests pasando.
+
+## [2026-07-24] — Fix: ProveedoresRegistrados — Eliminar modal anidado en invitación a proveedor
+- Tipo: fix + refactor (UX)
+- Qué: Reemplazado el `SelectModal` anidado dentro del `Modal` principal por un selector inline de obras dentro del mismo modal. El flujo anterior abría dos modales simultáneos (backdrop doble, foco confuso, UX engorrosa).
+- Cambios:
+  - Eliminado estado `isInviteProjectModalOpen` y handlers asociados (`setIsInviteProjectModalOpen` en open/close/reset).
+  - Agregado estado `projectSearch` + `filteredProjects` derivado para búsqueda en cliente.
+  - Selector inline: input de búsqueda + lista scrollable de obras activas con highlight de selección.
+  - Botón "Generar enlace único" habilitado solo con obra seleccionada.
+  - Mismo modal muestra resultado (link copiable) y botón "Generar para otra obra" que resetea el selector.
+- Archivos: `src/views/ProveedoresRegistrados.tsx`
+- Verificación: `tsc --noEmit` 0 errores (source), 379 tests pasando.
+
+## [2026-07-24] — Fix: PropuestaMaterialesPublica — Dos problemas UX
+- Tipo: fix + refactor
+- Qué:
+  1. **Espacios en campos de texto**: Eliminado `.trim()` del final de `sanitize()` que borraba espacios al escribir (cada `onChange` sanitizaba y recortaba). Ahora `sanitize` solo elimina HTML/JS peligroso.
+  2. **Selector de unidad de tiempo desalineado**: Reemplazado `SelectModal` (modal anidado, trigger con `min-w-[200px]` que desbordaba su contenedor `w-36`) por `<select>` nativo con clases idénticas al `NumericInput` (`text-xs px-3.5 py-3 rounded-xl...`). Altura y baseline ahora coinciden pixel-perfect.
+- Archivos: `src/views/PropuestaMaterialesPublica.tsx`
+- Verificación: `tsc --noEmit` 0 errores (source), 379 tests pasando.
+
+## [2026-07-24] — V2: Re-auditoría profunda completa — 106 hallazgos documentados
+- Tipo: audit
+- Qué: Re-auditoría completa del sistema (V2) con énfasis en código hardcodeado, seguridad, clean code, testing y configuración. Se auditaron ~120 archivos entre src/, mobile/, packages/shared/, config, BD y documentación.
+- Hallazgos: 4 🔴 CRITICAL, 11 🟠 HIGH, 43 🟡 MEDIUM, 48 🟢 LOW (106 totales)
+- Highlights:
+  - **Código Hardcodeado**: 23 hallazgos. El más crítico: URL de producción (`https://infraestructuraback.ivoofix.com`) hardcodeada en `mobile/config.ts` y `vite.config.ts`. Intervalos de polling (`30000`) duplicados en 4 hooks. Matriz de roles, colores, modelos de IA y listas de roles hardcodeados en frontend.
+  - **Seguridad**: API Keys de IA viajan completas al frontend (accesibles en React DevTools). Token JWT en localStorage sin httpOnly. .env versionado en git. Fallback silencioso a rol INFRAESTRUCTURA para roles desconocidos.
+  - **Clean Code**: 4 God Components identificados (`UsuariosPanel` 742 líneas, `ProveedoresRegistrados` 608, `ProcuraPanel` 555, `PresidenciaDashboard` 476). 8 refactors M-01 a M-08 ya aplicados desde V1.
+  - **Testing**: 27 suites, 379 tests, 0 fallos, 90.64% coverage lines. 6 vistas críticas aún sin tests directos.
+  - **Documentación**: README.md es template de AI Studio (no describe el proyecto). FLUJO_SISTEMA.md desfasado (no incluye módulo IA). Auditoría V1 desactualizada en sección testing.
+- Archivos: `AUDITORIA_front_24_07_2026 // V2.md` [NUEVO], `PENDIENTES.md`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando.
+
 ## [2026-07-24] — M-08: Crear componente Button compartido + estandarizar AIConfigFormModal
 - Tipo: refactor
 - Qué: Creado `src/components/UI/Button.tsx` como componente compartido de botón con 3 variantes (primary/secondary/danger) y 2 tamaños (sm/md). Soporta `isLoading` (muestra Spinner), `icon` y atributos HTML estándar.

@@ -56,6 +56,70 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 
 ---
 
+## 🔴 PENDIENTES — V2 Audit (24/07/2026)
+
+Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 106 hallazgos totales (4 CRITICAL, 11 HIGH, 43 MEDIUM, 48 LOW).
+
+### 🔴 CRITICAL — Sprint Inmediato (Seguridad)
+
+| # | Ítem | Detalle | Esfuerzo | Dependencia |
+|---|------|---------|----------|-------------|
+| 1 | **API Keys de IA expuestas en DOM** — Backend no debe enviar API Key completa. Solo `hasApiKey` + últimos 4 chars | `AIConfigTable.tsx` + Backend | 0.5 día | Backend |
+| 2 | **Token JWT en localStorage sin HttpOnly** — Migrar a cookie httpOnly + Secure o cifrar token antes de almacenar | `useAuth.ts` + Backend | 2–3 días | Backend |
+| 3 | **Contraseñas en texto plano en requests** — Forzar HTTPS + CSP upgrade-insecure-requests. Evaluar hashing cliente | `useAuth.ts`, `UsuariosPanel.tsx` | 0.5 día | Frontend |
+| 4 | **URL producción hardcodeada en mobile** — Mover `API_BASE_URL` a variable de entorno `EXPO_PUBLIC_API_URL` | `mobile/config.ts` | 0.5 día | Mobile |
+
+### 🟠 HIGH — Sprint 2 (Testing + Arquitectura)
+
+| # | Ítem | Detalle | Esfuerzo |
+|---|------|---------|----------|
+| 5 | **Tests para 6 vistas principales** — PresidenciaDashboard, Infraestructura, Cierre, Procura, Analistas, Finanzas | `src/views/` | 3 días |
+| 6 | **Mocks globales en setup.ts** — Agregar mock de `matchMedia`, `IntersectionObserver`, `ResizeObserver` | `src/test/setup.ts` | 0.5 día |
+| 7 | **Configurar Husky pre-commit** — lint + typecheck + tests antes de cada commit | `.husky/pre-commit` | 0.5 día |
+| 8 | **Centralizar intervalos de polling** — Crear constante `DEFAULT_POLL_INTERVAL = 30_000` | 4 hooks en `src/hooks/` | 0.5 día |
+| 9 | **Corregir fallback de rol** — Retornar `false` en lugar de `roleAccess["INFRAESTRUCTURA"]` para roles desconocidos | `useRouting.ts` | 0.1 día |
+| 10 | **Remover `.env` de git tracking** — `git rm --cached .env` | `.env` | 0.1 día |
+| 11 | **`usesCleartextTraffic: true`** — Remover para builds de producción | `mobile/app.json` | 0.1 día |
+| 12 | **Corregir mobile registerPublicContractor** — Usar `requestJson` en vez de `fetch` directo. Remover `rating: 4` hardcodeado | `mobile/App.tsx` | 0.5 día |
+
+### 🟡 MEDIUM — Sprint 3 (Clean Code + Refactor)
+
+| # | Ítem | Detalle | Esfuerzo |
+|---|------|---------|----------|
+| 13 | **Refactor God Components** — Extraer subcomponentes de UsuariosPanel (742→400), ProveedoresRegistrados (608→350), ProcuraPanel (555→350) | 3 vistas | 3 días |
+| 14 | **Extraer lógica financiera** — Mover cálculos de PresidenciaDashboard a hook `useProjectFinancials` | `PresidenciaDashboard.tsx` | 1 día |
+| 15 | **Migrar matriz de permisos a backend** — `roleAccess` servido desde `GET /api/auth/permissions` | `useRouting.ts` + Backend | 2 días |
+| 16 | **Migrar modelos IA a endpoint** — `PROVIDER_MODELS` servido desde `GET /ai/config/models` | `useAIConfig.ts` + Backend | 1 día |
+| 17 | **Migrar lista de roles a endpoint** — `ROLES` servido desde `GET /api/roles` | `UsuariosPanel.tsx` + Backend | 1 día |
+| 18 | **Migrar colores de roles a backend/algoritmo** — `ROLE_COLORS` por hash o endpoint | `utils.ts` + Backend | 0.5 día |
+| 19 | **Validación de contraseña en backend** — La validación de 8 caracteres mínimo debe replicarse en backend | `UsuariosPanel.tsx` + Backend | 0.5 día |
+| 20 | **Sanitización XSS en proveedores** — Sanitizar `supplierName`/`supplierContact` con DOMPurify | `useProveedores.ts` | 0.5 día |
+| 21 | **CSP: remover `http://localhost:*` en producción** — Condicional por modo dev/prod | `vite.config.ts` | 0.2 día |
+| 22 | **IDs secuenciales → UUIDs** — Migrar PKs VARCHAR a UUIDs en BD + backend | `database.sql` + Backend | 1 día |
+| 23 | **Timezone BD a UTC** — Cambiar `SET time_zone = "-04:00"` a `"+00:00"` | `database.sql` | 0.2 día |
+| 24 | **Inconsistencia BD/docs** — Agregar columnas `user_id` y `user_name_snapshot` a `audit_logs` en SQL | `database.sql` | 0.3 día |
+| 25 | **Columnas Table inline sin memo** — Mover definiciones de columnas fuera del componente o envolver en `useMemo` | ProveedoresRegistrados, PresidenciaDashboard, AIConfigTable | 0.5 día |
+| 26 | **Key prop con índice en lugar de ID** — Cambiar `rowKey={(_item, idx) => idx}` por `rowKey={(item) => item.id}` | `ProveedoresRegistrados.tsx` | 0.1 día |
+| 27 | **Doble fetch en useAIConfig** — Unificar dos useEffect que llaman loadConfigs() | `useAIConfig.ts` | 0.3 día |
+| 28 | **Exponer setters directos desde hook** — `setSyncMessage` → `dismissSyncMessage()` | `useAIConfig.ts` | 0.2 día |
+| 29 | **Copiar auditoría V1 a carpeta sin espacio** — Renombrar `AUDITORIA_front_24_07_2026 /` → `AUDITORIA_front_24_07_2026` | Carperta | 0.1 día |
+
+### 🟢 BAJA — Sprint 4 (Mejoras + Documentación)
+
+| # | Ítem | Detalle | Esfuerzo |
+|---|------|---------|----------|
+| 30 | **Reescribir README.md** — Describir proyecto real, stack, instalación, testing, monorepo | `README.md` | 0.5 día |
+| 31 | **Actualizar FLUJO_SISTEMA.md** — Agregar módulo IA, Actualizar a V2.0, corregir fecha | `FLUJO_SISTEMA.md` | 1 día |
+| 32 | **Actualizar AUDITORIA V1.md** — Testing: 8→27 suites, Cobertura: 35%→90% | `AUDITORIA_front_24_07_2026 / V1.md` | 0.5 día |
+| 33 | **Subir thresholds coverage a 85%** — Subir de 70% a 85% en `vite.config.ts` | `vite.config.ts` | 0.1 día |
+| 34 | **Tests para useRateLimit, logger, aiEvaluationService** — Completar brechas de testing | 3 archivos | 1 día |
+| 35 | **Migrar a CSS modules para remover `'unsafe-inline'` de CSP** | Todos los componentes | 2 días |
+| 36 | **Agregar optimizaciones de rendimiento** — useMemo en filtros, memo en SkeletonLoader, eliminar content-visibility innecesario | Varios archivos | 0.5 día |
+| 37 | **DonutChart responsive** — Reemplazar dimensiones absolutas por relativas | `PresidenciaDashboard.tsx` | 0.3 día |
+| 38 | **Agregar meta tags SEO en index.html** — description, OG tags, theme-color | `index.html` | 0.2 día |
+
+---
+
 ## 🔴 PENDIENTES — V1 Audit (24/07/2026)
 
 ### 🟢 BAJA — Mejoras y monitoreo
@@ -70,12 +134,13 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 
 ---
 
-## 🔄 PENDIENTES ANTERIORES (no cubiertos por V1)
+## 🔄 PENDIENTES ANTERIORES (no cubiertos por V1/V2)
 
 1. **REALIZAR** — Limpiar el bundle y eliminar dependencias inutilizadas.
 2. **REALIZAR** — Reevaluar expiración de token con PC apagada (verificar fix previo).
 3. **REALIZAR** — Entrar ROL x ROL y verificar PROCESOS Y VISTAS.
-
+4. **REALIZAR** — Eliminar del modal de Material del Catalogo la columna 'Valor' o arreglarla para que muestre su valor correctamente.
+5. **REALIZAR** — Existe un problema al seleccionar el proveedor y tratar de enviarle el link, El mismo abre dos modales y el select No permite seleccionar la obra.
 ---
 
 ## 🧪 PRUEBAS PENDIENTES
@@ -90,6 +155,12 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 
 ---
 
-## 📋 AUDITORÍAS PENDIENTES
+## ✅ AUDITORÍAS REALIZADAS
 
-1. Realizar nueva auditoría con Claude PRO después de completar todos los puntos anteriores.
+1. ✅ **V1 — Auditoría interna Frontend** (23/07/2026) — `AUDITORIA_INTERNA_FRONT_2026-07-23.md`
+2. ✅ **V1 — Auditoría Frontend** (24/07/2026) — `AUDITORIA_front_24_07_2026 / V1.md`
+3. ✅ **V2 — Re-auditoría profunda Frontend** (24/07/2026) — `AUDITORIA_front_24_07_2026 // V2.md`
+
+## 📋 PRÓXIMA AUDITORÍA
+
+1. Realizar auditoría V3 después de completar Sprints 1-3 (todos los items CRITICAL + HIGH).

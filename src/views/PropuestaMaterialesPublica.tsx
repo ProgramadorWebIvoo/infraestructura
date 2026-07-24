@@ -23,16 +23,14 @@ import {
 import { SupplierMaterialProposalItem } from "../types";
 import { apiFetch } from "../services/api";
 import NumericInput from "../components/UI/NumericInput";
-import SelectModal from "../components/UI/SelectModal";
 
-/** Elimina etiquetas HTML/XML del string para prevenir XSS en renderizados posteriores. */
+/** Elimina etiquetas HTML/XML y patrones JS del string para prevenir XSS en renderizados posteriores. */
 function sanitize(value: string): string {
   return value
     .replace(/<[^>]*>/g, "")
     .replace(/javascript\s*:/gi, "")
     .replace(/on\w+\s*=\s*(['"]?)[^'"\s]*\1/gi, "")
-    .replace(/\b(alert|prompt|confirm|print|open|write)\s*\([^)]*\)/gi, "")
-    .trim();
+    .replace(/\b(alert|prompt|confirm|print|open|write)\s*\([^)]*\)/gi, "");
 }
 
 interface ProjectPublicData {
@@ -77,7 +75,6 @@ export default function PropuestaMaterialesPublica() {
   const [items, setItems] = useState<ItemRow[]>([]);
   const [estimatedDays, setEstimatedDays] = useState<number | "">("");
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("dias");
-  const [isDurationUnitModalOpen, setIsDurationUnitModalOpen] = useState(false);
   const [generalNotes, setGeneralNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState("");
@@ -165,14 +162,14 @@ export default function PropuestaMaterialesPublica() {
           estimatedDays: estimatedDays !== "" ? Number(estimatedDays) : null,
           durationUnit: estimatedDays !== "" ? durationUnit : null,
           items: validItems.map((item) => ({
-            materialName: sanitize(item.materialName),
+            materialName: sanitize(item.materialName).trim(),
             quantity: item.quantity === "" ? 0 : item.quantity,
-            unit: sanitize(item.unit),
+            unit: sanitize(item.unit).trim(),
             unitPrice: item.unitPrice === "" ? 0 : item.unitPrice,
             totalPrice: item.totalPrice,
-            notes: item.notes ? sanitize(item.notes) : null,
+            notes: item.notes ? sanitize(item.notes).trim() : null,
           })),
-          generalNotes: sanitize(generalNotes) || null,
+          generalNotes: sanitize(generalNotes).trim() || null,
         }),
       });
       setSubmittedId(result.id);
@@ -477,29 +474,18 @@ export default function PropuestaMaterialesPublica() {
                   />
                 </div>
                 <div className="w-36">
-                  <SelectModal
-                    isOpen={isDurationUnitModalOpen}
-                    onClose={() => setIsDurationUnitModalOpen(false)}
-                    onOpen={() => setIsDurationUnitModalOpen(true)}
-                    onSelect={(opt) => {
-                      setDurationUnit(opt.value as DurationUnit);
-                      setIsDurationUnitModalOpen(false);
-                    }}
-                    options={DURATION_UNITS.map((u) => ({
-                      value: u.value,
-                      label: u.label,
-                      description: u.description,
-                      raw: u,
-                    }))}
-                    selectedValue={durationUnit}
-                    triggerLabel={durationUnit}
-                    title="Unidad de tiempo"
-                    infoLine="Seleccione la unidad para el plazo estimado"
-                    icon={<Clock className="h-5 w-5" />}
-                    iconColor="sky"
-                    searchPlaceholder="Buscar unidad..."
-                    maxWidth="max-w-sm"
-                  />
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Unidad</label>
+                  <select
+                    value={durationUnit}
+                    onChange={(e) => setDurationUnit(e.target.value as DurationUnit)}
+                    className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white font-mono font-bold appearance-none cursor-pointer"
+                  >
+                    {DURATION_UNITS.map((u) => (
+                      <option key={u.value} value={u.value}>
+                        {u.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
