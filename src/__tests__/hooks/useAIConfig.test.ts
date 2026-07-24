@@ -39,7 +39,7 @@ const EMPTY_USAGE = {
 };
 
 /** Helper: espera a que el hook termine de cargar (isLoading=false) */
-async function waitForLoad(resolved: boolean) {
+async function waitForLoad() {
   // Flush microtasks (promesas) y re-renders
   for (let i = 0; i < 10; i++) {
     await act(async () => { await Promise.resolve(); });

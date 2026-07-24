@@ -10,6 +10,16 @@
     2. Lazy views no encontraban el mock vía data-testid: cambiado `screen.getByTestId` → `screen.findByTestId` + `flushAll()` para esperar que Suspense resuelva el lazy import.
 - Archivos: `src/App.tsx`, `src/__tests__/hooks/useAIConfig.test.ts`, `src/__tests__/hooks/useProjectsData.test.ts`, `src/__tests__/App.test.tsx`
 
+## [2026-07-24] — M-01: Extraer subcomponentes de App.tsx — PublicRouteShell, AccessDeniedView, AuthenticatedRoutes
+- Tipo: refactor
+- Qué: Extraídos 3 subcomponentes de `App.tsx` a `src/components/Routes/`:
+  - **PublicRouteShell** — Renderiza las rutas públicas (ErrorBoundary + Suspense + Routes con MaterialesProveedores/PropuestaMaterialesPublica). Recibe `contractorsCount` y `onAddContractor` como props.
+  - **AccessDeniedView** — Pantalla "Acceso denegado" con botón de cerrar sesión. Recibe `onLogout`.
+  - **AuthenticatedRoutes** — Contiene `AuthenticatedLayout` + todas las rutas protegidas con `ProtectedRoute`. Recibe todos los datos y handlers desde `AppRoutes`.
+- App.tsx bajó de 354→231 líneas (-35%). `AppRoutes` ahora tiene 138 líneas con 5 early returns limpios.
+- `tsc --noEmit` 0 errores, 379 tests pasando.
+- Archivos: `src/App.tsx`, `src/components/Routes/PublicRouteShell.tsx` [NUEVO], `src/components/Routes/AccessDeniedView.tsx` [NUEVO], `src/components/Routes/AuthenticatedRoutes.tsx` [NUEVO], `PENDIENTES.md`
+
 ## [2026-07-24] — Actualización PENDIENTES.md con items de auditoría V1
 - Tipo: docs
 - Qué: Sincronizado `PENDIENTES.md` con los hallazgos de la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 / V1.md`). Se preservaron los items completados (✅ DONE) y se agregaron 21 nuevos items organizados por prioridad: 8 🔴 ALTA (tests faltantes), 8 🟡 MEDIA (refactors), 6 🟢 BAJA (mejoras/monitoreo). Se mantuvieron los items anteriores no cubiertos por V1, pruebas y auditorías pendientes.
