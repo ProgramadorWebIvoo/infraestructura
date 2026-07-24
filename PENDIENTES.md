@@ -60,9 +60,9 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 | # | Ítem | Archivos | Esfuerzo |
 |---|------|----------|----------|
 | 9 | ✅ **Extraer subcomponentes de `App.tsx`** — `AppRoutes` tiene 247 líneas. Separar: public routes, session validation, unauthenticated, layout en subcomponentes | `src/App.tsx` | 0.5 día |
-| 10 | **Unificar `KpiCard` duplicado** — `PresidenciaDashboard.tsx` tiene implementación local incompatible con `components/UI/KpiCard.tsx` | `src/views/PresidenciaDashboard.tsx`, `src/components/UI/KpiCard.tsx` | 0.25 día |
-| 11 | **Crear componente `Spinner` compartido** — Patrón SVG `<circle...>` duplicado en múltiples vistas | Varios `src/views/*` | 0.25 día |
-| 12 | **Extraer `useRateLimit` de `LoginScreen.tsx`** — Lógica de rate-limit inline en el componente | `src/views/LoginScreen.tsx` | 0.5 día |
+| 10 | ✅ **Unificar `KpiCard` duplicado** — `PresidenciaDashboard.tsx` tenía implementación local incompatible con `components/UI/KpiCard.tsx`. Ahora usa el componente compartido. | `src/views/PresidenciaDashboard.tsx`, `src/components/UI/KpiCard.tsx` | 0.25 día |
+| 11 | ✅ **Crear componente `Spinner` compartido** — Patrón SVG `<circle...>` duplicado en múltiples vistas. Creado `components/UI/Spinner.tsx`, reemplazadas 7 instancias. | Varios `src/views/*` | 0.25 día |
+| 12 | ✅ **Extraer `useRateLimit` de `LoginScreen.tsx`** — Lógica de rate-limit extraída a `hooks/useRateLimit.ts`. LoginScreen reducido ~23%. | `src/views/LoginScreen.tsx` | 0.5 día |
 | 13 | **Hacer genérica `signatureOf()` en `useProjectsData`** — Hardcodea campos de proyecto; recibir función de firma por parámetro | `src/hooks/useProjectsData.ts` | 0.25 día |
 | 14 | **Mover `getPendingCount()` a servicio/hook de workflow status** — Switch con lógica de negocio duplicada en `InteractiveOrganigrama` | `src/components/InteractiveOrganigrama.tsx` | 0.25 día |
 | 15 | **Reemplazar timeout manual de successMsg por Toast** — `InfraestructuraMantenimientoPanel` usa estado local con setTimeout | `src/views/InfraestructuraMantenimientoPanel.tsx` | 0.25 día |

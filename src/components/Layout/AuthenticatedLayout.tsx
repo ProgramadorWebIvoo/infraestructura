@@ -12,6 +12,7 @@ import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Database } from "lucide-react";
 
+import Spinner from "../UI/Spinner";
 import SidebarNav from "../UI/SidebarNav";
 import MobileTopBar from "../UI/MobileTopBar";
 import OfflineBanner from "../UI/OfflineBanner";
@@ -42,7 +43,7 @@ function PageFallback() {
   return (
     <div className="flex items-center justify-center py-20">
       <div className="flex flex-col items-center gap-4 text-slate-400">
-        <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
+        <Spinner size="xl" />
         <p className="text-sm font-medium">Cargando módulo…</p>
       </div>
     </div>

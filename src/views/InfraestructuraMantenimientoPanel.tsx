@@ -22,6 +22,7 @@ import {
   Search,
 } from "lucide-react";
 import { containerVariants, itemVariants } from "../animations";
+import Spinner from "../components/UI/Spinner";
 import { SkeletonCard, SkeletonBlock } from "../components/SkeletonLoader";
 import Card from "../components/UI/Card";
 import SectionHeader from "../components/UI/SectionHeader";
@@ -239,10 +240,7 @@ export default function InfraestructuraMantenimientoPanel({
                 className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
                 {isSubmitting ? (
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <Spinner />
                 ) : (
                   <Send className="h-4 w-4" />
                 )}

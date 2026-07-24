@@ -1,20 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Building2, LogIn, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { useRateLimit } from "../hooks/useRateLimit";
 
 interface LoginScreenProps {
   onLogin: (email: string, password: string) => Promise<void>;
-}
-
-const MAX_ATTEMPTS_BEFORE_BLOCK = 3;
-const MAX_BLOCK_SECONDS = 60;
-
-/**
- * Retorna segundos de bloqueo según el número de intentos fallidos.
- * Backoff exponencial: 2, 4, 8, 16, 32, 60 (max).
- */
-function getBlockDuration(count: number): number {
-  if (count <= MAX_ATTEMPTS_BEFORE_BLOCK) return 0;
-  return Math.min(Math.pow(2, count - MAX_ATTEMPTS_BEFORE_BLOCK), MAX_BLOCK_SECONDS);
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -23,60 +12,23 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [attempts, setAttempts] = useState(0);
-  const [blockTimer, setBlockTimer] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Limpiar interval al desmontar
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  const clearBlockInterval = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
-
-  const startBlockTimer = useCallback((seconds: number) => {
-    clearBlockInterval();
-    setBlockTimer(seconds);
-    intervalRef.current = setInterval(() => {
-      setBlockTimer((prev) => {
-        if (prev <= 1) {
-          clearBlockInterval();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, [clearBlockInterval]);
+  const { blockTimer, isBlocked, recordAttempt, resetAttempts } = useRateLimit();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (isSubmitting) return;
-
-    const blockSec = getBlockDuration(attempts);
-    if (blockSec > 0 && blockTimer > 0) return;
+    if (isSubmitting || isBlocked) return;
 
     setError("");
     setIsSubmitting(true);
 
     try {
       await onLogin(email, password);
-      setAttempts(0);
+      resetAttempts();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error inesperado.";
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-
-      const nextBlock = getBlockDuration(newAttempts);
-      if (nextBlock > 0) {
-        startBlockTimer(nextBlock);
-        setError(`Demasiados intentos. Espere ${nextBlock} segundos.`);
+      const blockSec = recordAttempt();
+      if (blockSec > 0) {
+        setError(`Demasiados intentos. Espere ${blockSec} segundos.`);
       } else {
         setError(message || "Correo o clave incorrectos.");
       }
@@ -85,7 +37,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     }
   };
 
-  const isBlocked = blockTimer > 0;
   const canSubmit = !isSubmitting && !isBlocked;
 
   return (

@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import Spinner from "../components/UI/Spinner";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { ROUTES } from "../routes.tsx";
 import type { Contractor } from "../types";
@@ -11,7 +12,7 @@ function FullScreenFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
       <div className="flex flex-col items-center gap-4 text-slate-400">
-        <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
+        <Spinner size="xl" />
         <p className="text-sm font-medium">Cargando módulo…</p>
       </div>
     </div>

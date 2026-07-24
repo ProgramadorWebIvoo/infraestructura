@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { ProjectStatus } from "../types";
 import type { Project, AuditLog } from "../types";
@@ -23,6 +23,7 @@ import StatusBadge from "../components/UI/StatusBadge";
 import { Table, type Column } from "../components/UI/Table";
 import { getRoleColor } from "../utils";
 import AuditInspectModal from "../components/Modals/AuditInspectModal";
+import KpiCard from "../components/UI/KpiCard";
 import { containerVariants, itemVariants } from "../animations";
 
 interface PresidenciaDashboardProps {
@@ -118,41 +119,6 @@ function getProjectColumns(onSelectProject: (p: Project) => void): Column<Projec
 }
 
 // ─── Local presentational components (single-use) ───
-
-function KpiCard({
-  icon,
-  label,
-  accent,
-  borderAccent,
-  variant = "light",
-  children,
-}: {
-  icon: ReactNode;
-  label: string;
-  accent: string;
-  borderAccent: string;
-  variant?: "light" | "dark";
-  children: ReactNode;
-}) {
-  const dark = variant === "dark";
-  const borderColor = dark ? "border-l-sky-500" : borderAccent;
-  return (
-    <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${dark ? "bg-slate-900 text-white border-slate-800" : "bg-white border-slate-200/80"} border-l-4 ${borderColor}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className={`p-2 rounded-xl ${dark ? "bg-sky-500/10" : "bg-gradient-to-br from-white to-slate-50 shadow-xs ring-1 ring-slate-200/60"}`}>
-            <span className={dark ? "text-sky-400" : accent}>{icon}</span>
-          </div>
-          <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${dark ? "text-slate-400" : "text-slate-500"}`}>{label}</span>
-        </div>
-        {!dark && (
-          <span className="text-[9px] font-mono text-slate-300 font-bold uppercase tracking-widest">IVOO</span>
-        )}
-      </div>
-      <div className="mt-3">{children}</div>
-    </div>
-  );
-}
 
 function DonutChart({ percent, centerValue, centerLabel }: { percent: number; centerValue: string | number; centerLabel: string }) {
   const radius = 60;

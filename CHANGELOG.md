@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [2026-07-24] — M-04: Extraer useRateLimit hook de LoginScreen
+- Tipo: refactor
+- Qué: Extraída la lógica de rate limiting (backoff exponencial con intentos fallidos, bloqueo con countdown, limpieza al desmontar) de `LoginScreen.tsx` a un hook reutilizable `src/hooks/useRateLimit.ts`.
+- El hook expone: `attempts`, `blockTimer`, `isBlocked`, `recordAttempt()` (retorna segundos de bloqueo), `resetAttempts()`. Usa `attemptsRef` para evitar stale closures en `recordAttempt`. Acepta `maxAttempts` (default 3) y `maxBlockSeconds` (default 60).
+- `LoginScreen.tsx` se redujo de ~222 → ~170 líneas (-23%). Eliminados imports de `useEffect`, `useRef`, `useCallback`; ahora solo importa `useState` de React y `useRateLimit` del hook.
+- Archivos: `src/hooks/useRateLimit.ts` [NUEVO], `src/views/LoginScreen.tsx`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando (incluyendo 23 tests de LoginScreen con rate limiting).
+
+## [2026-07-24] — M-03: Crear componente Spinner compartido — eliminar SVG duplicado
+- Tipo: refactor
+- Qué: Creado `src/components/UI/Spinner.tsx` como componente compartido de spinner, eliminando 7 instancias duplicadas del patrón SVG `<circle>+<path>` y spinner border-based:
+  - **3 inline SVG spinners** reemplazados: `ConfirmDialog.tsx`, `CierreObraPanel.tsx`, `InfraestructuraMantenimientoPanel.tsx` → `<Spinner />` (con `data-testid` preservado en ConfirmDialog)
+  - **4 border-based spinners** reemplazados: `App.tsx`, `PublicRouteShell.tsx`, `AuthenticatedRoutes.tsx`, `AuthenticatedLayout.tsx` → `<Spinner size="xl" />`
+- Props del componente: `size` ("xs"|"sm"|"md"|"lg"|"xl"), `className`, `data-testid`, `aria-hidden`.
+- El SVG del spinner está centralizado en un único lugar, eliminando la duplicación del patrón en 3 vistas y 4 fallbacks de Suspense.
+- Archivos: `src/components/UI/Spinner.tsx` [NUEVO], `src/components/UI/ConfirmDialog.tsx`, `src/views/CierreObraPanel.tsx`, `src/views/InfraestructuraMantenimientoPanel.tsx`, `src/App.tsx`, `src/routes/PublicRouteShell.tsx`, `src/routes/AuthenticatedRoutes.tsx`, `src/components/Layout/AuthenticatedLayout.tsx`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando.
+
+## [2026-07-24] — M-02: Unificar KpiCard duplicado (PresidenciaDashboard + shared)
+- Tipo: refactor
+- Qué: Eliminada la implementación local de `KpiCard` en `PresidenciaDashboard.tsx`. El componente compartido `components/UI/KpiCard.tsx` ahora soporta ambos patrones de uso:
+  - **Simple** (`value` + `sub`): display de estadística simple (usado en `UsageDashboard`)
+  - **Complejo** (`children`): contenido JSX personalizado (usado en `PresidenciaDashboard`: DonutChart, progress bars, gradientes)
+- Props nuevas: `accent`, `borderAccent`, `variant` ("light"|"dark"), `children`. `color` se mantiene como alias legacy de `borderAccent`.
+- El componente compartido adopta la apariencia más pulida de PresidenciaDashboard (hover effects, rounded-2xl, gradient icon container, IVOO watermark), beneficiando también a `UsageDashboard`.
+- `PresidenciaDashboard` eliminó ~35 líneas de código duplicado. `ReactNode` import removido (no más necesario).
+- Archivos: `src/components/UI/KpiCard.tsx`, `src/views/PresidenciaDashboard.tsx`
+- Verificación: `tsc --noEmit` 0 errores, 379 tests pasando.
+
 ## [2026-07-24] — V2 Audit: All 379 tests passing — fixes to useAIConfig, useProjectsData, App.test.tsx
 - Tipo: testing
 - Qué: Corregidos 17 tests rotos distribuidos en 3 archivos, pasando de 362→379 tests, 0 fallos:

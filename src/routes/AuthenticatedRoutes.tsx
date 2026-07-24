@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Location, Navigate, Route, Routes } from "react-router-dom";
 import { ROUTES, ProtectedRoute } from "../routes.tsx";
+import Spinner from "../components/UI/Spinner";
 import AuthenticatedLayout from "../components/Layout/AuthenticatedLayout";
 // Types are enforced at the leaf view component level; this shell passes through any props.
 
@@ -20,7 +21,7 @@ function FullScreenFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
       <div className="flex flex-col items-center gap-4 text-slate-400">
-        <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin" />
+        <Spinner size="xl" />
         <p className="text-sm font-medium">Cargando módulo…</p>
       </div>
     </div>
