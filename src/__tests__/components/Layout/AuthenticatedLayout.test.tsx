@@ -34,7 +34,7 @@ import type { Project } from "../../../types";
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 describe("AuthenticatedLayout", () => {
-  const defaultProps = {
+  const defaultProps: React.ComponentProps<typeof AuthenticatedLayout> = {
     user: { name: "Admin User", email: "admin@ivoo.com" },
     activeRole: "SUPERADMIN",
     canAccess: vi.fn(() => true),

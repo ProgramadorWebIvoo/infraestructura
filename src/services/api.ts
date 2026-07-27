@@ -4,23 +4,29 @@
  *
  * Cliente HTTP. Re-exporta la lógica core desde @ivoo/shared e inicializa
  * la configuración específica de web (API_BASE_URL desde VITE_API_URL).
+ *
+ * ── Autenticación web: cookie httpOnly de sesión (Sanctum SPA) ──────────
+ * A diferencia de mobile (Bearer token), el navegador nunca ve el token de
+ * sesión: viaja en una cookie httpOnly que el propio backend setea/valida.
+ * Lo único que el cliente JS gestiona es el token CSRF de doble-envío
+ * (cookie XSRF-TOKEN, legible por diseño) requerido por Laravel en cada
+ * request mutante. `apiFetch`/`apiDownload` aquí envuelven la versión de
+ * @ivoo/shared para: (1) enviar `credentials: "include"` siempre, (2)
+ * obtener la cookie CSRF antes de la primera mutación, (3) anexarla como
+ * header `X-XSRF-TOKEN`, y (4) descartar cualquier `token` Bearer residual
+ * (mobile lo usa, web ya no).
  */
 
 import {
   setApiBaseUrl,
   setTokenRefreshHandler,
   getApiBaseUrl,
-  apiFetch,
-  apiDownload,
+  apiFetch as sharedApiFetch,
+  apiDownload as sharedApiDownload,
 } from "@ivoo/shared";
+import type { ApiFetchOptions } from "@ivoo/shared";
 export type { ApiFetchOptions } from "@ivoo/shared";
-export {
-  setApiBaseUrl,
-  setTokenRefreshHandler,
-  getApiBaseUrl,
-  apiFetch,
-  apiDownload,
-};
+export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
 // ---------------------------------------------------------------------------
 // Inicialización de la base URL desde variable de entorno
@@ -30,3 +36,49 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 setApiBaseUrl(API_BASE_URL);
 
 export { API_BASE_URL };
+
+// ---------------------------------------------------------------------------
+// CSRF (Sanctum SPA): cookie XSRF-TOKEN ↔ header X-XSRF-TOKEN
+// ---------------------------------------------------------------------------
+
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function readCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function ensureCsrfCookie(): Promise<void> {
+  if (readCookie("XSRF-TOKEN")) return;
+
+  const root = API_BASE_URL.replace(/\/api\/?$/, "");
+  await fetch(`${root}/sanctum/csrf-cookie`, { credentials: "include" });
+}
+
+export async function apiFetch<T = unknown>(
+  path: string,
+  options: ApiFetchOptions = {},
+): Promise<T> {
+  const { token: _webIgnoresBearer, ...rest } = options;
+  const method = (options.method ?? "GET").toUpperCase();
+
+  const headers: Record<string, string> = {
+    ...(rest.headers as Record<string, string> | undefined),
+  };
+
+  if (MUTATING_METHODS.has(method)) {
+    await ensureCsrfCookie();
+    const csrfToken = readCookie("XSRF-TOKEN");
+    if (csrfToken) headers["X-XSRF-TOKEN"] = csrfToken;
+  }
+
+  return sharedApiFetch<T>(path, { ...rest, headers, credentials: "include" });
+}
+
+export async function apiDownload(
+  path: string,
+  options: ApiFetchOptions = {},
+): Promise<Blob> {
+  const { token: _webIgnoresBearer, ...rest } = options;
+  return sharedApiDownload(path, { ...rest, credentials: "include" });
+}

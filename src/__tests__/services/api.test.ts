@@ -15,6 +15,7 @@ vi.stubEnv("VITE_API_URL", BASE_URL);
 
 beforeEach(() => {
   global.fetch = vi.fn();
+  document.cookie = "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 });
 
 afterEach(() => {
@@ -77,18 +78,23 @@ describe("apiFetch", () => {
     expect(result).toBeUndefined();
   });
 
-  it("envía Authorization Bearer cuando se pasa token", async () => {
+  it("ignora un `token` Bearer heredado — web se autentica por cookie de sesión", async () => {
     mockFetch({ body: { ok: true } });
 
     await apiFetch("/secure", { token: "abc123" });
 
+    const headers = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].headers;
+    expect(headers.Authorization).toBeUndefined();
+  });
+
+  it("siempre envía credentials: include (cookie httpOnly de sesión)", async () => {
+    mockFetch({ body: { ok: true } });
+
+    await apiFetch("/secure");
+
     expect(global.fetch).toHaveBeenCalledWith(
       `${BASE_URL}/secure`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer abc123",
-        }),
-      }),
+      expect.objectContaining({ credentials: "include" }),
     );
   });
 
@@ -124,18 +130,55 @@ describe("apiFetch", () => {
 
     await apiFetch("/test", {
       headers: { "X-Custom": "val" } as Record<string, string>,
-      token: "tok",
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
       `${BASE_URL}/test`,
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: "Bearer tok",
           "X-Custom": "val",
         }),
       }),
     );
+  });
+
+  // -----------------------------------------------------------------------
+  // CSRF (Sanctum SPA): cookie XSRF-TOKEN ↔ header X-XSRF-TOKEN
+  // -----------------------------------------------------------------------
+
+  it("GET no dispara la obtención de la cookie CSRF", async () => {
+    mockFetch({ body: { ok: true } });
+
+    await apiFetch("/test");
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("POST sin cookie XSRF-TOKEN — la obtiene primero desde /sanctum/csrf-cookie", async () => {
+    mockFetch({ body: { ok: true } });
+
+    await apiFetch("/post", { method: "POST", body: JSON.stringify({ a: 1 }) });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://localhost:8000/sanctum/csrf-cookie",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
+  it("POST con cookie XSRF-TOKEN presente — la envía como header X-XSRF-TOKEN", async () => {
+    document.cookie = "XSRF-TOKEN=token-value-123";
+    mockFetch({ body: { ok: true } });
+
+    await apiFetch("/post", { method: "POST", body: JSON.stringify({ a: 1 }) });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${BASE_URL}/post`,
+      expect.objectContaining({
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "token-value-123" }),
+      }),
+    );
+    // Cookie ya presente: no vuelve a pedir /sanctum/csrf-cookie
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   // -----------------------------------------------------------------------
@@ -291,19 +334,17 @@ describe("apiDownload", () => {
     expect(blob).toBeInstanceOf(Blob);
   });
 
-  it("envía Authorization Bearer", async () => {
+  it("envía credentials: include, ignora un token Bearer heredado", async () => {
     mockFetch({ body: new ArrayBuffer(10) });
 
     await apiDownload("/file.pdf", { token: "tok" });
 
     expect(global.fetch).toHaveBeenCalledWith(
       `${BASE_URL}/file.pdf`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer tok",
-        }),
-      }),
+      expect.objectContaining({ credentials: "include" }),
     );
+    const headers = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].headers;
+    expect(headers?.Authorization).toBeUndefined();
   });
 
   it("error — lanza mensaje del body", async () => {

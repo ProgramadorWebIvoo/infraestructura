@@ -2,24 +2,27 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Hook de autenticación. Único punto que gestiona token, usuario
+ * Hook de autenticación. Único punto que gestiona sesión, usuario
  * y operaciones de login/logout. El control de acceso por rol
  * vive en useRouting.
  *
  * ── Seguridad de sesión ──────────────────────────────────────────────
- * - Al montar con token almacenado, valida contra backend (GET /api/user)
- *   antes de permitir acceso. Si el token expiró o fue revocado,
- *   limpia localStorage y redirige al login.
+ * - El token de sesión vive en una cookie httpOnly (Sanctum SPA) que este
+ *   hook nunca lee ni escribe: es inaccesible a JS, inmune a robo por XSS.
+ *   `authToken` es solo un sentinel en memoria ("authenticated") para que
+ *   los hooks de datos existentes puedan seguir usando `if (!authToken)`.
+ * - Al montar, siempre se valida contra backend (GET /api/user) porque no
+ *   hay forma de saber desde JS si la cookie httpOnly sigue vigente.
  * - Inactividad detectada por tiempo real (Date.now()), no por setTimeout
  *   que el navegador congela al dormir el PC o suspender el tab.
  * - visibilitychange detecta retorno inmediato al tab después de suspensión.
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { apiFetch, setTokenRefreshHandler } from "../services/api";
+import { apiFetch } from "../services/api";
 
-const STORAGE_TOKEN = "ivoo_auth_token";
 const STORAGE_USER = "ivoo_auth_user";
+const AUTHENTICATED_SENTINEL = "authenticated";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos de inactividad
 const INACTIVITY_CHECK_MS = 15_000; // cada 15s verificar tiempo real transcurrido
 
@@ -40,7 +43,7 @@ function validatePassword(password: string): string | null {
 }
 
 export function useAuth() {
-  const [authToken, setAuthToken] = useState<string>(() => localStorage.getItem(STORAGE_TOKEN) ?? "");
+  const [authToken, setAuthToken] = useState<string>("");
   const [authUser, setAuthUser] = useState<AuthUser>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_USER);
@@ -52,39 +55,31 @@ export function useAuth() {
   });
 
   // ── Flag de validación al montar ──
-  // Se inicializa en true solo si hay token guardado.
-  // Mientras sea true, App.tsx muestra pantalla de carga en vez del layout.
-  const [isValidatingSession, setIsValidatingSession] = useState<boolean>(() => {
-    return !!localStorage.getItem(STORAGE_TOKEN);
-  });
+  // Siempre empieza en true: la cookie httpOnly de sesión no es legible
+  // desde JS, así que la única forma de saber si hay sesión vigente es
+  // preguntarle al backend. Mientras sea true, App.tsx muestra pantalla
+  // de carga en vez del layout.
+  const [isValidatingSession, setIsValidatingSession] = useState<boolean>(true);
 
   // ── Limpieza de sesión (extraída para reuso) ──
   const clearSession = useCallback(() => {
-    localStorage.removeItem(STORAGE_TOKEN);
     localStorage.removeItem(STORAGE_USER);
     setAuthToken("");
     setAuthUser(null);
   }, []);
 
   // ── Validación de sesión al montar ──
-  // Llama a GET /api/user para confirmar que el token sigue siendo
-  // válido en el backend. Si falla (expirado, revocado, usuario inactivo),
-  // se limpia la sesión inmediatamente.
+  // Llama a GET /api/user; el navegador adjunta la cookie de sesión sola.
+  // Si falla (sin sesión, expirada, usuario inactivo), no hay nada que
+  // limpiar del lado del cliente más que el estado en memoria.
   useEffect(() => {
-    if (!authToken) {
-      setIsValidatingSession(false);
-      return;
-    }
-
     let cancelled = false;
 
     apiFetch<{ user: { name: string; email: string; role?: string } }>("/user", {
       method: "GET",
-      token: authToken,
     })
       .then((data) => {
         if (cancelled) return;
-        // Token válido: refrescar datos de usuario desde backend
         const safeUser = {
           name: String(data.user.name ?? ""),
           email: String(data.user.email ?? ""),
@@ -92,11 +87,11 @@ export function useAuth() {
         };
         localStorage.setItem(STORAGE_USER, JSON.stringify(safeUser));
         setAuthUser(safeUser);
+        setAuthToken(AUTHENTICATED_SENTINEL);
         setIsValidatingSession(false);
       })
       .catch(() => {
         if (cancelled) return;
-        // Token inválido/expirado: limpiar todo
         clearSession();
         setIsValidatingSession(false);
       });
@@ -104,18 +99,7 @@ export function useAuth() {
     return () => {
       cancelled = true;
     };
-    // Solo al montar — si después cambia authToken por login,
-    // no necesitamos re-validar; el backend ya devolvió token nuevo.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Token refresh handler (registrado una vez) ──
-  useEffect(() => {
-    setTokenRefreshHandler((newToken: string) => {
-      localStorage.setItem(STORAGE_TOKEN, newToken);
-      setAuthToken(newToken);
-    });
-  }, []);
+  }, [clearSession]);
 
   // ── Inactivity timeout por tiempo real ──
   // Usa setInterval + comparación Date.now() en vez de setTimeout
@@ -173,12 +157,14 @@ export function useAuth() {
     const passwordError = validatePassword(password);
     if (passwordError) throw new Error(passwordError);
 
-    const data = await apiFetch<{ token: string; user: { name: string; email: string; role?: string } }>("/login", {
+    // Sin device_name: el backend detecta por Referer/Origin que esta
+    // petición viene del SPA (dominio "stateful") y responde con cookie
+    // de sesión httpOnly en vez de un token Bearer.
+    const data = await apiFetch<{ user: { name: string; email: string; role?: string } }>("/login", {
       method: "POST",
       body: JSON.stringify({
         email: sanitizedEmail,
         password,
-        device_name: "web",
       }),
     });
 
@@ -188,9 +174,8 @@ export function useAuth() {
       role: data.user.role ? String(data.user.role) : undefined,
     };
 
-    localStorage.setItem(STORAGE_TOKEN, data.token);
     localStorage.setItem(STORAGE_USER, JSON.stringify(safeUser));
-    setAuthToken(data.token);
+    setAuthToken(AUTHENTICATED_SENTINEL);
     setAuthUser(safeUser);
     lastActivityRef.current = Date.now();
   }, []);
@@ -198,7 +183,7 @@ export function useAuth() {
   // ── Logout ──
   const handleLogout = useCallback(async () => {
     if (authToken) {
-      await apiFetch("/logout", { method: "POST", token: authToken }).catch(() => null);
+      await apiFetch("/logout", { method: "POST" }).catch(() => null);
     }
     clearSession();
   }, [authToken, clearSession]);

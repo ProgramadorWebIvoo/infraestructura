@@ -5,7 +5,7 @@
  * Pruebas unitarias para Modal — focus trap, ESC, portal, animaciones.
  */
 
-import { describe, it, expect, vi, afterEach, act } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import Modal from "@/components/UI/Modal";
 import { X } from "lucide-react";

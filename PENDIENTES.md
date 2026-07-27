@@ -73,12 +73,9 @@ Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 
 
 | # | Ítem | Detalle | Esfuerzo |
 |---|------|---------|----------|
-| 5 | **Tests para 6 vistas principales** — PresidenciaDashboard, Infraestructura, Cierre, Procura, Analistas, Finanzas | `src/views/` | 3 días |
 | 6 | **Mocks globales en setup.ts** — Agregar mock de `matchMedia`, `IntersectionObserver`, `ResizeObserver` | `src/test/setup.ts` | 0.5 día |
-| 7 | **Configurar Husky pre-commit** — lint + typecheck + tests antes de cada commit | `.husky/pre-commit` | 0.5 día |
 | 8 | **Centralizar intervalos de polling** — Crear constante `DEFAULT_POLL_INTERVAL = 30_000` | 4 hooks en `src/hooks/` | 0.5 día |
 | 9 | **Corregir fallback de rol** — Retornar `false` en lugar de `roleAccess["INFRAESTRUCTURA"]` para roles desconocidos | `useRouting.ts` | 0.1 día |
-| 10 | **Remover `.env` de git tracking** — `git rm --cached .env` | `.env` | 0.1 día |
 | 11 | **`usesCleartextTraffic: true`** — Remover para builds de producción | `mobile/app.json` | 0.1 día |
 | 12 | **Corregir mobile registerPublicContractor** — Usar `requestJson` en vez de `fetch` directo. Remover `rating: 4` hardcodeado | `mobile/App.tsx` | 0.5 día |
 

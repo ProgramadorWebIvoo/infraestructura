@@ -8,7 +8,7 @@
  */
 
 export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
+  SUPERADMIN:     ["/infraestructura", "/presidencia", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
   ADMIN:          ["/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
   PRESIDENCIA:    ["/presidencia", "/catalogos"],
   INFRAESTRUCTURA:["/infraestructura"],
