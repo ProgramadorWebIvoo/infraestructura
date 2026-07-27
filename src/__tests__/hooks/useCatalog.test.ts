@@ -56,7 +56,6 @@ describe("useCatalog", () => {
       fetcher: expect.any(Function),
       getSignature: expect.any(Function),
       errorMessage: expect.any(String),
-      interval: 30000,
     });
   });
 

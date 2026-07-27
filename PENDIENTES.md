@@ -66,18 +66,18 @@ Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 
 |---|------|---------|----------|-------------|
 | 1 | ✅ **API Keys de IA expuestas en DOM** — Fix aplicado: backend envía `hasApiKey` + solo últimos 4 chars. Frontend actualizado. | `AiConfiguration.php`, `AIConfigTable.tsx`, `useAIConfig.ts` | 0.5 día | Backend |
 | 2 | ✅ **Token JWT en localStorage sin HttpOnly** — Migrado a cookie httpOnly + Secure. Backend: TokenFromCookie middleware, login/logout setean/eliminan cookie. Frontend: useAuth.ts sin localStorage, api.ts con useCookieAuth. Mobile sigue con Bearer token. | 10 archivos (backend + frontend) | 2–3 días | Backend |
-| 3 | **Contraseñas en texto plano en requests** — Forzar HTTPS + CSP upgrade-insecure-requests. Evaluar hashing cliente | `useAuth.ts`, `UsuariosPanel.tsx` | 0.5 día | Frontend |
-| 4 | **URL producción hardcodeada en mobile** — Mover `API_BASE_URL` a variable de entorno `EXPO_PUBLIC_API_URL` | `mobile/config.ts` | 0.5 día | Mobile |
+| 3 | ✅ **Contraseñas en texto plano en requests** — Forzar HTTPS + CSP upgrade-insecure-requests. Evaluar hashing cliente | `useAuth.ts`, `UsuariosPanel.tsx` | 0.5 día | Frontend |
+| 4 | ✅ **URL producción hardcodeada en mobile** — Mover `API_BASE_URL` a variable de entorno `EXPO_PUBLIC_API_URL` | `mobile/config.ts` | 0.5 día | Mobile |
 
 ### 🟠 HIGH — Sprint 2 (Testing + Arquitectura)
 
 | # | Ítem | Detalle | Esfuerzo |
 |---|------|---------|----------|
-| 6 | **Mocks globales en setup.ts** — Agregar mock de `matchMedia`, `IntersectionObserver`, `ResizeObserver` | `src/test/setup.ts` | 0.5 día |
-| 8 | **Centralizar intervalos de polling** — Crear constante `DEFAULT_POLL_INTERVAL = 30_000` | 4 hooks en `src/hooks/` | 0.5 día |
-| 9 | **Corregir fallback de rol** — Retornar `false` en lugar de `roleAccess["INFRAESTRUCTURA"]` para roles desconocidos | `useRouting.ts` | 0.1 día |
-| 11 | **`usesCleartextTraffic: true`** — Remover para builds de producción | `mobile/app.json` | 0.1 día |
-| 12 | **Corregir mobile registerPublicContractor** — Usar `requestJson` en vez de `fetch` directo. Remover `rating: 4` hardcodeado | `mobile/App.tsx` | 0.5 día |
+| 6 | ✅ **Mocks globales en setup.ts** — Agregado mock de `matchMedia`, `IntersectionObserver`, `ResizeObserver` | `src/test/setup.ts` | 0.5 día |
+| 8 | ✅ **Centralizar intervalos de polling** — Constante `DEFAULT_POLL_INTERVAL = 30_000` en `src/constants.ts`, usada como default en `usePolledFetch` (los 4 hooks ya no repiten el valor) | `src/constants.ts`, `usePolledFetch.ts` | 0.5 día |
+| 9 | ✅ **Corregir fallback de rol** — `canAccess` ahora retorna `false` (`?? []`) en lugar de heredar `roleAccess["INFRAESTRUCTURA"]` para roles desconocidos | `useRouting.ts` | 0.1 día |
+| 11 | ✅ **`usesCleartextTraffic: true`** — `app.json` → `app.config.js` dinámico: solo `true` si `EXPO_PUBLIC_API_URL` es `http://` (dev), `false` automáticamente con `https://` en producción | `mobile/app.config.js` | 0.1 día |
+| 12 | ✅ **Corregir mobile registerPublicContractor** — Usa `requestJson` en vez de `fetch` directo. `rating` ya no se hardcodea (el backend ya defaultea a 4.0) | `mobile/App.tsx` | 0.5 día |
 
 ### 🟡 MEDIUM — Sprint 3 (Clean Code + Refactor)
 
@@ -125,7 +125,6 @@ Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 
 |---|------|---------|----------|
 | 17 | **Logger en producción expone `console.error/warn/info`** — Implementar servicio externo (Sentry/Logtail) y desactivar console en producción | `src/services/logger.ts` | 1 día |
 | 18 | **Fallback a datos locales sin autenticación (`INITIAL_PROJECTS`)** — Solo usar fallbacks en desarrollo o mostrar empty state en producción | `src/hooks/useProjectsData.ts` | 0.5 día |
-| 19 | **Token en localStorage sin HttpOnly** — Considerar migrar a cookies HttpOnly + Secure para producción (depende de backend). Aceptado con mitigación CSP actual | `src/hooks/useAuth.ts` + backend | 2–3 días |
 | 20 | **Monitorear versión React 19** — Riesgo bajo de compatibilidad (versión recién estable) | `package.json` | — |
 | 21 | **Monitorear dependencia `motion`** — Fork de framer-motion; verificar actualizaciones y compatibilidad | `package.json` | — |
 

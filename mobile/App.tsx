@@ -7,7 +7,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 
-import { API_BASE_URL } from "./config";
 import { requestJson } from "./api";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
@@ -89,17 +88,12 @@ function MainScreen() {
   };
 
   const registerPublicContractor = async (payload: Pick<Contractor, "name" | "specialty" | "contact">) => {
-    const response = await fetch(`${API_BASE_URL}/contractors`, {
+    // Ruta pública (sin auth) — el backend asigna rating=4.0 por defecto,
+    // no hay que hardcodearlo acá.
+    const contractor = await requestJson<Contractor>(null, "/contractors", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ ...payload, rating: 4 }),
+      body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
-
-    const contractor = (await response.json()) as Contractor;
     queryClient.invalidateQueries({ queryKey: ["contractors"] });
     return contractor;
   };

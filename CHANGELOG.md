@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [2026-07-27] — HIGH #6, #8, #11, #12: mocks de test, polling centralizado, cleartext dinámico, fetch público mobile
+- Tipo: fix + refactor
+- Qué:
+  - **#6 — Mocks globales en `setup.ts`**: agregado mock de `window.matchMedia`, `IntersectionObserver` y `ResizeObserver` (jsdom no los implementa; sin esto, cualquier código/librería que los invoque falla con "is not a function" en vez del error real que se esté probando).
+  - **#8 — Polling centralizado**: nueva constante `DEFAULT_POLL_INTERVAL = 30_000` en `src/constants.ts`. `usePolledFetch` la usa como default de su parámetro `interval` (ahora opcional) — los 4 hooks que repetían `interval: 30000` (`useContractors`, `useCatalog`, `useUsuarios`, `useProveedores`) ya no lo declaran, un solo punto de verdad.
+  - **#11 — `usesCleartextTraffic` dinámico (mobile)**: `mobile/app.json` (estático) reemplazado por `mobile/app.config.js`, que calcula `usesCleartextTraffic` en base a si `EXPO_PUBLIC_API_URL` empieza con `http://` — `true` solo en dev contra el emulador, `false` automáticamente en producción con `https://`.
+  - **#12 — `registerPublicContractor` (mobile)**: reemplazado el `fetch` manual por `requestJson(null, "/contractors", ...)` (mismo cliente HTTP que el resto de la app, con manejo de errores consistente). Eliminado `rating: 4` hardcodeado — el backend (`SupportController::storeContractor`) ya defaultea a `4.0` cuando no se envía.
+- Por qué / causa raíz: ítems HIGH de `PENDIENTES.md` (Sprint 2, re-auditoría V2).
+- Archivos: `src/test/setup.ts`, `src/constants.ts` [NUEVO], `src/hooks/usePolledFetch.ts`, `src/hooks/useContractors.ts`, `src/hooks/useCatalog.ts`, `src/hooks/useUsuarios.ts`, `src/hooks/useProveedores.ts`, `src/__tests__/hooks/usePolledFetch.test.ts`, `src/__tests__/hooks/{useContractors,useCatalog,useUsuarios,useProveedores}.test.ts`, `mobile/app.config.js` [NUEVO, reemplaza `app.json`], `mobile/App.tsx`
+- Verificación: `tsc --noEmit` 0 errores (web y mobile), 385/385 tests pasando (+1 test nuevo cubriendo el default de `usePolledFetch`).
+
 ## [2026-07-27] — Fix: roleAccess deny-by-default + SUPERADMIN con acceso a Presidencia
 - Tipo: fix + security
 - Qué: `useRoleAccess.canAccess()` ya no cae a `roleAccess["INFRAESTRUCTURA"]` cuando el rol activo no existe en el mapa — ahora retorna `[]` (sin acceso a ninguna ruta). Se agregó `/presidencia` a `SUPERADMIN` (como primera ruta, ya que es también su landing por defecto vía `firstAllowedRoute`), sin tocar `ADMIN` — solo `SUPERADMIN` y `PRESIDENCIA` pueden acceder a `/presidencia`.

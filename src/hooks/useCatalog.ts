@@ -28,7 +28,6 @@ export function useCatalog(authToken: string, showToast: ShowToast) {
         [],
       ),
       errorMessage: "No se pudo cargar el catálogo de materiales.",
-      interval: 30000,
     });
 
   const handleAddCatalogItem = useCallback((newItem: CatalogItem) => {

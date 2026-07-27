@@ -2,13 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import { usePolledFetch } from "@/hooks/usePolledFetch";
+import { DEFAULT_POLL_INTERVAL } from "@/constants";
 
 // Mock usePolling
+const mockUsePolling = vi.fn((callback, interval, enabled) => {
+  // Simular polling manual en tests
+  return;
+});
 vi.mock("@/hooks/usePolling", () => ({
-  usePolling: vi.fn((callback, interval, enabled) => {
-    // Simular polling manual en tests
-    return;
-  }),
+  usePolling: (cb: unknown, interval: unknown, enabled: unknown) => mockUsePolling(cb, interval, enabled),
 }));
 
 // Mock logger
@@ -54,6 +56,26 @@ describe("usePolledFetch", () => {
 
     expect(result.current.data).toEqual([]);
     expect(result.current.isLoading).toBe(true);
+  });
+
+  it("usa DEFAULT_POLL_INTERVAL si no se pasa `interval` explícito", () => {
+    mockFetcher.mockResolvedValue([]);
+
+    renderHook(() =>
+      usePolledFetch({
+        authToken: "token",
+        showToast: mockShowToast,
+        fetcher: mockFetcher,
+        getSignature: mockGetSignature,
+        errorMessage,
+      })
+    );
+
+    expect(mockUsePolling).toHaveBeenCalledWith(
+      expect.any(Function),
+      DEFAULT_POLL_INTERVAL,
+      true,
+    );
   });
 
   it("inicia con isLoading=false si no hay authToken", () => {

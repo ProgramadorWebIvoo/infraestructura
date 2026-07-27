@@ -24,7 +24,6 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
       ),
       getSignature: useCallback((data: SupplierMaterialProposal[]) => data.map(p => p.id).join("|"), []),
       errorMessage: "No se pudo cargar las propuestas de proveedores.",
-      interval: 30000,
     });
 
   const handleInviteSupplier = useCallback(

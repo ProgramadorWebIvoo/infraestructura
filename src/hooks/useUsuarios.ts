@@ -40,7 +40,6 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         [],
       ),
       errorMessage: "No se pudo cargar el listado de usuarios.",
-      interval: 30000,
     });
 
   const handleCreateUser = useCallback(

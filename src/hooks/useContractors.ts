@@ -24,7 +24,6 @@ export function useContractors(authToken: string, showToast: ShowToast) {
         [],
       ),
       errorMessage: "No se pudo cargar el catálogo de contratistas.",
-      interval: 30000,
     });
 
   const handleAddContractor = useCallback((newContractor: Contractor) => {

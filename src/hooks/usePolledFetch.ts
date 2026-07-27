@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { usePolling } from "./usePolling";
 import { logError } from "../services/logger";
 import type { ShowToast } from "./useProjects";
+import { DEFAULT_POLL_INTERVAL } from "../constants";
 
 interface UsePolledFetchOptions<T> {
   authToken: string;
@@ -12,8 +13,8 @@ interface UsePolledFetchOptions<T> {
   getSignature: (data: T[]) => string;
   /** Mensaje de error cuando el fetch falla (solo en carga inicial, no en poll). */
   errorMessage: string;
-  /** Intervalo de polling en ms. */
-  interval: number;
+  /** Intervalo de polling en ms. Default: DEFAULT_POLL_INTERVAL. */
+  interval?: number;
 }
 
 interface UsePolledFetchResult<T> {
@@ -36,7 +37,7 @@ export function usePolledFetch<T>({
   fetcher,
   getSignature,
   errorMessage,
-  interval,
+  interval = DEFAULT_POLL_INTERVAL,
 }: UsePolledFetchOptions<T>): UsePolledFetchResult<T> {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
