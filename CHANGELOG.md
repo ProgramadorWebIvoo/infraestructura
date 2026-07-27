@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [2026-07-27] — MEDIUM #13: Refactor de God Components (UsuariosPanel, ProveedoresRegistrados, ProcuraPanel)
+- Tipo: refactor
+- Qué: Las 3 vistas más grandes del frontend pasaron de un solo archivo a una carpeta (`index.tsx` orquestador + subcomponentes de presentación), sin cambios de comportamiento ni de props públicas — cada `import("../views/X")` sigue resolviendo igual (Vite/Node resuelven `X/index.tsx` transparentemente).
+  - **`UsuariosPanel/`** (747→233 líneas el índice): `UserRegistrationForm.tsx` (formulario de alta, con su propio estado de validación/envío) y `UserRow.tsx` (fila con vista + edición inline; el estado de los campos de edición ahora vive en la fila, no en el padre — solo `editingId` sigue centralizado para garantizar que únicamente una fila esté en edición a la vez).
+  - **`ProveedoresRegistrados/`** (636→98 líneas el índice): `ContractorsSection.tsx` (tabla + búsqueda de contratistas), `SupplierProposalsList.tsx` (lista colapsable de propuestas de materiales), `RatingModal.tsx` y `InviteModal.tsx` (cada modal resetea su propio estado interno vía `useEffect` cuando cambia el contratista objetivo, en vez de que el padre gestione todos los campos de ambos modales).
+  - **`ProcuraPanel/`** (555→66 líneas el índice): `InvestmentApprovalSection.tsx` (autorización de inversión inicial, incluye el sub-componente `ProjectDocuments`) y `BidEvaluationSection.tsx` (evaluación comparativa, rechazo, adjudicación y modal de evaluación IA).
+  - De paso: se eliminaron imports muertos (`UserCheck`, `SkeletonBlock`, `SkeletonTable` en `ProveedoresRegistrados`) que no se usaban en el archivo original.
+- Por qué / causa raíz: ítem MEDIUM #13 de la re-auditoría V2 — las 3 vistas mezclaban múltiples responsabilidades (formularios, tablas, modales, lógica de descarga/invitación) en un solo componente, dificultando lectura y pruebas dirigidas.
+- Archivos: `src/views/UsuariosPanel/{index,UserRegistrationForm,UserRow}.tsx` [reemplaza `UsuariosPanel.tsx`], `src/views/ProveedoresRegistrados/{index,ContractorsSection,SupplierProposalsList,RatingModal,InviteModal}.tsx` [reemplaza `ProveedoresRegistrados.tsx`], `src/views/ProcuraPanel/{index,InvestmentApprovalSection,BidEvaluationSection}.tsx` [reemplaza `ProcuraPanel.tsx`]
+- Verificación: `tsc --noEmit` 0 errores, 400/400 tests pasando (ninguna de las 3 vistas tenía tests dedicados que ejercitaran su estructura interna; `App.test.tsx` las mockea a nivel de módulo y sigue pasando). No se verificó visualmente en navegador — recomendable un smoke test manual de las 3 vistas (crear/editar usuario, evaluar/invitar proveedor, aprobar inversión/rechazar propuesta en Procura) antes de dar por cerrado el ítem.
+
 ## [2026-07-27] — MEDIUM #14–#21, #25–#28: 3 endpoints nuevos, colores por hash, memo en tablas, cleanup de useAIConfig
 - Tipo: feature + refactor + security
 - Qué:

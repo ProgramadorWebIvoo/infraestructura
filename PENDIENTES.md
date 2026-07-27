@@ -83,7 +83,7 @@ Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 
 
 | # | Ítem | Detalle | Esfuerzo |
 |---|------|---------|----------|
-| 13 | ⏳ **Refactor God Components** — Extraer subcomponentes de UsuariosPanel (742→400), ProveedoresRegistrados (608→350), ProcuraPanel (555→350). Pendiente de luz verde tras commit del resto del sprint | 3 vistas | 3 días |
+| 13 | ✅ **Refactor God Components** — UsuariosPanel (747→233 + 2 subcomponentes), ProveedoresRegistrados (636→98 + 4 subcomponentes), ProcuraPanel (555→66 + 2 subcomponentes). Cada vista pasó a carpeta (`index.tsx` + subcomponentes) | 3 vistas | 3 días |
 | 14 | ✅ **Extraer lógica financiera** — `useProjectFinancials` extraído, `PresidenciaDashboard` solo consume | `src/hooks/useProjectFinancials.ts` | 1 día |
 | 15 | ✅ **Migrar matriz de permisos a backend** — `GET /api/auth/permissions` (`config/permissions.php`), `useRouting.ts` la consume con fail-closed mientras carga | `useRouting.ts` + Backend | 2 días |
 | 16 | ✅ **Migrar modelos IA a endpoint** — `GET /ai/config/models` (`config/ai.php`), `useAIConfig.ts` expone `providerModels` | `useAIConfig.ts` + Backend | 1 día |
