@@ -7,9 +7,9 @@
  * POST /users/{id}/toggle-status, POST /users/{id}/send-reset-link.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../services/api";
-import { getErrorMessage } from "../services/logger";
+import { getErrorMessage, logError } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 
@@ -41,6 +41,24 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
       ),
       errorMessage: "No se pudo cargar el listado de usuarios.",
     });
+
+  // Lista de roles válidos — servida por el backend (fuente de verdad de
+  // CheckRole/UserController) en vez de hardcodeada en el frontend.
+  const [roles, setRoles] = useState<string[]>([]);
+  useEffect(() => {
+    if (!authToken) return;
+    let cancelled = false;
+    apiFetch<string[]>("/roles", { token: authToken })
+      .then((data) => {
+        if (!cancelled) setRoles(data);
+      })
+      .catch((err) => {
+        if (!cancelled) logError("useUsuarios.loadRoles", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken]);
 
   const handleCreateUser = useCallback(
     async (payload: {
@@ -128,6 +146,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
     users,
     isLoading,
     loadUsers,
+    roles,
     handleCreateUser,
     handleUpdateUser,
     handleToggleUserStatus,

@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [2026-07-27] — MEDIUM #14–#21, #25–#28: 3 endpoints nuevos, colores por hash, memo en tablas, cleanup de useAIConfig
+- Tipo: feature + refactor + security
+- Qué:
+  - **#15 — Matriz de permisos a backend**: nuevo `GET /api/auth/permissions` (`config/permissions.php`, backend) reemplaza el `roleAccess` hardcodeado en `useRouting.ts`. El hook ahora es fail-closed mientras carga (`isLoadingPermissions`); `App.tsx` espera ese estado antes de renderizar rutas autenticadas, igual que ya hacía con `isValidatingSession`.
+  - **#16 — Modelos de IA a backend**: nuevo `GET /ai/config/models` (`config/ai.php` → `available_models`) reemplaza `PROVIDER_MODELS` hardcodeado. `useAIConfig` expone `providerModels`.
+  - **#17 — Lista de roles a backend**: nuevo `GET /api/roles` (`UserController::VALID_ROLES`) reemplaza el array `ROLES` de `UsuariosPanel.tsx`. El frontend solo conserva las etiquetas amigables (`ROLE_LABELS`), no la fuente de verdad de qué roles existen — de paso corrige que `CATALOGOS` faltaba en la lista vieja.
+  - **#18 — Colores de rol por hash**: `getRoleColor()` ahora elige de una paleta fija de clases Tailwind vía hash determinístico del nombre del rol, en vez de un mapa `ROLE_COLORS` que había que actualizar a mano por cada rol nuevo.
+  - **#19 — Validación de contraseña backend**: verificado, ya existía (`UserController::store`, `min:8`) — sin cambios de código, solo confirmación.
+  - **#20 — Sanitización XSS**: `useProveedores.ts` sanitiza `supplierName`/`supplierCompany`/`supplierContact` con `DOMPurify.sanitize()` (sin tags/atributos permitidos) antes de enviarlos a `/supplier-invitations`.
+  - **#21 — CSP sin localhost en prod**: `connect-src` en `vite.config.ts` solo incluye `http://localhost:*`/`ws://localhost:*` en modo desarrollo.
+  - **#14 — `useProjectFinancials`**: cálculos financieros (`totalApprovedInvestment`, `totalReleasedFunds`, `pendingFunds`, `releasedPercent`) extraídos de `PresidenciaDashboard` a un hook dedicado y testeado.
+  - **#25 — Memo en columnas de tabla**: `useMemo` en `AIConfigTable`, `ProveedoresRegistrados` (tabla de contratistas) y `PresidenciaDashboard` (auditoría y proyectos) — antes se recreaban en cada render.
+  - **#26 — `rowKey` por índice**: la tabla de ítems de una propuesta de proveedor usa `materialName-unit` en vez de índice de array.
+  - **#27 — Doble fetch en `useAIConfig`**: los dos `useEffect` que llamaban `loadConfigs()` (uno en mount, otro en transición de login) se unificaron en uno solo.
+  - **#28 — Encapsulamiento de `useAIConfig`**: `setSyncMessage`/`setSyncIsError` ya no se exponen crudos; el hook expone `dismissSyncMessage()`.
+- Por qué / causa raíz: ítems MEDIUM de `PENDIENTES.md` (Sprint 3, re-auditoría V2). #22 (UUIDs), #23/#24 (sincronía de `database.sql`) y #29 (rename de carpeta) quedaron deprioritizados/omitidos — ver `PENDIENTES.md` para el detalle de cada decisión. #13 (God Components) queda pendiente para una sesión dedicada aparte por su tamaño y riesgo.
+- Archivos: backend — `routes/api.php`, `app/Http/Controllers/Api/{AuthController,UserController,AiConfigController}.php`, `config/{permissions.php [NUEVO], ai.php}`, `tests/Feature/{AuthTest,UserManagementTest,AiConfigModelsTest[NUEVO]}.php`; frontend — `src/hooks/{useRouting,useAIConfig,useUsuarios,useProveedores,useProjectFinancials[NUEVO]}.ts`, `src/views/{UsuariosPanel,PresidenciaDashboard,ProveedoresRegistrados,AIConfigPanel/index}.tsx`, `src/views/AIConfigPanel/AIConfigTable.tsx`, `src/utils.ts`, `src/App.tsx`, `vite.config.ts`, tests correspondientes.
+- Verificación: backend 138/138 tests; frontend `tsc --noEmit` 0 errores, 400/400 tests.
+
 ## [2026-07-27] — HIGH #6, #8, #11, #12: mocks de test, polling centralizado, cleartext dinámico, fetch público mobile
 - Tipo: fix + refactor
 - Qué:

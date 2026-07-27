@@ -107,12 +107,6 @@ export const PROVIDER_LABELS: Record<string, string> = {
   gemini: "Google Gemini",
 };
 
-export const PROVIDER_MODELS: Record<string, string[]> = {
-  openai: ["gpt-5.6-sol", "gpt-4.1", "gpt-4.1-mini", "gpt-5.4-nano", "gpt-5.6-luna", "gpt-5.6-terra"],
-  anthropic: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5"],
-  gemini: ["gemini-3.6-flash", "gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3.1-flash-lite"],
-};
-
 export const PROVIDER_COLORS: Record<string, { border: string; badge: string; btn: string }> = {
   openai: { border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700", btn: "from-emerald-600 to-emerald-500" },
   anthropic: { border: "border-l-amber-400", badge: "bg-amber-50 text-amber-700", btn: "from-amber-600 to-amber-500" },
@@ -130,6 +124,7 @@ export function useAIConfig(authToken: string) {
   const [isUsageLoading, setIsUsageLoading] = useState(true);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncIsError, setSyncIsError] = useState(false);
+  const [providerModels, setProviderModels] = useState<Record<string, string[]>>({});
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -150,6 +145,19 @@ export function useAIConfig(authToken: string) {
     }
   }, []);
 
+  // Load selectable models per provider — fuente de verdad: backend
+  // (config/ai.php), no hardcodeado en el frontend.
+  const loadProviderModels = useCallback(async () => {
+    const token = authTokenRef.current;
+    if (!token) return;
+    try {
+      const data = await apiFetch<Record<string, string[]>>("/ai/config/models", { token });
+      setProviderModels(data);
+    } catch (err) {
+      logError("useAIConfig.loadProviderModels", err);
+    }
+  }, []);
+
   // Load usage
   const loadUsage = useCallback(async (days = 30) => {
     const token = authTokenRef.current;
@@ -165,20 +173,22 @@ export function useAIConfig(authToken: string) {
     }
   }, []);
 
-  // Reset loading + disparar fetch cuando el token pasa de falsy → truthy (login)
+  // Un solo efecto cubre carga inicial (mount) y recarga en login (token
+  // pasa de falsy → truthy) — antes eran dos useEffect separados que ambos
+  // terminaban llamando loadConfigs(), duplicando el fetch en el caso en que
+  // el componente ya estaba montado sin sesión y el usuario luego iniciaba sesión.
   useEffect(() => {
-    if (!prevToken.current && authToken) {
+    const justLoggedIn = !prevToken.current && authToken;
+    prevToken.current = authToken;
+
+    if (justLoggedIn) {
       setIsLoading(true);
       setIsUsageLoading(true);
-      loadConfigs();
       loadUsage();
     }
-    prevToken.current = authToken;
-  }, [authToken, loadConfigs, loadUsage]);
-
-  useEffect(() => {
     loadConfigs();
-  }, [loadConfigs]);
+    loadProviderModels();
+  }, [authToken, loadConfigs, loadUsage, loadProviderModels]);
 
   // Create config
   const createConfig = useCallback(async (form: AiConfigForm): Promise<AiConfigRecord> => {
@@ -237,11 +247,19 @@ export function useAIConfig(authToken: string) {
     }
   }, []);
 
+  // Descarta el mensaje de sincronización — expone intención de dominio en
+  // vez de los setters de estado interno crudos.
+  const dismissSyncMessage = useCallback(() => {
+    setSyncMessage(null);
+    setSyncIsError(false);
+  }, []);
+
   return {
     configs,
     isLoading,
     usage,
     isUsageLoading,
+    providerModels,
     syncMessage,
     syncIsError,
     loadConfigs,
@@ -251,7 +269,6 @@ export function useAIConfig(authToken: string) {
     deleteConfig,
     testConfig,
     syncConfig,
-    setSyncMessage,
-    setSyncIsError,
+    dismissSyncMessage,
   };
 }

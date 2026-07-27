@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { ProjectStatus } from "../types";
@@ -96,11 +96,11 @@ export default function ProveedoresRegistrados({
   );
 
   // --- Rating modal handlers ---
-  const handleOpenEdit = (contractor: Contractor) => {
+  const handleOpenEdit = useCallback((contractor: Contractor) => {
     setEditingContractor(contractor);
     setEditRating(contractor.rating);
     setHoveredStar(null);
-  };
+  }, []);
 
   const handleCloseEdit = () => {
     setEditingContractor(null);
@@ -121,14 +121,14 @@ export default function ProveedoresRegistrados({
   };
 
   // --- Invite modal handlers ---
-  const handleOpenInviteModal = (contractor: Contractor) => {
+  const handleOpenInviteModal = useCallback((contractor: Contractor) => {
     setInviteModalContractor(contractor);
     setInviteProjectId("");
     setProjectSearch("");
     setGeneratedToken("");
     setGeneratedProjectTitle("");
     setLinkCopied(false);
-  };
+  }, []);
 
   const handleCloseInviteModal = () => {
     setInviteModalContractor(null);
@@ -180,6 +180,28 @@ export default function ProveedoresRegistrados({
   const proposalTotal = (p: SupplierMaterialProposal) =>
     p.items.reduce((sum, i) => sum + i.totalPrice, 0);
 
+  const contractorColumns: Column<Contractor>[] = useMemo(() => [
+    { key: "code", label: "Codigo", render: (c) => <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">{c.code}</span> },
+    { key: "name", label: "Empresa", render: (c) => <span className="font-bold text-slate-800">{c.name}</span> },
+    { key: "specialty", label: "Especialidad", render: (c) => <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{c.specialty}</span> },
+    { key: "contact", label: "Contacto", render: (c) => <div className="flex items-center gap-2 font-mono font-semibold text-slate-500"><Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />{c.contact}</div> },
+    {
+      key: "actions",
+      label: "Acciones",
+      align: "center",
+      render: (c) => (
+        <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-600">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+            {c.rating.toFixed(1)}
+          </div>
+          <button aria-label="Actualizar evaluación" onClick={() => handleOpenEdit(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md hover:-translate-y-0.5" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>
+          <button aria-label="Generar enlace de propuesta de materiales" onClick={() => handleOpenInviteModal(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-md hover:-translate-y-0.5" title="Generar enlace de propuesta de materiales"><Link2 className="h-3 w-3" /></button>
+        </div>
+      ),
+    },
+  ], [handleOpenEdit, handleOpenInviteModal]);
+
   return (
     <>
       <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
@@ -226,27 +248,7 @@ export default function ProveedoresRegistrados({
           </div>
 
           <Table
-            columns={[
-              { key: "code", label: "Codigo", render: (c) => <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">{c.code}</span> },
-              { key: "name", label: "Empresa", render: (c) => <span className="font-bold text-slate-800">{c.name}</span> },
-              { key: "specialty", label: "Especialidad", render: (c) => <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{c.specialty}</span> },
-              { key: "contact", label: "Contacto", render: (c) => <div className="flex items-center gap-2 font-mono font-semibold text-slate-500"><Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />{c.contact}</div> },
-              {
-                key: "actions",
-                label: "Acciones",
-                align: "center",
-                render: (c) => (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="flex items-center gap-1 rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-600">
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                      {c.rating.toFixed(1)}
-                    </div>
-                    <button aria-label="Actualizar evaluación" onClick={() => handleOpenEdit(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md hover:-translate-y-0.5" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>
-                    <button aria-label="Generar enlace de propuesta de materiales" onClick={() => handleOpenInviteModal(c)} className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-md hover:-translate-y-0.5" title="Generar enlace de propuesta de materiales"><Link2 className="h-3 w-3" /></button>
-                  </div>
-                ),
-              },
-            ]}
+            columns={contractorColumns}
             data={filteredContractors}
             rowKey={(c) => c.code}
             isLoading={isLoading}
@@ -424,7 +426,7 @@ export default function ProveedoresRegistrados({
                                 { key: "notes", label: "Notas", render: (item) => <span className="text-slate-400 italic">{item.notes || "—"}</span> },
                               ]}
                               data={proposal.items}
-                              rowKey={(_item, idx) => idx}
+                              rowKey={(item) => `${item.materialName}-${item.unit}`}
                               pageSize={10}
                               footer={
                                 <tr className="border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white">

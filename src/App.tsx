@@ -107,7 +107,7 @@ function AppRoutes() {
   } = useAuth();
 
   // ---- Role Access ----
-  const { activeRole, canAccess, firstAllowedRoute } = useRoleAccess(authUser?.role);
+  const { activeRole, canAccess, firstAllowedRoute, isLoadingPermissions } = useRoleAccess(authUser?.role);
 
   // ---- Contractors ----
   const {
@@ -192,6 +192,11 @@ function AppRoutes() {
   // ---- Autenticado pero sin rol asignado ----
   if (!authUser?.role) {
     return <AccessDeniedView onLogout={handleLogout} />;
+  }
+
+  // ---- Cargando matriz de permisos (GET /api/auth/permissions) ----
+  if (isLoadingPermissions) {
+    return <SessionValidationScreen />;
   }
 
   // ---- Layout autenticado ----

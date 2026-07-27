@@ -123,6 +123,32 @@ describe("useProveedores", () => {
       expect(res).toEqual({ token: "invite-token", projectTitle: "Test Project" });
     });
 
+    it("sanitiza HTML/scripts de supplierName y supplierCompany antes de enviar", async () => {
+      mockApiFetch.mockResolvedValue({ token: "invite-token", projectTitle: "Test Project" });
+
+      const { result } = renderHook(() => useProveedores("token", showToast));
+
+      await act(async () =>
+        result.current.handleInviteSupplier({
+          project_id: "PRJ-001",
+          supplierName: '<script>alert(1)</script>Proveedor X',
+          supplierCompany: '<img src=x onerror=alert(1)>Company X',
+          supplierContact: "proveedor@x.com",
+        }),
+      );
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/supplier-invitations", {
+        method: "POST",
+        token: "token",
+        body: JSON.stringify({
+          project_id: "PRJ-001",
+          supplierName: "Proveedor X",
+          supplierCompany: "Company X",
+          supplierContact: "proveedor@x.com",
+        }),
+      });
+    });
+
     it("shows error toast and re-throws on failure", async () => {
       const error = new Error("API error");
       mockApiFetch.mockRejectedValue(error);

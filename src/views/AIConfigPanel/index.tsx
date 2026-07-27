@@ -9,7 +9,6 @@ import {
   type AiConfigRecord,
   type AiConfigForm,
   EMPTY_CONFIG_FORM,
-  PROVIDER_MODELS,
 } from "../../hooks/useAIConfig";
 import SyncBanner from "./SyncBanner";
 import UsageDashboard from "./UsageDashboard";
@@ -24,6 +23,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     isLoading,
     usage,
     isUsageLoading,
+    providerModels,
     syncMessage,
     syncIsError,
     loadUsage,
@@ -32,8 +32,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     deleteConfig,
     testConfig,
     syncConfig,
-    setSyncMessage,
-    setSyncIsError,
+    dismissSyncMessage,
   } = useAIConfig(authToken);
 
   const [usageDays, setUsageDays] = useState(30);
@@ -173,7 +172,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-      <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={() => { setSyncMessage(null); setSyncIsError(false); }} />
+      <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={dismissSyncMessage} />
 
       <UsageDashboard
         usage={usage}
@@ -217,7 +216,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
         form={form}
         isSaving={isSaving}
         showApiKey={showApiKey}
-        availableModels={PROVIDER_MODELS[form.provider] ?? []}
+        availableModels={providerModels[form.provider] ?? []}
         onClose={handleCloseModal}
         onSave={handleSave}
         onFormChange={setForm}

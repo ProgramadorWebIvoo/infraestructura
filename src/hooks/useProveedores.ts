@@ -7,11 +7,18 @@
  */
 
 import { useCallback } from "react";
+import DOMPurify from "dompurify";
 import type { SupplierMaterialProposal } from "../types";
 import { apiFetch } from "../services/api";
 import { getErrorMessage } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
+
+// Sin tags/atributos permitidos: son campos de texto plano (nombre, contacto),
+// nunca deberían contener HTML. Mitiga XSS almacenado si el backend alguna
+// vez renderiza estos valores fuera de un contexto que escape por defecto
+// (ej. plantillas de email, PDFs, dangerouslySetInnerHTML).
+const sanitize = (value: string) => DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
 
 export function useProveedores(authToken: string, showToast: ShowToast) {
   const { data: proposals, setData: setProposals, isLoading, refresh: loadProposals } =
@@ -34,10 +41,16 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
       supplierContact: string;
     }): Promise<{ token: string; projectTitle: string }> => {
       try {
+        const sanitizedPayload = {
+          ...payload,
+          supplierName: sanitize(payload.supplierName),
+          supplierCompany: payload.supplierCompany ? sanitize(payload.supplierCompany) : null,
+          supplierContact: sanitize(payload.supplierContact),
+        };
         const data = await apiFetch<{ token: string; projectTitle: string }>("/supplier-invitations", {
           method: "POST",
           token: authToken,
-          body: JSON.stringify(payload),
+          body: JSON.stringify(sanitizedPayload),
         });
         showToast(`Invitación enviada a ${payload.supplierContact}`, "success");
         return data;

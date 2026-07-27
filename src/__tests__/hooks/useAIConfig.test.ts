@@ -108,6 +108,27 @@ describe("useAIConfig", () => {
     });
   });
 
+  describe("providerModels", () => {
+    it("carga /ai/config/models al montar y lo expone en el hook", async () => {
+      const models = { openai: ["gpt-4.1"], anthropic: ["claude-sonnet-5"], gemini: ["gemini-3.5-flash"] };
+      mockApiFetch.mockImplementation((path: string) =>
+        path === "/ai/config/models" ? Promise.resolve(models) : Promise.resolve([]),
+      );
+
+      const { result } = renderHook(() => useAIConfig("token"));
+      await waitForLoad();
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/models", { token: "token" });
+      expect(result.current.providerModels).toEqual(models);
+    });
+
+    it("empieza con providerModels vacío antes de cargar", () => {
+      mockApiFetch.mockResolvedValue([]);
+      const { result } = renderHook(() => useAIConfig("token"));
+      expect(result.current.providerModels).toEqual({});
+    });
+  });
+
   describe("createConfig", () => {
     it("POSTs to /ai/config and appends to local state", async () => {
       const existing = createMockConfig({ id: 1 });

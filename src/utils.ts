@@ -18,24 +18,37 @@ export {
 } from "@ivoo/shared";
 
 // ---------------------------------------------------------------------------
-// Mapa de colores por rol (web — clases Tailwind)
+// Color por rol (web — clases Tailwind), determinístico por hash
 // ---------------------------------------------------------------------------
+// Tailwind requiere clases literales para su scanner JIT, así que no se
+// puede armar un color arbitrario en runtime — en cambio, se elige una
+// combinación de una paleta fija vía hash del nombre del rol. Un rol nuevo
+// obtiene color automáticamente, sin tocar este archivo.
 
-export const ROLE_COLORS: Record<string, string> = {
-  SUPERADMIN: "bg-violet-100 text-violet-800 border-violet-300",
-  ADMIN: "bg-amber-50 text-amber-700 border-amber-200",
-  PRESIDENCIA: "bg-amber-50 text-amber-800 border-amber-200",
-  INFRAESTRUCTURA: "bg-sky-50 text-sky-700 border-sky-200",
-  CIERRE_DE_OBRA: "bg-blue-50 text-blue-700 border-blue-200",
-  PROCURA: "bg-purple-50 text-purple-700 border-purple-200",
-  ANALISTA: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  FINANZAS: "bg-rose-50 text-rose-700 border-rose-200",
-  CATALOGOS: "bg-slate-100 text-slate-700 border-slate-200",
-  SISTEMA: "bg-slate-50 text-slate-800 border-slate-200",
-};
+const ROLE_COLOR_PALETTE: readonly string[] = [
+  "bg-violet-100 text-violet-800 border-violet-300",
+  "bg-amber-50 text-amber-700 border-amber-200",
+  "bg-sky-50 text-sky-700 border-sky-200",
+  "bg-blue-50 text-blue-700 border-blue-200",
+  "bg-purple-50 text-purple-700 border-purple-200",
+  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "bg-rose-50 text-rose-700 border-rose-200",
+  "bg-slate-100 text-slate-700 border-slate-200",
+  "bg-cyan-50 text-cyan-700 border-cyan-200",
+  "bg-indigo-50 text-indigo-700 border-indigo-200",
+];
+
+function hashRoleName(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
 
 export function getRoleColor(role: string): string {
-  return ROLE_COLORS[role] ?? "bg-slate-50 text-slate-800 border-slate-200";
+  if (!role) return "bg-slate-50 text-slate-800 border-slate-200";
+  return ROLE_COLOR_PALETTE[hashRoleName(role) % ROLE_COLOR_PALETTE.length];
 }
 
 // ---------------------------------------------------------------------------

@@ -35,16 +35,20 @@ import { useToast } from "../components/UI/Toast";
 import { useUsuarios, type UserRecord, type UpdateUserPayload } from "../hooks/useUsuarios";
 import { containerVariants, itemVariants } from "../animations";
 
-const ROLES = [
-  { value: "SUPERADMIN", label: "Super Administrador" },
-  { value: "ADMIN", label: "Administrador" },
-  { value: "PRESIDENCIA", label: "Presidencia" },
-  { value: "INFRAESTRUCTURA", label: "Infraestructura / Mant." },
-  { value: "CIERRE_DE_OBRA", label: "Cierre de Obra" },
-  { value: "PROCURA", label: "Procura" },
-  { value: "ANALISTA", label: "Analistas" },
-  { value: "FINANZAS", label: "Finanzas" },
-];
+// Etiquetas amigables — la lista de valores válidos viene del backend
+// (GET /api/roles, fuente de verdad: UserController::VALID_ROLES) para que
+// un rol nuevo no requiera tocar el frontend para aparecer en el selector.
+const ROLE_LABELS: Record<string, string> = {
+  SUPERADMIN: "Super Administrador",
+  ADMIN: "Administrador",
+  PRESIDENCIA: "Presidencia",
+  INFRAESTRUCTURA: "Infraestructura / Mant.",
+  CIERRE_DE_OBRA: "Cierre de Obra",
+  PROCURA: "Procura",
+  ANALISTA: "Analistas",
+  FINANZAS: "Finanzas",
+  CATALOGOS: "Catálogos",
+};
 
 // ── Motion variants ──────────────────────────────────────────────────────
 const bannerVariants = {
@@ -66,10 +70,11 @@ interface UsuariosPanelProps {
 export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
   const { showToast } = useToast();
   const {
-    users, isLoading,
+    users, isLoading, roles,
     handleCreateUser, handleUpdateUser,
     handleToggleUserStatus, handleSendPasswordReset,
   } = useUsuarios(authToken, showToast);
+  const roleOptions = roles.map((value) => ({ value, label: ROLE_LABELS[value] ?? value }));
 
   // ── Create form state ─────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -198,7 +203,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
     }
   };
 
-  const roleLabel = (value: string) => ROLES.find(r => r.value === value)?.label ?? value;
+  const roleLabel = (value: string) => ROLE_LABELS[value] ?? value;
 
   // ── Render ────────────────────────────────────────────────────────────
 
@@ -372,7 +377,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                     onChange={e => setRole(e.target.value)}
                     className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:shadow-sm"
                   >
-                    {ROLES.map(r => (
+                    {roleOptions.map(r => (
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>
@@ -693,7 +698,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
                                       onChange={e => setEditRole(e.target.value)}
                                       className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 appearance-none"
                                     >
-                                      {ROLES.map(r => (
+                                      {roleOptions.map(r => (
                                         <option key={r.value} value={r.value}>{r.label}</option>
                                       ))}
                                     </select>

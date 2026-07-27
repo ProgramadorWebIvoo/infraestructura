@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Check,
   CheckCircle,
@@ -44,7 +45,7 @@ export default function AIConfigTable({
   onSync: () => void;
   onCreateNew: () => void;
 }) {
-  const columns: Column<AiConfigRecord>[] = [
+  const columns: Column<AiConfigRecord>[] = useMemo(() => [
     {
       key: "provider",
       label: "Proveedor",
@@ -161,7 +162,7 @@ export default function AIConfigTable({
         </div>
       ),
     },
-  ];
+  ], [testingId, deletingId, onTest, onEdit, onToggleActive, onDelete]);
 
   return (
     <motion.div variants={itemVariants}>

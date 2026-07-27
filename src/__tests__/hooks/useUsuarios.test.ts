@@ -13,8 +13,10 @@ vi.mock("@/services/api", () => ({
 }));
 
 const mockGetErrorMessage = vi.fn();
+const mockLogError = vi.fn();
 vi.mock("@/services/logger", () => ({
   getErrorMessage: (...args: unknown[]) => mockGetErrorMessage(...args),
+  logError: (...args: unknown[]) => mockLogError(...args),
 }));
 
 import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
@@ -49,6 +51,9 @@ describe("useUsuarios", () => {
     vi.clearAllMocks();
     mockUsePolledFetch.mockReturnValue(defaultReturn);
     mockGetErrorMessage.mockImplementation((_err: unknown, fallback: string) => fallback);
+    // Default para el fetch de /roles disparado al montar (con authToken);
+    // los tests que ejercitan otros endpoints sobreescriben con mockResolvedValueOnce.
+    mockApiFetch.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -88,6 +93,26 @@ describe("useUsuarios", () => {
 
       renderHook(() => useUsuarios("token", showToast));
       expect(mockApiFetch).toHaveBeenCalledWith("/users", { token: "token" });
+    });
+  });
+
+  describe("roles", () => {
+    it("carga /roles al montar con token y lo expone en el hook", async () => {
+      mockApiFetch.mockResolvedValue(["SUPERADMIN", "ADMIN", "ANALISTA"]);
+
+      const { result } = renderHook(() => useUsuarios("token", showToast));
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/roles", { token: "token" });
+      expect(result.current.roles).toEqual(["SUPERADMIN", "ADMIN", "ANALISTA"]);
+    });
+
+    it("no llama a /roles sin authToken", () => {
+      renderHook(() => useUsuarios("", showToast));
+      expect(mockApiFetch).not.toHaveBeenCalledWith("/roles", expect.anything());
     });
   });
 

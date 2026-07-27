@@ -83,23 +83,23 @@ Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 
 
 | # | Ítem | Detalle | Esfuerzo |
 |---|------|---------|----------|
-| 13 | **Refactor God Components** — Extraer subcomponentes de UsuariosPanel (742→400), ProveedoresRegistrados (608→350), ProcuraPanel (555→350) | 3 vistas | 3 días |
-| 14 | **Extraer lógica financiera** — Mover cálculos de PresidenciaDashboard a hook `useProjectFinancials` | `PresidenciaDashboard.tsx` | 1 día |
-| 15 | **Migrar matriz de permisos a backend** — `roleAccess` servido desde `GET /api/auth/permissions` | `useRouting.ts` + Backend | 2 días |
-| 16 | **Migrar modelos IA a endpoint** — `PROVIDER_MODELS` servido desde `GET /ai/config/models` | `useAIConfig.ts` + Backend | 1 día |
-| 17 | **Migrar lista de roles a endpoint** — `ROLES` servido desde `GET /api/roles` | `UsuariosPanel.tsx` + Backend | 1 día |
-| 18 | **Migrar colores de roles a backend/algoritmo** — `ROLE_COLORS` por hash o endpoint | `utils.ts` + Backend | 0.5 día |
-| 19 | **Validación de contraseña en backend** — La validación de 8 caracteres mínimo debe replicarse en backend | `UsuariosPanel.tsx` + Backend | 0.5 día |
-| 20 | **Sanitización XSS en proveedores** — Sanitizar `supplierName`/`supplierContact` con DOMPurify | `useProveedores.ts` | 0.5 día |
-| 21 | **CSP: remover `http://localhost:*` en producción** — Condicional por modo dev/prod | `vite.config.ts` | 0.2 día |
-| 22 | **IDs secuenciales → UUIDs** — Migrar PKs VARCHAR a UUIDs en BD + backend | `database.sql` + Backend | 1 día |
-| 23 | **Timezone BD a UTC** — Cambiar `SET time_zone = "-04:00"` a `"+00:00"` | `database.sql` | 0.2 día |
-| 24 | **Inconsistencia BD/docs** — Agregar columnas `user_id` y `user_name_snapshot` a `audit_logs` en SQL | `database.sql` | 0.3 día |
-| 25 | **Columnas Table inline sin memo** — Mover definiciones de columnas fuera del componente o envolver en `useMemo` | ProveedoresRegistrados, PresidenciaDashboard, AIConfigTable | 0.5 día |
-| 26 | **Key prop con índice en lugar de ID** — Cambiar `rowKey={(_item, idx) => idx}` por `rowKey={(item) => item.id}` | `ProveedoresRegistrados.tsx` | 0.1 día |
-| 27 | **Doble fetch en useAIConfig** — Unificar dos useEffect que llaman loadConfigs() | `useAIConfig.ts` | 0.3 día |
-| 28 | **Exponer setters directos desde hook** — `setSyncMessage` → `dismissSyncMessage()` | `useAIConfig.ts` | 0.2 día |
-| 29 | **Copiar auditoría V1 a carpeta sin espacio** — Renombrar `AUDITORIA_front_24_07_2026 /` → `AUDITORIA_front_24_07_2026` | Carperta | 0.1 día |
+| 13 | ⏳ **Refactor God Components** — Extraer subcomponentes de UsuariosPanel (742→400), ProveedoresRegistrados (608→350), ProcuraPanel (555→350). Pendiente de luz verde tras commit del resto del sprint | 3 vistas | 3 días |
+| 14 | ✅ **Extraer lógica financiera** — `useProjectFinancials` extraído, `PresidenciaDashboard` solo consume | `src/hooks/useProjectFinancials.ts` | 1 día |
+| 15 | ✅ **Migrar matriz de permisos a backend** — `GET /api/auth/permissions` (`config/permissions.php`), `useRouting.ts` la consume con fail-closed mientras carga | `useRouting.ts` + Backend | 2 días |
+| 16 | ✅ **Migrar modelos IA a endpoint** — `GET /ai/config/models` (`config/ai.php`), `useAIConfig.ts` expone `providerModels` | `useAIConfig.ts` + Backend | 1 día |
+| 17 | ✅ **Migrar lista de roles a endpoint** — `GET /api/roles` (`UserController::VALID_ROLES`), `UsuariosPanel.tsx` solo mantiene las etiquetas amigables | `UsuariosPanel.tsx` + Backend | 1 día |
+| 18 | ✅ **Colores de roles por hash** — `getRoleColor()` determinístico sobre una paleta fija (sin mapa por rol que mantener) | `utils.ts` | 0.5 día |
+| 19 | ✅ **Validación de contraseña en backend** — Ya existía (`UserController::store`, `min:8`), verificado y sin gaps | `UserController.php` | 0.5 día |
+| 20 | ✅ **Sanitización XSS en proveedores** — `DOMPurify.sanitize()` en `supplierName`/`supplierCompany`/`supplierContact` antes de enviar | `useProveedores.ts` | 0.5 día |
+| 21 | ✅ **CSP: remover `http://localhost:*` en producción** — Condicional por `isDev` en `connect-src` | `vite.config.ts` | 0.2 día |
+| 22 | ⏸️ **IDs secuenciales → UUIDs** — Omitido por decisión de producto: los códigos (PRJ-/PROP-/LOG-/contratista) son legibles por humanos y visibles en UI/auditoría/proveedores; ya tienen sufijo aleatorio contra colisiones (el riesgo real de seguridad señalado en la auditoría). Reemplazarlos por UUID es un cambio de producto, no deuda técnica | `database.sql` + Backend | — |
+| 23 | ⏸️ **Timezone BD a UTC** — Deprioritizado (no relevante); el `.sql` real del backend ya usa `+00:00`, solo la copia obsoleta de este repo tenía `-04:00` | `database.sql` | — |
+| 24 | ⏸️ **Inconsistencia BD/docs `audit_logs`** — Deprioritizado (no relevante); ya resuelto en la BD real (migración `2026_07_01_153523`), solo la doc quedó desactualizada | `database.sql` | — |
+| 25 | ✅ **Columnas Table inline sin memo** — `useMemo` en `AIConfigTable`, `ProveedoresRegistrados` (contractorColumns) y `PresidenciaDashboard` (auditColumns/projectColumns) | AIConfigTable, ProveedoresRegistrados, PresidenciaDashboard | 0.5 día |
+| 26 | ✅ **Key prop con índice en lugar de ID** — `rowKey={(item) => \`${item.materialName}-${item.unit}\`}` en la tabla de ítems de propuesta | `ProveedoresRegistrados.tsx` | 0.1 día |
+| 27 | ✅ **Doble fetch en useAIConfig** — Un solo `useEffect` cubre mount + transición de login | `useAIConfig.ts` | 0.3 día |
+| 28 | ✅ **Exponer setters directos desde hook** — `dismissSyncMessage()` reemplaza `setSyncMessage`/`setSyncIsError` expuestos | `useAIConfig.ts` | 0.2 día |
+| 29 | ⏸️ **Copiar auditoría V1 a carpeta sin espacio** — Deprioritizado (no relevante); los archivos originales `V1.md`/`V2.md` de esa carpeta se perdieron en el intento de renombrado (nunca estuvieron trackeados en git, sin backup posible). El folder ya quedó sin el espacio final | Carpeta | — |
 
 ### 🟢 BAJA — Sprint 4 (Mejoras + Documentación)
 

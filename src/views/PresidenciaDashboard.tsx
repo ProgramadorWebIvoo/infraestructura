@@ -22,6 +22,7 @@ import { SkeletonStats, SkeletonStatsDark, SkeletonTable, SkeletonCard } from ".
 import StatusBadge from "../components/UI/StatusBadge";
 import { Table, type Column } from "../components/UI/Table";
 import { getRoleColor } from "../utils";
+import { useProjectFinancials } from "../hooks/useProjectFinancials";
 import AuditInspectModal from "../components/Modals/AuditInspectModal";
 import KpiCard from "../components/UI/KpiCard";
 import { containerVariants, itemVariants } from "../animations";
@@ -182,26 +183,15 @@ export default function PresidenciaDashboard({
   const [auditDateFrom, setAuditDateFrom] = useState("");
   const [auditDateTo, setAuditDateTo] = useState("");
 
+  const auditColumns = useMemo(() => getAuditColumns(setInspectedAuditLog), []);
+  const projectColumns = useMemo(() => getProjectColumns(onSelectProject), [onSelectProject]);
+
   // ── Derived stats ──
   const totalProjectsCount = projects.length;
   const completedProjects = useMemo(() => projects.filter(p => p.status === ProjectStatus.COMPLETADO_PAGADO), [projects]);
   const activeProjects = useMemo(() => projects.filter(p => p.status !== ProjectStatus.COMPLETADO_PAGADO && p.status !== ProjectStatus.CREADO), [projects]);
 
-  const { totalApprovedInvestment, totalReleasedFunds, pendingFunds, releasedPercent } = useMemo(() => {
-    let totalApprovedInvestment = 0;
-    let totalReleasedFunds = 0;
-    projects.forEach(p => {
-      totalApprovedInvestment += p.approvedInvestmentAmount ?? p.estimatedTotal;
-      if (p.advancePaidAmount) totalReleasedFunds += p.advancePaidAmount;
-      if (p.finalPaidAmount) totalReleasedFunds += p.finalPaidAmount;
-    });
-    return {
-      totalApprovedInvestment,
-      totalReleasedFunds,
-      pendingFunds: Math.max(0, totalApprovedInvestment - totalReleasedFunds),
-      releasedPercent: Math.round((totalReleasedFunds / (totalApprovedInvestment || 1)) * 100),
-    };
-  }, [projects]);
+  const { totalApprovedInvestment, totalReleasedFunds, pendingFunds, releasedPercent } = useProjectFinancials(projects);
 
   const filteredProjects = useMemo(() => projects.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -374,7 +364,7 @@ export default function PresidenciaDashboard({
           </div>
         </div>
         <Table
-          columns={getAuditColumns(setInspectedAuditLog)}
+          columns={auditColumns}
           data={filteredAuditLogs}
           rowKey={(log) => log.id}
           emptyMessage="No hay logs registrados todavía."
@@ -439,7 +429,7 @@ export default function PresidenciaDashboard({
           </div>
         </div>
         <Table
-          columns={getProjectColumns(onSelectProject)}
+          columns={projectColumns}
           data={filteredProjects}
           rowKey={(p) => p.id}
           emptyMessage="No se encontraron obras con los filtros aplicados."
