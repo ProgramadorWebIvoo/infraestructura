@@ -106,13 +106,24 @@ export function useAuth() {
   // para que funcione correctamente aunque el PC duerma o el navegador
   // suspenda el tab (los timers JS se congelan, Date.now() no).
   const lastActivityRef = useRef(Date.now());
+  const isTimingOutRef = useRef(false);
 
   const checkInactivity = useCallback(() => {
-    if (!authToken) return;
+    if (!authToken || isTimingOutRef.current) return;
     const elapsed = Date.now() - lastActivityRef.current;
     if (elapsed >= SESSION_TIMEOUT_MS) {
-      clearSession();
-      window.location.reload();
+      isTimingOutRef.current = true;
+      // Debe invalidar la cookie de sesión en el backend antes de recargar:
+      // clearSession() solo limpia estado local, y como la sesión Sanctum
+      // vive en una cookie httpOnly con lifetime propio (backend), un
+      // reload sin /logout hace que GET /user vuelva a autenticar sola
+      // mientras la cookie no haya expirado por su cuenta.
+      apiFetch("/logout", { method: "POST" })
+        .catch(() => null)
+        .finally(() => {
+          clearSession();
+          window.location.reload();
+        });
     }
   }, [authToken, clearSession]);
 

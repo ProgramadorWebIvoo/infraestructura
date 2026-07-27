@@ -236,4 +236,123 @@ describe("useAuth", () => {
       expect(localStorage.getItem(STORAGE_USER)).toBeNull();
     });
   });
+
+  // -----------------------------------------------------------------------
+  // Inactividad por tiempo real (PC suspendida/apagada) — bug: el timeout
+  // solo limpiaba estado local y recargaba, sin avisarle al backend. Como
+  // la sesión vive en una cookie httpOnly con lifetime propio (Sanctum), el
+  // reload sin /logout dejaba la cookie viva y GET /user volvía a
+  // autenticar sola en el remount, dejando el "fix" sin efecto observable.
+  // -----------------------------------------------------------------------
+
+  describe("timeout de inactividad", () => {
+    const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+    const INACTIVITY_CHECK_MS = 15_000;
+    let reloadSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      reloadSpy = vi.fn();
+      Object.defineProperty(window, "location", {
+        configurable: true,
+        value: { ...window.location, reload: reloadSpy },
+      });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("al superar 30 min de inactividad, llama a /logout ANTES de limpiar y recargar", async () => {
+      const { result } = await renderAuthenticated();
+      mockApiFetch.mockClear();
+      mockApiFetch.mockResolvedValueOnce(undefined); // POST /logout
+
+      await act(async () => {
+        vi.advanceTimersByTime(SESSION_TIMEOUT_MS + INACTIVITY_CHECK_MS);
+        await vi.runOnlyPendingTimersAsync();
+      });
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/logout", { method: "POST" });
+      expect(result.current.authToken).toBe("");
+      expect(result.current.authUser).toBeNull();
+      expect(localStorage.getItem(STORAGE_USER)).toBeNull();
+      expect(reloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("igual limpia sesión y recarga si /logout falla en el backend", async () => {
+      const { result } = await renderAuthenticated();
+      mockApiFetch.mockClear();
+      mockApiFetch.mockRejectedValueOnce(new Error("Network"));
+
+      await act(async () => {
+        vi.advanceTimersByTime(SESSION_TIMEOUT_MS + INACTIVITY_CHECK_MS);
+        await vi.runOnlyPendingTimersAsync();
+      });
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/logout", { method: "POST" });
+      expect(result.current.authToken).toBe("");
+      expect(reloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("no dispara timeout antes de los 30 minutos", async () => {
+      await renderAuthenticated();
+      mockApiFetch.mockClear();
+
+      await act(async () => {
+        vi.advanceTimersByTime(SESSION_TIMEOUT_MS - 60_000);
+        await vi.runOnlyPendingTimersAsync();
+      });
+
+      expect(mockApiFetch).not.toHaveBeenCalledWith("/logout", expect.anything());
+      expect(reloadSpy).not.toHaveBeenCalled();
+    });
+
+    it("visibilitychange al volver del tab dispara el chequeo inmediato (PC suspendida)", async () => {
+      await renderAuthenticated();
+      mockApiFetch.mockClear();
+      mockApiFetch.mockResolvedValueOnce(undefined);
+
+      // Simula que el PC durmió: el reloj avanza más del timeout, pero
+      // ningún setInterval llega a correr (proceso congelado) hasta que
+      // el tab vuelve a ser visible.
+      vi.setSystemTime(Date.now() + SESSION_TIMEOUT_MS + 60_000);
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "visible",
+      });
+
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+        await vi.runOnlyPendingTimersAsync();
+      });
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/logout", { method: "POST" });
+      expect(reloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("no dispara dos veces el logout si el interval vuelve a correr mientras la llamada está en curso", async () => {
+      const { result } = await renderAuthenticated();
+      mockApiFetch.mockClear();
+      let resolveLogout: () => void = () => {};
+      mockApiFetch.mockImplementationOnce(
+        () => new Promise<void>((resolve) => { resolveLogout = resolve; }),
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(SESSION_TIMEOUT_MS + INACTIVITY_CHECK_MS);
+        await vi.advanceTimersByTimeAsync(INACTIVITY_CHECK_MS * 3);
+      });
+
+      expect(mockApiFetch).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        resolveLogout();
+        await vi.runOnlyPendingTimersAsync();
+      });
+
+      expect(reloadSpy).toHaveBeenCalledTimes(1);
+      expect(result.current.authToken).toBe("");
+    });
+  });
 });
