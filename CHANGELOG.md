@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## [2026-07-27] — Fix: roleAccess deny-by-default + SUPERADMIN con acceso a Presidencia
+- Tipo: fix + security
+- Qué: `useRoleAccess.canAccess()` ya no cae a `roleAccess["INFRAESTRUCTURA"]` cuando el rol activo no existe en el mapa — ahora retorna `[]` (sin acceso a ninguna ruta). Se agregó `/presidencia` a `SUPERADMIN` (como primera ruta, ya que es también su landing por defecto vía `firstAllowedRoute`), sin tocar `ADMIN` — solo `SUPERADMIN` y `PRESIDENCIA` pueden acceder a `/presidencia`.
+- Por qué / causa raíz: Auditoría V3 (`AUDITORIA_front_27_07_2026_V3.md`, hallazgo C1) detectó que el fallback a INFRAESTRUCTURA era una escalación de privilegios involuntaria para roles desconocidos/mal tipeados, y que `useRouting.test.ts` tenía 3 tests en rojo ejercitando exactamente ese bug, ignorados como "preexistentes" en al menos 3 commits.
+- Archivos: `src/hooks/useRouting.ts`, `src/__tests__/hooks/useRouting.test.ts`
+- Verificación: `tsc --noEmit` 0 errores, 384/384 tests pasando (los 3 que estaban en rojo ahora reflejan el comportamiento correcto en vez del vulnerable).
+
+## [2026-07-27] — 🔴 CRITICAL C-02 (rehecho): Sesión por cookie httpOnly vía Sanctum SPA nativo (reemplaza intento con CSRF roto)
+- Tipo: security
+- Qué: Se descartó el mecanismo casero (`TokenFromCookie`, `RefreshSanctumToken` cookie-side, `CorsDiagnosticController`) de un intento previo sin commitear que migraba el token de `localStorage` a cookie pero dejaba un CSRF explotable (`SameSite=None` sin ningún token CSRF). Se reemplazó por el flujo oficial de Sanctum SPA:
+  - `src/services/api.ts`: wrapper que siempre envía `credentials: "include"`, obtiene la cookie CSRF (`GET /sanctum/csrf-cookie`) antes de la primera mutación y la reenvía como header `X-XSRF-TOKEN`; descarta cualquier `token` Bearer heredado (mobile sigue usando Bearer vía `@ivoo/shared`, sin cambios).
+  - `src/hooks/useAuth.ts`: reescrito sin `localStorage` de token. `authToken` es un sentinel en memoria (`"authenticated"`) derivado de si `GET /api/user` resuelve; la validación de sesión al montar es incondicional (la cookie httpOnly no es legible desde JS).
+- Por qué / causa raíz: Auditorías V3 paralelas de frontend y backend detectaron, de forma independiente, que el intento anterior de C-02 introducía CSRF explotable sobre acciones financieras/contractuales. Contraparte backend en `infraestructura-back` (ver su CHANGELOG).
+- Archivos: `src/services/api.ts`, `src/hooks/useAuth.ts`, `src/__tests__/services/api.test.ts`, `src/__tests__/hooks/useAuth.test.ts`, `src/__tests__/components/Layout/AuthenticatedLayout.test.tsx`, `src/__tests__/components/UI/Modal.test.tsx` (2 fixes de tipos preexistentes de paso)
+- Verificación: `tsc --noEmit` 0 errores, 384/384 tests pasando.
+
+## [2026-07-27] — C-03: Forzar HTTPS — CSP upgrade-insecure-requests en build de producción
+- Tipo: security
+- Qué: `vite.config.ts` agrega la directiva `upgrade-insecure-requests` a la CSP solo en modo producción. Se evaluó explícitamente hashear la contraseña en el cliente (sugerido en PENDIENTES) y se descartó: no añade seguridad real (el hash pasaría a ser el secreto equivalente, sin proteger nada que TLS no proteja ya, y rompería el hashing bcrypt del backend). El control real es TLS forzado — ver contraparte backend (HSTS, `TRUSTED_PROXIES`, `URL::forceScheme`).
+- Por qué / causa raíz: PENDIENTES CRITICAL #3 — la auditoría interna señaló que las contraseñas viajan en claro en el body del login sin ninguna directiva que fuerce upgrade a HTTPS en la CSP.
+- Archivos: `vite.config.ts`
+- Nota pendiente: esta CSP solo se sirve hoy desde el dev server de Vite (`server.headers`), no llega al build de producción real — ver hallazgo C-NEW-4 de `AUDITORIA_front_27_07_2026_V3.md`, aún sin resolver.
+
+## [2026-07-27] — C-04: URL de producción hardcodeada en mobile → variable de entorno
+- Tipo: security + refactor
+- Qué: `mobile/config.ts` ya no hardcodea `https://infraestructuraback.ivoofix.com/api`. `API_BASE_URL` ahora viene de `EXPO_PUBLIC_API_URL` (inlineada en build-time por Expo), y falla explícitamente al arrancar si no está definida en vez de asumir un default silencioso.
+- Por qué / causa raíz: PENDIENTES CRITICAL #4 — cada entorno (dev/staging/prod) necesita su propia URL; hardcodear la de producción rompía el flujo de desarrollo local y mezclaba configuración de despliegue con código fuente.
+- Archivos: `mobile/config.ts`, `mobile/.env.example` [NUEVO], `mobile/.env` [NUEVO, gitignorado], `mobile/.gitignore`
+- Verificación: `tsc --noEmit` en `mobile/` sin errores.
+
 ## [2026-07-24] — Fix: Acceso a PRESIDENCIA solo para rol PRESIDENCIA
 - Tipo: fix + security
 - Qué: Eliminado acceso a `/presidencia` de todos los roles excepto `PRESIDENCIA` (y SUPERADMIN/ADMIN que ya no tienen acceso). Antes casi todos los roles (INFRAESTRUCTURA, CIERRE_DE_OBRA, PROCURA, ANALISTA, FINANZAS, CATALOGOS) tenían acceso a `/presidencia` en `roleAccess`.

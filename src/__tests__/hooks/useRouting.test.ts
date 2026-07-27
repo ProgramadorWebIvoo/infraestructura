@@ -46,13 +46,12 @@ describe("useRoleAccess", () => {
       expect(result.current.canAccess("/presidencia")).toBe(false);
     });
 
-    it("returna false si role no existe en roleAccess (fallback INFRAESTRUCTURA)", () => {
-      // rol no definido → fallback a INFRAESTRUCTURA
+    it("deniega todo acceso si el rol no existe en roleAccess (deny-by-default)", () => {
+      // rol no reconocido → sin acceso a ninguna ruta, no hereda de otro rol
       const { result } = renderHook(() => useRoleAccess("ROL_INEXISTENTE"));
 
-      // fallback INFRAESTRUCTURA tiene acceso a /presidencia e /infraestructura
-      expect(result.current.canAccess("/presidencia")).toBe(true);
-      expect(result.current.canAccess("/infraestructura")).toBe(true);
+      expect(result.current.canAccess("/presidencia")).toBe(false);
+      expect(result.current.canAccess("/infraestructura")).toBe(false);
       expect(result.current.canAccess("/finanzas")).toBe(false);
     });
   });
@@ -114,8 +113,12 @@ describe("roleAccess", () => {
     }
   });
 
-  it("SUPERADMIN y ADMIN tienen las mismas rutas", () => {
-    expect(roleAccess["SUPERADMIN"]).toEqual(roleAccess["ADMIN"]);
+  it("SUPERADMIN incluye todas las rutas de ADMIN (y además Presidencia)", () => {
+    for (const route of roleAccess["ADMIN"]) {
+      expect(roleAccess["SUPERADMIN"]).toContain(route);
+    }
+    expect(roleAccess["SUPERADMIN"]).toContain("/presidencia");
+    expect(roleAccess["ADMIN"]).not.toContain("/presidencia");
   });
 
   it("todas las rutas empiezan con /", () => {

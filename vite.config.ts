@@ -16,6 +16,7 @@ export default defineConfig(({mode}) => {
     "form-action 'self';",
     "base-uri 'self';",
     "frame-ancestors 'none';",
+    ...(isDev ? [] : ["upgrade-insecure-requests;"]),
   ].join(' ');
 
   return {

@@ -8,7 +8,7 @@
  */
 
 export const roleAccess: Record<string, string[]> = {
-  SUPERADMIN:     ["/infraestructura", "/presidencia", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
+  SUPERADMIN:     ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
   ADMIN:          ["/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
   PRESIDENCIA:    ["/presidencia", "/catalogos"],
   INFRAESTRUCTURA:["/infraestructura"],
@@ -24,7 +24,10 @@ export function useRoleAccess(role: string | undefined) {
 
   const canAccess = (path: string) => {
     if (!activeRole) return false;
-    return (roleAccess[activeRole] ?? roleAccess["INFRAESTRUCTURA"]).includes(path);
+    // Denegar por defecto: un rol no reconocido no hereda las rutas de
+    // ningún otro rol (antes caía a INFRAESTRUCTURA, una escalación de
+    // privilegios involuntaria para roles desconocidos/mal tipeados).
+    return (roleAccess[activeRole] ?? []).includes(path);
   };
 
   const firstAllowedRoute = (r: string | undefined): string | null => {
