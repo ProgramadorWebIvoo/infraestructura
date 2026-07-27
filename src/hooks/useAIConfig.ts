@@ -133,10 +133,9 @@ export function useAIConfig(authToken: string) {
 
   // Load configs
   const loadConfigs = useCallback(async () => {
-    const token = authTokenRef.current;
-    if (!token) return;
+    if (!authTokenRef.current) return;
     try {
-      const data = await apiFetch<AiConfigRecord[]>("/ai/config", { token });
+      const data = await apiFetch<AiConfigRecord[]>("/ai/config");
       setConfigs(data);
     } catch (err) {
       logError("useAIConfig.loadConfigs", err);
@@ -148,10 +147,9 @@ export function useAIConfig(authToken: string) {
   // Load selectable models per provider — fuente de verdad: backend
   // (config/ai.php), no hardcodeado en el frontend.
   const loadProviderModels = useCallback(async () => {
-    const token = authTokenRef.current;
-    if (!token) return;
+    if (!authTokenRef.current) return;
     try {
-      const data = await apiFetch<Record<string, string[]>>("/ai/config/models", { token });
+      const data = await apiFetch<Record<string, string[]>>("/ai/config/models");
       setProviderModels(data);
     } catch (err) {
       logError("useAIConfig.loadProviderModels", err);
@@ -160,11 +158,10 @@ export function useAIConfig(authToken: string) {
 
   // Load usage
   const loadUsage = useCallback(async (days = 30) => {
-    const token = authTokenRef.current;
-    if (!token) return;
+    if (!authTokenRef.current) return;
     setIsUsageLoading(true);
     try {
-      const data = await apiFetch<AiUsageData>(`/ai/config/usage?days=${days}`, { token });
+      const data = await apiFetch<AiUsageData>(`/ai/config/usage?days=${days}`);
       setUsage(data);
     } catch (err) {
       logError("useAIConfig.loadUsage", err);
@@ -192,10 +189,8 @@ export function useAIConfig(authToken: string) {
 
   // Create config
   const createConfig = useCallback(async (form: AiConfigForm): Promise<AiConfigRecord> => {
-    const token = authTokenRef.current;
     const created = await apiFetch<AiConfigRecord>("/ai/config", {
       method: "POST",
-      token,
       body: JSON.stringify(form),
     });
     setConfigs((prev) => [...prev, created]);
@@ -204,10 +199,8 @@ export function useAIConfig(authToken: string) {
 
   // Update config
   const updateConfig = useCallback(async (id: number, form: Partial<AiConfigForm>): Promise<AiConfigRecord> => {
-    const token = authTokenRef.current;
     const updated = await apiFetch<AiConfigRecord>(`/ai/config/${id}`, {
       method: "PATCH",
-      token,
       body: JSON.stringify(form),
     });
     setConfigs((prev) => prev.map((c) => (c.id === id ? updated : c)));
@@ -216,26 +209,22 @@ export function useAIConfig(authToken: string) {
 
   // Delete config
   const deleteConfig = useCallback(async (id: number): Promise<void> => {
-    const token = authTokenRef.current;
-    await apiFetch(`/ai/config/${id}`, { method: "DELETE", token });
+    await apiFetch(`/ai/config/${id}`, { method: "DELETE" });
     setConfigs((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
   // Test config
   const testConfig = useCallback(async (id: number): Promise<{ success: boolean; message: string }> => {
-    const token = authTokenRef.current;
-    return apiFetch(`/ai/config/${id}/test`, { method: "POST", token });
+    return apiFetch(`/ai/config/${id}/test`, { method: "POST" });
   }, []);
 
   // Sync to runtime
   const syncConfig = useCallback(async () => {
-    const token = authTokenRef.current;
     setSyncMessage(null);
     setSyncIsError(false);
     try {
       const result = await apiFetch<{ message: string; activeConfigs: number }>("/ai/config/sync", {
         method: "POST",
-        token,
       });
       setSyncMessage(result.message);
       return result;

@@ -34,7 +34,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
     usePolledFetch<UserRecord>({
       authToken,
       showToast,
-      fetcher: useCallback(() => apiFetch<UserRecord[]>("/users", { token: authToken }), [authToken]),
+      fetcher: useCallback(() => apiFetch<UserRecord[]>("/users"), []),
       getSignature: useCallback(
         (data: UserRecord[]) => data.map(u => [u.id, u.name, u.email, u.role, u.status].join(":")).join("|"),
         [],
@@ -48,7 +48,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
   useEffect(() => {
     if (!authToken) return;
     let cancelled = false;
-    apiFetch<string[]>("/roles", { token: authToken })
+    apiFetch<string[]>("/roles")
       .then((data) => {
         if (!cancelled) setRoles(data);
       })
@@ -71,7 +71,6 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
       try {
         const created = await apiFetch<UserRecord>("/users", {
           method: "POST",
-          token: authToken,
           body: JSON.stringify(payload),
         });
         setUsers(prev => [created, ...prev]);
@@ -82,7 +81,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         throw err;
       }
     },
-    [authToken, showToast],
+    [showToast],
   );
 
   const handleUpdateUser = useCallback(
@@ -90,7 +89,6 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
       try {
         const updated = await apiFetch<UserRecord>(`/users/${id}`, {
           method: "PATCH",
-          token: authToken,
           body: JSON.stringify(payload),
         });
         setUsers(prev => prev.map(u => (u.id === id ? updated : u)));
@@ -102,7 +100,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         throw err;
       }
     },
-    [authToken, showToast],
+    [showToast],
   );
 
   const handleToggleUserStatus = useCallback(
@@ -110,7 +108,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
       try {
         const result = await apiFetch<{ id: number | string; status: "Active" | "Inactive" }>(
           `/users/${id}/toggle-status`,
-          { method: "POST", token: authToken },
+          { method: "POST" },
         );
         setUsers(prev => prev.map(u => (u.id === id ? { ...u, status: result.status } : u)));
         const label = result.status === "Active" ? "activado" : "desactivado";
@@ -122,7 +120,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         throw err;
       }
     },
-    [authToken, showToast],
+    [showToast],
   );
 
   const handleSendPasswordReset = useCallback(
@@ -130,7 +128,6 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
       try {
         await apiFetch<{ message: string }>(`/users/${id}/send-reset-link`, {
           method: "POST",
-          token: authToken,
         });
         showToast("Link de restablecimiento enviado al correo del usuario.", "success");
       } catch (err) {
@@ -139,7 +136,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
         throw err;
       }
     },
-    [authToken, showToast],
+    [showToast],
   );
 
   return {

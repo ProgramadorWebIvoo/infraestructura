@@ -18,7 +18,7 @@ export function useContractors(authToken: string, showToast: ShowToast) {
     usePolledFetch<Contractor>({
       authToken,
       showToast,
-      fetcher: useCallback(() => apiFetch<Contractor[]>("/contractors", { token: authToken }), [authToken]),
+      fetcher: useCallback(() => apiFetch<Contractor[]>("/contractors"), []),
       getSignature: useCallback(
         (data: Contractor[]) => data.map(c => [c.code, c.name, c.rating].join(":")).join("|"),
         [],
@@ -33,11 +33,10 @@ export function useContractors(authToken: string, showToast: ShowToast) {
   const handleUpdateContractorRating = useCallback(async (code: string, rating: number) => {
     await apiFetch(`/contractors/${code}/rating`, {
       method: "POST",
-      token: authToken,
       body: JSON.stringify({ rating }),
     });
     setContractors(prev => prev.map(c => c.code === code ? { ...c, rating } : c));
-  }, [authToken]);
+  }, []);
 
   const resetContractors = useCallback(() => {
     setContractors([]);

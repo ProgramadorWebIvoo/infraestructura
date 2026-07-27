@@ -22,7 +22,7 @@ export function useCatalog(authToken: string, showToast: ShowToast) {
     usePolledFetch<CatalogItem>({
       authToken,
       showToast,
-      fetcher: useCallback(() => apiFetch<CatalogItem[]>("/materials", { token: authToken }), [authToken]),
+      fetcher: useCallback(() => apiFetch<CatalogItem[]>("/materials"), []),
       getSignature: useCallback(
         (data: CatalogItem[]) => data.map(i => [i.name, i.unit, i.estimatedUnitPrice].join(":")).join("|"),
         [],

@@ -82,7 +82,7 @@ describe("useAIConfig", () => {
 
       await waitForLoad();
 
-      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config", { token: "valid-token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config");
       expect(result.current.configs).toEqual(configs);
       expect(result.current.isLoading).toBe(false);
     });
@@ -104,7 +104,7 @@ describe("useAIConfig", () => {
 
       await waitForLoad();
 
-      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config", { token: "new-token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config");
     });
   });
 
@@ -118,7 +118,7 @@ describe("useAIConfig", () => {
       const { result } = renderHook(() => useAIConfig("token"));
       await waitForLoad();
 
-      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/models", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/models");
       expect(result.current.providerModels).toEqual(models);
     });
 
@@ -148,7 +148,6 @@ describe("useAIConfig", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/ai/config", {
         method: "POST",
-        token: "token",
         body: expect.any(String),
       });
       expect(returned).toEqual(created);
@@ -179,7 +178,6 @@ describe("useAIConfig", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/1", {
         method: "PATCH",
-        token: "token",
         body: JSON.stringify({ model: "gpt-5.6-sol" }),
       });
       expect(result.current.configs[0].model).toBe("gpt-5.6-sol");
@@ -204,7 +202,6 @@ describe("useAIConfig", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/1", {
         method: "DELETE",
-        token: "token",
       });
       expect(result.current.configs).toEqual([]);
     });
@@ -225,7 +222,6 @@ describe("useAIConfig", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/1/test", {
         method: "POST",
-        token: "token",
       });
       expect(res).toEqual({ success: true, message: "Connection OK" });
     });
@@ -246,7 +242,6 @@ describe("useAIConfig", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/sync", {
         method: "POST",
-        token: "token",
       });
       expect(result.current.syncMessage).toBe("Synced 3 configs");
       expect(result.current.syncIsError).toBe(false);
@@ -287,7 +282,7 @@ describe("useAIConfig", () => {
         await result.current.loadUsage(7);
       });
 
-      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/usage?days=7", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/usage?days=7");
       expect(result.current.usage).toEqual(EMPTY_USAGE);
     });
   });

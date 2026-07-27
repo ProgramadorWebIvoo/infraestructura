@@ -26,8 +26,8 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
       authToken,
       showToast,
       fetcher: useCallback(
-        () => apiFetch<SupplierMaterialProposal[]>("/supplier-material-proposals", { token: authToken }),
-        [authToken],
+        () => apiFetch<SupplierMaterialProposal[]>("/supplier-material-proposals"),
+        [],
       ),
       getSignature: useCallback((data: SupplierMaterialProposal[]) => data.map(p => p.id).join("|"), []),
       errorMessage: "No se pudo cargar las propuestas de proveedores.",
@@ -49,7 +49,6 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
         };
         const data = await apiFetch<{ token: string; projectTitle: string }>("/supplier-invitations", {
           method: "POST",
-          token: authToken,
           body: JSON.stringify(sanitizedPayload),
         });
         showToast(`Invitación enviada a ${payload.supplierContact}`, "success");
@@ -60,7 +59,7 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
         throw err;
       }
     },
-    [authToken, showToast],
+    [showToast],
   );
 
   return {

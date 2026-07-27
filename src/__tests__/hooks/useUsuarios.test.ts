@@ -92,7 +92,7 @@ describe("useUsuarios", () => {
       });
 
       renderHook(() => useUsuarios("token", showToast));
-      expect(mockApiFetch).toHaveBeenCalledWith("/users", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/users");
     });
   });
 
@@ -106,7 +106,7 @@ describe("useUsuarios", () => {
         await Promise.resolve();
       });
 
-      expect(mockApiFetch).toHaveBeenCalledWith("/roles", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/roles");
       expect(result.current.roles).toEqual(["SUPERADMIN", "ADMIN", "ANALISTA"]);
     });
 
@@ -136,7 +136,6 @@ describe("useUsuarios", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/users", {
         method: "POST",
-        token: "token",
         body: expect.stringContaining("New User"),
       });
       expect(created).toEqual(newUser);
@@ -186,7 +185,6 @@ describe("useUsuarios", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/users/1", {
         method: "PATCH",
-        token: "token",
         body: expect.stringContaining("Updated Name"),
       });
       expect(returned).toEqual(updated);
@@ -214,7 +212,6 @@ describe("useUsuarios", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/users/1/toggle-status", {
         method: "POST",
-        token: "token",
       });
       expect(newStatus).toBe("Inactive");
 
@@ -237,7 +234,6 @@ describe("useUsuarios", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/users/1/send-reset-link", {
         method: "POST",
-        token: "token",
       });
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("Link de restablecimiento enviado"),

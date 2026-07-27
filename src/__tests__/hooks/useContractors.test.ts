@@ -134,7 +134,6 @@ describe("useContractors", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/contractors/CON-001/rating", {
         method: "POST",
-        token: "token",
         body: JSON.stringify({ rating: 4.5 }),
       });
 
@@ -172,7 +171,7 @@ describe("useContractors", () => {
 
       renderHook(() => useContractors("token", showToast));
 
-      expect(mockApiFetch).toHaveBeenCalledWith("/contractors", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/contractors");
     });
   });
 

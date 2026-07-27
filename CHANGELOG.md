@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [2026-07-27] — 🟠 HIGH Audit V3 #1–3: CVE react-router (riesgo aceptado), Husky (descartado), leaky abstraction en hooks
+- Tipo: fix + docs + security
+- Qué:
+  - **#1 CVE `react-router` (GHSA-qwww-vcr4-c8h2):** verificado que la vulnerabilidad solo afecta apps que usan las "unstable RSC APIs" (data mode con server actions/loaders) de React Router. Esta app usa `BrowserRouter` clásico sin RSC (`src/App.tsx`) — no explotable con el patrón de uso actual. `npm audit fix --force` bajaría a `react-router-dom@7.11.0` (regresión real e innecesaria), ya que la única versión que corrige el CVE dentro del rango instalado es `8.3.0` (major, fuera de alcance de un parche puntual). Se documenta como riesgo aceptado; upgrade mayor queda como mejora futura.
+  - **#2 Hook de pre-commit (Husky):** descartado por decisión explícita del usuario — no se usa Husky en este proyecto.
+  - **#3 Leaky abstraction `{ token }` en hooks:** `useAIConfig.ts`, `useProveedores.ts`, `useContractors.ts`, `useCatalog.ts`, `useUsuarios.ts` pasaban `token`/`token: authToken` a `apiFetch()` como si fuera un Bearer real, cuando `api.ts` (web) siempre lo descarta (la sesión viaja por cookie httpOnly de Sanctum). Se eliminó el parámetro `token` de todas las llamadas a `apiFetch` en estos 5 hooks; `authToken`/`authTokenRef` se conserva únicamente como gate de sesión (`if (!authToken) return`).
+- Por qué: hallazgos de `AUDITORIA_front_27_07_2026_V3.md` sección HIGH. #1 y #3 requerían verificar el código real antes de actuar — el CVE no aplicaba al patrón de uso, y el "bug" del token era cosmético (el valor nunca se enviaba), pero la forma del código sugería lo contrario.
+- Archivos: `PENDIENTES.md`, `src/hooks/useAIConfig.ts`, `src/hooks/useProveedores.ts`, `src/hooks/useContractors.ts`, `src/hooks/useCatalog.ts`, `src/hooks/useUsuarios.ts`, tests correspondientes en `src/__tests__/hooks/`.
+- Verificación: `npx tsc --noEmit` limpio; suite completa `npx vitest run` — 431/431 tests pasando (32 archivos).
+
 ## [2026-07-27] — LOW #17–#38 (V1+V2): logger en prod, fallback demo solo dev, tests, thresholds, perf, docs
 - Tipo: fix + refactor + docs + security
 - Qué:

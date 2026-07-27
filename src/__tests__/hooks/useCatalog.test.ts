@@ -109,7 +109,7 @@ describe("useCatalog", () => {
       });
 
       renderHook(() => useCatalog("token", showToast));
-      expect(mockApiFetch).toHaveBeenCalledWith("/materials", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/materials");
     });
   });
 

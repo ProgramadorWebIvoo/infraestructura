@@ -64,6 +64,10 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
       setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
+    if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setErrorMsg("La contraseña debe incluir mayúsculas, minúsculas y números.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -177,7 +181,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
                 type={showPassword ? "text" : "password"} required value={password}
                 autoComplete="new-password"
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mín. 8 caracteres, mayúscula, minúscula y número"
                 className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:shadow-sm placeholder:text-slate-400"
               />
               <button

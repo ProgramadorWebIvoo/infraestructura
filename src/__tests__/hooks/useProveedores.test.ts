@@ -72,7 +72,7 @@ describe("useProveedores", () => {
       });
 
       renderHook(() => useProveedores("token", showToast));
-      expect(mockApiFetch).toHaveBeenCalledWith("/supplier-material-proposals", { token: "token" });
+      expect(mockApiFetch).toHaveBeenCalledWith("/supplier-material-proposals");
     });
   });
 
@@ -108,7 +108,6 @@ describe("useProveedores", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/supplier-invitations", {
         method: "POST",
-        token: "token",
         body: JSON.stringify({
           project_id: "PRJ-001",
           supplierName: "Proveedor X",
@@ -139,7 +138,6 @@ describe("useProveedores", () => {
 
       expect(mockApiFetch).toHaveBeenCalledWith("/supplier-invitations", {
         method: "POST",
-        token: "token",
         body: JSON.stringify({
           project_id: "PRJ-001",
           supplierName: "Proveedor X",
