@@ -13,6 +13,36 @@ import Card from "../../components/UI/Card";
 import NumericInput from "../../components/UI/NumericInput";
 import { Table } from "../../components/UI/Table";
 import SelectModal from "../../components/UI/SelectModal";
+import type { Column } from "../../components/UI/Table";
+import type { SelectModalOption } from "../../components/UI/SelectModal";
+
+type CatalogOption = SelectModalOption<{ name: string; unit: string; estimatedUnitPrice: number; index: number }>;
+
+// Columnas explícitas: el default de SelectModal muestra una columna "Valor"
+// con `opt.value` crudo (el índice del array usado para selección interna),
+// no un precio. Acá mostramos Nombre / Unidad / Precio real del catálogo.
+const catalogColumns: Column<CatalogOption>[] = [
+  {
+    key: "label",
+    label: "Nombre",
+    sortable: true,
+    render: (opt) => <span className="font-bold text-slate-800">{opt.label}</span>,
+  },
+  {
+    key: "unit",
+    label: "Unidad",
+    align: "center",
+    render: (opt) => <span className="text-[11px] font-semibold text-slate-500">{opt.raw.unit}</span>,
+  },
+  {
+    key: "estimatedUnitPrice",
+    label: "Precio Unit. (Est)",
+    align: "right",
+    render: (opt) => (
+      <span className="font-mono font-semibold text-slate-600">${opt.raw.estimatedUnitPrice.toFixed(2)}</span>
+    ),
+  },
+];
 
 interface MaterialAdderSectionProps {
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
@@ -124,6 +154,7 @@ export default function MaterialAdderSection({
                 description: `${mat.estimatedUnitPrice} / ${mat.unit}`,
                 raw: { ...mat, index: i },
               }))}
+              columns={catalogColumns}
               selectedValue={selectedCatalogIndex}
               triggerLabel="Seleccionar material del catálogo..."
               title="Seleccionar Material del Catálogo"

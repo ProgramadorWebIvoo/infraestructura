@@ -100,9 +100,9 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 
 ## 🔄 PENDIENTES ANTERIORES (no cubiertos por V1/V2)
 
-4. **REALIZAR** — Eliminar del modal de Material del Catalogo la columna 'Valor' o arreglarla para que muestre su valor correctamente.
-5. **REALIZAR** — Existe un problema al seleccionar el proveedor y tratar de enviarle el link, El mismo abre dos modales y el select No permite seleccionar la obra.
-6. **REALIZAR** — Reducir el tiempo de carga entre cambio de vistas para asi evitar que se muestre lo maximo posible el spinner de 'Cargando modulo' y la experiencia de UX sea mejor.
+4. ✅ **REALIZAR** — Eliminar del modal de Material del Catalogo la columna 'Valor' o arreglarla para que muestre su valor correctamente. `SelectModal` mostraba por defecto una columna "Valor" con el índice interno del array (0,1,2...), no un precio. Fix: `MaterialAdderSection` ahora pasa `columns` explícitas (Nombre/Unidad/Precio Unit.). Test nuevo en `MaterialAdderSection.test.tsx`.
+5. ✅ **REALIZAR** — Existe un problema al seleccionar el proveedor y tratar de enviarle el link, El mismo abre dos modales y el select No permite seleccionar la obra. Causa: `ProveedoresRegistrados/index.tsx` tenía dos `useState` independientes (rating / invite) que podían quedar abiertos a la vez, superponiendo dos modales con el mismo z-index y bloqueando clicks sobre el selector de obra. Fix: unificados en un solo estado discriminado (`activeModal`), mutuamente excluyente. 2 tests nuevos.
+6. **REALIZAR** — Reducir el tiempo de carga entre cambio de vistas para asi evitar que se muestre lo maximo posible el spinner de 'Cargando modulo' y la experiencia de UX sea mejor. *(Diferido a pedido del usuario — 27/07/2026.)*
 ---
 
 ## 🧪 PRUEBAS PENDIENTES
@@ -129,17 +129,17 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 
 | # | Ítem | Estado verificado |
 |---|------|--------------------|
-| 1 | Constante global fuera de clase (dup. de #11) | ⏳ Pendiente. |
-| 2 | `nextContractorCode()` duplicado | ⏳ Pendiente — `SupportController.php` vs `ContractorController.php`. |
-| 3 | `log()`/`logEvaluation()` triplicado (causa raíz de #4) | ⏳ Pendiente. |
-| 4 | `Rule::in()` sin array | ⏳ Pendiente — `AIEvaluationController.php:52`. |
-| 5 | `getMaskedApiKey()` código muerto | ⏳ **Sigue pendiente** — verificado: el método sigue definido en `AiConfiguration.php:51` y ya no se invoca desde ningún lado (`toArray()` hace su propio enmascarado inline desde el fix C-01). |
-| 6 | `anthropic-version` hardcodeada en 2 lugares | ⏳ Pendiente. |
-| 7 | Controladores violan SRP | ⏳ Pendiente — refactor grande, no tocado. |
-| 8 | `AIEvaluationService::registerProviders()` viola DIP | ⏳ Pendiente. |
+| 1 | Constante global fuera de clase (dup. de #11) | ✅ Ya estaba resuelto (commit `6981577`, previo a esta pasada): `CONTRACTOR_STATUSES` movida dentro de `ContractorController`. Verificado. |
+| 2 | `nextContractorCode()` duplicado | ✅ Extraído a `Contractor::nextCode()` (modelo). `ContractorController` y `SupportController` ahora llaman al mismo método; eliminados los dos privados duplicados. |
+| 3 | `log()`/`logEvaluation()` triplicado (causa raíz de #4) | ✅ Extraído a `AuditLog::record()` (modelo). `ProjectController::log()`, `ProjectDocumentController::log()` y `AIEvaluationController::logEvaluation()` ahora delegan al mismo método; eliminados los 3 privados duplicados. |
+| 4 | `Rule::in()` sin array | ✅ Corregido en `AIEvaluationController.php:52` — `Rule::in('chatgpt', 'gemini', 'claude')` (bug real: solo validaba `'chatgpt'`, rechazaba `'gemini'`/`'claude'`) → `Rule::in(['chatgpt', 'gemini', 'claude'])`. Test de regresión agregado. |
+| 5 | `getMaskedApiKey()` código muerto | ✅ Eliminado de `AiConfiguration.php` (sin otras referencias). |
+| 6 | `anthropic-version` hardcodeada en 2 lugares | ✅ Extraída a `AnthropicProvider::API_VERSION`, referenciada desde `AiConfigController::testAnthropic()`. |
+| 7 | Controladores violan SRP | ✅ **Alcance acotado** (decisión del usuario 27/07/2026: extracción segura, no refactor completo a capa de servicios por riesgo sobre flujos de pago/contratación en producción). Generadores de ID (`nextProjectId`, `nextProposalId` x2) movidos a sus modelos (`Project::nextId()`, `SupplierMaterialProposal::nextId()`, `ProjectProposal::nextId()`), igual que #2. La responsabilidad de audit-logging ya se centralizó en #3. El split completo CRUD/lifecycle/import a servicios queda pendiente si se decide abordarlo. |
+| 8 | `AIEvaluationService::registerProviders()` viola DIP | ✅ Extraído a `AIProviderFactory` (nuevo, en `Providers/`) — el servicio ya no instancia clases concretas de provider directamente ni mantiene el mapa key→clase inline. |
 
 ### 🔵 BAJO — Testing
 
 | # | Ítem | Estado verificado |
 |---|------|--------------------|
-| 1 | Cobertura sin cambios: AI Config CRUD, AI Evaluation, etc. | ⏳ Pendiente. |
+| 1 | Cobertura sin cambios: AI Config CRUD, AI Evaluation, etc. | ✅ Agregados `AiConfigCrudTest.php` (10 tests: CRUD + masking + gates de rol), `AiEvaluationTest.php` (5 tests: happy path con `Http::fake`, failover sin provider, regresión del bug `Rule::in`, gate de rol) y `ProjectDocumentTest.php` (8 tests: upload/index/destroy/download, sanitización de path traversal). Suite backend: 154 → 177 tests, todos verdes. |

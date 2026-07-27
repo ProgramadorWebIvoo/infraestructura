@@ -34,16 +34,22 @@ export default function ProveedoresRegistrados({
   const { showToast } = useToast();
   const { proposals, isLoadingProposals, handleInviteSupplier } = useProveedores(authToken, showToast);
 
-  const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
-  const [inviteModalContractor, setInviteModalContractor] = useState<Contractor | null>(null);
+  // Un solo estado discriminado en vez de dos independientes: evita que
+  // rating e invite queden abiertos a la vez (dos modales superpuestos con
+  // el mismo z-index) si el usuario clickea ambas acciones sin cerrar la
+  // primera.
+  type ActiveModal = { type: "rating" | "invite"; contractor: Contractor } | null;
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
   const handleOpenEdit = useCallback((contractor: Contractor) => {
-    setEditingContractor(contractor);
+    setActiveModal({ type: "rating", contractor });
   }, []);
 
   const handleOpenInviteModal = useCallback((contractor: Contractor) => {
-    setInviteModalContractor(contractor);
+    setActiveModal({ type: "invite", contractor });
   }, []);
+
+  const closeModal = useCallback(() => setActiveModal(null), []);
 
   return (
     <>
@@ -82,15 +88,15 @@ export default function ProveedoresRegistrados({
       </motion.div>
 
       <RatingModal
-        contractor={editingContractor}
-        onClose={() => setEditingContractor(null)}
+        contractor={activeModal?.type === "rating" ? activeModal.contractor : null}
+        onClose={closeModal}
         onSave={onUpdateContractorRating}
       />
 
       <InviteModal
-        contractor={inviteModalContractor}
+        contractor={activeModal?.type === "invite" ? activeModal.contractor : null}
         projects={projects}
-        onClose={() => setInviteModalContractor(null)}
+        onClose={closeModal}
         onInvite={handleInviteSupplier}
       />
     </>
