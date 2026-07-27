@@ -64,8 +64,8 @@ Basado en la re-auditoría profunda V2 (`AUDITORIA_front_24_07_2026 // V2.md`). 
 
 | # | Ítem | Detalle | Esfuerzo | Dependencia |
 |---|------|---------|----------|-------------|
-| 1 | **API Keys de IA expuestas en DOM** — Backend no debe enviar API Key completa. Solo `hasApiKey` + últimos 4 chars | `AIConfigTable.tsx` + Backend | 0.5 día | Backend |
-| 2 | **Token JWT en localStorage sin HttpOnly** — Migrar a cookie httpOnly + Secure o cifrar token antes de almacenar | `useAuth.ts` + Backend | 2–3 días | Backend |
+| 1 | ✅ **API Keys de IA expuestas en DOM** — Fix aplicado: backend envía `hasApiKey` + solo últimos 4 chars. Frontend actualizado. | `AiConfiguration.php`, `AIConfigTable.tsx`, `useAIConfig.ts` | 0.5 día | Backend |
+| 2 | ✅ **Token JWT en localStorage sin HttpOnly** — Migrado a cookie httpOnly + Secure. Backend: TokenFromCookie middleware, login/logout setean/eliminan cookie. Frontend: useAuth.ts sin localStorage, api.ts con useCookieAuth. Mobile sigue con Bearer token. | 10 archivos (backend + frontend) | 2–3 días | Backend |
 | 3 | **Contraseñas en texto plano en requests** — Forzar HTTPS + CSP upgrade-insecure-requests. Evaluar hashing cliente | `useAuth.ts`, `UsuariosPanel.tsx` | 0.5 día | Frontend |
 | 4 | **URL producción hardcodeada en mobile** — Mover `API_BASE_URL` a variable de entorno `EXPO_PUBLIC_API_URL` | `mobile/config.ts` | 0.5 día | Mobile |
 

@@ -17,7 +17,8 @@ export interface AiConfigRecord {
   id: number;
   provider: "openai" | "anthropic" | "gemini";
   model: string;
-  apiKey: string; // masked
+  hasApiKey: boolean;
+  apiKey: string; // solo últimos 4 chars visibles (ej. "••••wxyz")
   baseUrl: string | null;
   maxTokens: number;
   isActive: boolean;
