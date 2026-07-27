@@ -53,10 +53,14 @@ export default function InviteModal({ contractor, projects, onClose, onInvite }:
     [projects],
   );
 
-  const filteredProjects = activeProjects.filter(
-    (p) =>
-      p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
-      p.id.toLowerCase().includes(projectSearch.toLowerCase())
+  const filteredProjects = useMemo(
+    () =>
+      activeProjects.filter(
+        (p) =>
+          p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
+          p.id.toLowerCase().includes(projectSearch.toLowerCase())
+      ),
+    [activeProjects, projectSearch],
   );
 
   const handleGenerateInvite = async () => {

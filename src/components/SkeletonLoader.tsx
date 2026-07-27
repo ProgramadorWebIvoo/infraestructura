@@ -1,13 +1,15 @@
 // Skeleton primitives for loading states
 // Uses animate-pulse with slate palette that matches the bento aesthetic
 
+import { memo } from "react";
+
 const base = "animate-pulse bg-slate-200 rounded-xl";
 
-export function SkeletonBlock({ className = "" }: { className?: string }) {
+export const SkeletonBlock = memo(function SkeletonBlock({ className = "" }: { className?: string }) {
   return <div className={`${base} ${className}`} />;
-}
+});
 
-export function SkeletonCard({ className = "" }: { className?: string }) {
+export const SkeletonCard = memo(function SkeletonCard({ className = "" }: { className?: string }) {
   return (
     <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 ${className}`}>
       <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
@@ -24,9 +26,9 @@ export function SkeletonCard({ className = "" }: { className?: string }) {
       </div>
     </div>
   );
-}
+});
 
-export function SkeletonStats({ className = "" }: { className?: string }) {
+export const SkeletonStats = memo(function SkeletonStats({ className = "" }: { className?: string }) {
   return (
     <div className={`rounded-2xl border border-slate-200/80 shadow-sm p-5 bg-white ${className}`}>
       <SkeletonBlock className="h-3 w-1/2 mb-3" />
@@ -34,9 +36,9 @@ export function SkeletonStats({ className = "" }: { className?: string }) {
       <SkeletonBlock className="h-3 w-2/3" />
     </div>
   );
-}
+});
 
-export function SkeletonStatsDark({ className = "" }: { className?: string }) {
+export const SkeletonStatsDark = memo(function SkeletonStatsDark({ className = "" }: { className?: string }) {
   return (
     <div className={`bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md ${className}`}>
       <SkeletonBlock className="h-3 w-1/2 mb-3 !bg-slate-700" />
@@ -44,9 +46,9 @@ export function SkeletonStatsDark({ className = "" }: { className?: string }) {
       <SkeletonBlock className="h-3 w-2/3 !bg-slate-700" />
     </div>
   );
-}
+});
 
-export function SkeletonTableRow({ cells = 5 }: { cells?: number }) {
+export const SkeletonTableRow = memo(function SkeletonTableRow({ cells = 5 }: { cells?: number }) {
   return (
     <tr className="border-b border-slate-50">
       {Array.from({ length: cells }).map((_, i) => (
@@ -56,9 +58,9 @@ export function SkeletonTableRow({ cells = 5 }: { cells?: number }) {
       ))}
     </tr>
   );
-}
+});
 
-export function SkeletonTable({
+export const SkeletonTable = memo(function SkeletonTable({
   rows = 5,
   columns = 6,
   className = "",
@@ -98,9 +100,9 @@ export function SkeletonTable({
       </div>
     </div>
   );
-}
+});
 
-export function SkeletonList({ items = 4 }: { items?: number }) {
+export const SkeletonList = memo(function SkeletonList({ items = 4 }: { items?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: items }).map((_, i) => (
@@ -114,12 +116,12 @@ export function SkeletonList({ items = 4 }: { items?: number }) {
       ))}
     </div>
   );
-}
+});
 
-export function SkeletonBadge({ className = "" }: { className?: string }) {
+export const SkeletonBadge = memo(function SkeletonBadge({ className = "" }: { className?: string }) {
   return <SkeletonBlock className={`h-5 w-16 rounded-lg ${className}`} />;
-}
+});
 
-export function SkeletonButton({ className = "" }: { className?: string }) {
+export const SkeletonButton = memo(function SkeletonButton({ className = "" }: { className?: string }) {
   return <SkeletonBlock className={`h-10 rounded-xl ${className}`} />;
-}
+});

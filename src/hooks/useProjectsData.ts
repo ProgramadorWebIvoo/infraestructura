@@ -62,9 +62,18 @@ export function useProjectsData({ authToken, showToast, signatureFn }: UseProjec
     } catch (error) {
       if (opts?.isPoll) return; // silencioso en poll
       logError("useProjectsData", error);
-      setProjects(INITIAL_PROJECTS);
-      setAuditLogs(INITIAL_AUDIT_LOGS);
-      showToastRef.current("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
+      if (import.meta.env.DEV) {
+        // Solo en desarrollo: datos demo para poder trabajar en la UI sin
+        // backend corriendo. En producción, mostrar fallback de negocio real
+        // sería engañoso (el usuario creería que son obras/pagos reales).
+        setProjects(INITIAL_PROJECTS);
+        setAuditLogs(INITIAL_AUDIT_LOGS);
+        showToastRef.current("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
+      } else {
+        setProjects([]);
+        setAuditLogs([]);
+        showToastRef.current("No se pudo conectar con el servidor. Intenta nuevamente en unos minutos.", "error");
+      }
     } finally {
       if (!opts?.isPoll) setIsLoading(false);
     }

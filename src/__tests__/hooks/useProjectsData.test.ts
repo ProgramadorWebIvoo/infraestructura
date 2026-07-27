@@ -66,6 +66,7 @@ describe("useProjectsData", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   // ── Initial state ───────────────────────────────────────────────────────────
@@ -119,7 +120,8 @@ describe("useProjectsData", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    it("falls back to INITIAL_PROJECTS and INITIAL_AUDIT_LOGS on fetch error", async () => {
+    it("en desarrollo, cae a INITIAL_PROJECTS y INITIAL_AUDIT_LOGS en error de fetch", async () => {
+      vi.stubEnv("DEV", true);
       mockApiFetch.mockRejectedValue(new Error("API down"));
 
       const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
@@ -130,7 +132,8 @@ describe("useProjectsData", () => {
       expect(result.current.auditLogs).toEqual(INITIAL_AUDIT_LOGS_MOCK);
     });
 
-    it("shows a warning toast on fetch error", async () => {
+    it("en desarrollo, muestra un toast de warning en error de fetch", async () => {
+      vi.stubEnv("DEV", true);
       mockApiFetch.mockRejectedValue(new Error("API down"));
 
       renderHook(() => useProjectsData({ authToken: "token", showToast }));
@@ -140,6 +143,32 @@ describe("useProjectsData", () => {
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo conectar"),
         "warning",
+      );
+    });
+
+    it("en producción, NO cae a datos demo — deja projects/auditLogs vacíos", async () => {
+      vi.stubEnv("DEV", false);
+      mockApiFetch.mockRejectedValue(new Error("API down"));
+
+      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
+
+      await flushAll();
+
+      expect(result.current.projects).toEqual([]);
+      expect(result.current.auditLogs).toEqual([]);
+    });
+
+    it("en producción, muestra un toast de error (no 'datos locales de respaldo')", async () => {
+      vi.stubEnv("DEV", false);
+      mockApiFetch.mockRejectedValue(new Error("API down"));
+
+      renderHook(() => useProjectsData({ authToken: "token", showToast }));
+
+      await flushAll();
+
+      expect(showToast).toHaveBeenCalledWith(
+        expect.stringContaining("No se pudo conectar con el servidor"),
+        "error",
       );
     });
   });

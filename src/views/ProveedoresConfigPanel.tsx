@@ -6,7 +6,7 @@
  * CRUD completo + gestión de estado.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   Building2,
@@ -137,12 +137,16 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
   }, [loadContractors]);
 
   // ---- Filter ----
-  const filtered = contractors.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.code.toLowerCase().includes(search.toLowerCase()) ||
-      c.specialty.toLowerCase().includes(search.toLowerCase()) ||
-      c.contact.toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(
+    () =>
+      contractors.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.code.toLowerCase().includes(search.toLowerCase()) ||
+          c.specialty.toLowerCase().includes(search.toLowerCase()) ||
+          c.contact.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [contractors, search],
   );
 
   // ---- Modal handlers ----

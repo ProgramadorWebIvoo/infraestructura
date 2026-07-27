@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [2026-07-27] — LOW #17–#38 (V1+V2): logger en prod, fallback demo solo dev, tests, thresholds, perf, docs
+- Tipo: fix + refactor + docs + security
+- Qué:
+  - **V1#17 — Logger sin `console` en producción**: `logError`/`logWarn`/`logInfo` dejan de escribir a consola cuando `import.meta.env.PROD`. Se agregó `setErrorSink()` para conectar un servicio externo (Sentry/Logtail) más adelante — no incluido porque requiere credenciales/DSN que no tengo.
+  - **V1#18 — Fallback a datos demo solo en desarrollo**: `useProjectsData` ya no muestra `INITIAL_PROJECTS`/`INITIAL_AUDIT_LOGS` como si fueran datos reales cuando falla el fetch en producción — solo pasa en dev (`import.meta.env.DEV`). En producción: arrays vacíos + toast de error real.
+  - **#34 — Tests nuevos**: `useRateLimit` (8 tests: backoff exponencial, tope de `maxBlockSeconds`, countdown, reset), `logger` (13 tests: `getErrorMessage`, comportamiento dev vs prod, `errorSink`), `aiEvaluationService` (8 tests: payload, provider opcional, propagación de errores).
+  - **#33 — Coverage thresholds**: `lines`/`functions`/`statements` subidos a 85% (nivel real ya los supera: 92.96%/86.08%/91.29%). `branches` a 80% (nivel real: 80.76% — llevarlo a 85% habría roto el build sin tests de branch adicionales, fuera de alcance de un ítem LOW).
+  - **#36 — Rendimiento**: `useMemo` en las 6 derivaciones de filtro que quedaban sin memoizar (`MaterialConfigPanel`, `ProveedoresConfigPanel`, `ContractorsSection`, `SupplierProposalsList`, `InviteModal`, `UsuariosPanel`). `SkeletonLoader.tsx` completo envuelto en `React.memo`. `content-visibility: auto` en listas largas se dejó igual — es un uso legítimo para performance, no "innecesario" como sugería el ítem.
+  - **#37 — DonutChart responsive**: `<svg>` pasó de `width="170" height="170"` fijos a `viewBox="0 0 170 170"` + `w-full h-auto`; el contenedor (`max-w-[170px]`) controla el tope de tamaño en vez del propio SVG.
+  - **#38 — Meta tags SEO**: `description`, `theme-color`, Open Graph (`og:title`/`og:description`/`og:type`) y `robots: noindex, nofollow` en `index.html` (app interna autenticada, no debe indexarse en buscadores).
+  - **#30 — README.md reescrito**: describe el proyecto real (stack, monorepo, instalación web+mobile, scripts, testing, roles) en vez del template de AI Studio. `.env.example` corregido a `VITE_API_URL` real (antes tenía variables inertes de AI Studio).
+  - **#31 — FLUJO_SISTEMA.md actualizado**: v2.0, fecha 2026-07-27, nueva sección 9 (módulo de Evaluación Inteligente IA — failover ChatGPT→Gemini→Claude, configuración en `/config-ia`), rol `CATALOGOS` agregado a la tabla de roles, y la tabla de control de acceso (sección 8) reescrita para reflejar `config/permissions.php` real — la anterior estaba desactualizada (decía que `/presidencia` era accesible por casi todos los roles, cuando desde la corrección de seguridad solo lo son SUPERADMIN y PRESIDENCIA).
+  - **#32 — no aplicable**: `AUDITORIA_front_24_07_2026/V1.md` se perdió permanentemente en un incidente de borrado accidental (archivo nunca trackeado en git, sin backup posible) — documentado en `PENDIENTES.md`.
+  - **#35 — omitido**: "migrar a CSS modules para remover `unsafe-inline`" no resuelve el problema real (motion/react inyecta estilos inline para animar, independientemente de CSS modules) — requeriría reemplazar la librería de animación, cambio de arquitectura fuera de alcance. Documentado en `PENDIENTES.md`.
+- Por qué / causa raíz: ítems LOW/BAJA de PENDIENTES.md (V1 y V2 de la auditoría).
+- Archivos: `src/services/logger.ts`, `src/hooks/useProjectsData.ts`, `src/__tests__/{hooks/useRateLimit,hooks/useProjectsData,services/logger,services/aiEvaluationService}.test.ts`, `vite.config.ts`, `src/components/SkeletonLoader.tsx`, `src/views/{MaterialConfigPanel,ProveedoresConfigPanel,PresidenciaDashboard}.tsx`, `src/views/ProveedoresRegistrados/{ContractorsSection,SupplierProposalsList,InviteModal}.tsx`, `src/views/UsuariosPanel/index.tsx`, `index.html`, `README.md`, `.env.example`, `FLUJO_SISTEMA.md`
+- Verificación: `tsc --noEmit` 0 errores, 431/431 tests pasando, `npm run test:coverage` cumple los nuevos umbrales (exit code 0).
+
 ## [2026-07-27] — MEDIUM #13: Refactor de God Components (UsuariosPanel, ProveedoresRegistrados, ProcuraPanel)
 - Tipo: refactor
 - Qué: Las 3 vistas más grandes del frontend pasaron de un solo archivo a una carpeta (`index.tsx` orquestador + subcomponentes de presentación), sin cambios de comportamiento ni de props públicas — cada `import("../views/X")` sigue resolviendo igual (Vite/Node resuelven `X/index.tsx` transparentemente).

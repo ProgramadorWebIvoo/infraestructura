@@ -126,8 +126,8 @@ function DonutChart({ percent, centerValue, centerLabel }: { percent: number; ce
   const circumference = 2 * Math.PI * radius;
   const gradientId = `donut-grad-${centerLabel.replace(/\s+/g, "")}`;
   return (
-    <div className="relative flex items-center justify-center">
-      <svg width="170" height="170" className="transform -rotate-90 drop-shadow-sm" role="img" aria-label={`Gráfico de distribución: ${centerLabel} ${centerValue}`}>
+    <div className="relative flex w-full items-center justify-center">
+      <svg viewBox="0 0 170 170" className="w-full h-auto transform -rotate-90 drop-shadow-sm" role="img" aria-label={`Gráfico de distribución: ${centerLabel} ${centerValue}`}>
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#0ea5e9" />
@@ -280,7 +280,7 @@ export default function PresidenciaDashboard({
           </h4>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-8">
-          <div className="flex-shrink-0">
+          <div className="w-full max-w-[170px] mx-auto sm:mx-0 shrink-0">
             <DonutChart percent={infraPercent} centerValue={infraCount} centerLabel="Infraestructura" />
           </div>
           <div className="flex-1 space-y-4 w-full border-t sm:border-t-0 sm:border-l border-slate-100 pt-5 sm:pt-0 sm:pl-8">

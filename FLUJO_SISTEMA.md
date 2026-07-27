@@ -1,8 +1,8 @@
 # IVOO Gestión de Infraestructura — Documentación del Flujo Operativo
 
-**Versión:** 1.0  
-**Fecha:** 2026-07-01  
-**Sistema:** Plataforma web React + API Laravel (Sanctum)
+**Versión:** 2.0  
+**Fecha:** 2026-07-27  
+**Sistema:** Plataforma web React + API Laravel (Sanctum) + módulo de Evaluación Inteligente (IA)
 
 ---
 
@@ -26,6 +26,7 @@
 6. [Diagrama de Estado](#6-diagrama-de-estado)
 7. [Trazabilidad y Auditoría](#7-trazabilidad-y-auditoría)
 8. [Control de Acceso por Rol](#8-control-de-acceso-por-rol)
+9. [Módulo de Evaluación Inteligente (IA)](#9-módulo-de-evaluación-inteligente-ia)
 
 ---
 
@@ -50,8 +51,9 @@ INFRAESTRUCTURA → CIERRE DE OBRA → PROCURA → ANALISTAS → PROCURA → FIN
 | `PROCURA` | Aprueba inversión, gestiona licitación y adjudica contratistas | Módulo Procura + Catálogos |
 | `ANALISTA` | Carga propuestas de contratistas y envía cuadro comparativo | Módulo Analistas |
 | `FINANZAS` | Libera pagos: anticipo al inicio y liquidación final | Módulo Finanzas |
+| `CATALOGOS` | Consulta de catálogo de proveedores/materiales | Módulo Catálogos |
 
-> Los roles son asignados desde el panel de Administración de Usuarios (`/usuarios`), accesible solo para ADMIN y SUPERADMIN.
+> Los roles son asignados desde el panel de Administración de Usuarios (`/usuarios`), accesible solo para ADMIN y SUPERADMIN. La lista de roles válidos la sirve el backend (`GET /api/roles`), no está hardcodeada en el frontend.
 
 ---
 
@@ -499,19 +501,48 @@ Cada acción sobre un proyecto genera automáticamente un registro en la tabla `
 
 ## 8. Control de Acceso por Rol
 
-| Módulo / Ruta | SUPERADMIN | ADMIN | PRESIDENCIA | INFRAESTRUCTURA | CIERRE_OBRA | PROCURA | ANALISTA | FINANZAS |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `/presidencia` (Dashboard) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `/infraestructura` | ✓ | ✓ | — | ✓ | — | — | — | — |
-| `/cierre-obra` | ✓ | ✓ | — | — | ✓ | — | — | — |
-| `/procura` | ✓ | ✓ | — | — | — | ✓ | — | — |
-| `/analistas` | ✓ | ✓ | — | — | — | — | ✓ | — |
-| `/finanzas` | ✓ | ✓ | — | — | — | — | — | ✓ |
-| `/catalogos` (Proveedores) | ✓ | ✓ | — | — | — | ✓ | — | — |
-| `/usuarios` (Admin) | ✓ | ✓ | — | — | — | — | — | — |
+> La matriz de acceso completa la sirve el backend (`GET /api/auth/permissions`, fuente de verdad: `config/permissions.php`) — el frontend ya no la hardcodea, así que esta tabla es un reflejo, no la fuente. Actualizar `config/permissions.php` es lo único necesario si cambia el acceso de un rol.
+
+| Módulo / Ruta | SUPERADMIN | ADMIN | PRESIDENCIA | INFRAESTRUCTURA | CIERRE_OBRA | PROCURA | ANALISTA | FINANZAS | CATALOGOS |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `/presidencia` (Dashboard) | ✓ | — | ✓ | — | — | — | — | — | — |
+| `/infraestructura` | ✓ | ✓ | — | ✓ | — | — | — | — | — |
+| `/cierre-obra` | ✓ | ✓ | — | — | ✓ | — | — | — | — |
+| `/procura` | ✓ | ✓ | — | — | — | ✓ | — | — | — |
+| `/analistas` | ✓ | ✓ | — | — | — | — | ✓ | — | — |
+| `/finanzas` | ✓ | ✓ | — | — | — | — | — | ✓ | — |
+| `/catalogos` (Proveedores registrados) | ✓ | ✓ | ✓ | — | — | ✓ | — | — | ✓ |
+| `/usuarios` (Admin) | ✓ | ✓ | — | — | — | — | — | — | — |
+| `/config-proveedores` | ✓ | ✓ | — | — | — | — | — | — | — |
+| `/config-materiales` | ✓ | ✓ | — | — | — | — | — | — | — |
+| `/config-ia` (Evaluación Inteligente) | ✓ | ✓ | — | — | — | — | — | — | — |
+
+> Nota: solo `SUPERADMIN` y `PRESIDENCIA` acceden al Dashboard ejecutivo (`/presidencia`) — antes casi todos los roles tenían acceso, corregido por auditoría de seguridad (ver `CHANGELOG.md`, fix "Acceso a PRESIDENCIA solo para rol PRESIDENCIA").
 
 > Las rutas públicas `/registro-proveedores` y `/propuesta-materiales/:token` son accesibles sin autenticación para proveedores externos.
 
 ---
 
-*Documentación generada el 2026-07-01 — Sistema IVOO Gestión de Infraestructura*
+## 9. Módulo de Evaluación Inteligente (IA)
+
+Herramienta de apoyo a la decisión para Procura durante la **Fase 5 — Adjudicación** (sección 4): analiza el cuadro comparativo de propuestas de un proyecto y sugiere el contratista ganador con justificación.
+
+### 9.1 Funcionamiento
+
+- Botón **"Evaluación IA"** en el panel de Procura (`/procura`), disponible por cada proyecto en estado `COMPARATIVA_ENVIADA` junto a sus propuestas.
+- El frontend envía el proyecto + propuestas al backend (`POST /api/ai/evaluate-proposals`), que arma el prompt y consulta al proveedor de IA configurado.
+- **Failover automático entre proveedores:** ChatGPT (OpenAI) → Gemini (Google) → Claude (Anthropic), en el orden configurado. Si un proveedor falla (rate limit, timeout, error), el backend reintenta con el siguiente sin que el usuario lo note.
+- La respuesta incluye: contratista sugerido, nivel de confianza, resumen, fortalezas, debilidades, factores de riesgo y recomendación — la decisión final de adjudicar sigue siendo manual (Procura confirma o ignora la sugerencia).
+- La evaluación **no reemplaza** el flujo de adjudicación normal (sección 4, Fase 5): solo asiste la lectura del cuadro comparativo.
+
+### 9.2 Configuración (solo SUPERADMIN / ADMIN)
+
+Panel `/config-ia`:
+- Alta/baja/edición de configuraciones por proveedor (modelo, API key, tokens máximos, orden de prioridad, activo/inactivo, respaldo).
+- Las API keys nunca se exponen completas al frontend (solo últimos 4 caracteres) — corrección de auditoría de seguridad.
+- Dashboard de uso: tokens consumidos, costo estimado y tasa de éxito por proveedor/modelo, con rango de días configurable.
+- Sincronización manual (botón "Sincronizar") para aplicar cambios de configuración al runtime del backend sin reiniciar el servicio.
+
+---
+
+*Documentación actualizada el 2026-07-27 — Sistema IVOO Gestión de Infraestructura*

@@ -27,12 +27,16 @@ export default function ContractorsSection({
 }: ContractorsSectionProps) {
   const [search, setSearch] = useState("");
 
-  const filteredContractors = contractors.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.code.toLowerCase().includes(search.toLowerCase()) ||
-      c.specialty.toLowerCase().includes(search.toLowerCase()) ||
-      c.contact.toLowerCase().includes(search.toLowerCase())
+  const filteredContractors = useMemo(
+    () =>
+      contractors.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.code.toLowerCase().includes(search.toLowerCase()) ||
+          c.specialty.toLowerCase().includes(search.toLowerCase()) ||
+          c.contact.toLowerCase().includes(search.toLowerCase())
+      ),
+    [contractors, search],
   );
 
   const contractorColumns: Column<Contractor>[] = useMemo(() => [

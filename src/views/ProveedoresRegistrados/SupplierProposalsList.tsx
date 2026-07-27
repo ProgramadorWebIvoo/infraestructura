@@ -6,7 +6,7 @@
  * de ProveedoresRegistrados.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, ChevronUp, Clock, Loader2, Mail, Package, Search } from "lucide-react";
 import { itemVariants } from "../../animations";
@@ -25,12 +25,16 @@ export default function SupplierProposalsList({ proposals, isLoading }: Supplier
   const [expandedProposal, setExpandedProposal] = useState<string | null>(null);
   const [proposalSearch, setProposalSearch] = useState("");
 
-  const filteredProposals = proposals.filter(
-    (p) =>
-      p.supplierName.toLowerCase().includes(proposalSearch.toLowerCase()) ||
-      (p.supplierCompany ?? "").toLowerCase().includes(proposalSearch.toLowerCase()) ||
-      p.projectTitleSnapshot.toLowerCase().includes(proposalSearch.toLowerCase()) ||
-      p.id.toLowerCase().includes(proposalSearch.toLowerCase())
+  const filteredProposals = useMemo(
+    () =>
+      proposals.filter(
+        (p) =>
+          p.supplierName.toLowerCase().includes(proposalSearch.toLowerCase()) ||
+          (p.supplierCompany ?? "").toLowerCase().includes(proposalSearch.toLowerCase()) ||
+          p.projectTitleSnapshot.toLowerCase().includes(proposalSearch.toLowerCase()) ||
+          p.id.toLowerCase().includes(proposalSearch.toLowerCase())
+      ),
+    [proposals, proposalSearch],
   );
 
   return (

@@ -7,7 +7,7 @@
  * y envío de link de restablecimiento de contraseña.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Users, Search } from "lucide-react";
 import { useToast } from "../../components/UI/Toast";
@@ -52,14 +52,14 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
 
-  const filteredUsers = users.filter(u => {
+  const filteredUsers = useMemo(() => users.filter(u => {
     const matchesSearch =
       !searchQuery.trim() ||
       u.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
       u.email.toLowerCase().includes(searchQuery.trim().toLowerCase());
     const matchesStatus = statusFilter === "all" || u.status === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+  }), [users, searchQuery, statusFilter]);
 
   const handleToggle = async (user: UserRecord) => {
     setTogglingId(user.id);

@@ -6,7 +6,7 @@
  * CRUD completo + soft delete (Activo/Inactivo).
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   CheckCircle,
@@ -115,10 +115,14 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
   }, [loadMaterials]);
 
   // ---- Filter ----
-  const filtered = materials.filter(
-    (m) =>
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.unit.toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(
+    () =>
+      materials.filter(
+        (m) =>
+          m.name.toLowerCase().includes(search.toLowerCase()) ||
+          m.unit.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [materials, search],
   );
 
   // ---- Modal handlers ----

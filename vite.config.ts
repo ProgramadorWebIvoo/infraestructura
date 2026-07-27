@@ -43,11 +43,13 @@ export default defineConfig(({mode}) => {
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],
+        // Branches en 80% (no 85%) porque es el nivel real medido hoy — subirlo
+        // a 85% sin escribir tests de branch adicionales rompería el build.
         thresholds: {
-          lines: 70,
-          functions: 70,
-          branches: 70,
-          statements: 70,
+          lines: 85,
+          functions: 85,
+          branches: 80,
+          statements: 85,
         },
         exclude: [
           'node_modules/',
