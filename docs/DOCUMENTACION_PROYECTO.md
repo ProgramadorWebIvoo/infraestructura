@@ -673,36 +673,91 @@ cd mobile && npm test  # Jest + React Native Testing Library
 
 ### 9.1 Variables de Entorno
 
-#### Frontend Web (`.env`)
-```env
-VITE_API_URL=https://api.tudominio.com  # SIN /api al final (proxy lo añade)
-```
+> ⚠️ **Corrección (28/07/2026):** la versión anterior de esta sección decía que
+> `VITE_API_URL` debía ir **sin** `/api` (con un proxy agregándolo) y listaba
+> `SANCTUM_COOKIE_SAME_SITE` / `SANCTUM_COOKIE_SECURE` como variables reales.
+> Verificado contra el código actual: ninguna de las dos existe — `SameSite`
+> está hardcodeado en `config/session.php` (`'same_site' => 'lax'`), y
+> `src/services/api.ts` concatena `VITE_API_URL` + `path` directamente (sin
+> proxy), por lo que **sí** necesita el `/api` al final. La tabla de abajo
+> refleja el comportamiento real verificado, no el diseño original.
 
-#### Backend (`.env`)
-```env
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://api.tudominio.com
+#### Frontend Web (`infraestructura/.env`)
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_DATABASE=infraestructura
-DB_USERNAME=...
-DB_PASSWORD=...
+| Variable | Dev (actual) | Producción | Qué hace |
+|---|---|---|---|
+| `VITE_API_URL` | `http://localhost:8000/api` | `https://api.tudominio.com/api` | Base URL que `src/services/api.ts` antepone a cada request (`${VITE_API_URL}${path}`). **Debe incluir `/api`** — no hay proxy que lo agregue en el código actual. |
 
-SANCTUM_STATEFUL_DOMAINS=tudominio.com,www.tudominio.com
-SESSION_DOMAIN=.tudominio.com
-SANCTUM_COOKIE_SAME_SITE=none
-SANCTUM_COOKIE_SECURE=true
-SANCTUM_EXPIRATION=60  # minutos
+No hay más variables — `APP_URL`/`API_URL` que aparecen en el `.env` local no las lee ningún código (`import.meta.env`), son vestigiales.
 
-EXPO_PUSH_KEY=...  # Para notificaciones push
-```
+#### Backend (`infraestructura-back/.env`)
 
-#### Mobile (`.env`)
+**Núcleo de la app**
+
+| Variable | Qué hace | Producción |
+|---|---|---|
+| `APP_ENV` | Modo de la app | `production` |
+| `APP_DEBUG` | Si es `true`, las excepciones devuelven stack trace completo (incluye rutas de archivos del servidor) en las respuestas JSON de error. **Confirmado en vivo durante testing: filtra rutas absolutas del filesystem.** | `false`, sin excepción |
+| `APP_KEY` | Clave de cifrado (sesiones, cookies firmadas). Generar una propia con `php artisan key:generate` — **nunca reusar la de dev/otro entorno**. | única por entorno |
+| `APP_URL` | URL pública del backend (usada por Laravel para generar URLs absolutas, ej. en algunos links de notificación) | `https://api.tudominio.com` |
+| `FRONTEND_URL` | URL pública del SPA. La usan **dos cosas**: `config/cors.php` (único origen permitido) y `App\Notifications\UserPasswordReset` (arma el link `{FRONTEND_URL}/reset-password/{token}?email=...`). Si esto está mal, el link de reset apunta a un dominio equivocado. | `https://app.tudominio.com` |
+
+**CORS / Sanctum (auth SPA por cookie httpOnly)**
+
+| Variable | Qué hace | Producción |
+|---|---|---|
+| `SANCTUM_STATEFUL_DOMAINS` | Dominios (sin esquema, sin `/`) desde los que el navegador recibe la cookie de sesión en vez de exigir un Bearer token. Debe incluir el dominio real del SPA. Default de Sanctum ya cubre `localhost`/`127.0.0.1` en dev. | `app.tudominio.com` |
+| `SESSION_DOMAIN` | Dominio de la cookie de sesión. Con subdominios separados para front/back, usar el dominio raíz con punto inicial para que la cookie viaje entre ambos (same-site). | `.tudominio.com` |
+| `SESSION_SECURE_COOKIE` | Si `true`, la cookie de sesión solo viaja por HTTPS. Requiere que el sitio sirva HTTPS de verdad. | `true` |
+| `TRUSTED_PROXIES` | Si hay un reverse proxy/CDN delante (Nginx, Cloudflare, load balancer) terminando TLS, `*` para que Laravel confíe en su header `X-Forwarded-Proto` y detecte HTTPS correctamente (si no, las cookies `Secure` y HSTS no se aplican aunque el usuario esté en HTTPS). Dejar vacío si la app es alcanzable directamente. | `*` (si hay proxy) |
+| `SANCTUM_EXPIRATION` | Minutos de vida del token Bearer — **solo aplica a mobile** (auth por token). La sesión web usa `SESSION_LIFETIME`, no esta variable. | `1440` (24h) o según política |
+| `SESSION_LIFETIME` | Minutos de inactividad antes de expirar la sesión web. Verificado en testing: el frontend llama `POST /logout` al detectar inactividad, además de la expiración propia del backend. | `120` (o según política) |
+
+**Base de datos**
+
+| Variable | Qué hace |
+|---|---|
+| `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Conexión MySQL/MariaDB estándar de Laravel. |
+
+**Correo (`send-reset-link` de Configuración → Usuarios)**
+
+| Variable | Qué hace |
+|---|---|
+| `MAIL_MAILER` | `smtp` para envío real; `log` escribe el correo en `storage/logs/laravel.log` en vez de enviarlo (útil para dev sin credenciales, ver `TESTING_GUIDE.md` §11). |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION` | Credenciales del proveedor SMTP. En producción, usar un proveedor transaccional (SES, Postmark, SendGrid, etc.) — no una cuenta Gmail personal como en dev local. |
+| `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Remitente que ve el usuario. Debe coincidir con `MAIL_USERNAME` en la mayoría de proveedores SMTP (Gmail incluido) o el envío es rechazado. |
+
+El envío de `UserPasswordReset` es **síncrono** (no implementa `ShouldQueue`), así que no depende de un worker de colas (`php artisan queue:work`) — si `MAIL_MAILER` está mal configurado, la petición HTTP falla con 500 en el momento (no falla silenciosamente en una cola).
+
+**IA (evaluación de propuestas en Procura)**
+
+> ⚠️ **Corrección (28/07/2026):** la config de IA por proveedor (API keys, modelo,
+> habilitado/deshabilitado, orden de fallback) **no se lee del `.env`** — es 100%
+> administrada en runtime desde la tabla `ai_configurations` (panel Configuración
+> → IA Models, `AiConfigController` + `AiConfigurationService`). `AI_PROVIDER_ORDER`,
+> `{OPENAI,GEMINI,ANTHROPIC}_{ENABLED,API_KEY,MODEL,MAX_TOKENS,BASE_URL}` en
+> `config/ai.php` son código muerto (nunca se llama a `config('ai.openai.*')` etc.
+> en `AIEvaluationService`) y ya se eliminaron del `.env` local. `config/ai.php`
+> los sigue declarando por compatibilidad pero no aportan nada; se pueden limpiar
+> a futuro sin romper nada.
+
+| Variable | Qué hace |
+|---|---|
+| `AI_TIMEOUT` | Único valor de IA que sí se lee del `.env` (`AIEvaluationService.php`, `config('ai.timeout', 60)`) — timeout en segundos por request a la IA. |
+
+**Broadcasting (eliminado — sin uso real)**
+
+Las variables `PUSHER_*` / `VITE_PUSHER_*` se quitaron del `.env`. El frontend
+nunca tuvo `pusher-js`/`laravel-echo` como dependencia y `BROADCAST_DRIVER=log`
+sigue en modo log — no hay ninguna feature de tiempo real vía Pusher activa hoy.
+Si en el futuro se implementa broadcasting real, agregar las variables de nuevo
+en ese momento (`config/broadcasting.php`).
+
+#### Mobile (`mobile/.env`)
 ```env
 EXPO_PUBLIC_API_URL=https://api.tudominio.com/api  # CON /api
 ```
+Nota: `mobile/` está fuera del `npm workspace` de la raíz (`"workspaces": ["packages/*"]`) y su bundler (Metro) no observaba `packages/shared/` por defecto — se agregó `mobile/metro.config.js` con `watchFolders` apuntando a la raíz del monorepo para que `mobile/api.ts` pueda importar `../packages/shared`. Sin ese archivo, la app mobile no bundlea en ningún entorno (ni Expo Web, ni emulador, ni build).
 
 ### 9.2 Proxy Producción (Requerido por C-NEW-3)
 

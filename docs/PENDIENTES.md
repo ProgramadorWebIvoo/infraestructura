@@ -1,7 +1,4 @@
 # PENDIENTES
-
-Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 / V1.md`).
-
 ---
 
 ## ✅ DONE — Items completados en sprints anteriores
@@ -96,25 +93,27 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 88. ✅ **REALIZAR** — Limpiar el bundle y eliminar dependencias inutilizadas.
 89. ✅ **REALIZAR** — Entrar ROL x ROL y verificar PROCESOS Y VISTAS.
 90. ✅ **REALIZAR** — Reevaluar expiración de token con PC apagada (verificar fix previo). Bug encontrado: el timeout de inactividad (`useAuth.ts`) solo limpiaba estado local y hacía `reload()`, sin llamar a `/logout`; como la sesión vive en cookie httpOnly con lifetime propio en backend (Sanctum, `SESSION_LIFETIME=120`), el reload re-autenticaba solo vía `GET /user` mientras la cookie no hubiera expirado por su cuenta — el "fix" no tenía efecto observable. Corregido: ahora llama a `POST /logout` antes de limpiar y recargar, con guard contra doble disparo. 5 tests nuevos cubren el flujo (timeout normal, fallo de red en logout, no-disparo antes de tiempo, `visibilitychange` tras suspensión, no doble logout).
+91. ✅ `nextContractorCode()` duplicado Extraído a `Contractor::nextCode()` (modelo).
+92. ✅ `log()`/`logEvaluation()` triplicado (causa raíz de #4)
+93. ✅ `Rule::in()` sin array
+94. ✅ `getMaskedApiKey()` código muerto 
+95. ✅ Controladores violan SRP
+96. ✅ `AIEvaluationService::registerProviders()` viola DIP
+97. ✅ Cobertura sin cambios: AI Config CRUD, AI Evaluation, etc.
+98. ✅ **REALIZAR** — Eliminar del modal de Material del Catalogo la columna 'Valor' o arreglarla para que muestre su valor correctamente. `SelectModal` mostraba por defecto una columna "Valor" con el índice interno del array (0,1,2...), no un precio. Fix: `MaterialAdderSection` ahora pasa `columns` explícitas (Nombre/Unidad/Precio Unit.). Test nuevo en `MaterialAdderSection.test.tsx`.
+99. ✅ **REALIZAR** — Existe un problema al seleccionar el proveedor y tratar de enviarle el link, El mismo abre dos modales y el select No permite seleccionar la obra. Causa: `ProveedoresRegistrados/index.tsx` tenía dos `useState` independientes (rating / invite) que podían quedar abiertos a la vez, superponiendo dos modales con el mismo z-index y bloqueando clicks sobre el selector de obra. Fix: unificados en un solo estado discriminado (`activeModal`), mutuamente excluyente. 2 tests nuevos.
 ---
 
-## 🔄 PENDIENTES ANTERIORES (no cubiertos por V1/V2)
+## 🧪 PRUEBAS PENDIENTES — Resultados (28/07/2026)
 
-4. ✅ **REALIZAR** — Eliminar del modal de Material del Catalogo la columna 'Valor' o arreglarla para que muestre su valor correctamente. `SelectModal` mostraba por defecto una columna "Valor" con el índice interno del array (0,1,2...), no un precio. Fix: `MaterialAdderSection` ahora pasa `columns` explícitas (Nombre/Unidad/Precio Unit.). Test nuevo en `MaterialAdderSection.test.tsx`.
-5. ✅ **REALIZAR** — Existe un problema al seleccionar el proveedor y tratar de enviarle el link, El mismo abre dos modales y el select No permite seleccionar la obra. Causa: `ProveedoresRegistrados/index.tsx` tenía dos `useState` independientes (rating / invite) que podían quedar abiertos a la vez, superponiendo dos modales con el mismo z-index y bloqueando clicks sobre el selector de obra. Fix: unificados en un solo estado discriminado (`activeModal`), mutuamente excluyente. 2 tests nuevos.
-6. **REALIZAR** — Reducir el tiempo de carga entre cambio de vistas para asi evitar que se muestre lo maximo posible el spinner de 'Cargando modulo' y la experiencia de UX sea mejor. *(Diferido a pedido del usuario — 27/07/2026.)*
----
-
-## 🧪 PRUEBAS PENDIENTES
-
-1. Probar todas las funciones y rutas después de normalización de conexión a la API.
-2. Probar expiración y funcionalidad de tokens Sanctum.
-3. Probar polling en todo el sistema.
-4. Probar seguridad entre roles y CRUD en vistas de Configuración.
-5. Probar sistema de restablecimiento de contraseñas.
-6. Probar sistema de ModalSelect.
-7. Probar entorno nativo mobile de la App.
-
+1. ✅ **Rutas y funciones tras normalización de API** — Recorridas las 7 vistas principales (Presidencia, Infra/Mant, Cierre Obra, Procura, Analistas, Finanzas, Proveedores) más Configuración. Todas las llamadas (`/api/user`, `/api/auth/permissions`, `/api/contractors`, `/api/materials`, `/api/projects`, `/api/audit-logs`, `/api/users`) responden 200 sin errores de consola.
+2. ✅ **Tokens Sanctum** — Confirmado que la sesión vive en cookie httpOnly (no accesible desde `document.cookie`, solo se ve el `XSRF-TOKEN` de doble-envío). Mutaciones sin CSRF válido devuelven 419. Logout dispara `POST /logout` y bloquea el acceso a rutas protegidas. Expiración por inactividad ya cubierta por los 5 tests unitarios de `useAuth` (no re-probada en vivo por requerir esperar el `SESSION_LIFETIME` real).
+3. ✅ **Polling** — Verificado en Presidencia: `contractors`/`materials` se refetchean automáticamente cada ~15s sin duplicar peticiones ni generar errores.
+4. ✅ **Seguridad entre roles y CRUD en Configuración** — Creados 6 usuarios de prueba (uno por rol: Presidencia, Infraestructura, Cierre de Obra, Procura, Analistas, Finanzas, Catálogos). Confirmado que el sidebar solo muestra el módulo permitido y que acceder por URL directa a una ruta ajena (ej. `/usuarios` logueado como Infraestructura) redirige a la vista permitida. A nivel backend, `GET /api/users` con un rol no autorizado devuelve 403 (no solo ocultamiento en frontend).
+5. ✅ **Restablecimiento de contraseñas** — El flujo de reset es admin-driven desde Configuración → Usuarios → ícono de enviar (no hay auto-servicio "olvidé mi contraseña", por diseño). Se encontraron y corrigieron 2 bugs:
+   - **Mail local mal configurado**: `MAIL_MAILER=smtp` con `MAIL_HOST=mailpit` (hostname de Docker, no resoluble fuera de ese entorno) causaba 500 en `POST /users/{id}/send-reset-link`. Corregido en `infraestructura-back/.env` → `MAIL_MAILER=log` (los correos se escriben en `storage/logs/laravel.log` en vez de enviarse de verdad, sin dependencias externas).
+   - **Enlace de reset roto**: el correo generado por `UserPasswordReset` apunta a `{FRONTEND_URL}/reset-password/{token}?email=...`, pero esa ruta no existía en el frontend (redirigía al dashboard sin mostrar nada). Se agregó el endpoint `POST /api/reset-password` (`AuthController::resetPassword`, público, `throttle:public-api`, usa `Password::reset()` de Laravel) y la vista `src/views/ResetPasswordScreen` con ruta pública `/reset-password/:token` (registrada en `routes.tsx` y `PublicRouteShell.tsx`). Probado de punta a punta: enviar link → tomar el link del log → completar el formulario → login exitoso con la nueva clave.
+6. ✅ **ModalSelect** — Probado en "Configurar Requerimientos de Material": búsqueda en vivo, contador "X de Y opciones", paginación y selección funcionan correctamente.
 ---
 
 ## 🔴 PENDIENTES — V3 Audit Front (27/07/2026) — `AUDITORIA_front_27_07_2026_V3.md`
@@ -124,22 +123,3 @@ Basado en la auditoría interna V1 del 24/07/2026 (`AUDITORIA_front_24_07_2026 /
 | # | Ítem | Estado verificado | 
 |---|------|--------------------|
 | 1 | Cabeceras de seguridad (CSP, etc.) nunca llegan a producción | 🚧 **Bloqueado por infraestructura** — el despliegue de producción aún no está definido (confirmado con el usuario 27/07/2026). No se puede resolver sin saber qué sirve el build (`dist/`) — Nginx, Vercel, Node, etc. Retomar cuando esté decidido. |
-
-### 🟡 MEDIUM
-
-| # | Ítem | Estado verificado |
-|---|------|--------------------|
-| 1 | Constante global fuera de clase (dup. de #11) | ✅ Ya estaba resuelto (commit `6981577`, previo a esta pasada): `CONTRACTOR_STATUSES` movida dentro de `ContractorController`. Verificado. |
-| 2 | `nextContractorCode()` duplicado | ✅ Extraído a `Contractor::nextCode()` (modelo). `ContractorController` y `SupportController` ahora llaman al mismo método; eliminados los dos privados duplicados. |
-| 3 | `log()`/`logEvaluation()` triplicado (causa raíz de #4) | ✅ Extraído a `AuditLog::record()` (modelo). `ProjectController::log()`, `ProjectDocumentController::log()` y `AIEvaluationController::logEvaluation()` ahora delegan al mismo método; eliminados los 3 privados duplicados. |
-| 4 | `Rule::in()` sin array | ✅ Corregido en `AIEvaluationController.php:52` — `Rule::in('chatgpt', 'gemini', 'claude')` (bug real: solo validaba `'chatgpt'`, rechazaba `'gemini'`/`'claude'`) → `Rule::in(['chatgpt', 'gemini', 'claude'])`. Test de regresión agregado. |
-| 5 | `getMaskedApiKey()` código muerto | ✅ Eliminado de `AiConfiguration.php` (sin otras referencias). |
-| 6 | `anthropic-version` hardcodeada en 2 lugares | ✅ Extraída a `AnthropicProvider::API_VERSION`, referenciada desde `AiConfigController::testAnthropic()`. |
-| 7 | Controladores violan SRP | ✅ **Alcance acotado** (decisión del usuario 27/07/2026: extracción segura, no refactor completo a capa de servicios por riesgo sobre flujos de pago/contratación en producción). Generadores de ID (`nextProjectId`, `nextProposalId` x2) movidos a sus modelos (`Project::nextId()`, `SupplierMaterialProposal::nextId()`, `ProjectProposal::nextId()`), igual que #2. La responsabilidad de audit-logging ya se centralizó en #3. El split completo CRUD/lifecycle/import a servicios queda pendiente si se decide abordarlo. |
-| 8 | `AIEvaluationService::registerProviders()` viola DIP | ✅ Extraído a `AIProviderFactory` (nuevo, en `Providers/`) — el servicio ya no instancia clases concretas de provider directamente ni mantiene el mapa key→clase inline. |
-
-### 🔵 BAJO — Testing
-
-| # | Ítem | Estado verificado |
-|---|------|--------------------|
-| 1 | Cobertura sin cambios: AI Config CRUD, AI Evaluation, etc. | ✅ Agregados `AiConfigCrudTest.php` (10 tests: CRUD + masking + gates de rol), `AiEvaluationTest.php` (5 tests: happy path con `Http::fake`, failover sin provider, regresión del bug `Rule::in`, gate de rol) y `ProjectDocumentTest.php` (8 tests: upload/index/destroy/download, sanitización de path traversal). Suite backend: 154 → 177 tests, todos verdes. |

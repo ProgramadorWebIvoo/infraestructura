@@ -33,6 +33,7 @@ export const ROUTES = {
   CONFIG_IA: "/config-ia",
   REGISTRO_PROVEEDORES: "/registro-proveedores",
   PROPUESTA_MATERIALES: "/propuesta-materiales/:token",
+  RESET_PASSWORD: "/reset-password/:token",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -43,11 +44,15 @@ const PUBLIC_ROUTES = new Set<string>([ROUTES.REGISTRO_PROVEEDORES]);
 
 /**
  * Devuelve true si `path` corresponde a una ruta pública (sin autenticación).
- * La segunda condición cubre /propuesta-materiales/:token cuyo path real
- * incluye un token dinámico (no podemos listarlo en PUBLIC_ROUTES).
+ * Las siguientes condiciones cubren rutas con token dinámico en el path
+ * (no podemos listarlas en PUBLIC_ROUTES, que solo admite paths estáticos).
  */
 export function isPublicRoute(path: string): boolean {
-  return PUBLIC_ROUTES.has(path) || path.startsWith("/propuesta-materiales/");
+  return (
+    PUBLIC_ROUTES.has(path) ||
+    path.startsWith("/propuesta-materiales/") ||
+    path.startsWith("/reset-password/")
+  );
 }
 
 // ---------------------------------------------------------------------------
