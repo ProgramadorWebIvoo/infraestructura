@@ -6,7 +6,7 @@
  * PropuestaMaterialesPublica.
  */
 
-import { Clock, Send } from "lucide-react";
+import { Clock, HandCoins, Send } from "lucide-react";
 import NumericInput from "../../components/UI/NumericInput";
 import { DURATION_UNITS, sanitize, type DurationUnit } from "./types";
 
@@ -15,6 +15,8 @@ interface ProposalDetailsSectionProps {
   onEstimatedDaysChange: (v: number | "") => void;
   durationUnit: DurationUnit;
   onDurationUnitChange: (v: DurationUnit) => void;
+  advancePercent: number | "";
+  onAdvancePercentChange: (v: number | "") => void;
   generalNotes: string;
   onGeneralNotesChange: (v: string) => void;
   isSubmitting: boolean;
@@ -25,6 +27,8 @@ export default function ProposalDetailsSection({
   onEstimatedDaysChange,
   durationUnit,
   onDurationUnitChange,
+  advancePercent,
+  onAdvancePercentChange,
   generalNotes,
   onGeneralNotesChange,
   isSubmitting,
@@ -63,6 +67,29 @@ export default function ProposalDetailsSection({
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Advance percent */}
+      <div className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
+        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+          <HandCoins className="h-4 w-4 text-slate-500" />
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Anticipo requerido</h3>
+        </div>
+        <p className="text-xs text-slate-500 font-medium mb-4">
+          Indique que porcentaje de anticipo necesita para iniciar el pedido (dejelo vacio si no requiere anticipo).
+        </p>
+        <div className="flex items-center gap-3 max-w-[10rem]">
+          <div className="flex-1">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Porcentaje (%)</label>
+            <NumericInput
+              value={advancePercent}
+              onChange={(v) => onAdvancePercentChange(v === "" ? "" : Math.min(100, v))}
+              placeholder="0"
+              min={0}
+              step="1"
+            />
           </div>
         </div>
       </div>

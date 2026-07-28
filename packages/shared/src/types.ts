@@ -133,5 +133,6 @@ export interface SupplierMaterialProposal {
   generalNotes?: string;
   estimatedDays?: number;
   durationUnit?: string;
+  advancePercent?: number;
   submittedAt: string;
 }

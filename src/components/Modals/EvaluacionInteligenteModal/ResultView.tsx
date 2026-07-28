@@ -163,7 +163,7 @@ function WinnerCard({
           <span className="font-mono font-bold text-emerald-700 text-sm">
             ${totalCost.toLocaleString()} USD
           </span>
-          <span>{deliveryWeeks} semanas</span>
+          <span>{deliveryWeeks > 0 ? `${deliveryWeeks} semanas` : "Sin dato"}</span>
           <span>Rating: {rating?.toFixed(1) ?? "—"}</span>
         </div>
       </div>

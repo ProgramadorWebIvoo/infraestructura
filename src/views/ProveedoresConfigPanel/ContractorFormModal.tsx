@@ -155,6 +155,7 @@ export default function ContractorFormModal({
               onSelect={(opt) => onFormChange({ ...form, status: opt.value as ContractorForm["status"] })}
               options={STATUS_OPTIONS}
               selectedValue={form.status}
+              allowDeselect={false}
               triggerLabel="Seleccionar estado..."
               title="Seleccionar Estado"
               infoLine={`${STATUS_OPTIONS.length} opciones disponibles`}

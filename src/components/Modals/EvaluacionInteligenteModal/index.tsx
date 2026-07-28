@@ -150,7 +150,7 @@ export default function EvaluacionInteligenteModal({
 
   // --- Métricas para IdleView ---
   const idleMetrics = useMemo(() => {
-    const weeks = proposals.map((p) => p.deliveryWeeks);
+    const weeks = proposals.map((p) => p.deliveryWeeks).filter((w) => w > 0);
     return {
       proposalCount: proposals.length,
       approvedInvestmentAmount: project.approvedInvestmentAmount,

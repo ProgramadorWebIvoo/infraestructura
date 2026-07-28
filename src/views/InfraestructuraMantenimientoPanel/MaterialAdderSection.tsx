@@ -156,6 +156,7 @@ export default function MaterialAdderSection({
               }))}
               columns={catalogColumns}
               selectedValue={selectedCatalogIndex}
+              allowDeselect={false}
               triggerLabel="Seleccionar material del catálogo..."
               title="Seleccionar Material del Catálogo"
               infoLine={`${materialsCatalog.length} materiales disponibles`}

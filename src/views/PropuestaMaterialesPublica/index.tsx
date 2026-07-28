@@ -25,6 +25,7 @@ export default function PropuestaMaterialesPublica() {
   const [items, setItems] = useState<ItemRow[]>([]);
   const [estimatedDays, setEstimatedDays] = useState<number | "">("");
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("dias");
+  const [advancePercent, setAdvancePercent] = useState<number | "">("");
   const [generalNotes, setGeneralNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState("");
@@ -111,6 +112,7 @@ export default function PropuestaMaterialesPublica() {
         body: JSON.stringify({
           estimatedDays: estimatedDays !== "" ? Number(estimatedDays) : null,
           durationUnit: estimatedDays !== "" ? durationUnit : null,
+          advancePercent: advancePercent !== "" ? Number(advancePercent) : null,
           items: validItems.map((item) => ({
             materialName: sanitize(item.materialName).trim(),
             quantity: item.quantity === "" ? 0 : item.quantity,
@@ -181,6 +183,8 @@ export default function PropuestaMaterialesPublica() {
               onEstimatedDaysChange={setEstimatedDays}
               durationUnit={durationUnit}
               onDurationUnitChange={setDurationUnit}
+              advancePercent={advancePercent}
+              onAdvancePercentChange={setAdvancePercent}
               generalNotes={generalNotes}
               onGeneralNotesChange={setGeneralNotes}
               isSubmitting={isSubmitting}

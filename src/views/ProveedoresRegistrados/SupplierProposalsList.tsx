@@ -8,7 +8,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, ChevronUp, Clock, Loader2, Mail, Package, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, HandCoins, Loader2, Mail, Package, Search } from "lucide-react";
 import { itemVariants } from "../../animations";
 import { Table } from "../../components/UI/Table";
 import type { SupplierMaterialProposal } from "../../types";
@@ -176,13 +176,24 @@ export default function SupplierProposalsList({ proposals, isLoading }: Supplier
                             <div className="font-semibold text-slate-700 mt-0.5">{proposal.submittedAt}</div>
                           </div>
                         </div>
-                        {proposal.estimatedDays != null && (
-                          <div className="mt-3 pt-3 border-t border-indigo-100 flex items-center gap-2">
-                            <Clock className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                            <div className="text-[10px] font-bold uppercase text-indigo-500">Tiempo estimado:</div>
-                            <div className="font-black text-slate-700 text-xs">
-                              {proposal.estimatedDays} {proposal.durationUnit ?? "dias"}
-                            </div>
+                        {(proposal.estimatedDays != null || proposal.advancePercent != null) && (
+                          <div className="mt-3 pt-3 border-t border-indigo-100 flex flex-wrap items-center gap-x-6 gap-y-2">
+                            {proposal.estimatedDays != null && (
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                                <div className="text-[10px] font-bold uppercase text-indigo-500">Tiempo estimado:</div>
+                                <div className="font-black text-slate-700 text-xs">
+                                  {proposal.estimatedDays} {proposal.durationUnit ?? "dias"}
+                                </div>
+                              </div>
+                            )}
+                            {proposal.advancePercent != null && (
+                              <div className="flex items-center gap-2">
+                                <HandCoins className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                                <div className="text-[10px] font-bold uppercase text-indigo-500">Anticipo solicitado:</div>
+                                <div className="font-black text-slate-700 text-xs">{proposal.advancePercent}%</div>
+                              </div>
+                            )}
                           </div>
                         )}
                         {proposal.generalNotes && (

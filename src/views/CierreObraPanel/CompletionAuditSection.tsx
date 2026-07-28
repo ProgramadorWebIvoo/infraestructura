@@ -22,11 +22,13 @@ interface CompletionAuditSectionProps {
 }
 
 export default function CompletionAuditSection({ projects, onVerifyCompletion }: CompletionAuditSectionProps) {
-  const [confirmVerifyId, setConfirmVerifyId] = useState<string | null>(null);
+  const [confirmVerifyProject, setConfirmVerifyProject] = useState<Project | null>(null);
 
   const pendingCompletionVerify = projects.filter(
     p => p.status === ProjectStatus.EN_EJECUCION || p.status === ProjectStatus.VERIFICANDO_FINALIZACION
   );
+
+  const confirmIsUnderAudit = confirmVerifyProject?.status === ProjectStatus.VERIFICANDO_FINALIZACION;
 
   return (
     <>
@@ -64,7 +66,7 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion }:
                     </div>
                     <StatusBadge
                       code={isUnderAudit ? "VERIFICANDO_FINALIZACION" : "EN_EJECUCION"}
-                      label={isUnderAudit ? "Auditoría" : "En Curso"}
+                      label={isUnderAudit ? "Paso 2 de 2 · Auditoría" : "Paso 1 de 2 · En Curso"}
                     />
                   </div>
 
@@ -80,13 +82,19 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion }:
                     )}
                   </div>
 
+                  <p className="text-[10px] text-slate-400 font-medium leading-snug">
+                    {isUnderAudit
+                      ? "La obra ya fue reportada como finalizada. Confirme la certificación de calidad para autorizar el pago."
+                      : "Al confirmar, solo se reporta la obra como finalizada. Luego deberá certificar la calidad en un segundo paso."}
+                  </p>
+
                   <button
                     id={`btn-verify-quality-${p.id}`}
-                    onClick={() => setConfirmVerifyId(p.id)}
+                    onClick={() => setConfirmVerifyProject(p)}
                     className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md shadow-emerald-600/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
                   >
                     <BadgeCheck className="h-4 w-4" />
-                    Certificar Calidad y Autorizar Pago
+                    {isUnderAudit ? "Certificar Calidad y Autorizar Pago" : "Reportar Obra como Finalizada"}
                   </button>
                 </div>
               );
@@ -126,18 +134,22 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion }:
 
       {/* ── Confirm Verify Completion ── */}
       <ConfirmDialog
-        isOpen={!!confirmVerifyId}
-        onClose={() => setConfirmVerifyId(null)}
+        isOpen={!!confirmVerifyProject}
+        onClose={() => setConfirmVerifyProject(null)}
         onConfirm={() => {
-          if (confirmVerifyId) {
-            onVerifyCompletion(confirmVerifyId);
-            setConfirmVerifyId(null);
+          if (confirmVerifyProject) {
+            onVerifyCompletion(confirmVerifyProject.id);
+            setConfirmVerifyProject(null);
           }
         }}
-        title="Certificar Calidad"
-        message="¿Estás seguro de certificar la calidad de esta obra? Esta acción autorizará el pago final al contratista. Una vez certificada, no podrá revertirse."
+        title={confirmIsUnderAudit ? "Paso 2 de 2 · Certificar Calidad" : "Paso 1 de 2 · Reportar Finalización"}
+        message={
+          confirmIsUnderAudit
+            ? "¿Estás seguro de certificar la calidad de esta obra? Esta acción autorizará el pago final al contratista. Una vez certificada, no podrá revertirse."
+            : "¿Estás seguro de reportar esta obra como finalizada? Esto la enviará a auditoría de calidad; el pago final se autorizará en un segundo paso, una vez certificada la calidad."
+        }
         variant="warning"
-        confirmLabel="Certificar y autorizar pago"
+        confirmLabel={confirmIsUnderAudit ? "Certificar y autorizar pago" : "Reportar como finalizada"}
       />
     </>
   );

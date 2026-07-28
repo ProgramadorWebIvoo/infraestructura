@@ -154,9 +154,7 @@ export default function SelectModal<T>({
 
   const handleDeselect = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (allowDeselect && onDeselect) {
-      onDeselect();
-    }
+    onDeselect?.();
   };
 
   const isSelected = (opt: SelectModalOption<T>) => opt.value === selectedValue;
@@ -198,8 +196,10 @@ export default function SelectModal<T>({
         <Search className={`h-4 w-4 shrink-0 ${disabled ? "text-slate-300" : "text-slate-400"}`} />
       </button>
 
-      {/* Deselect — sibling del trigger para evitar nested interactive */}
-      {selectedOption && allowDeselect && (
+      {/* Deselect — sibling del trigger para evitar nested interactive.
+          Requiere onDeselect explícito: sin él no hay nada que limpiar y el
+          botón quedaría inerte. */}
+      {selectedOption && allowDeselect && onDeselect && (
         <button
           type="button"
           onClick={handleDeselect}

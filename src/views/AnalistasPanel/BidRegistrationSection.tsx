@@ -110,6 +110,7 @@ export default function BidRegistrationSection({
               onClose={() => setIsProjectModalOpen(false)}
               onOpen={() => setIsProjectModalOpen(true)}
               onSelect={(opt) => onSelectProject(opt.value as string)}
+              onDeselect={() => onSelectProject("")}
               options={projectOptions}
               selectedValue={selectedProjectId}
               triggerLabel="Seleccionar obra..."
@@ -149,6 +150,7 @@ export default function BidRegistrationSection({
                       onClose={() => setIsContractorModalOpen(false)}
                       onOpen={() => setIsContractorModalOpen(true)}
                       onSelect={(opt) => setContractorCode(opt.value as string)}
+                      onDeselect={() => setContractorCode("")}
                       options={contractorOptions}
                       selectedValue={contractorCode}
                       triggerLabel="Seleccionar proveedor..."

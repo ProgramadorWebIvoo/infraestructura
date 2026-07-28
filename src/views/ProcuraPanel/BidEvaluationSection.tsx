@@ -203,7 +203,7 @@ export default function BidEvaluationSection({
                           { key: "materialCost", label: "Insumos/Materiales", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">${prop.materialCost.toLocaleString("en-US")}</span> },
                           { key: "laborCost", label: "Mano de Obra", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">${prop.laborCost.toLocaleString("en-US")}</span> },
                           { key: "totalCost", label: "Costo Total", align: "right", render: (prop) => <span className="font-mono font-black text-emerald-700 text-sm">${prop.totalCost.toLocaleString("en-US")}</span> },
-                          { key: "deliveryWeeks", label: "Entrega", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks} semanas</span> },
+                          { key: "deliveryWeeks", label: "Entrega", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} semanas` : "Sin dato"}</span> },
                           {
                             key: "advance",
                             label: "Anticipo Pactado",

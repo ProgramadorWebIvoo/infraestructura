@@ -141,6 +141,7 @@ export default function MaterialFormModal({
               onSelect={(opt) => onFormChange({ ...form, isActive: opt.value === 1 })}
               options={STATUS_OPTIONS}
               selectedValue={form.isActive ? 1 : 0}
+              allowDeselect={false}
               triggerLabel={form.isActive ? "Activo" : "Inactivo"}
               title="Seleccionar Estado"
               infoLine={`${STATUS_OPTIONS.length} opciones disponibles`}

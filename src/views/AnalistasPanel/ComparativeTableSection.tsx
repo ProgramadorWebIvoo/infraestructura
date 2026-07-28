@@ -121,7 +121,7 @@ export default function ComparativeTableSection({
                   >
                     <div>
                       <div className="font-bold text-slate-800 text-xs">{prop.contractorName}</div>
-                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">Plazo: {prop.deliveryWeeks} sem | Anticipo: {prop.negotiatedAdvancePercent}%</div>
+                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">Plazo: {prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} sem` : "Sin dato"} | Anticipo: {prop.negotiatedAdvancePercent}%</div>
                       <div className="font-mono text-[11px] text-emerald-600 font-bold mt-1">${prop.totalCost.toLocaleString()} USD</div>
                     </div>
                     <button
