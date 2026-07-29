@@ -48,18 +48,13 @@ export default function KpiCard({
             <span className={iconColor}>{icon}</span>
           </div>
           <span
-            className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+            className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
               dark ? "text-slate-400" : "text-slate-500"
             }`}
           >
             {label}
           </span>
         </div>
-        {!dark && (
-          <span className="text-[9px] font-mono text-slate-300 font-bold uppercase tracking-widest">
-            IVOO
-          </span>
-        )}
       </div>
       <div className="mt-3">
         {children ?? (
@@ -68,7 +63,7 @@ export default function KpiCard({
               <p className="text-lg font-black text-slate-900">{value}</p>
             )}
             {sub !== undefined && (
-              <p className="text-[10px] font-medium text-slate-400">{sub}</p>
+              <p className="text-[11px] font-medium text-slate-400">{sub}</p>
             )}
           </>
         )}

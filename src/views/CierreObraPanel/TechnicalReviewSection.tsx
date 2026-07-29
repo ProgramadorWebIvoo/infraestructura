@@ -8,11 +8,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Button from "../../components/UI/Button";
 import { ProjectStatus } from "../../types";
 import type { Project } from "../../types";
 import { useToast } from "../../components/UI/Toast";
 import { Calculator, CheckCircle2, FileSpreadsheet, Map, MapPin, Upload } from "lucide-react";
-import Spinner from "../../components/UI/Spinner";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
 import FileDropZone from "../../components/UI/FileDropZone";
@@ -87,7 +87,6 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
             </label>
             <div
               className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth"
-              style={{ willChange: "scroll-position" }}
             >
               {pendingReview.map((p) => (
                 <button
@@ -199,19 +198,17 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
               </div>
 
               <div className="flex justify-end pt-2">
-                <button
+                <Button
                   id="btn-cierre-submit-review"
                   type="submit"
+                  variant="primary"
+                  colorScheme="sky"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl transition-all duration-200 shadow-md shadow-sky-500/20 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  isLoading={isSubmitting}
+                  icon={<Upload className="h-4 w-4" />}
                 >
-                  {isSubmitting ? (
-                    <Spinner />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
                   {isSubmitting ? "Guardando..." : "Guardar y Enviar a Procura"}
-                </button>
+                </Button>
               </div>
             </motion.form>
           )}

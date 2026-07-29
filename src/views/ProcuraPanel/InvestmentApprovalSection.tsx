@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Button from "../../components/UI/Button";
 import { CheckSquare, Download, FileSpreadsheet, Map, MapPin, TrendingUp } from "lucide-react";
 import { useToast } from "../../components/UI/Toast";
 import { apiDownload } from "../../services/api";
@@ -146,7 +147,6 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Peticiones Listas para Procura:</label>
             <div
               className="flex flex-wrap gap-2 max-h-88 overflow-y-auto pr-2 -mr-2 scroll-smooth"
-              style={{ willChange: "scroll-position" }}
             >
               {pendingInvestmentApproval.map((p) => (
                 <button
@@ -231,14 +231,15 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
               </div>
 
               <div className="flex justify-end pt-2">
-                <button
+                <Button
                   id="btn-procura-approve-investment"
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white rounded-xl shadow-md shadow-purple-600/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-purple-600/30 hover:-translate-y-0.5"
+                  variant="primary"
+                  colorScheme="purple"
+                  icon={<CheckSquare className="h-4 w-4" />}
                 >
-                  <CheckSquare className="h-4 w-4" />
                   Autorizar Presupuesto y Enviar a Licitación
-                </button>
+                </Button>
               </div>
             </motion.form>
           )}

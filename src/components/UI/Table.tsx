@@ -292,7 +292,7 @@ export function Table<T>({
         className={`overflow-x-auto ${maxHeight ? "overflow-y-auto" : ""}`}
         style={{
           ...(maxHeight ? { maxHeight } : {}),
-          willChange: "scroll-position",
+          // willChange se aplica solo cuando hay scroll activo (omitido por defecto)
         }}
       >
         <table className={`w-full text-left text-xs border-collapse ${className}`} style={shouldVirtualize ? { tableLayout: "fixed" } : undefined}>
@@ -302,7 +302,7 @@ export function Table<T>({
                   <th
                       key={col.key}
                       className={`
-                    py-3 px-4 text-[10px] uppercase tracking-wider whitespace-nowrap
+                    py-3 px-4 text-[11px] uppercase tracking-wider whitespace-nowrap
                     ${thAlign(col)}
                     ${stickyHeader ? "sticky top-0 bg-slate-50 z-10" : ""}
                     ${col.sortable ? "cursor-pointer select-none hover:bg-slate-100/50" : ""}

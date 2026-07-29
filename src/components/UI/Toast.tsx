@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
+import { X } from "lucide-react";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -24,7 +25,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = ++nextId;
     setToasts(prev => {
-      const next = [...prev, { id, message, type }];
+      const next = [{ id, message, type }, ...prev];
       // Keep only the last MAX_TOASTS
       if (next.length > MAX_TOASTS) {
         const removed = next.splice(0, next.length - MAX_TOASTS);
@@ -60,7 +61,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
 
       {/* Toast container */}
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm">
+      <div role="region" aria-label="Notificaciones" className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm">
         {toasts.map(toast => (
           <div
             key={toast.id}
@@ -79,10 +80,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <span className="flex-1">{toast.message}</span>
             <button
               onClick={() => dismiss(toast.id)}
-              className="text-current opacity-60 hover:opacity-100 text-lg leading-none font-bold"
+              className="text-current opacity-60 hover:opacity-100 p-0.5 rounded-md hover:bg-black/5 transition-colors"
               aria-label="Cerrar"
             >
-              &times;
+              <X className="h-4 w-4" />
             </button>
           </div>
         ))}

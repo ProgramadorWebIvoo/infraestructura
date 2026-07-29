@@ -56,7 +56,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
     <>
       {/* Mobile Sidebar Backdrop */}
       <div
-        className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 transition-opacity duration-300 ease-out lg:hidden ${
+        className={`fixed inset-0 bg-slate-950/60 z-50 transition-opacity duration-300 ease-out lg:hidden ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -69,28 +69,31 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
         }`}
       >
         {/* ── Sidebar Header (Logo/Brand) ─────────────────────────────────── */}
-        <div className="relative p-6 border-b border-slate-800/80 shrink-0 overflow-hidden">
-          {/* Gradient blobs — depth layers */}
-          <div className="absolute -top-12 -right-12 w-40 h-40 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-28 h-28 bg-indigo-500/8 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative p-6 border-b border-slate-800/60 shrink-0 overflow-hidden">
+          {/* Ambient atmospheric light — replaces artificial gradient blobs */}
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
 
-          <div className="flex items-center justify-between relative z-10">
+          {/* Subtle top edge highlight — natural light source */}
+          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent pointer-events-none" />
+
+          <div className="flex items-center justify-between relative">
             <div className="flex items-center gap-3">
-              {/* Logo icon with live indicator */}
+              {/* Logo icon */}
               <div className="relative shrink-0">
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 ring-1 ring-white/15">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset">
                   <Building2 className="h-5 w-5 text-white stroke-[2.5]" />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0F172A] shadow-xs" />
+                {/* Static status indicator */}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400/80 rounded-full border-2 border-[#0F172A]" />
               </div>
 
               {/* Wordmark + tagline */}
               <div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-lg font-black tracking-tight text-emerald-400 leading-none font-brand">IVOO</span>
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em] leading-none">Gestión</span>
                 </div>
-                <p className="text-[10px] text-slate-500 font-medium mt-0.5 tracking-wide">
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">
                   Construyendo con propósito
                 </p>
               </div>
@@ -98,7 +101,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
 
             <button
               aria-label="Cerrar menú lateral"
-              className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors duration-200 self-start"
+              className="lg:hidden text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors duration-200 self-start"
               onClick={onClose}
             >
               <X className="h-5 w-5" />
@@ -108,8 +111,8 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
 
         {/* ── Sidebar Navigation Items ────────────────────────────────────── */}
         <nav aria-label="Menú principal" className="sidebar-scrollbar flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest px-3 mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500/60 animate-pulse" />
+          <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-slate-500 uppercase tracking-widest px-3 mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-500/60" />
             Flujos de Trabajo
           </div>
 
@@ -325,7 +328,7 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-slate-200 font-bold truncate leading-tight">{user.name}</p>
-                <p className="text-[10px] text-slate-500 font-mono truncate leading-tight mt-0.5">{user.email}</p>
+                <p className="text-[11px] text-slate-500 font-mono truncate leading-tight mt-0.5">{user.email}</p>
               </div>
             </div>
           )}

@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { useToast } from "../../components/UI/Toast";
 import Modal from "../../components/UI/Modal";
+import Button from "../../components/UI/Button";
 import type { Contractor } from "../../types";
 
 interface RatingModalProps {
@@ -58,17 +59,19 @@ export default function RatingModal({ contractor, onClose, onSave }: RatingModal
       closeDisabled={isSaving}
       footer={
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} disabled={isSaving} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:shadow-md disabled:opacity-50">
+          <Button onClick={onClose} disabled={isSaving}>
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-amber-500/20 transition-all duration-200 hover:from-amber-700 hover:to-amber-600 hover:shadow-lg hover:shadow-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+            variant="primary"
+            colorScheme="amber"
+            isLoading={isSaving}
+            icon={<Star className="h-3.5 w-3.5" />}
           >
-            <Star className="h-3.5 w-3.5" />
             {isSaving ? "Guardando..." : "Guardar evaluacion"}
-          </button>
+          </Button>
         </div>
       }
     >

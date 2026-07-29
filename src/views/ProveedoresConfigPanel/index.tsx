@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Building2, Plus, Search, UserCog } from "lucide-react";
 import { Table } from "../../components/UI/Table";
+import Button from "../../components/UI/Button";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
 import { useToast } from "../../components/UI/Toast";
 import { apiFetch } from "../../services/api";
@@ -198,13 +199,15 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
             Catálogo maestro de proveedores. Crea, edita y administra el estado de cada registro.
           </p>
         </div>
-        <button
+        <Button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-sky-500/20 transition-all duration-200 hover:from-sky-700 hover:to-sky-600 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
+          variant="primary"
+          colorScheme="sky"
+          size="md"
+          icon={<Plus className="h-4 w-4" />}
         >
-          <Plus className="h-4 w-4" />
           Nuevo proveedor
-        </button>
+        </Button>
       </motion.div>
 
       {/* ── Table card ── */}

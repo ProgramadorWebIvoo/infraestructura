@@ -114,7 +114,7 @@ export default function InteractiveOrganigrama({
             {/* BASE DE DATOS (Central Hub) */}
             <div className="w-52 p-3 rounded-xl border border-sky-100 bg-sky-50 text-center shadow-xs">
               <div className="flex items-center justify-center gap-1.5 text-sky-800 font-bold text-xs tracking-wider font-mono">
-                <Database className="h-3.5 w-3.5 text-sky-500 animate-pulse" />
+                <Database className="h-3.5 w-3.5 text-sky-500" />
                 BASE DE DATOS IVOO
               </div>
               <div className="text-[9px] text-sky-600 font-bold font-mono uppercase tracking-wide mt-0.5">Núcleo Centralizador</div>
@@ -122,9 +122,9 @@ export default function InteractiveOrganigrama({
  
             {/* Connector Lines to Departments */}
             <div className="w-full max-w-lg flex items-center justify-between px-6 -mt-1">
-              <div className="w-1/3 h-4 border-t-2 border-l-2 border-dashed border-slate-300 rounded-tl-lg"></div>
-              <div className="w-0.5 h-4 bg-slate-300"></div>
-              <div className="w-1/3 h-4 border-t-2 border-r-2 border-dashed border-slate-300 rounded-tr-lg"></div>
+              <div className="w-1/3 h-4 border-t-2 border-l-2 border-slate-300 rounded-tl-lg"></div>
+              <div className="w-0.5 h-4 bg-gradient-to-b from-slate-300 to-slate-400"></div>
+              <div className="w-1/3 h-4 border-t-2 border-r-2 border-slate-300 rounded-tr-lg"></div>
             </div>
  
             {/* 3 Columns: Left (Cierre / Infra), Center (Procura/Analistas), Right (Finanzas) */}

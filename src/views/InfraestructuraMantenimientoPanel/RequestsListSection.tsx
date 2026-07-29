@@ -61,7 +61,6 @@ export default function RequestsListSection({ projects }: RequestsListSectionPro
           </div>
           <div
             className="space-y-3 overflow-y-auto pr-1 max-h-[420px]"
-            style={{ willChange: "scroll-position" }}
           >
             {projects.length === 0 ? (
               <p className="text-xs text-slate-400 italic text-center py-8">No hay peticiones registradas aún.</p>

@@ -7,7 +7,7 @@
  */
 
 import { AlertCircle, FilePlus2, MapPin, Send } from "lucide-react";
-import Spinner from "../../components/UI/Spinner";
+import Button from "../../components/UI/Button";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
 import AlertBanner from "../../components/UI/AlertBanner";
@@ -127,19 +127,17 @@ export default function RequestFormSection({
         {errorMsg && <AlertBanner type="error" message={errorMsg} icon={<AlertCircle className="h-4 w-4 shrink-0" />} />}
 
         <div className="flex justify-end pt-2">
-          <button
+          <Button
             id="btn-submit-project"
             type="submit"
+            variant="primary"
+            colorScheme="sky"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-3 text-xs font-bold bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            isLoading={isSubmitting}
+            icon={<Send className="h-4 w-4" />}
           >
-            {isSubmitting ? (
-              <Spinner />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
             {isSubmitting ? "Enviando..." : "Enviar Petición a Cierre de Obra"}
-          </button>
+          </Button>
         </div>
       </form>
     </Card>

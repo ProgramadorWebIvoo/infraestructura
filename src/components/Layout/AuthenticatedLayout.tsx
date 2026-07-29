@@ -108,7 +108,7 @@ export default function AuthenticatedLayout({
             {/* Dynamic Role Indicator Notification — hidden on mobile */}
             <div className="hidden sm:flex flex-col sm:flex-row sm:items-center justify-between bg-gradient-to-br from-sky-50/40 to-white px-5 py-4 rounded-2xl border border-slate-200 shadow-xs gap-3 border-l-4 border-l-sky-400">
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-600 ring-1 ring-sky-200/50">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-sky-600 ring-1 ring-sky-200/50">
                   <Database className="h-3 w-3 text-sky-500" />
                   Base de datos unificada
                 </span>
@@ -117,7 +117,7 @@ export default function AuthenticatedLayout({
                 <span className="font-semibold text-slate-700">{contractorsCount} Proveedores</span>
               </div>
               <div className="inline-flex items-center gap-1.5 self-start sm:self-auto text-[11px] font-mono font-bold bg-gradient-to-r from-slate-100 to-slate-50 text-slate-600 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-xs shadow-emerald-500/40" />
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-xs shadow-emerald-500/40" />
                 Terminal: {activeRole}
               </div>
             </div>

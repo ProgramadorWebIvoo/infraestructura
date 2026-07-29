@@ -6,8 +6,9 @@
  */
 
 import { useState } from "react";
-import { Loader2, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import Modal from "../../components/UI/Modal";
+import Button from "../../components/UI/Button";
 import SelectModal from "../../components/UI/SelectModal";
 import { STATUS_OPTIONS, type MaterialForm } from "./types";
 
@@ -47,30 +48,23 @@ export default function MaterialFormModal({
       closeDisabled={isSaving}
       footer={
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:shadow-md disabled:opacity-50"
-          >
+          <Button onClick={onClose} disabled={isSaving}>
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onSave}
             disabled={isSaving}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-emerald-500/20 transition-all duration-200 hover:from-emerald-700 hover:to-emerald-600 hover:shadow-lg hover:shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+            variant="primary"
+            colorScheme="emerald"
+            isLoading={isSaving}
           >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Guardando...
-              </>
-            ) : (
+            {isSaving ? "Guardando..." : (
               <>
                 <Package className="h-4 w-4" />
                 {mode === "create" ? "Crear material" : "Guardar cambios"}
               </>
             )}
-          </button>
+          </Button>
         </div>
       }
     >

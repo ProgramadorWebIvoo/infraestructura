@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Button from "../../components/UI/Button";
 import { AlertTriangle, BrainCircuit, MapPin, ShieldCheck, Users, XCircle } from "lucide-react";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
@@ -79,7 +80,6 @@ export default function BidEvaluationSection({
         ) : (
           <div
             className="space-y-6 max-h-[580px] overflow-y-auto pr-1"
-            style={{ willChange: "scroll-position" }}
           >
             {pendingContractSelection.map((p) => {
               const isRejectingThis = rejectingProjectId === p.id;
@@ -107,22 +107,26 @@ export default function BidEvaluationSection({
                       <span className="text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 font-mono text-[10px] tracking-wider uppercase shadow-xs">
                         {p.proposals?.length || 0} Propuestas
                       </span>
-                      <button
+                      <Button
                         id={`btn-ai-eval-${p.id}`}
                         onClick={() => setAiEvalProject(p)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm"
+                        variant="secondary"
+                        size="sm"
+                        className="text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200 hover:border-amber-300"
+                        icon={<BrainCircuit className="h-3.5 w-3.5" />}
                       >
-                        <BrainCircuit className="h-3.5 w-3.5" />
                         Evaluación IA
-                      </button>
+                      </Button>
                       {!isRejectingThis && (
-                        <button
+                        <Button
                           onClick={() => handleOpenReject(p.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm"
+                          variant="secondary"
+                          size="sm"
+                          className="text-red-600 bg-red-50 hover:bg-red-100 border-red-200 hover:border-red-300"
+                          icon={<XCircle className="h-3.5 w-3.5" />}
                         >
-                          <XCircle className="h-3.5 w-3.5" />
                           Rechazar
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -161,23 +165,23 @@ export default function BidEvaluationSection({
                         <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{rejectReason.length}/500</span>
                       </div>
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
+                        <Button
+                          variant="secondary"
                           onClick={handleCancelReject}
                           disabled={isRejecting}
-                          className="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all duration-200 disabled:opacity-50 cursor-pointer"
                         >
                           Cancelar
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="primary"
+                          colorScheme="rose"
                           onClick={() => handleConfirmReject(p.id)}
                           disabled={isRejecting || !rejectReason.trim()}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 rounded-xl shadow-md shadow-red-600/20 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                          isLoading={isRejecting}
+                          icon={<XCircle className="h-3.5 w-3.5" />}
                         >
-                          <XCircle className="h-3.5 w-3.5" />
                           {isRejecting ? "Rechazando..." : "Confirmar rechazo"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                       </motion.div>
@@ -220,7 +224,7 @@ export default function BidEvaluationSection({
                             label: "Contratación",
                             align: "center",
                             render: (prop) => (
-                              <button
+                              <Button
                                 id={`btn-hire-${p.id}-${prop.contractorCode}`}
                                 onClick={() => setConfirmSelect({
                                   projectId: p.id,
@@ -228,11 +232,13 @@ export default function BidEvaluationSection({
                                   proposalId: prop.id,
                                   contractorName: prop.contractorName,
                                 })}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-0.5"
+                                variant="primary"
+                                colorScheme="sky"
+                                size="sm"
+                                icon={<ShieldCheck className="h-4 w-4" />}
                               >
-                                <ShieldCheck className="h-4 w-4" />
                                 Adjudicar
-                              </button>
+                              </Button>
                             ),
                           },
                         ]}

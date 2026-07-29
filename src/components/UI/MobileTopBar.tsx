@@ -7,9 +7,10 @@ interface MobileTopBarProps {
 
 export default function MobileTopBar({ user, onMenuClick }: MobileTopBarProps) {
   return (
-    <header className="bg-[#0F172A] text-white border-b border-slate-800/80 shadow-sm relative overflow-hidden lg:hidden">
-      {/* Gradient blur accent */}
-      <div className="absolute top-0 right-0 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/3 translate-x-1/4" />
+    <header className="bg-[#0F172A] text-white border-b border-slate-800/60 shadow-sm relative overflow-hidden lg:hidden">
+      {/* Atmospheric light — matching sidebar header */}
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
+      <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent pointer-events-none" />
 
       <div className="relative z-10 flex items-center justify-between px-4 py-3">
         {/* Logo + Brand */}
@@ -30,9 +31,9 @@ export default function MobileTopBar({ user, onMenuClick }: MobileTopBarProps) {
           <div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-base font-black tracking-tight text-emerald-400 leading-none font-brand">IVOO</span>
-              <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">Gestión</span>
             </div>
-            <p className="text-[9px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">
+            <p className="text-[10px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">
               Construyendo con propósito
             </p>
           </div>

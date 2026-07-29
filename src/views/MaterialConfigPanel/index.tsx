@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Package, Plus, Search } from "lucide-react";
 import { Table } from "../../components/UI/Table";
+import Button from "../../components/UI/Button";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
 import { useToast } from "../../components/UI/Toast";
 import { apiFetch } from "../../services/api";
@@ -185,13 +186,15 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
             Catálogo maestro de materiales. Crea, edita y administra el estado de cada registro.
           </p>
         </div>
-        <button
+        <Button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-500/20 transition-all duration-200 hover:from-emerald-700 hover:to-emerald-600 hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5"
+          variant="primary"
+          colorScheme="emerald"
+          size="md"
+          icon={<Plus className="h-4 w-4" />}
         >
-          <Plus className="h-4 w-4" />
           Nuevo material
-        </button>
+        </Button>
       </motion.div>
 
       {/* ── Table card ── */}

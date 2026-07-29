@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { CheckCircle, Coins, CreditCard } from "lucide-react";
+import Button from "../../components/UI/Button";
 import type { Project } from "../../types";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
@@ -80,14 +81,17 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
                   </div>
                 </div>
 
-                <button
+                <Button
                   id={`btn-pay-advance-${p.id}`}
                   onClick={() => setConfirmPayAdvance({ projectId: p.id, amount: advAmount, title: p.title })}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-700 hover:to-rose-600 text-white rounded-xl shadow-md shadow-rose-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-rose-500/30 hover:-translate-y-0.5"
+                  variant="primary"
+                  colorScheme="rose"
+                  size="md"
+                  className="w-full"
+                  icon={<CreditCard className="h-4 w-4" />}
                 >
-                  <CreditCard className="h-4 w-4" />
                   Liberar Desembolso de Anticipo Bancario
-                </button>
+                </Button>
               </div>
             );
           })}

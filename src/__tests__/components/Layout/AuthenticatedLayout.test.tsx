@@ -142,10 +142,9 @@ describe("AuthenticatedLayout", () => {
     expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
   });
 
-  it("shows the role indicator with correct styling", () => {
-    const { container } = renderLayout({ activeRole: "ADMIN" });
+  it("shows the role indicator with the active role", () => {
+    renderLayout({ activeRole: "ADMIN" });
 
-    const roleBadge = container.querySelector(".animate-pulse");
-    expect(roleBadge).toBeInTheDocument();
+    expect(screen.getByText("Terminal: ADMIN")).toBeInTheDocument();
   });
 });

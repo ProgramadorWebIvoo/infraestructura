@@ -12,6 +12,7 @@ import { ProjectStatus } from "../../types";
 import type { Project } from "../../types";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
+import Button from "../../components/UI/Button";
 import EmptyState from "../../components/UI/EmptyState";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
 import StatusBadge from "../../components/UI/StatusBadge";
@@ -45,7 +46,6 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion }:
         ) : (
           <div
             className="space-y-4 max-h-80 overflow-y-auto pr-1"
-            style={{ willChange: "scroll-position" }}
           >
             {pendingCompletionVerify.map((p) => {
               const isUnderAudit = p.status === ProjectStatus.VERIFICANDO_FINALIZACION;
@@ -88,14 +88,17 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion }:
                       : "Al confirmar, solo se reporta la obra como finalizada. Luego deberá certificar la calidad en un segundo paso."}
                   </p>
 
-                  <button
+                  <Button
                     id={`btn-verify-quality-${p.id}`}
                     onClick={() => setConfirmVerifyProject(p)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white rounded-xl shadow-md shadow-emerald-600/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
+                    variant="primary"
+                    colorScheme="emerald"
+                    size="md"
+                    className="w-full"
+                    icon={<BadgeCheck className="h-4 w-4" />}
                   >
-                    <BadgeCheck className="h-4 w-4" />
                     {isUnderAudit ? "Certificar Calidad y Autorizar Pago" : "Reportar Obra como Finalizada"}
-                  </button>
+                  </Button>
                 </div>
               );
             })}

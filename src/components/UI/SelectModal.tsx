@@ -8,9 +8,10 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
-import { Search, X, Check } from "lucide-react";
+import { Search, X, Check, ChevronDown } from "lucide-react";
 import Modal from "./Modal";
 import { Table, type Column } from "./Table";
+import Button from "./Button";
 
 export interface SelectModalOption<T> {
   /** Valor único que se devuelve al seleccionar */
@@ -189,11 +190,12 @@ export default function SelectModal<T>({
         `}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
+        aria-label={triggerLabel}
       >
         <span className="truncate text-left">
           {selectedOption ? selectedOption.label : triggerLabel}
         </span>
-        <Search className={`h-4 w-4 shrink-0 ${disabled ? "text-slate-300" : "text-slate-400"}`} />
+        <ChevronDown className={`h-4 w-4 shrink-0 ${disabled ? "text-slate-300" : "text-slate-400"}`} />
       </button>
 
       {/* Deselect — sibling del trigger para evitar nested interactive.
@@ -223,22 +225,18 @@ export default function SelectModal<T>({
         closeDisabled={false}
         footer={
           <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:shadow-md"
-            >
+            <Button variant="secondary" onClick={onClose}>
               {cancelText}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              colorScheme="sky"
               onClick={handleConfirm}
               disabled={!confirmedSelection}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-sky-500/20 transition-all duration-200 hover:from-sky-700 hover:to-sky-600 hover:shadow-lg hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:from-sky-600 disabled:hover:to-sky-500"
+              icon={<Check className="h-3.5 w-3.5" />}
             >
-              <Check className="h-3.5 w-3.5" />
               {confirmText}
-            </button>
+            </Button>
           </div>
         }
       >

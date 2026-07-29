@@ -137,7 +137,7 @@ export default function Modal({
       {isOpen && (
         <div
           data-testid="modal-backdrop"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
           role="dialog"
           aria-modal="true"
           aria-label={title ?? "Diálogo"}

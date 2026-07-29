@@ -94,7 +94,7 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
       <motion.div className="flex items-center gap-3" variants={itemVariants}>
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 shadow-lg shadow-sky-500/20">
           <Users className="h-5 w-5 text-white stroke-[2.5]" />
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white" />
         </div>
         <div>
            <h1 className="text-lg font-black tracking-tight text-slate-900">Gestión de Usuarios</h1>

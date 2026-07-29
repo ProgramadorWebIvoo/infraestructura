@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { CheckCircle, CreditCard, DollarSign } from "lucide-react";
+import Button from "../../components/UI/Button";
 import type { Project } from "../../types";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
@@ -80,14 +81,17 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
                   </div>
                 </div>
 
-                <button
+                <Button
                   id={`btn-pay-final-${p.id}`}
                   onClick={() => setConfirmPayFinal({ projectId: p.id, amount: balanceDue, title: p.title })}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-700 hover:to-sky-600 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
+                  variant="primary"
+                  colorScheme="sky"
+                  size="md"
+                  className="w-full"
+                  icon={<CreditCard className="h-4 w-4" />}
                 >
-                  <CreditCard className="h-4 w-4" />
                   Aprobar y Transferir Finiquito de Obra
-                </button>
+                </Button>
               </div>
             );
           })}

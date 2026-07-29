@@ -72,7 +72,7 @@ export default function AuditLogSection({ auditLogs }: AuditLogSectionProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-sky-50 rounded-xl border border-sky-100">
-              <Activity className="h-4 w-4 text-sky-500 animate-pulse" />
+              <Activity className="h-4 w-4 text-sky-500" />
             </div>
             <div>
               <h2 className="font-bold text-slate-900 text-sm">Trazabilidad en Tiempo Real</h2>
@@ -81,7 +81,7 @@ export default function AuditLogSection({ auditLogs }: AuditLogSectionProps) {
           </div>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400/40" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/40" />
               <span className="text-[10px] font-mono text-slate-500 font-bold">EN VIVO</span>
             </span>
             <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold border border-slate-200">

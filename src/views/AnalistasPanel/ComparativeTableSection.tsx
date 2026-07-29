@@ -12,6 +12,7 @@ import { useToast } from "../../components/UI/Toast";
 import { Award, FileSpreadsheet, LayoutList, Loader2, Send, Trash2 } from "lucide-react";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
+import Button from "../../components/UI/Button";
 import EmptyState from "../../components/UI/EmptyState";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
 
@@ -95,23 +96,20 @@ export default function ComparativeTableSection({
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                   Propuestas Ingresadas ({activeProject.proposals?.length || 0}):
                 </span>
-                <button
+                <Button
                   onClick={handleImport}
                   disabled={isImporting}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                  variant="secondary"
+                  size="sm"
+                  className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300"
                   title="Importar propuestas recibidas desde el portal de proveedores"
+                  icon={isImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LayoutList className="h-3.5 w-3.5" />}
                 >
-                  {isImporting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <LayoutList className="h-3.5 w-3.5" />
-                  )}
                   {isImporting ? "Importando..." : "Traer del portal"}
-                </button>
+                </Button>
               </div>
               <div
                 className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1"
-                style={{ willChange: "scroll-position" }}
               >
                 {activeProject.proposals?.map((prop) => (
                   <div
@@ -145,14 +143,17 @@ export default function ComparativeTableSection({
 
             {activeProject.proposals && activeProject.proposals.length > 0 && (
               <div className="border-t border-slate-100 pt-5 space-y-3">
-                <button
+                <Button
                   id="btn-analistas-submit-comparative"
                   onClick={handleSubmit}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-xl shadow-md shadow-sky-500/20 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
+                  variant="primary"
+                  colorScheme="sky"
+                  size="md"
+                  className="w-full"
+                  icon={<Send className="h-4 w-4" />}
                 >
-                  <Send className="h-4 w-4" />
                   Enviar Cuadro de Comparación a Gerencia Procura
-                </button>
+                </Button>
                 <p className="text-[10px] text-slate-400 text-center leading-relaxed font-medium">
                   Al enviar, se consolida la terna comparativa en la Base de Datos para la adjudicación por parte de Procura.
                 </p>

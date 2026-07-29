@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Table, type Column } from "../../components/UI/Table";
+import Button from "../../components/UI/Button";
 import { itemVariants } from "../../animations";
 import type { AiConfigRecord } from "../../hooks/useAIConfig";
 import ProviderIcon from "./ProviderIcon";
@@ -180,25 +181,24 @@ export default function AIConfigTable({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="md"
             onClick={onSync}
             disabled={isSyncing}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 shadow-xs transition-all duration-200 hover:bg-slate-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+            icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           >
-            {isSyncing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
             Sincronizar
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            colorScheme="indigo"
+            size="md"
             onClick={onCreateNew}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-700 hover:to-indigo-600 hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5"
+            icon={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4" />
             Nueva config.
-          </button>
+          </Button>
         </div>
       </div>
 
