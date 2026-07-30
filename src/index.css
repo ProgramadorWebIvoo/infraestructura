@@ -6,6 +6,9 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-brand: "Lato", sans-serif;
   --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-out-right: slide-out-right 0.25s ease-in forwards;
+  --animate-toast-progress: toast-progress 4s linear forwards;
 }
 
 @keyframes slide-up {
@@ -17,6 +20,33 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
 /* ── Scrollbar estilizada para sidebar (tema oscuro) ─────────── */

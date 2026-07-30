@@ -156,7 +156,7 @@ function AppRoutes() {
     resetData();
     resetContractors();
     resetCatalog();
-    navigate(ROUTES.PRESIDENCIA);
+    navigate(ROUTES.HOME);
   };
 
   // ---- Login wrapper con toast de bienvenida ----

@@ -43,7 +43,7 @@ describe("Toast", () => {
     expect(screen.getByText("Auto Dismiss")).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(4000);
+      vi.advanceTimersByTime(4250);
     });
 
     expect(screen.queryByText("Auto Dismiss")).not.toBeInTheDocument();
@@ -59,7 +59,12 @@ describe("Toast", () => {
     expect(screen.getByText("Dismiss Me")).toBeInTheDocument();
 
     act(() => {
-      screen.getByLabelText("Cerrar").click();
+      screen.getByLabelText("Cerrar notificación").click();
+    });
+
+    // Advance past exit animation (250ms)
+    act(() => {
+      vi.advanceTimersByTime(250);
     });
 
     expect(screen.queryByText("Dismiss Me")).not.toBeInTheDocument();
@@ -152,7 +157,7 @@ describe("Toast", () => {
     act(() => { screen.getByText("Show Toast").click(); });
 
     act(() => {
-      screen.getByLabelText("Cerrar").click();
+      screen.getByLabelText("Cerrar notificación").click();
     });
 
     // Advance well past the auto-dismiss time — should not re-appear
