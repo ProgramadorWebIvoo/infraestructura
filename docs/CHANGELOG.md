@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [2026-07-31] — InspectProjectModal: expediente de obra con organigrama IVOO, snapshot financiero y trazabilidad por estado
+- Tipo: feature + refactor + fix
+- Qué: el modal que muestra el estatus de un proyecto (abierto desde "Inspeccionar" en el Master de Presidencia) fue rediseñado a su máxima expresión sin perder ningún dato del timeline original:
+  - **Organigrama IVOO integrado**: versión compacta de `InteractiveOrganigrama` (Presidencia → Base de Datos → Cierre de Obra / Gerencia Procura + Analistas / Finanzas) con estado por nodo derivado del avance real del proyecto: `Hecho` (✅), `En curso` (● pulso, rol con la "pelota" según `status`), `Parcial` (⏱ alguna acción del rol completada) y `Pendiente` — más leyenda de estados. El rol actual se mapea desde el estado canónico (CREADO→Cierre, REVISADO_CIERRE→Procura, CONFIRMADO_PROCURA→Analistas, COMPARATIVA_ENVIADA→Procura, CONTRATADO/LISTO_PAGO_FINAL→Finanzas, VERIFICANDO_FINALIZACION→Cierre).
+  - **Snapshot financiero** (nuevo): estimado materiales, tope aprobado, contrato final (ganador con % de variación vs estimado), anticipo pagado + fecha, liquidación final + fecha y liberado total con barra de % (reusa `winnerOf`/`approvedOf` de `utils/dashboardSummary` — única fuente de verdad).
+  - **Metadata enriquecida**: badge de estado grande (`StatusBadge`), ubicación, fecha de apertura, antigüedad y `updatedAt`.
+  - **Trazabilidad 8 pasos conservada y mejorada**: mismos datos del timeline original (descripción, notas de cierre, planos/cálculos, tope presupuestario + nota procura, ofertas, adjudicación, anticipo, calidad, liquidación) con pill de estado por paso (Completado/En curso/Pendiente), iconos de rol y ofertas enriquecidas con rating ★, plazo en semanas y monto en USD.
+  - **Fix de formato monetario**: todos los montos ahora usan `fmtMoney` (en-US fijo con 2 decimales). Antes el timeline usaba `toLocaleString()` sin opciones → en locales españoles renderizaba "76.000" (punto de miles) mientras el snapshot mostraba "76,000.00" — inconsistencia real dentro del mismo modal.
+- Por qué / causa raíz: el modal mostraba el workflow como timeline lineal plano sin contexto del organigrama de decisiones ni posición del proyecto en él; el usuario pidió integrar el concepto de `InteractiveOrganigrama` conservando todos los datos y elevando visual/UX.
+- Archivos: `src/components/Modals/InspectProjectModal.tsx`, `src/__tests__/components/Modals/InspectProjectModal.test.tsx` [NUEVO].
+- Verificación: `tsc --noEmit` 0 errores; suite completa `npx vitest run` — 473/474 (único fallo pre-existente de `SidebarNav`, ajeno); `vite build` OK. Tests nuevos: 11/11 (render, metadata, snapshot financiero, nodos del organigrama, estados CREADO/COMPLETADO, ofertas, adjudicación, cierre, empty state).
+
+
 ## [2026-07-31] — DRY: helpers de dominio centralizados (winnerOf/approvedOf/releasedOf)
 - Tipo: refactor
 - Qué: `winnerOf`, `approvedOf` y `releasedOf` estaban duplicadas entre `utils/dashboardSummary.ts` y `MasterTableSection.tsx`. Ahora son públicas en el util y el master las importa — única fuente de verdad para "propuesta ganadora", "monto aprobado" y "monto liberado".
