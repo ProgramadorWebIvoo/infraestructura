@@ -26,6 +26,7 @@ describe("useProjectFinancials", () => {
       totalReleasedFunds: 0,
       pendingFunds: 0,
       releasedPercent: 0,
+      excessReleased: 0,
     });
   });
 

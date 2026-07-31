@@ -6,7 +6,7 @@
  */
 
 import { motion } from "motion/react";
-import { CheckCircle2, Clock, DollarSign, Layers } from "lucide-react";
+import { CheckCircle2, Clock, DollarSign, Layers, AlertTriangle } from "lucide-react";
 import KpiCard from "../../components/UI/KpiCard";
 import { itemVariants } from "../../animations";
 
@@ -15,6 +15,7 @@ interface KpiSectionProps {
   totalReleasedFunds: number;
   releasedPercent: number;
   pendingFunds: number;
+  excessReleased?: number;
   totalProjectsCount: number;
   activeProjectsCount: number;
   completedProjectsCount: number;
@@ -25,11 +26,14 @@ export default function KpiSection({
   totalReleasedFunds,
   releasedPercent,
   pendingFunds,
+  excessReleased = 0,
   totalProjectsCount,
   activeProjectsCount,
   completedProjectsCount,
 }: KpiSectionProps) {
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const overBudget = excessReleased > 0;
+  const barWidth = Math.min(100, releasedPercent);
 
   return (
     <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -38,14 +42,23 @@ export default function KpiSection({
         <p className="text-[10px] text-slate-400 mt-1 font-medium">Inversión autorizada en Base de Datos</p>
       </KpiCard>
 
-      <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} label="Fondos Liquidados" accent="text-sky-600" borderAccent="border-l-sky-400">
+      <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} label="Fondos Liquidados" accent={overBudget ? "text-rose-400" : "text-sky-600"} borderAccent={overBudget ? "border-l-rose-400" : "border-l-sky-400"}>
         <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">${fmt(totalReleasedFunds)}</span>
-        <div className="flex items-center gap-1.5 mt-2">
-          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div className="bg-gradient-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-1000" style={{ width: `${releasedPercent}%` }} />
+        {overBudget ? (
+          <div className="flex items-center gap-1.5 mt-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
+            <span className="text-[10px] font-mono font-bold text-rose-600">
+              Sobre-ejecución: ${fmt(excessReleased)}
+            </span>
           </div>
-          <span className="text-[10px] font-mono font-bold text-sky-600">{releasedPercent}%</span>
-        </div>
+        ) : (
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div className="bg-gradient-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-1000" style={{ width: `${barWidth}%` }} />
+            </div>
+            <span className="text-[10px] font-mono font-bold text-sky-600">{releasedPercent}%</span>
+          </div>
+        )}
       </KpiCard>
 
       <KpiCard icon={<Clock className="h-5 w-5" />} label="Compromisos Pendientes" accent="text-rose-500" borderAccent="border-l-rose-400">

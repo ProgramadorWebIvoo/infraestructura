@@ -62,6 +62,8 @@ export interface Project {
   location: string;
   createdDate: string;
   status: ProjectStatus;
+  createdAt?: string;
+  updatedAt?: string;
   materials: MaterialItem[];
   estimatedTotal: number;
   cierreObraNotes?: string;

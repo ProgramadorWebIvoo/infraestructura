@@ -72,17 +72,19 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
           /* ── Vertical bar chart ── */
           <div className="flex items-end gap-1 h-32 pb-4">
             {currentData.map((d) => {
-              const pct = Math.max(1, (d.total_tokens / maxVal) * 100);
+              const pct = Math.max(0, (d.total_tokens / maxVal) * 100);
+              const barHeightPx = Math.max(3, (d.total_tokens / maxVal) * 96); // 96px = alto útil de h-32
               const shortDate = d.date.slice(5);
               const tokensStr = d.total_tokens.toLocaleString();
 
               return (
-                <div key={d.date} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                <div key={d.date} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
                   <span className="text-[9px] text-slate-500 font-mono font-bold">{tokensStr}</span>
                   <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden">
                     <div
                       className="w-full rounded-t-md bg-gradient-to-t from-sky-500 to-sky-400 transition-all duration-500"
-                      style={{ height: `${pct}%` }}
+                      style={{ height: `${barHeightPx}px` }}
+                      title={`${d.date}: ${tokensStr} tokens (${Math.round(pct)}% del máximo)`}
                     />
                   </div>
                   <span className="text-[9px] text-slate-400 font-mono">{shortDate}</span>

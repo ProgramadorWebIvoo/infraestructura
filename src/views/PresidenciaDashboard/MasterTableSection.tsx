@@ -3,16 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Sección del master de obras — extraída de PresidenciaDashboard.
+ * Incluye avance financiero por obra, contratista adjudicado, variación
+ * estimado vs contrato, antigüedad y exportación CSV de los filtros activos.
  */
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Layers, MapPin, Search } from "lucide-react";
+import { ArrowRight, Download, Layers, MapPin, Star } from "lucide-react";
 import { ProjectStatus } from "../../types";
 import type { Project } from "../../types";
 import StatusBadge from "../../components/UI/StatusBadge";
+import EmptyState from "../../components/UI/EmptyState";
+import { SearchInput, SelectFilter } from "../../components/UI/FilterBar";
 import { Table, type Column } from "../../components/UI/Table";
+import { daysBetween, approvedOf, releasedOf, winnerOf } from "../../utils/dashboardSummary";
 import { itemVariants } from "../../animations";
+
+const fmtMoney = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function AdvanceBar({ project }: { project: Project }) {
+  const approved = approvedOf(project);
+  const paid = releasedOf(project);
+  const pct = approved > 0 ? Math.min(100, Math.round((paid / approved) * 100)) : 0;
+  return (
+    <div className="flex items-center gap-2 min-w-[110px]">
+      <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+        <div
+          className={`h-2 rounded-full transition-all duration-700 ${
+            pct >= 100 ? "bg-gradient-to-r from-emerald-400 to-emerald-600" : "bg-gradient-to-r from-sky-400 to-sky-600"
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-mono font-bold text-slate-600 whitespace-nowrap">{pct}%</span>
+    </div>
+  );
+}
 
 function getProjectColumns(onSelectProject: (p: Project) => void): Column<Project>[] {
   return [
@@ -25,7 +51,7 @@ function getProjectColumns(onSelectProject: (p: Project) => void): Column<Projec
           <div className="font-sans font-bold text-slate-800 line-clamp-1">{p.title}</div>
           <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1 font-semibold">
             <span className={`w-1.5 h-1.5 rounded-full ${p.type === "INFRAESTRUCTURA" ? "bg-sky-500" : "bg-slate-400"}`} />
-            {p.type} • Creado el {p.createdDate}
+            {p.type} • hace {daysBetween(p.createdDate)}d
           </div>
         </>
       ),
@@ -40,17 +66,47 @@ function getProjectColumns(onSelectProject: (p: Project) => void): Column<Projec
         </div>
       ),
     },
-    { key: "estimatedTotal", label: "Estimado Materiales", render: (p) => <span className="font-mono font-bold text-slate-700">${p.estimatedTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+    { key: "estimatedTotal", label: "Estimado Materiales", render: (p) => <span className="font-mono font-bold text-slate-700">${fmtMoney(p.estimatedTotal)}</span> },
     {
       key: "finalContractValue",
       label: "Contrato Final",
       render: (p) => {
-        const wp = p.proposals?.find(prop => prop.contractorCode === p.selectedContractorCode);
-        const val = wp ? wp.totalCost : null;
-        return val ? (
-          <span className="font-mono font-black text-slate-900">${val.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-        ) : (
-          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider italic">Sin contratar</span>
+        const winner = winnerOf(p);
+        if (!winner) return <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider italic">Sin contratar</span>;
+        const variance = p.estimatedTotal > 0 ? ((winner.totalCost - p.estimatedTotal) / p.estimatedTotal) * 100 : 0;
+        return (
+          <div>
+            <div className="font-mono font-black text-slate-900">${fmtMoney(winner.totalCost)}</div>
+            {p.estimatedTotal > 0 && (
+              <div className={`text-[10px] font-mono font-bold ${variance >= 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                {variance >= 0 ? "+" : ""}{variance.toFixed(1)}% vs estimado
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "advance",
+      label: "Avance Financiero",
+      render: (p) => <AdvanceBar project={p} />,
+    },
+    {
+      key: "contractor",
+      label: "Contratista",
+      render: (p) => {
+        const winner = winnerOf(p);
+        if (!winner) return <span className="text-slate-300 italic font-mono text-[10px]">—</span>;
+        return (
+          <div className="min-w-[120px]">
+            <div className="text-xs font-bold text-slate-700 line-clamp-1">{winner.contractorName}</div>
+            {winner.contractorRating != null && (
+              <div className="flex items-center gap-1 text-[10px] font-bold text-amber-600">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                {winner.contractorRating.toFixed(1)}
+              </div>
+            )}
+          </div>
         );
       },
     },
@@ -78,17 +134,63 @@ interface MasterTableSectionProps {
   onSelectProject: (project: Project) => void;
 }
 
+const TYPE_OPTIONS = [
+  { value: "ALL", label: "Todos los Tipos" },
+  { value: "INFRAESTRUCTURA", label: "Infraestructura" },
+  { value: "MANTENIMIENTO", label: "Mantenimiento" },
+];
+
+function buildStatusOptions(): { value: string; label: string }[] {
+  return [
+    { value: "ALL", label: "Todos los Estados" },
+    ...Object.values(ProjectStatus).map((status) => ({ value: status, label: status })),
+  ];
+}
+
+function csvEscape(value: unknown): string {
+  const str = String(value ?? "");
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+function exportCsv(rows: Project[]) {
+  const header = [
+    "id", "title", "type", "location", "status", "createdDate",
+    "estimatedTotal", "approvedInvestmentAmount", "contractValue", "paidAmount",
+    "contractorName", "contractorRating",
+  ];
+  const lines = rows.map((p) => {
+    const winner = winnerOf(p);
+    return [
+      p.id, p.title, p.type, p.location, p.status, p.createdDate,
+      p.estimatedTotal, p.approvedInvestmentAmount ?? "", winner?.totalCost ?? "",
+      releasedOf(p), winner?.contractorName ?? "", winner?.contractorRating ?? "",
+    ]
+      .map(csvEscape)
+      .join(",");
+  });
+  const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `master-obras-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function MasterTableSection({ projects, onSelectProject }: MasterTableSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
   const projectColumns = useMemo(() => getProjectColumns(onSelectProject), [onSelectProject]);
+  const statusOptions = useMemo(() => buildStatusOptions(), []);
 
   const filteredProjects = useMemo(() => projects.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = !term ||
+      p.title.toLowerCase().includes(term) ||
+      p.location.toLowerCase().includes(term) ||
+      p.id.toLowerCase().includes(term);
     const matchesStatus = statusFilter === "ALL" || p.status === statusFilter;
     const matchesType = typeFilter === "ALL" || p.type === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
@@ -107,43 +209,39 @@ export default function MasterTableSection({ projects, onSelectProject }: Master
               <p className="text-[11px] text-slate-500 font-medium">Visualización integrada de presupuestos, materiales, contratistas asignados y flujos.</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
-            <div className="relative flex-1 md:w-60">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                id="db-search"
-                type="text"
-                placeholder="Buscar por obra o código..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Buscar obras"
-                className="pl-10 pr-3.5 py-2 w-full text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-semibold text-slate-700"
-              />
-            </div>
-            <select
-              id="filter-type"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              aria-label="Filtrar por tipo"
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
-            >
-              <option value="ALL">Todos los Tipos</option>
-              <option value="INFRAESTRUCTURA">Infraestructura</option>
-              <option value="MANTENIMIENTO">Mantenimiento</option>
-            </select>
-            <select
-              id="filter-status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              aria-label="Filtrar por estado"
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
-            >
-              <option value="ALL">Todos los Estados</option>
-              {Object.values(ProjectStatus).map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
+          <button
+            type="button"
+            onClick={() => exportCsv(filteredProjects)}
+            disabled={filteredProjects.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+            aria-label="Exportar master a CSV"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exportar CSV
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2.5 mt-4">
+          <SearchInput
+            id="db-search"
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar por obra o código..."
+            ariaLabel="Buscar obras"
+          />
+          <SelectFilter
+            id="filter-type"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            ariaLabel="Filtrar por tipo"
+            options={TYPE_OPTIONS}
+          />
+          <SelectFilter
+            id="filter-status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            ariaLabel="Filtrar por estado"
+            options={statusOptions}
+          />
         </div>
       </div>
       <Table
@@ -151,6 +249,7 @@ export default function MasterTableSection({ projects, onSelectProject }: Master
         data={filteredProjects}
         rowKey={(p) => p.id}
         emptyMessage="No se encontraron obras con los filtros aplicados."
+        emptyState={<EmptyState message="No se encontraron obras con los filtros aplicados." />}
         maxHeight="350px"
         containerClassName="border border-slate-100 rounded-lg"
         pageSize={15}

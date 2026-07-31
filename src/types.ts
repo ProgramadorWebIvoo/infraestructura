@@ -17,3 +17,67 @@ export type {
   SupplierMaterialProposalItem,
   SupplierMaterialProposal,
 } from "@ivoo/shared";
+
+// ---------------------------------------------------------------------------
+// Dashboard ejecutivo de Presidencia (GET /api/dashboard/summary)
+// ---------------------------------------------------------------------------
+
+export interface DashboardSummaryFunnelEntry {
+  status: string;
+  count: number;
+  approvedAmount: number;
+  committedAmount: number;
+}
+
+export interface DashboardSummaryTypeEntry {
+  type: string;
+  count: number;
+  approvedAmount: number;
+}
+
+export interface DashboardSummaryLocationEntry {
+  location: string;
+  count: number;
+  approvedAmount: number;
+}
+
+export interface DashboardSummaryMonthlyEntry {
+  month: string;
+  count: number;
+}
+
+export interface DashboardSummaryContractorEntry {
+  contractorCode: string;
+  contractorName: string;
+  projectCount: number;
+  totalAmount: number;
+}
+
+export interface DashboardSummaryStalledEntry {
+  id: string;
+  title: string;
+  status: string;
+  daysSinceUpdate: number;
+  createdDate: string;
+}
+
+export interface DashboardSummary {
+  totalProjects: number;
+  totalApprovedInvestment: number;
+  totalReleasedFunds: number;
+  totalCommittedAmount: number;
+  pendingFunds: number;
+  releasedPercent: number;
+  excessReleased: number;
+  funnel: DashboardSummaryFunnelEntry[];
+  typeBreakdown: DashboardSummaryTypeEntry[];
+  locationBreakdown: DashboardSummaryLocationEntry[];
+  monthlyTrend: DashboardSummaryMonthlyEntry[];
+  topContractors: DashboardSummaryContractorEntry[];
+  stalledProjects: DashboardSummaryStalledEntry[];
+  negotiationMetrics: {
+    avgAdvancePercent: number;
+    avgDeliveryWeeks: number;
+  };
+  updatedAt?: string;
+}

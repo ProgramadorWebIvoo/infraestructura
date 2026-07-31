@@ -3,16 +3,40 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Sección de trazabilidad/auditoría — extraída de PresidenciaDashboard.
+ * La etiqueta de sincronización muestra el tiempo real desde el último poll
+ * (honesta: el dashboard se actualiza cada 25s, no es "EN VIVO").
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, Eye, Search } from "lucide-react";
+import { Activity, Eye, RefreshCw } from "lucide-react";
 import type { AuditLog } from "../../types";
 import { Table, type Column } from "../../components/UI/Table";
+import EmptyState from "../../components/UI/EmptyState";
+import { SearchInput, SelectFilter } from "../../components/UI/FilterBar";
 import { getRoleColor } from "../../utils";
 import AuditInspectModal from "../../components/Modals/AuditInspectModal";
 import { itemVariants } from "../../animations";
+
+const AUDIT_ROLE_OPTIONS = [
+  { value: "ALL", label: "Todos los Roles" },
+  { value: "PRESIDENCIA", label: "Presidencia" },
+  { value: "INFRAESTRUCTURA", label: "Infraestructura" },
+  { value: "CIERRE_DE_OBRA", label: "Cierre de Obra" },
+  { value: "PROCURA", label: "Procura" },
+  { value: "ANALISTA", label: "Analistas" },
+  { value: "FINANZAS", label: "Finanzas" },
+  { value: "SISTEMA", label: "Sistema" },
+];
+
+function timeAgo(date: Date | null): string {
+  if (!date) return "sin datos";
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return `hace ${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `hace ${minutes} min`;
+  return `hace ${Math.floor(minutes / 60)} h`;
+}
 
 function getAuditColumns(onInspect: (log: AuditLog) => void): Column<AuditLog>[] {
   return [
@@ -40,14 +64,22 @@ function getAuditColumns(onInspect: (log: AuditLog) => void): Column<AuditLog>[]
 
 interface AuditLogSectionProps {
   auditLogs: AuditLog[];
+  lastSync?: Date | null;
 }
 
-export default function AuditLogSection({ auditLogs }: AuditLogSectionProps) {
+export default function AuditLogSection({ auditLogs, lastSync = null }: AuditLogSectionProps) {
   const [inspectedAuditLog, setInspectedAuditLog] = useState<AuditLog | null>(null);
   const [auditSearchTerm, setAuditSearchTerm] = useState("");
   const [auditRoleFilter, setAuditRoleFilter] = useState<string>("ALL");
   const [auditDateFrom, setAuditDateFrom] = useState("");
   const [auditDateTo, setAuditDateTo] = useState("");
+
+  // Refresca el texto "hace Xs" del badge de sincronización sin re-render pesado
+  const [, setNow] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const auditColumns = useMemo(() => getAuditColumns(setInspectedAuditLog), []);
 
@@ -81,62 +113,50 @@ export default function AuditLogSection({ auditLogs }: AuditLogSectionProps) {
           </div>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/40" />
-              <span className="text-[10px] font-mono text-slate-500 font-bold">EN VIVO</span>
+              <RefreshCw className="h-3 w-3 text-sky-500" />
+              <span className="text-[10px] font-mono text-slate-500 font-bold">
+                Actualizado {timeAgo(lastSync)}
+              </span>
             </span>
             <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold border border-slate-200">
-              {auditLogs.length} registros
+              {filteredAuditLogs.length}/{auditLogs.length} registros
             </span>
           </div>
         </div>
         {/* ── Search + filter bar ── */}
         <div className="flex flex-wrap gap-2.5 mt-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                id="audit-search"
-                type="text"
-                placeholder="Buscar por acción, proyecto, usuario o detalles..."
-                value={auditSearchTerm}
-                onChange={(e) => setAuditSearchTerm(e.target.value)}
-                aria-label="Buscar en auditoría"
-                className="pl-10 pr-3.5 py-2 w-full text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-semibold text-slate-700"
-              />
-            </div>
-            <input
-              id="audit-date-from"
-              type="date"
-              value={auditDateFrom}
-              onChange={(e) => setAuditDateFrom(e.target.value)}
-              aria-label="Fecha desde"
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-              title="Fecha desde"
-            />
-            <input
-              id="audit-date-to"
-              type="date"
-              value={auditDateTo}
-              onChange={(e) => setAuditDateTo(e.target.value)}
-              aria-label="Fecha hasta"
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-              title="Fecha hasta"
-            />
-            <select
-              id="audit-filter-role"
-              value={auditRoleFilter}
-              onChange={(e) => setAuditRoleFilter(e.target.value)}
-              aria-label="Filtrar por rol"
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden font-bold cursor-pointer"
-            >
-            <option value="ALL">Todos los Roles</option>
-            <option value="PRESIDENCIA">Presidencia</option>
-            <option value="INFRAESTRUCTURA">Infraestructura</option>
-            <option value="CIERRE_DE_OBRA">Cierre de Obra</option>
-            <option value="PROCURA">Procura</option>
-            <option value="ANALISTA">Analistas</option>
-            <option value="FINANZAS">Finanzas</option>
-            <option value="SISTEMA">Sistema</option>
-          </select>
+          <SearchInput
+            id="audit-search"
+            value={auditSearchTerm}
+            onChange={setAuditSearchTerm}
+            placeholder="Buscar por acción, proyecto, usuario o detalles..."
+            ariaLabel="Buscar en auditoría"
+          />
+          <input
+            id="audit-date-from"
+            type="date"
+            value={auditDateFrom}
+            onChange={(e) => setAuditDateFrom(e.target.value)}
+            aria-label="Fecha desde"
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
+            title="Fecha desde"
+          />
+          <input
+            id="audit-date-to"
+            type="date"
+            value={auditDateTo}
+            onChange={(e) => setAuditDateTo(e.target.value)}
+            aria-label="Fecha hasta"
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
+            title="Fecha hasta"
+          />
+          <SelectFilter
+            id="audit-filter-role"
+            value={auditRoleFilter}
+            onChange={setAuditRoleFilter}
+            ariaLabel="Filtrar por rol"
+            options={AUDIT_ROLE_OPTIONS}
+          />
         </div>
       </div>
       <Table
@@ -144,6 +164,7 @@ export default function AuditLogSection({ auditLogs }: AuditLogSectionProps) {
         data={filteredAuditLogs}
         rowKey={(log) => log.id}
         emptyMessage="No hay logs registrados todavía."
+        emptyState={<EmptyState message="No hay logs que coincidan con los filtros aplicados." />}
         maxHeight="350px"
         stickyHeader
         containerClassName="border border-slate-100 rounded-lg"

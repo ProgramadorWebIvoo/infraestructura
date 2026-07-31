@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## [2026-07-31] — DRY: helpers de dominio centralizados (winnerOf/approvedOf/releasedOf)
+- Tipo: refactor
+- Qué: `winnerOf`, `approvedOf` y `releasedOf` estaban duplicadas entre `utils/dashboardSummary.ts` y `MasterTableSection.tsx`. Ahora son públicas en el util y el master las importa — única fuente de verdad para "propuesta ganadora", "monto aprobado" y "monto liberado".
+- Archivos: `src/utils/dashboardSummary.ts`, `src/views/PresidenciaDashboard/MasterTableSection.tsx`.
+- Verificación: `tsc --noEmit` 0 errores; tests 18/18 (3 archivos); `vite build` OK.
+
+
+## [2026-07-31] — Distribución por Tipo de Obra: sección de inversión por tipo (llena la card gemela)
+- Tipo: feature
+- Qué: la card de Distribución por Tipo de Obra quedaba muy alta por intentar igualar a Ejecución Financiera. En vez de encogerla, ahora recibe el `summary` completo y agrega debajo del donut+barras de conteo la sección "Inversión por Tipo" (presupuesto aprobado por tipo, con barra proporcional al total y monto en USD) — aprovecha el espacio con una métrica ejecutiva real en lugar de un gráfico con área vacía.
+- Archivos: `src/views/PresidenciaDashboard/DistributionChart.tsx` (firma `{ summary }`), `src/views/PresidenciaDashboard/index.tsx` (eliminados los `useMemo` de `infraCount`/`mantCount`, ahora derivados en el componente).
+- Verificación: `tsc --noEmit` 0 errores; `vite build` OK; suite 462/463 (único fallo pre-existente de `SidebarNav`).
+
+
+## [2026-07-31] — Fix gráfica de barras verticales: altura en px (MiniBarChart y Creación por Mes)
+- Tipo: fix
+- Qué: las barras verticales de `MiniBarChart` (modo "7 días", AIConfigPanel) y de "Obras Creadas por Mes" (Presidencia) usaban `height: %` contra un contenedor flex sin altura explícita → se resolvían a 0 y la gráfica no se renderizaba (solo números/etiquetas). Ahora la altura se calcula en px contra un máximo fijo (`maxVal * 96px`) con `min-height` de 3-4px, `h-full` en la columna y tooltip con el % del máximo. Diagnóstico con datos reales (QA: 4 días de uso IA, hasta 2.757 tokens) — el modo diario (horizontal) sí funcionaba; el vertical no.
+- Archivos: `src/components/UI/MiniBarChart.tsx`, `src/views/PresidenciaDashboard/InsightsSection.tsx`.
+- Verificación: `tsc --noEmit` 0 errores; `vite build` OK; suite 462/463 (único fallo pre-existente de `SidebarNav`).
+
+
+## [2026-07-31] — PresidenciaDashboard: barras de insights correctas, gráfica mensual real y sección de estancadas removida
+- Tipo: fix + feature
+- Qué:
+  - **Fix barras de ranking (Top Contratistas / Inversión por Ubicación)**: el ancho se calculaba con `value.length` (longitud del string formateado `"$X · N obras"`) en vez del monto → todas las barras se veían ~1%. Ahora `RankBar` recibe `amount` (monto real) y el ancho es proporcional al máximo del grupo.
+  - **Fix gráfica "Obras Creadas por Mes"**: las barras usaban `height: %` contra un padre sin altura explícita → no se renderizaban (solo se veían los números). Ahora siguen el patrón del `MiniBarChart` (wrapper `flex-1 justify-end` dentro de un contenedor con altura fija), ocupan `md:col-span-2`, muestran últimos 12 meses con tooltip (`title`), etiquetas y leyenda de máximo.
+  - **Sección "Obras sin Actividad" eliminada** del dashboard por decisión del usuario (el endpoint `stalledProjects` se conserva en el contrato del API).
+- Por qué / causa raíz: bugs de render detectados visualmente por el usuario en la vista de Presidencia; la barra de ranking medía un string, y la gráfica mensual no tenía altura de referencia.
+- Archivos: `src/views/PresidenciaDashboard/InsightsSection.tsx`, `src/views/PresidenciaDashboard/FinancialOverviewSection.tsx` (sub-textos "% del presupuesto" por barra + leyenda de semántica).
+- Verificación: `tsc --noEmit` 0 errores; `npx vitest run` — 462/463 (único fallo pre-existente de `SidebarNav`, ajeno).
+
+
+## [2026-07-31] — PresidenciaDashboard: resumen ejecutivo exacto, funnel, financiero, insights y master con sobre-ejecución
+- Tipo: feature + refactor + fix
+- Qué:
+  - **Resumen ejecutivo con endpoint oficial + fallback cliente**: nuevo `GET /api/dashboard/summary` (backend, `role:PRESIDENCIA,SUPERADMIN`) alimenta `useDashboardSummary` con polling de 25s. Cuando el endpoint no responde (offline/dev), `computeDashboardSummary` (espejo cliente con las mismas reglas) mantiene el dashboard poblado y la bandera `isExact` indica si los números son los oficiales del servidor o una aproximación local — el header muestra "Datos parciales (sin backend)" en ese caso.
+  - **Exactitud de KPIs**: `KpiSection` ya no divide `releasedPercent` con montos no liberados/pendientes mal calculados; la barra se clamp a 100 y aparece badge rojo "Sobre-ejecución $X" cuando `excessReleased > 0` (liberado > aprobado). `useProjectFinancials` expone `excessReleased`.
+  - **Nuevas secciones**: `StatusFunnelSection` (pipeline por estado en orden canónico, con montos aprobado/comprometido por fase), `FinancialOverviewSection` (aprobado → comprometido → liberado → pendiente + anticipo y plazo promedio de contratos adjudicados + señal de sobre-ejecución), `InsightsSection` (top 5 contratistas, inversión por ubicación top 8, tendencia mensual de creación, obras estancadas 14+ días).
+  - **MasterTableSection reescrita**: columnas nuevas (Contrato Final con % de variación vs estimado, Avance Financiero con barra, Contratista con rating ★, "hace Nd"), filtros con `FilterBar` (`SearchInput` + `SelectFilter` reutilizables), `EmptyState`, export CSV del master filtrado, `updatedAt`/`createdAt`/`contractorRating` expuestos por `ProjectResource`.
+  - **Trazabilidad honesta**: `AuditLogSection` cambia "EN VIVO" por "Actualizado hace Ns/min" con `lastSync` real del polling, roles como constante de módulo, filtros de fecha + rol con FilterBar y `EmptyState`.
+  - **Tipo `Project`**: agrega `createdAt?`/`updatedAt?` en `packages/shared`.
+- Por qué / causa raíz: los KPIs de Presidencia usaban paginación del cliente (conteos incompletos con >20 obras), la barra de % podía superar 100 y no existía señal de sobre-ejecución, el master no mostraba contrato/avance/contratista, y la etiqueta "EN VIVO" era falsa (el dashboard se actualiza por polling cada 25s).
+- Archivos: `src/types.ts`, `src/utils/dashboardSummary.ts` [NUEVO], `src/hooks/useDashboardSummary.ts` [NUEVO], `src/hooks/useProjectFinancials.ts`, `src/components/UI/FilterBar.tsx` [NUEVO], `src/views/PresidenciaDashboard/{index,KpiSection,DistributionChart,MasterTableSection,AuditLogSection}.tsx` (reescritos), `src/views/PresidenciaDashboard/{StatusFunnelSection,FinancialOverviewSection,InsightsSection}.tsx` [NUEVOS], `packages/shared/src/types.ts`, tests nuevos en `src/__tests__/utils/dashboardSummary.test.ts` y `src/__tests__/hooks/useDashboardSummary.test.ts`, `src/__tests__/hooks/useProjectFinancials.test.ts` (contrato ampliado).
+- Verificación: `tsc --noEmit` 0 errores; `vite build` OK; suite `npx vitest run` — 462/463 tests pasando. El único fallo restante (`SidebarNav.test.tsx`, `justify-center`) es pre-existente del commit 026fa7e (sidebar colapsable, ajeno a este cambio). Coverage con mis cambios mejora el baseline: lines 88.32% (vs 87.53%), funcs 78.11% (vs 77.22%), branches 74.29% (vs 73.55%) — los umbrales configurados (funcs 85%, branches 80%) ya NO se cumplían en HEAD antes de este cambio.
+
+
 ## [2026-07-31] — Sidebar profesionalizado: colapso animado, centrado de iconos, render boundaries y persistencia
 - Tipo: feature + refactor + fix
 - Qué:
