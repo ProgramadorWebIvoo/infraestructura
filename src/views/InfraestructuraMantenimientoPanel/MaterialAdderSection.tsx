@@ -6,13 +6,16 @@
  * materiales/servicios — extraída de InfraestructuraMantenimientoPanel.
  */
 
-import { useState } from "react";
-import { Package, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, Package, Plus, Trash2 } from "lucide-react";
 import type { MaterialItem } from "../../types";
 import Card from "../../components/UI/Card";
 import NumericInput from "../../components/UI/NumericInput";
 import { Table } from "../../components/UI/Table";
 import SelectModal from "../../components/UI/SelectModal";
+import AlertBanner from "../../components/UI/AlertBanner";
+import { useToast } from "../../components/UI/Toast";
+import { formatCurrency } from "../../utils";
 import type { Column } from "../../components/UI/Table";
 import type { SelectModalOption } from "../../components/UI/SelectModal";
 
@@ -39,7 +42,7 @@ const catalogColumns: Column<CatalogOption>[] = [
     label: "Precio Unit. (Est)",
     align: "right",
     render: (opt) => (
-      <span className="font-mono font-semibold text-slate-600">${opt.raw.estimatedUnitPrice.toFixed(2)}</span>
+      <span className="font-mono font-semibold text-slate-600">{formatCurrency(opt.raw.estimatedUnitPrice)}</span>
     ),
   },
 ];
@@ -48,14 +51,15 @@ interface MaterialAdderSectionProps {
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
   addedMaterials: Omit<MaterialItem, "id">[];
   onAddedMaterialsChange: (materials: Omit<MaterialItem, "id">[]) => void;
-  onError: (message: string) => void;
+  /** Error de validación del formulario padre (submit sin materiales). */
+  materialsError?: string;
 }
 
 export default function MaterialAdderSection({
   materialsCatalog,
   addedMaterials,
   onAddedMaterialsChange,
-  onError,
+  materialsError,
 }: MaterialAdderSectionProps) {
   const [selectedCatalogIndex, setSelectedCatalogIndex] = useState(0);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
@@ -64,22 +68,33 @@ export default function MaterialAdderSection({
   const [customMaterialUnit, setCustomMaterialUnit] = useState("Unidad");
   const [customMaterialPrice, setCustomMaterialPrice] = useState<number | "">(1.0);
   const [isCustomMaterial, setIsCustomMaterial] = useState(false);
+  const [adderError, setAdderError] = useState("");
+  const { showToast } = useToast();
+
+  // Si el catálogo está vacío, el agregado personalizado es la única vía útil.
+  useEffect(() => {
+    if (materialsCatalog.length === 0 && !isCustomMaterial) setIsCustomMaterial(true);
+  }, [materialsCatalog.length, isCustomMaterial]);
 
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
+    setAdderError("");
     const qtyNum = materialQty === "" ? 1 : materialQty;
 
     if (isCustomMaterial) {
-      if (!customMaterialName.trim()) {
-        onError("Por favor, introduce el nombre del material personalizado.");
+      const name = customMaterialName.trim();
+      if (!name) {
+        setAdderError("Por favor, introduce el nombre del material personalizado.");
+        document.getElementById("custom-mat-name")?.focus();
         return;
       }
       const priceNum = customMaterialPrice === "" ? 0 : customMaterialPrice;
       onAddedMaterialsChange([
         ...addedMaterials,
-        { name: customMaterialName, quantity: qtyNum, unit: customMaterialUnit, estimatedUnitPrice: priceNum },
+        { name, quantity: qtyNum, unit: customMaterialUnit, estimatedUnitPrice: priceNum },
       ]);
       setCustomMaterialName("");
+      showToast(`${name} agregado al requerimiento.`, "success");
     } else {
       const selectedItem = materialsCatalog[selectedCatalogIndex];
       if (!selectedItem) return;
@@ -87,6 +102,7 @@ export default function MaterialAdderSection({
         ...addedMaterials,
         { name: selectedItem.name, quantity: qtyNum, unit: selectedItem.unit, estimatedUnitPrice: selectedItem.estimatedUnitPrice },
       ]);
+      showToast(`${selectedItem.name} agregado al requerimiento.`, "success");
     }
   };
 
@@ -97,16 +113,51 @@ export default function MaterialAdderSection({
   const materialsSubtotal = addedMaterials.reduce((sum, m) => sum + m.quantity * m.estimatedUnitPrice, 0);
 
   return (
-    <Card className="border-l-4 border-l-emerald-400">
-      <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
+    <Card className="border-l-4 border-l-emerald-400 h-full flex flex-col">
+      <div className="flex items-start gap-3 border-b border-slate-100 pb-4 mb-5">
         <div className="p-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl">
           <Package className="h-4 w-4" />
         </div>
-        <div>
+        <div className="min-w-0">
           <h4 className="font-bold text-slate-900 text-sm">Configurar Requerimientos de Material / Servicios</h4>
           <p className="text-[11px] text-slate-500 font-medium">Seleccione del catálogo o agregue un material personalizado</p>
         </div>
+        <div className="ml-auto shrink-0 text-right">
+          <span className="block text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">Insumos agregados</span>
+          <span className="flex items-baseline justify-end gap-1.5 mt-0.5">
+            <span className="font-mono font-black text-slate-900 text-sm">{addedMaterials.length}</span>
+            <span className="text-[9px] font-bold text-slate-400">·</span>
+            <span className="font-mono font-black text-emerald-700 text-sm">{formatCurrency(materialsSubtotal)}</span>
+          </span>
+        </div>
       </div>
+
+      {materialsError && (
+        <AlertBanner
+          type="error"
+          message={materialsError}
+          icon={<AlertCircle className="h-4 w-4 shrink-0" />}
+          className="mb-4"
+        />
+      )}
+
+      {adderError && (
+        <AlertBanner
+          type="error"
+          message={adderError}
+          icon={<AlertCircle className="h-4 w-4 shrink-0" />}
+          className="mb-4"
+        />
+      )}
+
+      {materialsCatalog.length === 0 && (
+        <AlertBanner
+          type="info"
+          message="El catálogo IVOO está vacío. Usa la pestaña Personalizado para cargar el material o servicio."
+          icon={<Package className="h-4 w-4 shrink-0" />}
+          className="mb-4"
+        />
+      )}
 
       {/* Toggle catalog / custom */}
       <div className="flex gap-1 mb-5 p-1 bg-slate-100/60 rounded-xl text-xs font-bold w-fit">
@@ -157,6 +208,7 @@ export default function MaterialAdderSection({
               columns={catalogColumns}
               selectedValue={selectedCatalogIndex}
               allowDeselect={false}
+              disabled={materialsCatalog.length === 0}
               triggerLabel="Seleccionar material del catálogo..."
               title="Seleccionar Material del Catálogo"
               infoLine={`${materialsCatalog.length} materiales disponibles`}
@@ -164,23 +216,31 @@ export default function MaterialAdderSection({
               iconColor="emerald"
               searchPlaceholder="Buscar por nombre, unidad o precio..."
               maxWidth="max-w-2xl"
+              emptyMessage="No hay materiales en el catálogo aún."
             />
           </div>
         ) : (
           <>
             <div className="md:col-span-2">
-              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nombre del Material / Servicio</label>
+              <label htmlFor="custom-mat-name" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                Nombre del Material / Servicio
+              </label>
               <input
                 id="custom-mat-name"
                 type="text"
                 placeholder="Ej. Mano de obra soldadura de vigas"
                 value={customMaterialName}
-                onChange={(e) => setCustomMaterialName(e.target.value)}
+                onChange={(e) => {
+                  setCustomMaterialName(e.target.value);
+                  setAdderError("");
+                }}
                 className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-800"
               />
             </div>
             <div>
-              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Unidad</label>
+              <label htmlFor="custom-mat-unit" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                Unidad
+              </label>
               <input
                 id="custom-mat-unit"
                 type="text"
@@ -191,7 +251,9 @@ export default function MaterialAdderSection({
               />
             </div>
             <div>
-              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Costo Estimado ($)</label>
+              <label htmlFor="custom-mat-price" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                Costo Estimado ($)
+              </label>
               <NumericInput
                 id="custom-mat-price"
                 value={customMaterialPrice}
@@ -205,7 +267,9 @@ export default function MaterialAdderSection({
         )}
 
         <div>
-          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cantidad</label>
+          <label htmlFor="mat-qty" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+            Cantidad
+          </label>
           <NumericInput
             id="mat-qty"
             value={materialQty}
@@ -233,8 +297,8 @@ export default function MaterialAdderSection({
           columns={[
             { key: "name", label: "Material / Servicio", render: (m) => <span className="text-slate-800 font-bold">{m.name}</span> },
             { key: "quantity", label: "Cantidad", align: "center", render: (m) => <span className="text-slate-600 font-medium">{m.quantity} {m.unit}</span> },
-            { key: "estimatedUnitPrice", label: "Precio Unit. (Est)", align: "right", render: (m) => <span className="font-mono text-slate-500 font-semibold">${m.estimatedUnitPrice.toFixed(2)}</span> },
-            { key: "total", label: "Total (Est)", align: "right", render: (m) => <span className="font-mono font-bold text-slate-900">${(m.quantity * m.estimatedUnitPrice).toFixed(2)}</span> },
+            { key: "estimatedUnitPrice", label: "Precio Unit. (Est)", align: "right", render: (m) => <span className="font-mono text-slate-500 font-semibold">{formatCurrency(m.estimatedUnitPrice)}</span> },
+            { key: "total", label: "Total (Est)", align: "right", render: (m) => <span className="font-mono font-bold text-slate-900">{formatCurrency(m.quantity * m.estimatedUnitPrice)}</span> },
             {
               key: "actions",
               label: "Remover",
@@ -258,7 +322,7 @@ export default function MaterialAdderSection({
           footer={addedMaterials.length > 0 ? (
             <tr>
               <td colSpan={3} className="py-3.5 px-4 text-right text-slate-500 uppercase tracking-wider text-[9px] font-bold">Costo Estimado Materiales:</td>
-              <td className="py-3.5 px-4 text-right font-mono text-emerald-700 text-sm font-black">${materialsSubtotal.toFixed(2)}</td>
+              <td className="py-3.5 px-4 text-right font-mono text-emerald-700 text-sm font-black">{formatCurrency(materialsSubtotal)}</td>
               <td />
             </tr>
           ) : undefined}

@@ -8,11 +8,11 @@
 
 export const navLinkClass = (activeBg: string, borderColor: string, isCollapsed: boolean) =>
   ({ isActive }: { isActive: boolean }) =>
-    `group relative flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 after:content-[''] after:absolute after:right-2 after:top-1/2 after:-translate-y-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:transition-opacity after:duration-200
+    `group relative flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60
     ${isCollapsed ? "gap-0 px-0 py-2.5 justify-center" : "gap-3 px-3 py-2.5"}
     ${isActive
-        ? `${activeBg} text-white ${borderColor} shadow-md ring-1 ring-inset ring-white/10 font-black after:opacity-100 after:bg-white/70 after:shadow-[0_0_6px_rgba(255,255,255,0.55)]`
-        : `border-transparent text-slate-400 hover:bg-slate-900/50 hover:text-white ${isCollapsed ? "" : "hover:translate-x-0.5"} after:opacity-0`
+        ? `${activeBg} text-white ${borderColor} shadow-md ring-1 ring-inset ring-white/10 font-black`
+        : `border-transparent text-slate-400 hover:bg-slate-900/50 hover:text-white ${isCollapsed ? "" : "hover:translate-x-0.5"}`
     }`;
 
 export const sidebarIconClass = (isActive: boolean, activeClass = "!text-white") =>

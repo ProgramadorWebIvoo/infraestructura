@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [2026-07-31] — Sidebar: dot brillante del navlink activo eliminado
+- Tipo: fix (UI)
+- Qué: se eliminó el **punto blanco resplandeciente** (pseudo-elemento `after:` con `shadow` glow) que el navlink activo mostraba en su borde derecho, en `SidebarNav` y en los ítems del dropdown de Configuración (clase compartida `navLinkClass`).
+- Por qué / causa raíz: el usuario reportó un "punto resplandeciente" en los navlinks del sidebar; es el indicador decorativo del estado activo, no deseado.
+- Archivos: `src/components/UI/sidebarNavClasses.ts`
+- Verificación: `tsc --noEmit` 0 errores; `vitest run` SidebarNav **26/26**.
+
+## [2026-07-31] — RequestForm: tipo de requerimiento a ancho completo (botones en fila)
+- Tipo: fix (UI)
+- Qué: el campo "Tipo de Requerimiento" ahora ocupa el **ancho completo** de la card del formulario con ambos botones (Obras / Infraestructura | Mantenimiento) en una **fila**; "Descripción del Trabajo" pasa a su propia fila full-width debajo (con `flex-1` para que siga creciendo y mantenga el botón de envío anclado abajo).
+- Por qué / causa raíz: el usuario reportó que los botones de tipo se veían en columna (quedaban comprimidos en la mitad izquierda del grid del formulario); se sacaron del grid de dos columnas y ahora son una fila amplia y legible.
+- Archivos: `src/views/InfraestructuraMantenimientoPanel/RequestFormSection.tsx`
+- Verificación: `tsc --noEmit` 0 errores; `vitest run` RequestFormSection **4/4**.
+
+## [2026-07-31] — Panel Infraestructura/Mantenimiento: vista consultable, KPIs operativos y formulario uniforme
+- Tipo: feature + refactor + fix
+- Qué:
+  - **Vista reestructurada**: header de página (título + subtítulo + chip "X peticiones") y strip de 4 KPIs **operativos** — Peticiones, Por Revisar (CREADO), En Ejecución (EN_EJECUCION) y Completadas (COMPLETADO_PAGADO). El KPI de **"Inversión Estimada" (agregado monetario) se eliminó** por decisión del usuario: no corresponde exponerlo al rol de Infraestructura; los montos se conservan solo por petición (tabla y modal).
+  - **Peticiones del Departamento: de lista de tarjetas a tabla consultable** (`RequestsTableSection`, ancho completo): búsqueda (título/ID/ubicación), columnas ordenables (ID, Título+Ubicación, Tipo, Estado con `StatusBadge`, Fecha, Total con `formatCurrency`), paginación (`pageSize=6`), fila clicable → `InspectRequestModal`, botón de inspección con `aria-label`, y `EmptyState` diferenciado (sin registros vs sin coincidencias). Reemplaza la lista de tarjetas scrollable en la columna derecha (engorrosa para consultar).
+  - **Pipeline del departamento integrado** (`PipelineOverview` + `pipeline.ts`): la antigua tarjeta informativa oscura (marketing copy) y la tarjeta "Flujo del Departamento" suelta se reemplazan por una **tira de chips horizontal** dentro de la propia card de peticiones — Todas + 6 etapas canónicas (Creadas / Cierre / Procura / Finanzas / Ejecución / Completadas) con conteo y estado activo; tocar un chip filtra la tabla. Estado `stageKey` elevado al índice (única fuente, compartido por pipeline y tabla).
+  - **Formulario y materiales lado a lado** (`lg:grid-cols-2`, antes form+materials en 2/3 y pipeline en 1/3): ambas cards con `h-full flex flex-col`; en el formulario la **descripción crece** (`flex-1`) y el **botón de envío se ancla abajo** (`mt-auto`), eliminando el hueco en el "footer" de la card al igualar alturas con la card de materiales.
+  - **RequestFormSection**: labels asociados con `htmlFor`/`id` (a11y), toggle de tipo como `radiogroup` con iconos (Building2/Wrench), subtexto por tipo, `aria-pressed`/`aria-checked`, y **errores inline por campo** (`role="alert"`, `aria-invalid`) con foco automático al primer campo inválido (antes un banner genérico único).
+  - **MaterialAdderSection**: chip "Insumos agregados" con contador + subtotal en el header, **error local** del agregado personalizado (antes `onError` al padre), **banner de catálogo vacío** con auto-switch a la pestaña Personalizado + `SelectModal` deshabilitado y `emptyMessage` propio, toast de éxito al agregar material, y `formatCurrency` en toda la tabla/footer.
+  - **InspectRequestModal pulido**: `StatusBadge` para el estado, `formatCurrency` para todos los montos (antes `$` + `toFixed` a mano, inconsistente con el resto de la app), tipo legible en el infoLine y badge de materiales.
+- Por qué / causa raíz: el usuario pidió mejorar la UI/UX de la vista de Infraestructura/Mantenimiento; feedback iterativo: (1) la lista de tarjetas era engorrosa para consultar, (2) el KPI de inversión no corresponde al rol de infraestructura, (3) el pipeline quedaba desacoplado como tarjeta suelta en la columna derecha, (4) la card del formulario mostraba un hueco abajo al estirarse contra la card de materiales.
+- Archivos: `src/views/InfraestructuraMantenimientoPanel/pipeline.ts` [NUEVO], `src/views/InfraestructuraMantenimientoPanel/PipelineOverview.tsx` [NUEVO], `src/views/InfraestructuraMantenimientoPanel/RequestsTableSection.tsx` [NUEVO], `src/views/InfraestructuraMantenimientoPanel/RequestsListSection.tsx` [ELIMINADO], `src/views/InfraestructuraMantenimientoPanel/{index,RequestFormSection,MaterialAdderSection}.tsx`, `src/components/Modals/InspectRequestModal.tsx`, tests: `src/__tests__/views/InfraestructuraMantenimientoPanel/{PipelineOverview,RequestsTableSection,RequestFormSection,MaterialAdderSection}.test.tsx` (`RequestsListSection.test.tsx` [ELIMINADO]).
+- Verificación: `tsc --noEmit` 0 errores; tests del panel **14/14**; `vite build` OK.
+
 ## [2026-07-31] — Configuración IA: refactor SOLID con testing + payloads alineados a docs oficiales (OpenAI/Anthropic/Gemini)
 - Tipo: refactor + feature + security + fix
 - Qué:

@@ -6,11 +6,11 @@
  * del proyecto registrado desde Infraestructura / Mantenimiento.
  */
 
-import { MapPin, Calendar, Package, DollarSign, FileText } from "lucide-react";
+import { Calendar, DollarSign, FileText, MapPin, Package } from "lucide-react";
 import type { Project } from "../../types";
 import Modal from "../UI/Modal";
 import StatusBadge from "../UI/StatusBadge";
-import { formatNumber } from "../../utils";
+import { formatCurrency } from "../../utils";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -33,7 +33,7 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
       onClose={onClose}
       badge="Expediente • Petición de Obra"
       title={project?.title ?? ""}
-      infoLine={project ? `${project.id} • ${project.type}` : undefined}
+      infoLine={project ? `${project.id} • ${project.type === "INFRAESTRUCTURA" ? "Infraestructura" : "Mantenimiento"}` : undefined}
       maxWidth="max-w-lg"
       icon={<FileText className="h-5 w-5" />}
       iconColor="sky"
@@ -89,7 +89,7 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
                   ? "bg-sky-50 text-sky-700 border-sky-200"
                   : "bg-slate-100 text-slate-700 border-slate-200"
               }`}>
-                {project.type}
+                {project.type === "INFRAESTRUCTURA" ? "INFRAESTRUCTURA" : "MANTENIMIENTO"}
               </span>
             </div>
           </section>
@@ -119,8 +119,8 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
                       <tr key={m.id} className="bg-white">
                         <td className="py-2 px-3 font-semibold text-slate-800">{m.name}</td>
                         <td className="py-2 px-3 text-center font-mono text-slate-600">{m.quantity} {m.unit}</td>
-                        <td className="py-2 px-3 text-right font-mono text-slate-500">${m.estimatedUnitPrice.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">${(m.quantity * m.estimatedUnitPrice).toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right font-mono text-slate-500">{formatCurrency(m.estimatedUnitPrice)}</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">{formatCurrency(m.quantity * m.estimatedUnitPrice)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -133,7 +133,7 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-black text-sky-700 text-sm">
-                        ${formatNumber(project.estimatedTotal)}
+                        {formatCurrency(project.estimatedTotal)}
                       </td>
                     </tr>
                   </tfoot>

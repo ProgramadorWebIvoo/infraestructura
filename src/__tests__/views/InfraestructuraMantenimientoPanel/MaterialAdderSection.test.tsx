@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import MaterialAdderSection from "@/views/InfraestructuraMantenimientoPanel/MaterialAdderSection";
+import { ToastProvider } from "@/components/UI/Toast";
 
 vi.mock("motion/react", () => ({
   useReducedMotion: () => false,
@@ -39,12 +40,13 @@ afterEach(() => {
 describe("MaterialAdderSection — modal de catálogo", () => {
   it("muestra columnas Nombre/Unidad/Precio Unit., no 'Valor' con índice crudo", () => {
     render(
-      <MaterialAdderSection
-        materialsCatalog={materialsCatalog}
-        addedMaterials={[]}
-        onAddedMaterialsChange={vi.fn()}
-        onError={vi.fn()}
-      />,
+      <ToastProvider>
+        <MaterialAdderSection
+          materialsCatalog={materialsCatalog}
+          addedMaterials={[]}
+          onAddedMaterialsChange={vi.fn()}
+        />
+      </ToastProvider>,
     );
 
     // selectedCatalogIndex arranca en 0: el botón trigger ya muestra el
@@ -60,5 +62,20 @@ describe("MaterialAdderSection — modal de catálogo", () => {
     // Precio real del catálogo visible, no el índice (0/1) que mostraba antes
     expect(screen.getByText("$12.50")).toBeInTheDocument();
     expect(screen.getByText("$8.20")).toBeInTheDocument();
+  });
+
+  it("muestra el banner de error cuando el submit de materiales falla (validación padre)", () => {
+    render(
+      <ToastProvider>
+        <MaterialAdderSection
+          materialsCatalog={materialsCatalog}
+          addedMaterials={[]}
+          onAddedMaterialsChange={vi.fn()}
+          materialsError="Agrega al menos un material o servicio a la petición."
+        />
+      </ToastProvider>,
+    );
+
+    expect(screen.getByText("Agrega al menos un material o servicio a la petición.")).toBeInTheDocument();
   });
 });

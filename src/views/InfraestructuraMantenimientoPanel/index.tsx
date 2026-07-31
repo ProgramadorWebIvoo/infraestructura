@@ -5,15 +5,18 @@
  * Panel de Infraestructura / Mantenimiento: creación de peticiones de obra.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
+import { Building2, CheckCircle2, Clock, FilePlus2, HardHat } from "lucide-react";
 import type { Project, MaterialItem } from "../../types";
+import { ProjectStatus } from "../../types";
 import { useToast } from "../../components/UI/Toast";
 import { containerVariants, itemVariants } from "../../animations";
-import { SkeletonCard, SkeletonBlock } from "../../components/SkeletonLoader";
+import { SkeletonCard, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
+import KpiCard from "../../components/UI/KpiCard";
 import RequestFormSection from "./RequestFormSection";
 import MaterialAdderSection from "./MaterialAdderSection";
-import RequestsListSection from "./RequestsListSection";
+import RequestsTableSection from "./RequestsTableSection";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;
@@ -21,6 +24,9 @@ interface InfraestructuraMantenimientoPanelProps {
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
   isLoading?: boolean;
 }
+
+export type FieldKey = "title" | "location" | "description" | "materials";
+export type FieldErrors = Partial<Record<FieldKey, string>>;
 
 export default function InfraestructuraMantenimientoPanel({
   onAddProject,
@@ -37,23 +43,54 @@ export default function InfraestructuraMantenimientoPanel({
   // Added materials state
   const [addedMaterials, setAddedMaterials] = useState<Omit<MaterialItem, "id">[]>([]);
 
-  // Validation messages
-  const [errorMsg, setErrorMsg] = useState("");
+  // Validation state
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
+  // Filtro de etapa compartido entre el pipeline y la tabla
+  const [stageKey, setStageKey] = useState("todas");
+
+  const materialsSubtotal = useMemo(
+    () => addedMaterials.reduce((sum, m) => sum + m.quantity * m.estimatedUnitPrice, 0),
+    [addedMaterials],
+  );
+
+  const kpis = useMemo(
+    () => ({
+      total: projects.length,
+      pendingReview: projects.filter((p) => p.status === ProjectStatus.CREADO).length,
+      inExecution: projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION).length,
+      completed: projects.filter((p) => p.status === ProjectStatus.COMPLETADO_PAGADO).length,
+    }),
+    [projects],
+  );
+
   if (isLoading) return <InfraestructuraSkeleton />;
 
-  const materialsSubtotal = addedMaterials.reduce((sum, m) => sum + m.quantity * m.estimatedUnitPrice, 0);
+  const clearError = (key: FieldKey) =>
+    setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validate = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    if (!title.trim()) errors.title = "El título de la obra o trabajo es obligatorio.";
+    if (!location.trim()) errors.location = "La ubicación exacta es obligatoria.";
+    if (!description.trim()) errors.description = "Describe el alcance del trabajo a realizar.";
+    if (addedMaterials.length === 0) errors.materials = "Agrega al menos un material o servicio a la petición.";
+    return errors;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    if (!title.trim()) { setErrorMsg("El título del proyecto o trabajo es obligatorio."); return; }
-    if (!location.trim()) { setErrorMsg("La ubicación exacta es obligatoria."); return; }
-    if (!description.trim()) { setErrorMsg("Por favor, proporciona una descripción del trabajo."); return; }
-    if (addedMaterials.length === 0) { setErrorMsg("Debes agregar al menos un material o servicio a la petición."); return; }
 
+    const errors = validate();
+    if (Object.values(errors).some(Boolean)) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setIsSubmitting(true);
     try {
       onAddProject({
@@ -65,28 +102,65 @@ export default function InfraestructuraMantenimientoPanel({
       setTitle(""); setDescription(""); setLocation("");
       setAddedMaterials([]);
       showToast("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.", "success");
-      setErrorMsg("");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-6" variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+      <h1 className="sr-only">Infraestructura / Mantenimiento</h1>
 
-      {/* Left 2 Columns: Creation Form */}
-      <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-        <h1 className="sr-only">Infraestructura / Mantenimiento</h1>
+      {/* Header del departamento */}
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 bg-sky-50 border border-sky-100 rounded-2xl shadow-sm">
+            <Building2 className="h-6 w-6 text-sky-600" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900">Infraestructura / Mantenimiento</h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Registre peticiones de obra y dé seguimiento a los insumos requeridos.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* KPIs del departamento (operativos, sin exposición financiera agregada) */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard icon={<FilePlus2 className="h-5 w-5" />} label="Peticiones" accent="text-sky-600" borderAccent="border-l-sky-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{kpis.total}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Registradas por el departamento</p>
+        </KpiCard>
+
+        <KpiCard icon={<Clock className="h-5 w-5" />} label="Por Revisar" accent="text-amber-500" borderAccent="border-l-amber-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-amber-600 to-amber-400 bg-clip-text text-transparent">{kpis.pendingReview}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">En cola de Cierre de Obra</p>
+        </KpiCard>
+
+        <KpiCard icon={<HardHat className="h-5 w-5" />} label="En Ejecución" accent="text-cyan-600" borderAccent="border-l-cyan-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-cyan-700 to-cyan-500 bg-clip-text text-transparent">{kpis.inExecution}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Obras activas en campo</p>
+        </KpiCard>
+
+        <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} label="Completadas" accent="text-emerald-600" borderAccent="border-l-emerald-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">{kpis.completed}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Pagadas y cerradas</p>
+        </KpiCard>
+      </motion.div>
+
+      {/* Formulario + materiales (lado a lado) */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RequestFormSection
           title={title}
-          onTitleChange={setTitle}
+          onTitleChange={(v) => { setTitle(v); clearError("title"); }}
           location={location}
-          onLocationChange={setLocation}
+          onLocationChange={(v) => { setLocation(v); clearError("location"); }}
           type={type}
           onTypeChange={setType}
           description={description}
-          onDescriptionChange={setDescription}
-          errorMsg={errorMsg}
+          onDescriptionChange={(v) => { setDescription(v); clearError("description"); }}
+          errors={fieldErrors}
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
         />
@@ -94,14 +168,14 @@ export default function InfraestructuraMantenimientoPanel({
         <MaterialAdderSection
           materialsCatalog={materialsCatalog}
           addedMaterials={addedMaterials}
-          onAddedMaterialsChange={(materials) => { setAddedMaterials(materials); setErrorMsg(""); }}
-          onError={setErrorMsg}
+          onAddedMaterialsChange={(materials) => { setAddedMaterials(materials); clearError("materials"); }}
+          materialsError={fieldErrors.materials}
         />
       </motion.div>
 
-      {/* Right Column: Info + Existing Requests */}
-      <motion.div variants={itemVariants} className="space-y-6">
-        <RequestsListSection projects={projects} />
+      {/* Tabla de peticiones con pipeline integrado (ancho completo, consultable) */}
+      <motion.div variants={itemVariants}>
+        <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} />
       </motion.div>
     </motion.div>
   );
@@ -110,28 +184,24 @@ export default function InfraestructuraMantenimientoPanel({
 /* ─── Skeleton Loader ─── */
 function InfraestructuraSkeleton() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="space-y-6">
+      <div className="flex items-center gap-3.5">
+        <SkeletonBlock className="h-12 w-12 rounded-2xl bg-slate-200" />
+        <div className="space-y-2">
+          <SkeletonBlock className="h-5 w-64" />
+          <SkeletonBlock className="h-3 w-80" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonStats key={i} />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SkeletonCard />
         <SkeletonCard />
       </div>
-      <div className="space-y-6">
-        <div className="bg-slate-900 rounded-2xl p-6 space-y-3">
-          <SkeletonBlock className="h-4 w-48 bg-slate-700" />
-          <SkeletonBlock className="h-3 w-full bg-slate-700" />
-          <SkeletonBlock className="h-3 w-5/6 bg-slate-700" />
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
-          <SkeletonBlock className="h-3 w-32" />
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="p-3 border border-slate-100 rounded-xl space-y-2">
-              <SkeletonBlock className="h-3 w-16" />
-              <SkeletonBlock className="h-4 w-3/4" />
-              <SkeletonBlock className="h-3 w-20" />
-            </div>
-          ))}
-        </div>
-      </div>
+      <SkeletonCard />
     </div>
   );
 }
