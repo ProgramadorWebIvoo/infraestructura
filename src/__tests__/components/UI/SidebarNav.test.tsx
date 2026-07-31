@@ -11,6 +11,8 @@ function renderSidebar(props: Partial<Parameters<typeof SidebarNav>[0]> = {}) {
     user: { name: "Juan Pérez", email: "juan@ivoo.com" },
     onLogout: vi.fn(),
     canAccess: vi.fn(() => true),
+    isCollapsed: false,
+    onToggleCollapse: vi.fn(),
   };
 
   return render(
@@ -198,5 +200,96 @@ describe("SidebarNav", () => {
 
     fireEvent.click(screen.getByText("Presidencia"));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  // ── Collapsed state ─────────────────────────────────────────────────────────
+  it("calls onToggleCollapse when collapse button is clicked", () => {
+    const onToggleCollapse = vi.fn();
+    renderSidebar({ isCollapsed: false, onToggleCollapse });
+
+    const toggle = screen.getByLabelText("Minimizar barra de navegación");
+    fireEvent.click(toggle);
+    expect(onToggleCollapse).toHaveBeenCalledOnce();
+  });
+
+  it("collapse button exposes the correct action for the current state", () => {
+    const { unmount } = renderSidebar({ isCollapsed: false });
+    expect(screen.getByLabelText("Minimizar barra de navegación")).toBeInTheDocument();
+    unmount();
+
+    renderSidebar({ isCollapsed: true });
+    expect(screen.getByLabelText("Expandir barra de navegación")).toBeInTheDocument();
+  });
+
+  it("collapsed sidebar narrows to w-16 and centers icons (no px/gap offset)", () => {
+    const { container } = renderSidebar({ isCollapsed: true });
+
+    const aside = container.querySelector("aside");
+    expect(aside?.className).toContain("w-16");
+
+    const presidencia = screen.getByText("Presidencia").closest("a")!;
+    expect(presidencia.className).toContain("justify-center");
+    expect(presidencia.className).toContain("px-0");
+    expect(presidencia.className).toContain("gap-0");
+    expect(presidencia.className).not.toContain("px-3");
+    expect(presidencia.className).not.toContain("gap-3");
+  });
+
+  it("expanded sidebar uses full width layout with text visible", () => {
+    const { container } = renderSidebar({ isCollapsed: false });
+
+    const aside = container.querySelector("aside");
+    expect(aside?.className).toContain("w-64");
+
+    const presidencia = screen.getByText("Presidencia").closest("a")!;
+    expect(presidencia.className).toContain("px-3");
+    expect(presidencia.className).toContain("gap-3");
+  });
+
+  it("collapsed sidebar hides text labels and brand wordmark", () => {
+    renderSidebar({ isCollapsed: true });
+
+    const presidencia = screen.getByText("Presidencia");
+    expect(presidencia.className).toContain("max-w-0");
+    expect(presidencia.className).toContain("opacity-0");
+    expect(screen.queryByText("Gestión")).not.toBeInTheDocument();
+    expect(screen.queryByText("Construyendo con propósito")).not.toBeInTheDocument();
+  });
+
+  it("expanded sidebar shows animated labels at full width", () => {
+    renderSidebar({ isCollapsed: false });
+
+    const presidencia = screen.getByText("Presidencia");
+    expect(presidencia.className).toContain("max-w-40");
+    expect(presidencia.className).toContain("opacity-100");
+  });
+
+  it("collapsed sidebar centers config button and hides submenu indentation", () => {
+    renderSidebar({ isCollapsed: true });
+
+    const configBtn = screen.getByText("Configuración").closest("button")!;
+    expect(configBtn.className).toContain("justify-center");
+    expect(configBtn.className).toContain("px-0");
+    expect(configBtn.className).not.toContain("px-3");
+
+    fireEvent.click(configBtn);
+
+    const submenu = document.querySelector('[role="menu"]')!;
+    expect(submenu.className).not.toContain("ml-3");
+    const usuarios = screen.getByText("Usuarios");
+    expect(usuarios.className).toContain("max-w-0");
+    expect(usuarios.className).toContain("opacity-0");
+  });
+
+  it("collapsed sidebar centers user avatar and logout icon", () => {
+    renderSidebar({ isCollapsed: true });
+
+    const logoutBtn = screen.getByText("Cerrar Sesión").closest("button")!;
+    expect(logoutBtn.className).toContain("justify-center");
+    expect(logoutBtn.className).toContain("px-0");
+
+    const userRow = screen.getByText("JP").parentElement!;
+    expect(userRow.className).toContain("justify-center");
+    expect(userRow.className).toContain("px-0");
   });
 });

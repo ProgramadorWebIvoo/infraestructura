@@ -7,7 +7,7 @@
  * Recibe las rutas como children y las envuelve en transiciones AnimatePresence.
  */
 
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, useEffect, useCallback, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Database } from "lucide-react";
@@ -35,6 +35,11 @@ interface AuthenticatedLayoutProps {
   children: ReactNode;
 }
 
+interface SidebarNavProps {
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
 // ---------------------------------------------------------------------------
 // Suspense fallback para el contenido de rutas
 // ---------------------------------------------------------------------------
@@ -52,6 +57,9 @@ function PageFallback() {
 
 // El modal se lazy-loadea porque solo se abre bajo demanda
 const InspectProjectModal = lazy(() => import("../Modals/InspectProjectModal"));
+
+// El estado colapsado del sidebar sobrevive al refresh de página
+const SIDEBAR_COLLAPSED_KEY = "ivoo.sidebar.collapsed";
 
 // ---------------------------------------------------------------------------
 // Componente
@@ -71,6 +79,9 @@ export default function AuthenticatedLayout({
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1",
+  );
 
   const pageVariants = prefersReducedMotion
     ? { initial: { opacity: 1 }, enter: { opacity: 1 }, exit: { opacity: 1 } }
@@ -81,6 +92,13 @@ export default function AuthenticatedLayout({
       };
   const pageTransition = { duration: prefersReducedMotion ? 0 : 0.22, ease: "easeOut" as const };
 
+  const handleOnToggleCollapsed = useCallback(() => setIsSidebarCollapsed((prev) => !prev), []);
+  const handleCloseMobileSidebar = useCallback(() => setIsMobileSidebarOpen(false), []);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isSidebarCollapsed ? "1" : "0");
+  }, [isSidebarCollapsed]);
+
   return (
     <ErrorBoundary>
       <OfflineBanner />
@@ -88,10 +106,12 @@ export default function AuthenticatedLayout({
 
         <SidebarNav
           isOpen={isMobileSidebarOpen}
-          onClose={() => setIsMobileSidebarOpen(false)}
+          onClose={handleCloseMobileSidebar}
           user={user}
           onLogout={onLogout}
           canAccess={canAccess}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleOnToggleCollapsed}
         />
 
         {/* Main Container Area */}

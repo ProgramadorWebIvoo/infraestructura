@@ -1,5 +1,15 @@
-import { useState } from "react";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Barra de navegación lateral: brand, links por rol, dropdown de configuración
+ * y footer de usuario/logout. Envuelta en memo — con los callbacks estables del
+ * layout, no se re-renderiza al cambiar de ruta.
+ */
+
+import { memo } from "react";
 import { NavLink } from "react-router-dom";
+import { motion } from "motion/react";
 import {
   Building2,
   TrendingUp,
@@ -7,14 +17,13 @@ import {
   FileSearch,
   Users,
   DollarSign,
-  Settings,
+  UserCog,
   X,
   LogOut,
-  UserCog,
-  ChevronDown,
-  Package,
-  Brain,
+  ChevronRight,
 } from "lucide-react";
+import ConfigDropdown from "./ConfigDropdown";
+import { navLinkClass, sidebarIconClass, sidebarTextClass } from "./sidebarNavClasses";
 
 interface SidebarNavProps {
   isOpen: boolean;
@@ -22,21 +31,9 @@ interface SidebarNavProps {
   user: { name: string; email: string } | null;
   onLogout: () => void;
   canAccess: (path: string) => boolean;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
-
-// ─── Navigation link class factory ───────────────────────────────────────────
-const navLinkClass = (activeBg: string, borderColor: string) =>
-  ({ isActive }: { isActive: boolean }) =>
-    `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 ${
-      isActive
-        ? `${activeBg} text-white ${borderColor} shadow-sm font-black`
-        : "border-transparent text-slate-400 hover:bg-slate-900/50 hover:text-white hover:translate-x-0.5"
-    }`;
-
-const sidebarIconClass = (isActive: boolean, activeClass = "!text-white") =>
-  `h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:rotate-[3deg] ${
-    isActive ? activeClass : "text-slate-400 group-hover:text-white"
-  }`;
 
 // ─── User initials helper ────────────────────────────────────────────────────
 const getUserInitials = (name: string) =>
@@ -48,8 +45,7 @@ const getUserInitials = (name: string) =>
     .slice(0, 2);
 
 // ─── Component ───────────────────────────────────────────────────────────────
-export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess }: SidebarNavProps) {
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
+function SidebarNav({ isOpen, onClose, user, onLogout, canAccess, isCollapsed, onToggleCollapse }: SidebarNavProps) {
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
 
   return (
@@ -64,39 +60,39 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
 
       {/* Sidebar navigation */}
       <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-[#0F172A] text-white border-r border-slate-800/80 z-50 flex flex-col transition-transform duration-300 ease-out lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0 ${
+        className={`fixed inset-y-0 left-0 ${isCollapsed ? "w-16" : "w-64"} bg-[#0F172A] text-white border-r border-slate-800/80 z-50 flex flex-col transition-[width,transform,translate] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] transform-gpu lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* ── Sidebar Header (Logo/Brand) ─────────────────────────────────── */}
-        <div className="relative p-6 border-b border-slate-800/60 shrink-0 overflow-hidden">
-          {/* Ambient atmospheric light — replaces artificial gradient blobs */}
+        <div className={`relative border-b border-slate-800/60 shrink-0 overflow-hidden ${isCollapsed ? "py-3" : "p-3"}`}>
+          {/* Ambient atmospheric light */}
           <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
 
-          {/* Subtle top edge highlight — natural light source */}
+          {/* Subtle top edge highlight */}
           <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent pointer-events-none" />
 
-          <div className="flex items-center justify-between relative">
-            <div className="flex items-center gap-3">
+          <div className={`flex items-center relative ${isCollapsed ? "justify-center" : "justify-between"}`}>
+            <div className={`flex items-center ${isCollapsed ? "" : "gap-3"}`}>
               {/* Logo icon */}
               <div className="relative shrink-0">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset">
                   <Building2 className="h-5 w-5 text-white stroke-[2.5]" />
                 </div>
-                {/* Static status indicator */}
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400/80 rounded-full border-2 border-[#0F172A]" />
               </div>
 
               {/* Wordmark + tagline */}
-              <div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-black tracking-tight text-emerald-400 leading-none font-brand">IVOO</span>
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em] leading-none">Gestión</span>
+              {!isCollapsed && (
+                <div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg font-black tracking-tight text-emerald-400 leading-none font-brand">IVOO</span>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em] leading-none">Gestión</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">
+                    Construyendo con propósito
+                  </p>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium mt-0.5 tracking-wide leading-tight">
-                  Construyendo con propósito
-                </p>
-              </div>
+              )}
             </div>
 
             <button
@@ -109,24 +105,31 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
           </div>
         </div>
 
+        {/* ── Sidebar Collapse Button ─────────────────────────────────── */}
+        <button
+          aria-label={isCollapsed ? "Expandir barra de navegación" : "Minimizar barra de navegación"}
+          onClick={onToggleCollapse}
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 hidden lg:flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+        >
+          <motion.div animate={{ rotate: isCollapsed ? 0 : 180 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}>
+            <ChevronRight />
+          </motion.div>
+        </button>
+
         {/* ── Sidebar Navigation Items ────────────────────────────────────── */}
         <nav aria-label="Menú principal" className="sidebar-scrollbar flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-slate-500 uppercase tracking-widest px-3 mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500/60" />
-            Flujos de Trabajo
-          </div>
-
           {canAccess("/presidencia") && (
             <NavLink
               to="/presidencia"
               id="sidebar-presidencia"
               onClick={onClose}
-              className={navLinkClass("bg-slate-800", "border-sky-400")}
+              className={navLinkClass("bg-slate-800", "border-sky-400", isCollapsed)}
+              title="Presidencia"
             >
               {({ isActive }) => (
                 <>
                   <TrendingUp className={sidebarIconClass(isActive, "text-sky-400")} />
-                  <span>Presidencia</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Presidencia</span>
                 </>
               )}
             </NavLink>
@@ -137,12 +140,13 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               to="/infraestructura"
               id="sidebar-infraestructura"
               onClick={onClose}
-              className={navLinkClass("bg-sky-500", "border-sky-400")}
+              className={navLinkClass("bg-sky-500", "border-sky-400", isCollapsed)}
+              title="Infraestructura"
             >
               {({ isActive }) => (
                 <>
                   <Building2 className={sidebarIconClass(isActive)} />
-                  <span>Infra / Mant</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Infra / Mant</span>
                 </>
               )}
             </NavLink>
@@ -153,12 +157,13 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               to="/cierre-obra"
               id="sidebar-cierre"
               onClick={onClose}
-              className={navLinkClass("bg-blue-600", "border-blue-400")}
+              className={navLinkClass("bg-blue-600", "border-blue-400", isCollapsed)}
+              title="Cierre de Obra"
             >
               {({ isActive }) => (
                 <>
                   <CheckSquare className={sidebarIconClass(isActive)} />
-                  <span>Cierre Obra</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Cierre Obra</span>
                 </>
               )}
             </NavLink>
@@ -169,12 +174,13 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               to="/procura"
               id="sidebar-procura"
               onClick={onClose}
-              className={navLinkClass("bg-purple-600", "border-purple-400")}
+              className={navLinkClass("bg-purple-600", "border-purple-400", isCollapsed)}
+              title="Procura"
             >
               {({ isActive }) => (
                 <>
                   <FileSearch className={sidebarIconClass(isActive)} />
-                  <span>Procura</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Procura</span>
                 </>
               )}
             </NavLink>
@@ -185,12 +191,13 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               to="/analistas"
               id="sidebar-analistas"
               onClick={onClose}
-              className={navLinkClass("bg-emerald-600", "border-emerald-400")}
+              className={navLinkClass("bg-emerald-600", "border-emerald-400", isCollapsed)}
+              title="Analistas"
             >
               {({ isActive }) => (
                 <>
                   <Users className={sidebarIconClass(isActive)} />
-                  <span>Analistas</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Analistas</span>
                 </>
               )}
             </NavLink>
@@ -201,12 +208,13 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               to="/finanzas"
               id="sidebar-finanzas"
               onClick={onClose}
-              className={navLinkClass("bg-rose-600", "border-rose-400")}
+              className={navLinkClass("bg-rose-600", "border-rose-400", isCollapsed)}
+              title="Finanzas"
             >
               {({ isActive }) => (
                 <>
                   <DollarSign className={sidebarIconClass(isActive)} />
-                  <span>Finanzas</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Finanzas</span>
                 </>
               )}
             </NavLink>
@@ -217,116 +225,31 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
               to="/catalogos"
               id="sidebar-catalogos"
               onClick={onClose}
-              className={navLinkClass("bg-slate-800", "border-slate-400")}
+              className={navLinkClass("bg-slate-800", "border-slate-400", isCollapsed)}
+              title="Catalogos"
             >
               {({ isActive }) => (
                 <>
                   <UserCog className={sidebarIconClass(isActive, "text-slate-300")} />
-                  <span>Proveedores</span>
+                  <span className={sidebarTextClass(isCollapsed)}>Proveedores</span>
                 </>
               )}
             </NavLink>
           )}
 
           {/* ── Configuration Dropdown ────────────────────────────────────── */}
-          {canAccess("/usuarios") && (
-            <div className="space-y-0.5">
-              <button
-                onClick={() => setIsConfigOpen((prev) => !prev)}
-                className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 border-transparent text-slate-400 hover:bg-slate-900/50 hover:text-white hover:translate-x-0.5 w-full text-left"
-                aria-expanded={isConfigOpen}
-              >
-                <Settings className="h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:rotate-[3deg] text-slate-400 group-hover:text-white" />
-                <span className="flex-1">Configuración</span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    isConfigOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isConfigOpen && (
-                <div role="menu" aria-orientation="vertical" className="ml-3 space-y-0.5 border-l border-slate-800/60 pl-3 pt-0.5">
-                  {/* Usuarios */}
-                  <NavLink
-                    role="menuitem"
-                    to="/usuarios"
-                    id="sidebar-usuarios"
-                    onClick={onClose}
-                    className={navLinkClass("bg-sky-500", "border-sky-400")}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <Users className={sidebarIconClass(isActive)} />
-                        <span>Usuarios</span>
-                      </>
-                    )}
-                  </NavLink>
-
-                  {/* Proveedores */}
-                  <NavLink
-                    role="menuitem"
-                    to="/config-proveedores"
-                    id="sidebar-config-proveedores"
-                    onClick={onClose}
-                    className={navLinkClass("bg-indigo-600", "border-indigo-400")}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <UserCog className={sidebarIconClass(isActive)} />
-                        <span>Proveedores</span>
-                      </>
-                    )}
-                  </NavLink>
-
-                  {/* Material */}
-                  <NavLink
-                    role="menuitem"
-                    to="/config-materiales"
-                    id="sidebar-config-materiales"
-                    onClick={onClose}
-                    className={navLinkClass("bg-emerald-600", "border-emerald-400")}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <Package className={sidebarIconClass(isActive)} />
-                        <span>Material</span>
-                      </>
-                    )}
-                  </NavLink>
-
-                  {/* IA Models */}
-                  <NavLink
-                    role="menuitem"
-                    to="/config-ia"
-                    id="sidebar-config-ia"
-                    onClick={onClose}
-                    className={navLinkClass("bg-violet-600", "border-violet-400")}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <Brain className={sidebarIconClass(isActive)} />
-                        <span>Modelos de IA</span>
-                      </>
-                    )}
-                  </NavLink>
-                </div>
-              )}
-            </div>
-          )}
-
-          
+          {canAccess("/usuarios") && <ConfigDropdown isCollapsed={isCollapsed} onClose={onClose} />}
         </nav>
 
         {/* ── Sidebar Footer ──────────────────────────────────────────────── */}
         <div className="p-4 border-t border-slate-800/80 shrink-0 space-y-2">
           {/* User info */}
           {user && (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs">
+            <div className={`flex items-center py-2 rounded-xl text-xs ${isCollapsed ? "justify-center px-0" : "gap-3 px-3"}`}>
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-[11px] font-black text-white shrink-0 ring-1 ring-white/10 shadow-sm">
                 {userInitials}
               </div>
-              <div className="min-w-0 flex-1">
+              <div className={`${sidebarTextClass(isCollapsed)} min-w-0 flex-1`}>
                 <p className="text-slate-200 font-bold truncate leading-tight">{user.name}</p>
                 <p className="text-[11px] text-slate-500 font-mono truncate leading-tight mt-0.5">{user.email}</p>
               </div>
@@ -338,13 +261,17 @@ export default function SidebarNav({ isOpen, onClose, user, onLogout, canAccess 
             id="btn-logout"
             role="menuitem"
             onClick={onLogout}
-            className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white hover:translate-x-0.5"
+            className={`group w-full flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white ${
+              isCollapsed ? "justify-center gap-0 px-0 py-2.5" : "gap-3 px-3 py-2.5 hover:translate-x-0.5"
+            }`}
           >
-            <LogOut className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
-            <span>Cerrar Sesión</span>
+            <LogOut className={`h-[18px] w-[18px] shrink-0 transition-transform duration-200 ${isCollapsed ? "" : "group-hover:translate-x-0.5"}`} />
+            <span className={sidebarTextClass(isCollapsed)}>Cerrar Sesión</span>
           </button>
         </div>
       </aside>
     </>
   );
 }
+
+export default memo(SidebarNav);

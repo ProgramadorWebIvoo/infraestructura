@@ -48,6 +48,7 @@ describe("AuthenticatedLayout", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   const renderLayout = (props: Partial<typeof defaultProps> = {}) =>
@@ -146,5 +147,19 @@ describe("AuthenticatedLayout", () => {
     renderLayout({ activeRole: "ADMIN" });
 
     expect(screen.getByText("Terminal: ADMIN")).toBeInTheDocument();
+  });
+
+  it("persists collapsed sidebar state to localStorage on toggle", () => {
+    renderLayout();
+
+    fireEvent.click(screen.getByLabelText("Minimizar barra de navegación"));
+    expect(localStorage.getItem("ivoo.sidebar.collapsed")).toBe("1");
+  });
+
+  it("restores collapsed sidebar state from localStorage on mount", () => {
+    localStorage.setItem("ivoo.sidebar.collapsed", "1");
+    renderLayout();
+
+    expect(screen.getByLabelText("Expandir barra de navegación")).toBeInTheDocument();
   });
 });
