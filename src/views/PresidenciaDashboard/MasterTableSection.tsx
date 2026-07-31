@@ -9,11 +9,12 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Download, Layers, MapPin, Star } from "lucide-react";
+import { ArrowRight, Download, FileSpreadsheet, FileText, Layers, MapPin, Star } from "lucide-react";
 import { ProjectStatus } from "../../types";
 import type { Project } from "../../types";
 import StatusBadge from "../../components/UI/StatusBadge";
 import EmptyState from "../../components/UI/EmptyState";
+import ExportButton, { type ExportRow } from "../../components/UI/ExportButton";
 import { SearchInput, SelectFilter } from "../../components/UI/FilterBar";
 import { Table, type Column } from "../../components/UI/Table";
 import { daysBetween, approvedOf, releasedOf, winnerOf } from "../../utils/dashboardSummary";
@@ -147,35 +148,11 @@ function buildStatusOptions(): { value: string; label: string }[] {
   ];
 }
 
-function csvEscape(value: unknown): string {
-  const str = String(value ?? "");
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-}
-
-function exportCsv(rows: Project[]) {
-  const header = [
-    "id", "title", "type", "location", "status", "createdDate",
-    "estimatedTotal", "approvedInvestmentAmount", "contractValue", "paidAmount",
-    "contractorName", "contractorRating",
-  ];
-  const lines = rows.map((p) => {
-    const winner = winnerOf(p);
-    return [
-      p.id, p.title, p.type, p.location, p.status, p.createdDate,
-      p.estimatedTotal, p.approvedInvestmentAmount ?? "", winner?.totalCost ?? "",
-      releasedOf(p), winner?.contractorName ?? "", winner?.contractorRating ?? "",
-    ]
-      .map(csvEscape)
-      .join(",");
-  });
-  const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `master-obras-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+const EXPORT_HEADERS = [
+  "id", "title", "type", "location", "status", "createdDate",
+  "estimatedTotal", "approvedInvestmentAmount", "contractValue", "paidAmount",
+  "contractorName", "contractorRating",
+];
 
 export default function MasterTableSection({ projects, onSelectProject }: MasterTableSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -196,6 +173,28 @@ export default function MasterTableSection({ projects, onSelectProject }: Master
     return matchesSearch && matchesStatus && matchesType;
   }), [projects, searchTerm, statusFilter, typeFilter]);
 
+  const exportRows = useMemo<ExportRow[]>(
+    () =>
+      filteredProjects.map((p) => {
+        const winner = winnerOf(p);
+        return [
+          p.id, p.title, p.type, p.location, p.status, p.createdDate,
+          p.estimatedTotal, p.approvedInvestmentAmount ?? "", winner?.totalCost ?? "",
+          releasedOf(p), winner?.contractorName ?? "", winner?.contractorRating ?? "",
+        ];
+      }),
+    [filteredProjects]
+  );
+
+  const exportProps = {
+    filename: `master-obras-${new Date().toISOString().slice(0, 10)}`,
+    headers: EXPORT_HEADERS,
+    rows: exportRows,
+    title: "Master de Obras e Infraestructuras",
+    subtitle: `Generado el ${new Date().toLocaleString("es-ES", { dateStyle: "long" })}`,
+    disabled: filteredProjects.length === 0,
+  };
+
   return (
     <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
       <div className="p-5 border-b border-slate-100 bg-slate-50/50">
@@ -209,16 +208,35 @@ export default function MasterTableSection({ projects, onSelectProject }: Master
               <p className="text-[11px] text-slate-500 font-medium">Visualización integrada de presupuestos, materiales, contratistas asignados y flujos.</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => exportCsv(filteredProjects)}
-            disabled={filteredProjects.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
-            aria-label="Exportar master a CSV"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Exportar CSV
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportButton
+              format="csv"
+              {...exportProps}
+              icon={<Download className="h-3.5 w-3.5" />}
+              aria-label="Exportar master a CSV"
+              className="px-3 py-2 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100"
+            >
+              Exportar CSV
+            </ExportButton>
+            <ExportButton
+              format="excel"
+              {...exportProps}
+              icon={<FileSpreadsheet className="h-3.5 w-3.5" />}
+              aria-label="Exportar master a Excel"
+              className="px-3 py-2 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100"
+            >
+              Exportar Excel
+            </ExportButton>
+            <ExportButton
+              format="pdf"
+              {...exportProps}
+              icon={<FileText className="h-3.5 w-3.5" />}
+              aria-label="Exportar master a PDF"
+              className="px-3 py-2 text-[11px] text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100"
+            >
+              Exportar PDF
+            </ExportButton>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2.5 mt-4">
           <SearchInput

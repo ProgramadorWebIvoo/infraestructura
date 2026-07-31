@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [2026-07-31] — ExportButton con estilos (Excel/PDF atractivos) + botones en "Diario de Egresos y Transferencias" (Finanzas)
+- Tipo: feature
+- Qué:
+  - **`ExportButton` ahora genera salidas visuales** para `excel` y `pdf` mediante nuevas props opcionales `columns` (`ExportColumn[]`: `width`, `format`, `align`, `money`) y `footer` (`{ label, value }`):
+    - **Excel**: fila de título (merge, bold 16), fila de subtítulo (merge, 10pt), fila de cabecera con fondo `#1e293b` y texto blanco, filas con bordes finos + zebra (pares `#f8fafc`), alineación por columna, formato numérico real vía numFmt (p.ej. `"$#,##0.00"` con `money`), y fila de total con label mergeado (N-1 columnas) + valor numérico formateado alineado a la derecha. Las celdas solapadas por `columnSpan` van como `null` (requisito de la librería).
+    - **PDF**: template de impresión rediseñado — encabezado de documento con `h1` + subtítulo y regla inferior, cabecera de tabla oscura (`#1e293b`, blanco, uppercase), filas zebra, columnas numéricas alineadas a la derecha con `tabular-nums`, formato monetario `$` con 2 decimales, y pie de total con label colspan + valor bold.
+  - **`SectionHeader`**: nueva prop opcional `actions` (acciones alineadas a la derecha del encabezado; layout `flex-wrap` para pantallas angostas).
+  - **`LedgerSection` (Finanzas)**: botones **Exportar Excel** (índigo) y **Exportar PDF** (rosa) sobre el diario filtrado por búsqueda; 7 columnas (voucher, obra, ID proyecto, tipo egreso, proveedor, fecha, monto) con anchos/alineación/`money` por columna, título "Diario de Egresos y Transferencias", subtítulo con fecha de generación + nº de movimientos, y fila `TOTAL DESEMBOLSADO`. Deshabilitados si no hay movimientos. El componente queda **retrocompatible**: el Master de Obras sigue usando los mismos 3 botones sin `columns`/`footer` (mismo output anterior).
+  - **Renombrado**: "Libro Diario de Egresos y Transferencias" → **"Diario de Egresos y Transferencias"** en título, exports, aria-labels, mensaje de confirmación de `AdvancesSection` y comentarios — el registro NO es un libro diario homologado/fiscalmente correcto para emisión, así que se evita el término "libro".
+- Por qué / causa raíz: el usuario pidió que los exports de la tabla de Finanzas fueran "atractivos y bonitos, así como ordenados"; el output previo de Excel/PDF era plano (headers en negrita sin estilos, tabla gris básica).
+- Archivos: `src/components/UI/ExportButton.tsx`, `src/components/UI/SectionHeader.tsx`, `src/views/FinanzasPanel/LedgerSection.tsx`, `src/views/FinanzasPanel/AdvancesSection.tsx`, `src/views/FinanzasPanel/index.tsx`, `src/__tests__/components/UI/ExportButton.test.tsx` (+1 test estilizado).
+- Verificación: `tsc --noEmit` 0 errores; suite 478/479 (único fallo pre-existente de `SidebarNav`, ajeno); `vite build` OK (write-excel-file sigue en chunk lazy 71.71 kB); **validación E2E con Excel 16 COM**: el XLSX estilizado (title/subtitle merge, header oscuro bold, zebra, numFmt `$`, total mergeado) **abre sin reparación**, A5='VCH-1000A', G5='$2.500.000,50' (locale es-ES), G9 total correcto 4.365.398,03.
+
+## [2026-07-31] — ExportButton reutilizable (CSV/Excel XLSX/PDF) + 3 botones en el Master de Obras
+- Tipo: feature + refactor + fix
+- Qué:
+  - **Nuevo componente `ExportButton`** (`src/components/UI/ExportButton.tsx`) con prop `format`:
+    - `csv` → Blob UTF-8 **con BOM** (`text/csv;charset=utf-8`) para que Excel interprete acentos correctamente (antes podía mostrar mojibake en locales españoles).
+    - `excel` → **XLSX real (OOXML)** generado con `write-excel-file@4.1.1` (lazy-loaded vía `import()` → chunk propio de 71.71 kB, solo se carga al hacer clic). Dependencia única transitiva `fflate` (sin CVEs). **NO se usó SheetJS npm** (`xlsx@0.18.5`, estancada con CVE-2023-30533 y CVE-2024-22363) **ni exceljs** (arrastra cadena con brace-expansion DoS y uuid — `npm audit` lo confirmó); `write-excel-file` deja `npm audit` sin nuevas vulnerabilidades (solo quedan las 2 pre-existentes de react-router).
+    - `pdf` → inyecta vista imprimible `#export-print-root` (portal directo a `document.body` con CSS `@media print` que oculta el resto), `window.print()` y limpieza con `onafterprint` + fallback 60s.
+    - Escapado XSS-safe en CSV (RFC 4180) y PDF (HTML/XML).
+  - **Master de Obras**: la lógica `csvEscape`/`exportCsv` local se reemplaza por 3 botones `ExportButton` (CSV esmeralda, Excel índigo, PDF rosa) sobre el master filtrado; props comunes en `exportProps` (DRY).
+- Por qué / causa raíz:
+  - El CSV estaba acoplado a `MasterTableSection`; se necesitaba un componente reutilizable con Excel/PDF por prop.
+  - **Fix del aviso de Excel "el formato y la extensión del archivo no coinciden / recuperación"**: la primera implementación (Opción A, sin dependencias) exportaba Excel como HTML con extensión `.xls` → Excel 16 detecta el mismatch y fuerza reparación. Se intentó generar XLSX OOXML a mano (ZIP STORE + SpreadsheetML mínimo): el contenedor ZIP era válido (Expand-Archive OK, XML bien formado) pero **Excel COM (16.0) rechazaba el archivo al abrirlo** (diagnóstico con `Workbooks.Open`, incluida variante DEFLATE re-empaquetada con System.IO.Compression que también falló → el problema era el contenido OOXML, no el ZIP). Por decisión del usuario se adoptó la librería `write-excel-file`, validada con Excel COM: **abre sin prompt de recuperación**, con headers en negrita, celdas numéricas reales (2500000,5 / 1200) y `<script>` como texto literal.
+- Archivos: `src/components/UI/ExportButton.tsx` [NUEVO], `src/views/PresidenciaDashboard/MasterTableSection.tsx`, `src/__tests__/components/UI/ExportButton.test.tsx` [NUEVO], `package.json` (+`write-excel-file`), `package-lock.json`.
+- Verificación: `tsc --noEmit` 0 errores; suite completa 477/478 (único fallo pre-existente de `SidebarNav`, ajeno); `vite build` OK; **validación E2E con Excel 16 COM: el XLSX generado abre sin reparación y con valores correctos**.
+
 ## [2026-07-31] — InspectProjectModal: expediente de obra con organigrama IVOO, snapshot financiero y trazabilidad por estado
 - Tipo: feature + refactor + fix
 - Qué: el modal que muestra el estatus de un proyecto (abierto desde "Inspeccionar" en el Master de Presidencia) fue rediseñado a su máxima expresión sin perder ningún dato del timeline original:

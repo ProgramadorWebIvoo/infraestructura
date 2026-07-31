@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Panel de Finanzas: liberación de anticipos + liquidaciones finales + libro diario.
+ * Panel de Finanzas: liberación de anticipos + liquidaciones finales + diario de egresos.
  */
 
 import { motion } from "motion/react";

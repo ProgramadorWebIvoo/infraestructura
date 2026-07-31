@@ -112,7 +112,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
           }
         }}
         title="Liberar Anticipo"
-        message={`¿Estás seguro de liberar el anticipo de $${formatNumber(confirmPayAdvance?.amount ?? 0)} para la obra "${confirmPayAdvance?.title ?? ""}"? Esta acción registrará el pago en el libro diario y cambiará el estado del proyecto a "En ejecución".`}
+        message={`¿Estás seguro de liberar el anticipo de $${formatNumber(confirmPayAdvance?.amount ?? 0)} para la obra "${confirmPayAdvance?.title ?? ""}"? Esta acción registrará el pago en el diario de egresos y cambiará el estado del proyecto a "En ejecución".`}
         variant="warning"
         confirmLabel="Liberar anticipo"
         isLoading={isPaying}

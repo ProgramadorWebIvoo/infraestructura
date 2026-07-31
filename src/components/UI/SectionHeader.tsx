@@ -13,6 +13,8 @@ interface SectionHeaderProps {
   description: string;
   /** Color del contenedor del icono (bg, text, border). Ej: "sky" */
   color?: string;
+  /** Acciones opcionales alineadas a la derecha (botones de exportación, etc.). */
+  actions?: ReactNode;
 }
 
 const COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
@@ -26,18 +28,21 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = 
   slate: { bg: "bg-slate-50", text: "text-slate-600", border: "border-slate-100" },
 };
 
-export default function SectionHeader({ icon, title, description, color = "sky" }: SectionHeaderProps) {
+export default function SectionHeader({ icon, title, description, color = "sky", actions }: SectionHeaderProps) {
   const c = COLOR_MAP[color] ?? COLOR_MAP.sky;
 
   return (
-    <div className="flex items-center gap-3.5 border-b border-slate-100 pb-5 mb-6">
-      <div className={`${c.bg} ${c.text} ${c.border} p-2.5 rounded-xl border`}>
-        {icon}
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-5 mb-6">
+      <div className="flex items-center gap-3.5">
+        <div className={`${c.bg} ${c.text} ${c.border} p-2.5 rounded-xl border`}>
+          {icon}
+        </div>
+        <div>
+          <h2 className="font-sans font-bold text-slate-900 text-base">{title}</h2>
+          <p className="text-xs text-slate-500 font-medium">{description}</p>
+        </div>
       </div>
-      <div>
-        <h2 className="font-sans font-bold text-slate-900 text-base">{title}</h2>
-        <p className="text-xs text-slate-500 font-medium">{description}</p>
-      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
