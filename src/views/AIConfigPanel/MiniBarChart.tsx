@@ -1,8 +1,57 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { AiUsageDaily } from "../../hooks/useAIConfig";
 
+type ViewMode = "daily" | "weekly";
+
+function TabButton({
+  label,
+  mode,
+  active,
+  onClick,
+}: {
+  label: string;
+  mode: ViewMode;
+  active: boolean;
+  onClick: (mode: ViewMode) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(mode)}
+      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-t-md transition-colors cursor-pointer ${
+        active
+          ? "bg-violet-100 text-violet-700 border-b-2 border-violet-500"
+          : "text-slate-500 hover:text-slate-700"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
-  const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
+  const [viewMode, setViewMode] = useState<ViewMode>("daily");
+
+  // Todos los hooks se ejecutan incondicionalmente (regla de hooks): el early
+  // return de "sin datos" estaba antes de useMemo → cuando `data` pasaba de
+  // vacío a no vacío React lanzaba "Rendered fewer hooks than expected".
+  const { currentData, maxVal } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { currentData: [] as AiUsageDaily[], maxVal: 1 };
+    }
+    const slice = viewMode === "daily" ? data.slice(-14) : data.slice(-7);
+    return {
+      currentData: slice,
+      maxVal: Math.max(...slice.map((d) => d.total_tokens), 1),
+    };
+  }, [data, viewMode]);
+
+  const chartLabel = useMemo(() => {
+    const lines = currentData
+      .map((d) => `${d.date.slice(5)}: ${d.total_tokens.toLocaleString()} tokens`)
+      .join(", ");
+    return `Gráfico de uso de tokens. ${lines}. Máximo: ${maxVal.toLocaleString()}`;
+  }, [currentData, maxVal]);
 
   if (!data || data.length === 0) {
     return (
@@ -12,37 +61,13 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
     );
   }
 
-  const dailyData = data.slice(-14);
-  const weeklyData = data.slice(-7);
-
-  const currentData = viewMode === "daily" ? dailyData : weeklyData;
-  const maxVal = Math.max(...currentData.map((d) => d.total_tokens), 1);
-
-  const chartLabel = useMemo(() => {
-    const lines = currentData.map(d => `${d.date.slice(5)}: ${d.total_tokens.toLocaleString()} tokens`).join(", ");
-    return `Gráfico de uso de tokens. ${lines}. Máximo: ${maxVal.toLocaleString()}`;
-  }, [currentData, maxVal]);
-
-  const TabButton = ({ label, mode }: { label: string; mode: "daily" | "weekly" }) => (
-    <button
-      onClick={() => setViewMode(mode)}
-      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-t-md transition-colors cursor-pointer ${
-        viewMode === mode
-          ? "bg-violet-100 text-violet-700 border-b-2 border-violet-500"
-          : "text-slate-500 hover:text-slate-700"
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   const isDaily = viewMode === "daily";
 
   return (
     <div className="space-y-3">
       <div className="flex gap-1 border-b border-slate-200 pb-2">
-        <TabButton label="Diario (14d)" mode="daily" />
-        <TabButton label="7 días" mode="weekly" />
+        <TabButton label="Diario (14d)" mode="daily" active={isDaily} onClick={setViewMode} />
+        <TabButton label="7 días" mode="weekly" active={!isDaily} onClick={setViewMode} />
       </div>
 
       <div role="img" aria-label={chartLabel}>

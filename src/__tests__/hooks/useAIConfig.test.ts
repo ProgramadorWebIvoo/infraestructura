@@ -14,6 +14,7 @@ vi.mock("@/services/logger", () => ({
 }));
 
 import { useAIConfig, type AiConfigRecord, type AiConfigForm, EMPTY_CONFIG_FORM } from "../../hooks/useAIConfig";
+import { PROVIDER_MODELS } from "../../constants/aiModels";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockConfig(overrides: Partial<AiConfigRecord> = {}): AiConfigRecord {
@@ -122,10 +123,37 @@ describe("useAIConfig", () => {
       expect(result.current.providerModels).toEqual(models);
     });
 
-    it("empieza con providerModels vacío antes de cargar", () => {
+    it("empieza con el catálogo constante de modelos (nunca vacío)", () => {
       mockApiFetch.mockResolvedValue([]);
       const { result } = renderHook(() => useAIConfig("token"));
-      expect(result.current.providerModels).toEqual({});
+      expect(result.current.providerModels).toEqual(PROVIDER_MODELS);
+    });
+
+    it("el endpoint puede EXTENDER el catálogo constante, no vaciarlo", async () => {
+      // El backend devuelve un proveedor nuevo + uno conocido con menos modelos
+      const backendModels = { anthropic: ["claude-opus-9"] };
+      mockApiFetch.mockImplementation((path: string) =>
+        path === "/ai/config/models" ? Promise.resolve(backendModels) : Promise.resolve([]),
+      );
+
+      const { result } = renderHook(() => useAIConfig("token"));
+      await waitForLoad();
+
+      // anthropic queda reemplazado por lo del backend; el resto sigue del catálogo
+      expect(result.current.providerModels.anthropic).toEqual(["claude-opus-9"]);
+      expect(result.current.providerModels.openai).toEqual(PROVIDER_MODELS.openai);
+      expect(result.current.providerModels.gemini).toEqual(PROVIDER_MODELS.gemini);
+    });
+
+    it("conserva el catálogo constante si el fetch de modelos falla", async () => {
+      mockApiFetch.mockImplementation((path: string) =>
+        path === "/ai/config/models" ? Promise.reject(new Error("offline")) : Promise.resolve([]),
+      );
+
+      const { result } = renderHook(() => useAIConfig("token"));
+      await waitForLoad();
+
+      expect(result.current.providerModels).toEqual(PROVIDER_MODELS);
     });
   });
 

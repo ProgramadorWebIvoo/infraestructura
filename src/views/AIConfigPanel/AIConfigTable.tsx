@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   Check,
   CheckCircle,
@@ -20,6 +20,49 @@ import Button from "../../components/UI/Button";
 import { itemVariants } from "../../animations";
 import type { AiConfigRecord } from "../../hooks/useAIConfig";
 import ProviderIcon from "./ProviderIcon";
+
+// ---------------------------------------------------------------------------
+// Guard de seguridad (hallazgo ALTO de la auditoría 29/07): el backend
+// devuelve solo los últimos 4 chars ("••••wxyz" = 8 chars). Si por cualquier
+// escenario (debug, malformación) llegara una clave más larga, se enmascara
+// por completo en runtime para no exponerla en el DOM.
+// ---------------------------------------------------------------------------
+function maskApiKey(record: AiConfigRecord): string {
+  if (!record.hasApiKey) return "";
+  return record.apiKey.length > 8 ? "••••••••" : record.apiKey;
+}
+
+// ---------------------------------------------------------------------------
+// Botón de acción de fila (4 usos idénticos salvo hover/estado)
+// ---------------------------------------------------------------------------
+function RowActionButton({
+  label,
+  title,
+  onClick,
+  disabled = false,
+  hoverClass,
+  children,
+}: {
+  label: string;
+  title: string;
+  onClick: () => void;
+  disabled?: boolean;
+  hoverClass: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40 ${hoverClass}`}
+      aria-label={label}
+      title={title}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function AIConfigTable({
   configs,
@@ -70,7 +113,7 @@ export default function AIConfigTable({
           title={c.hasApiKey ? "Clave configurada (solo últimos 4 visibles)" : "Sin clave"}
         >
           {c.hasApiKey ? (
-            c.apiKey
+            maskApiKey(c)
           ) : (
             <span className="text-slate-300 italic">—</span>
           )}
@@ -114,52 +157,52 @@ export default function AIConfigTable({
       align: "center",
       render: (c) => (
         <div className="flex items-center justify-center gap-1">
-          <button
+          <RowActionButton
+            label={`Probar conexión ${c.model}`}
+            title="Probar conexión"
             onClick={() => onTest(c.id)}
             disabled={testingId === c.id || !c.isActive}
-            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label={`Probar conexión ${c.model}`}
-            title="Probar conexión"
+            hoverClass="hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
           >
             {testingId === c.id ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Server className="h-3.5 w-3.5" />
             )}
-          </button>
-          <button
-            onClick={() => onEdit(c)}
-            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-md"
-            aria-label={`Editar ${c.model}`}
+          </RowActionButton>
+          <RowActionButton
+            label={`Editar ${c.model}`}
             title="Editar configuración"
+            onClick={() => onEdit(c)}
+            hoverClass="hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
           >
             <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => onToggleActive(c)}
-            className={`rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
-              c.isActive
-                ? "border-amber-200 bg-white text-amber-400 hover:bg-amber-50 hover:text-amber-600"
-                : "border-emerald-200 bg-white text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
-            }`}
-            aria-label={c.isActive ? "Desactivar" : "Activar"}
+          </RowActionButton>
+          <RowActionButton
+            label={c.isActive ? "Desactivar" : "Activar"}
             title={c.isActive ? "Desactivar modelo" : "Activar modelo"}
+            onClick={() => onToggleActive(c)}
+            hoverClass={
+              c.isActive
+                ? "border-amber-200 text-amber-400 hover:bg-amber-50 hover:text-amber-600"
+                : "border-emerald-200 text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
+            }
           >
             {c.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-          </button>
-          <button
+          </RowActionButton>
+          <RowActionButton
+            label={`Eliminar ${c.model}`}
+            title="Eliminar configuración"
             onClick={() => onDelete(c.id)}
             disabled={deletingId === c.id}
-            className="rounded-lg border border-red-200 bg-white p-1.5 text-red-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label={`Eliminar ${c.model}`}
-            title="Eliminar configuración"
+            hoverClass="border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600"
           >
             {deletingId === c.id ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Trash2 className="h-3.5 w-3.5" />
             )}
-          </button>
+          </RowActionButton>
         </div>
       ),
     },

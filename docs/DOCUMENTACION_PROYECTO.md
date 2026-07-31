@@ -98,7 +98,6 @@ src/
 │   │   ├── EmptyState.tsx
 │   │   ├── FileDropZone.tsx
 │   │   ├── KpiCard.tsx
-│   │   ├── MiniBarChart.tsx
 │   │   ├── OfflineBanner.tsx
 │   │   ├── MobileTopBar.tsx
 │   │   ├── SectionHeader.tsx
@@ -133,7 +132,7 @@ src/
 │   ├── ProcuraPanel.tsx
 │   ├── AnalistasPanel.tsx
 │   ├── FinanzasPanel.tsx
-│   ├── AIConfigPanel/         # index.tsx + AIConfigTable.tsx + ProviderIcon.tsx + SyncBanner.tsx + UsageDashboard.tsx
+│   ├── AIConfigPanel/         # index.tsx + AIConfigTable.tsx + ProviderIcon.tsx + SyncBanner.tsx + UsageDashboard.tsx + MiniBarChart.tsx + aiConfigForm.ts
 │   ├── UsuariosPanel/         # index.tsx + UserRow.tsx + UserRegistrationForm.tsx
 │   ├── ProveedoresRegistrados/ # index.tsx + ContractorsSection.tsx + InviteModal.tsx + RatingModal.tsx + SupplierProposalsList.tsx
 │   ├── ProveedoresConfigPanel.tsx

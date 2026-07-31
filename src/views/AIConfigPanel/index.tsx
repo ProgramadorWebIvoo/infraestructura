@@ -13,6 +13,7 @@ import {
 import SyncBanner from "./SyncBanner";
 import UsageDashboard from "./UsageDashboard";
 import AIConfigTable from "./AIConfigTable";
+import { validateConfigForm, buildUpdatePayload } from "./aiConfigForm";
 import AIConfigFormModal from "../../components/Modals/AIConfigFormModal";
 
 export default function AIConfigPanel({ authToken }: { authToken: string }) {
@@ -87,12 +88,9 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
   };
 
   const handleSave = async () => {
-    if (!form.model.trim()) {
-      showToast("El nombre del modelo es obligatorio.", "error");
-      return;
-    }
-    if (modalMode === "create" && !form.apiKey.trim()) {
-      showToast("La API Key es obligatoria.", "error");
+    const validationError = validateConfigForm(form, modalMode);
+    if (validationError) {
+      showToast(validationError, "error");
       return;
     }
 
@@ -102,14 +100,7 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
         await createConfig(form);
         showToast("Configuración creada correctamente.", "success");
       } else if (editingId) {
-        const payload: Record<string, unknown> = { model: form.model };
-        if (form.apiKey.trim()) payload.apiKey = form.apiKey;
-        payload.baseUrl = form.baseUrl || null;
-        payload.maxTokens = form.maxTokens === "" ? 4096 : form.maxTokens;
-        payload.isActive = form.isActive;
-        payload.isFallback = form.isFallback;
-        payload.sortOrder = form.sortOrder;
-        await updateConfig(editingId, payload as Partial<AiConfigForm>);
+        await updateConfig(editingId, buildUpdatePayload(form));
         showToast("Configuración actualizada correctamente.", "success");
       }
       handleCloseModal();

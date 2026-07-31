@@ -8,6 +8,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../services/api";
 import { logError, getErrorMessage } from "../services/logger";
+// Re-export de constantes de dominio: las vistas las consumen desde el hook
+// (API pública estable) pero la fuente de verdad vive en constants/aiProviders.
+export {
+  AI_PROVIDERS,
+  PROVIDER_LABELS,
+  PROVIDER_COLORS,
+  providerColor,
+} from "../constants/aiProviders";
+import type { AIProvider } from "../constants/aiProviders";
+import { PROVIDER_MODELS } from "../constants/aiModels";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,7 +25,7 @@ import { logError, getErrorMessage } from "../services/logger";
 
 export interface AiConfigRecord {
   id: number;
-  provider: "openai" | "anthropic" | "gemini";
+  provider: AIProvider;
   model: string;
   hasApiKey: boolean;
   apiKey: string; // solo últimos 4 chars visibles (ej. "••••wxyz")
@@ -29,7 +39,7 @@ export interface AiConfigRecord {
 }
 
 export interface AiConfigForm {
-  provider: "openai" | "anthropic" | "gemini";
+  provider: AIProvider;
   model: string;
   apiKey: string;
   baseUrl: string;
@@ -37,6 +47,21 @@ export interface AiConfigForm {
   isActive: boolean;
   isFallback: boolean;
   sortOrder: number;
+}
+
+/**
+ * Payload de actualización. baseUrl es nullable (vacío → null en backend) y
+ * apiKey es opcional (vacío = conservar la actual). Difieren de AiConfigForm
+ * porque el formulario usa strings para ambos.
+ */
+export interface AiConfigUpdatePayload {
+  model?: string;
+  apiKey?: string;
+  baseUrl?: string | null;
+  maxTokens?: number;
+  isActive?: boolean;
+  isFallback?: boolean;
+  sortOrder?: number;
 }
 
 export const EMPTY_CONFIG_FORM: AiConfigForm = {
@@ -87,32 +112,6 @@ export interface AiUsageData {
   totals: AiUsageTotals;
 }
 
-const INITIAL_USAGE: AiUsageTotals = {
-  prompt_tokens: 0,
-  completion_tokens: 0,
-  total_tokens: 0,
-  total_cost: 0,
-  total_requests: 0,
-  successful_requests: 0,
-  failed_requests: 0,
-};
-
-// ---------------------------------------------------------------------------
-// Provider labels & models
-// ---------------------------------------------------------------------------
-
-export const PROVIDER_LABELS: Record<string, string> = {
-  openai: "OpenAI (ChatGPT)",
-  anthropic: "Anthropic (Claude)",
-  gemini: "Google Gemini",
-};
-
-export const PROVIDER_COLORS: Record<string, { border: string; badge: string; btn: string }> = {
-  openai: { border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700", btn: "from-emerald-600 to-emerald-500" },
-  anthropic: { border: "border-l-amber-400", badge: "bg-amber-50 text-amber-700", btn: "from-amber-600 to-amber-500" },
-  gemini: { border: "border-l-blue-400", badge: "bg-blue-50 text-blue-700", btn: "from-blue-600 to-blue-500" },
-};
-
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -124,7 +123,12 @@ export function useAIConfig(authToken: string) {
   const [isUsageLoading, setIsUsageLoading] = useState(true);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncIsError, setSyncIsError] = useState(false);
-  const [providerModels, setProviderModels] = useState<Record<string, string[]>>({});
+  // Catálogo constante como base editable en código (constants/aiModels.ts).
+  // El endpoint solo puede EXTENDERLO (modelos nuevos que aparezcan en
+  // backend/producción) — nunca deja el selector vacío aunque falle.
+  const [providerModels, setProviderModels] = useState<Record<string, string[]>>(
+    () => PROVIDER_MODELS,
+  );
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -144,14 +148,17 @@ export function useAIConfig(authToken: string) {
     }
   }, []);
 
-  // Load selectable models per provider — fuente de verdad: backend
-  // (config/ai.php), no hardcodeado en el frontend.
+  // Carga modelos seleccionables por proveedor. Base: catálogo constante
+  // (constants/aiModels.ts); el backend (config/ai.php → available_models)
+  // solo puede extender el catálogo, no vaciarlo.
   const loadProviderModels = useCallback(async () => {
     if (!authTokenRef.current) return;
     try {
       const data = await apiFetch<Record<string, string[]>>("/ai/config/models");
-      setProviderModels(data);
+      setProviderModels({ ...PROVIDER_MODELS, ...data });
     } catch (err) {
+      // Ante fallo se conserva el catálogo constante — el selector nunca
+      // queda sin opciones.
       logError("useAIConfig.loadProviderModels", err);
     }
   }, []);
@@ -198,7 +205,7 @@ export function useAIConfig(authToken: string) {
   }, []);
 
   // Update config
-  const updateConfig = useCallback(async (id: number, form: Partial<AiConfigForm>): Promise<AiConfigRecord> => {
+  const updateConfig = useCallback(async (id: number, form: AiConfigUpdatePayload): Promise<AiConfigRecord> => {
     const updated = await apiFetch<AiConfigRecord>(`/ai/config/${id}`, {
       method: "PATCH",
       body: JSON.stringify(form),
