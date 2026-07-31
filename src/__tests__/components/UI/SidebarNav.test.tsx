@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SidebarNav from "../../../components/UI/SidebarNav";
 
@@ -28,9 +28,9 @@ describe("SidebarNav", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the IVOO brand", () => {
+  it("renders the IVOO brand (company logo + Gestión label)", () => {
     renderSidebar();
-    expect(screen.getByText("IVOO")).toBeInTheDocument();
+    expect(screen.getByAltText("IVOO")).toBeInTheDocument();
     expect(screen.getByText("Gestión")).toBeInTheDocument();
   });
 
@@ -87,7 +87,7 @@ describe("SidebarNav", () => {
     expect(screen.queryByText("Configuración")).not.toBeInTheDocument();
   });
 
-  it("toggles configuration dropdown when button is clicked", () => {
+  it("toggles configuration dropdown when button is clicked", async () => {
     renderSidebar();
 
     const configBtn = screen.getByText("Configuración");
@@ -101,7 +101,9 @@ describe("SidebarNav", () => {
     expect(screen.getByText("Modelos de IA")).toBeInTheDocument();
 
     fireEvent.click(configBtn);
-    expect(screen.queryByText("Usuarios")).not.toBeInTheDocument();
+    // El submenú es un acordeón con animación de salida (AnimatePresence):
+    // la remoción del DOM ocurre al terminar el exit, no en el mismo tick.
+    await waitFor(() => expect(screen.queryByText("Usuarios")).not.toBeInTheDocument());
   });
 
   it("renders logout button and calls onLogout on click", () => {

@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { Building2, LogIn, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { LogIn, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useRateLimit } from "../../hooks/useRateLimit";
 
 interface LoginFormProps {
@@ -48,13 +48,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
   return (
     <div className="relative w-full max-w-md animate-slide-up rounded-2xl border border-slate-700/60 bg-white/95 p-7 text-slate-900 shadow-2xl shadow-slate-950/50 backdrop-blur-xl sm:p-8">
-      {/* Logo y título */}
+      {/* Logo oficial y título */}
       <div className="mb-7 flex items-center gap-3.5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 ring-1 ring-white/20">
-          <Building2 className="h-5 w-5 stroke-[2.5]" aria-hidden="true" />
+        <div className="shrink-0 overflow-hidden rounded-xl ring-1 ring-slate-300/60 shadow-lg shadow-emerald-500/15">
+          <img src="/ivoo_logoo.png" alt="IVOO" className="block h-12 w-auto" />
         </div>
         <div>
-          <h1 className="text-xl font-black tracking-tight text-emerald-600"><span className="font-brand">IVOO</span> <span className="text-slate-900">Gestión</span></h1>
+          <h1 className="text-xl font-black tracking-tight text-slate-900">Gestión</h1>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
             Acceso interno
           </p>

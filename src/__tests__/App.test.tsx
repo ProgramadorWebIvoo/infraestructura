@@ -82,6 +82,7 @@ vi.mock("@/views/UsuariosPanel", () => ({
 // Mock motion
 vi.mock("motion/react", () => ({
   useReducedMotion: () => false,
+  MotionConfig: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {

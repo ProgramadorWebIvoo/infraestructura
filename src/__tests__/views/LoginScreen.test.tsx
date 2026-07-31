@@ -71,9 +71,9 @@ describe("LoginScreen", () => {
   // -----------------------------------------------------------------------
 
   describe("renderizado", () => {
-    it("muestra el logo y título", () => {
+    it("muestra el logo oficial y título", () => {
       render(<LoginScreen onLogin={mockOnLogin} />);
-      expect(screen.getByText("IVOO")).toBeInTheDocument();
+      expect(screen.getByAltText("IVOO")).toBeInTheDocument();
       expect(screen.getByText("Gestión")).toBeInTheDocument();
       expect(screen.getByText("Acceso interno")).toBeInTheDocument();
     });

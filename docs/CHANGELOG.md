@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [2026-07-31] — Logo oficial también en la pantalla de login
+- Tipo: feature
+- Qué: en `LoginForm` el tile emerald con icono Building2 + wordmark "IVOO" se reemplaza por el **logo oficial de la empresa** (`/ivoo_logoo.png`) como chip redondeado (rounded-xl, ring slate, sombra esmeralda) a `h-12` (~144px), con "Gestión" como título y "Acceso interno" como subtítulo — se elimina el texto "IVOO" duplicado (el logo ya es el wordmark). Se quitó el import de `Building2` (ya sin uso en el componente).
+- Por qué / causa raíz: el usuario pidió el mismo logo de la empresa en la pantalla de login (consistencia de marca con la sidebar).
+- Archivos: `src/views/LoginScreen/LoginForm.tsx`, `src/__tests__/views/LoginScreen.test.tsx` (test de brand → `getByAltText("IVOO")`).
+- Verificación: `tsc --noEmit` 0 errores; suite completa **479/479**.
+
+## [2026-07-31] — Sidebar profesionalizada: logo oficial, colapso pulido, tooltips, acordeón y estados activos
+- Tipo: feature + refactor + fix
+- Qué:
+  - **Logo oficial de la empresa en el header** (`public/ivoo_logoo.png`, wordmark 225×75 fondo verde esmeralda): en modo expandido se muestra como chip redondeado (rounded-xl, ring blanco, sombra esmeralda) a `h-9` (~108px) dentro de una fila de altura fija `h-10` para que el alto del header (64px) sea idéntico en ambos estados y no salte al colapsar. En modo colapsado (rail de 64px) no cabe un 3:1, así que se conserva el tile emerald con el icono Building2. Se eliminó el wordmark de texto "IVOO" + tagline (ahora el brand es el logo real + etiqueta "Gestión").
+  - **Colapso rematado**: ancho del rail con easing `cubic-bezier(0.22,1,0.36,1)` (ease-out-quint), sombra del drawer mobile, etiquetas con fade direccional — entran con `delay-100` tras abrir el ancho (300ms) y salen rápido sin delay (`duration-150`) — y `visibility` no animada para que la etiqueta oculta no reciba foco/clic **sin reintroducir el artefacto de "línea negra" de recorte** (se corrigió un intento de animar `max-width`, que era el bug visual).
+  - **Tooltips en modo colapsado**: nuevo `SidebarTip` — tooltip flotante con flecha, entrada spring (opacity/x/scale), `role="tooltip"`, se renderiza en **portal a `document.body`** (el nav tiene `overflow-y-auto` y el aside `transform-gpu`: un tooltip `fixed` dentro del árbol quedaría recortado o re-posicionado contra un containing block distinto al viewport). Los handlers/ref se clonan sobre el target (`cloneElement` + `Children.only`) sin nodo wrapper para no alterar el layout flex/space-y. Se dispara con hover y focus (a11y). Aplica a: 7 links, logo, avatar (nombre+email), logout, botón y sub-ítems de Configuración.
+  - **Estados activos**: los links activos ahora tienen punto indicador luminoso a la derecha (`after:` con glow), ring interior blanco y sombra; icono activo con drop-shadow sutil. Focus-visible rings en links, colapso, logout y config.
+  - **Botón de colapso**: tamaño `w-7 h-7`, flecha chevron con spring (300/22/0.5), `aria-expanded`, glow sky en hover, `active:scale-95`.
+  - **ConfigDropdown**: submenú como **acordeón** (altura animada con `AnimatePresence` height 0→auto, easing expo-out) en lugar de montar/desmontar; el botón se ilumina si una ruta de configuración está activa (`useLocation`); el submenú se auto-abre si se llega con una ruta de config activa.
+  - **`MotionConfig reducedMotion="user"`** envolviendo el sidebar: todas las animaciones JS respetan `prefers-reduced-motion`.
+  - **Fix del fallo pre-existente de SidebarNav** (documentado en el changelog como "único fallo ajeno"): el test `collapsed sidebar narrows to w-16 and centers icons` exigía `justify-center px-0 gap-0` en links colapsados y el código no los emitía — la clase colapsada ahora los incluye.
+- Por qué / causa raíz: el usuario pidió profesionalizar la sidebar y sus estilos/animaciones de colapso, e integrar el logo de la empresa; el artefacto de recorte al animar `max-width` (comentado en `sidebarNavClasses.ts`) se reintrodujo en un primer intento y se corrigió volviendo a animar solo `opacity`.
+- Archivos: `src/components/UI/SidebarTip.tsx` [NUEVO], `src/components/UI/SidebarNav.tsx`, `src/components/UI/ConfigDropdown.tsx`, `src/components/UI/sidebarNavClasses.ts`, `src/__tests__/components/UI/SidebarNav.test.tsx` (test de brand → `getByAltText`; toggle de dropdown → `waitFor` por la animación de salida del acordeón), `src/__tests__/components/Layout/AuthenticatedLayout.test.tsx` y `src/__tests__/App.test.tsx` (mocks de `motion/react` + `MotionConfig`), `public/ivoo_logoo.png` (referenciado).
+- Verificación: `tsc --noEmit` 0 errores; suite completa **479/479** (antes 478/479 con el fallo pre-existente de SidebarNav); `vite build` OK con `ivoo_logoo.png` copiado a `dist/`.
+
 ## [2026-07-31] — ExportButton con estilos (Excel/PDF atractivos) + botones en "Diario de Egresos y Transferencias" (Finanzas)
 - Tipo: feature
 - Qué:
