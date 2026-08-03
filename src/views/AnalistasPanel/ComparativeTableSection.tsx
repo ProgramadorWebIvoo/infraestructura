@@ -6,15 +6,16 @@
  * AnalistasPanel.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Project } from "../../types";
 import { useToast } from "../../components/UI/Toast";
-import { Award, FileSpreadsheet, LayoutList, Loader2, Send, Trash2 } from "lucide-react";
+import { Award, FileSpreadsheet, LayoutList, Loader2, Send, Trash2, Trophy } from "lucide-react";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
 import Button from "../../components/UI/Button";
 import EmptyState from "../../components/UI/EmptyState";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import { formatNumber } from "../../utils";
 
 interface ImportResult {
   message: string;
@@ -40,6 +41,10 @@ export default function ComparativeTableSection({
   const { showToast } = useToast();
   const [isImporting, setIsImporting] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+
+  const proposals = useMemo(() => activeProject?.proposals ?? [], [activeProject]);
+  const techo = activeProject?.approvedInvestmentAmount ?? 0;
+  const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
 
   const handleImport = async () => {
     if (!activeProject || !onImportSupplierProposals) return;
@@ -68,7 +73,7 @@ export default function ComparativeTableSection({
 
   return (
     <>
-      <Card hoverable={false} className="border-l-4 border-l-sky-400">
+      <Card hoverable={false} className="border-l-4 border-l-sky-400 h-full flex flex-col">
         <SectionHeader
           icon={<Award className="h-5 w-5" />}
           title="Cuadro Comparativo Digital"
@@ -77,24 +82,41 @@ export default function ComparativeTableSection({
         />
 
         {!activeProject ? (
-          <EmptyState
-            icon={<Award className="h-8 w-8" />}
-            message="Seleccione un expediente en el panel izquierdo para ver su cuadro comparativo."
-          />
+          <div className="flex-1 flex items-center">
+            <EmptyState
+              icon={<Award className="h-8 w-8" />}
+              message="Seleccione un expediente en el panel izquierdo para ver su cuadro comparativo."
+            />
+          </div>
         ) : (
-          <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-br from-sky-50/50 to-white rounded-xl border border-sky-100/60 text-xs">
-              <span className="font-bold text-sky-900 block mb-1">Techo de Inversión Aprobado:</span>
-              <span className="font-mono font-black text-sky-700 text-base">
-                ${activeProject.approvedInvestmentAmount?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-              </span>
-              <p className="text-[10px] text-slate-500 mt-2 font-medium">Definido por la Gerencia de Procura según ficha técnica de Cierre de Obra.</p>
+          <div className="flex-1 flex flex-col space-y-4">
+            {/* Techo de inversión + stats del cuadro */}
+            <div className="p-4 bg-gradient-to-br from-sky-50/50 to-white rounded-xl border border-sky-100/60 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-sky-900 text-xs">Techo de Inversión Aprobado:</span>
+                <span className="font-mono font-black text-sky-700 text-base">
+                  ${techo.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium">Definido por la Gerencia de Procura según ficha técnica de Cierre de Obra.</p>
+
+              {proposals.length > 0 && (
+                <div className="pt-2 border-t border-sky-100/60">
+                  <div className="rounded-lg bg-emerald-50/60 border border-emerald-100 p-2.5">
+                    <div className="flex items-center gap-1 text-emerald-600 text-[9px] font-black uppercase tracking-wider">
+                      <Trophy className="h-3 w-3" /> Mejor Oferta
+                    </div>
+                    <div className="font-mono font-black text-emerald-700 text-sm mt-0.5">${formatNumber(best?.totalCost ?? 0)}</div>
+                    <div className="text-[9px] text-slate-500 font-medium truncate" title={best?.contractorName}>{best?.contractorName}</div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Propuestas Ingresadas ({activeProject.proposals?.length || 0}):
+                  Propuestas Ingresadas ({proposals.length}):
                 </span>
                 <Button
                   onClick={handleImport}
@@ -109,30 +131,43 @@ export default function ComparativeTableSection({
                 </Button>
               </div>
               <div
-                className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1"
+                className="space-y-2.5 max-h-[185px] overflow-y-auto pr-1 pb-1 scroll-smooth scroll-pb-1"
               >
-                {activeProject.proposals?.map((prop) => (
-                  <div
-                    key={prop.id}
-                    className="p-3.5 border border-slate-100 bg-white rounded-xl flex items-center justify-between gap-3 shadow-xs hover:border-emerald-200 hover:shadow-sm transition-all duration-200"
-                    style={{ contentVisibility: "auto", contain: "layout style paint" }}
-                  >
-                    <div>
-                      <div className="font-bold text-slate-800 text-xs">{prop.contractorName}</div>
-                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">Plazo: {prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} sem` : "Sin dato"} | Anticipo: {prop.negotiatedAdvancePercent}%</div>
-                      <div className="font-mono text-[11px] text-emerald-600 font-bold mt-1">${prop.totalCost.toLocaleString()} USD</div>
-                    </div>
-                    <button
-                      id={`btn-delete-proposal-${prop.id}`}
-                      onClick={() => onRemoveProposal(activeProject.id, prop.id)}
-                      className="text-rose-400 hover:bg-rose-50 hover:text-rose-600 p-2 rounded-xl transition-colors shrink-0 cursor-pointer"
+                {proposals.map((prop) => {
+                  const isBest = prop.id === best?.id && proposals.length > 1;
+                  return (
+                    <div
+                      key={prop.id}
+                      className={`p-3.5 border bg-white rounded-xl flex items-center justify-between gap-3 shadow-xs transition-all duration-200 ${
+                        isBest ? "border-emerald-300 ring-1 ring-emerald-100" : "border-slate-100 hover:border-emerald-200 hover:shadow-sm"
+                      }`}
+                      style={{ contentVisibility: "auto", contain: "layout style paint" }}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-800 text-xs truncate">{prop.contractorName}</span>
+                          {isBest && (
+                            <span className="text-[8px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md border border-emerald-200 shrink-0">
+                              Mejor
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">Plazo: {prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} sem` : "Sin dato"} | Anticipo: {prop.negotiatedAdvancePercent}%</div>
+                        <div className="font-mono text-[11px] text-emerald-600 font-bold mt-1">${prop.totalCost.toLocaleString()} USD</div>
+                      </div>
+                      <button
+                        id={`btn-delete-proposal-${prop.id}`}
+                        onClick={() => onRemoveProposal(activeProject.id, prop.id)}
+                        className="text-rose-400 hover:bg-rose-50 hover:text-rose-600 p-2 rounded-xl transition-colors shrink-0 cursor-pointer"
+                        aria-label={`Eliminar propuesta de ${prop.contractorName}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
 
-                {(!activeProject.proposals || activeProject.proposals.length === 0) && (
+                {proposals.length === 0 && (
                   <EmptyState
                     icon={<FileSpreadsheet className="h-6 w-6" />}
                     message="Ninguna oferta registrada. Use el formulario en el panel izquierdo o importe desde el portal de proveedores."
@@ -141,8 +176,8 @@ export default function ComparativeTableSection({
               </div>
             </div>
 
-            {activeProject.proposals && activeProject.proposals.length > 0 && (
-              <div className="border-t border-slate-100 pt-5 space-y-3">
+            {proposals.length > 0 && (
+              <div className="mt-auto border-t border-slate-100 pt-5 space-y-3">
                 <Button
                   id="btn-analistas-submit-comparative"
                   onClick={handleSubmit}
@@ -175,7 +210,7 @@ export default function ComparativeTableSection({
           setConfirmSubmit(false);
         }}
         title="Enviar Cuadro Comparativo"
-        message={`¿Estás seguro de enviar el cuadro comparativo con ${activeProject?.proposals?.length ?? 0} propuestas a la Gerencia de Procura? Una vez enviado, Procura revisará las ofertas y procederá con la adjudicación.`}
+        message={`¿Estás seguro de enviar el cuadro comparativo con ${proposals.length} propuestas a la Gerencia de Procura? Una vez enviado, Procura revisará las ofertas y procederá con la adjudicación.`}
         variant="info"
         confirmLabel="Enviar a Procura"
       />

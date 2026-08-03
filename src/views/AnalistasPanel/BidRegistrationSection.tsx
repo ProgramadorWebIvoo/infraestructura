@@ -9,12 +9,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Project, Contractor, Proposal } from "../../types";
-import { FileSpreadsheet, FolderOpen, Plus, Users } from "lucide-react";
+import { FileSpreadsheet, FolderOpen, MapPin, Plus, Users } from "lucide-react";
 import Card from "../../components/UI/Card";
 import SectionHeader from "../../components/UI/SectionHeader";
 import NumericInput from "../../components/UI/NumericInput";
 import EmptyState from "../../components/UI/EmptyState";
 import SelectModal from "../../components/UI/SelectModal";
+import Button from "../../components/UI/Button";
+import { formatNumber } from "../../utils";
 
 interface BidRegistrationSectionProps {
   pendingLicitacion: Project[];
@@ -58,6 +60,8 @@ export default function BidRegistrationSection({
     raw: c,
   }));
 
+  const newTotal = (Number(materialCost) || 0) + (Number(laborCost) || 0);
+
   const handleAddProposal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProjectId) return;
@@ -88,7 +92,7 @@ export default function BidRegistrationSection({
   };
 
   return (
-    <Card className="border-l-4 border-l-emerald-400">
+    <Card className="border-l-4 border-l-emerald-400 h-full flex flex-col">
       <SectionHeader
         icon={<FileSpreadsheet className="h-5 w-5" />}
         title="Carga de Propuestas de Contratistas"
@@ -96,12 +100,14 @@ export default function BidRegistrationSection({
       />
 
       {pendingLicitacion.length === 0 ? (
-        <EmptyState
-          icon={<FolderOpen className="h-8 w-8" />}
-          message="No hay expedientes en licitación activa. Vaya al panel de Procura o Cierre de Obra para avanzar flujos."
-        />
+        <div className="flex-1 flex items-center">
+          <EmptyState
+            icon={<FolderOpen className="h-8 w-8" />}
+            message="No hay expedientes en licitación activa. Vaya al panel de Procura o Cierre de Obra para avanzar flujos."
+          />
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="flex-1 flex flex-col space-y-4">
           {/* Select Project - using SelectModal */}
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Seleccionar Expediente a Cotizar:</label>
@@ -127,122 +133,135 @@ export default function BidRegistrationSection({
             {activeProject && (
               <motion.div
                 key="analistas-project-detail"
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 0 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="space-y-5 pt-2 overflow-hidden"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="space-y-5 pt-2"
               >
-              {/* Adder Form */}
-              <form onSubmit={handleAddProposal} className="p-5 bg-gradient-to-br from-emerald-50/30 to-white rounded-xl border border-emerald-100/60 space-y-4">
-                <div className="flex items-center gap-2.5 pb-3 border-b border-emerald-100/60">
-                  <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
-                    <Users className="h-4 w-4 text-emerald-600" />
+                {/* Resumen del expediente seleccionado */}
+                <div className="p-4 bg-gradient-to-br from-emerald-50/40 to-white rounded-xl border border-emerald-100/60 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[9px] font-bold text-emerald-600">{activeProject.id}</span>
                   </div>
-                  <h4 className="text-xs font-bold text-slate-800">Registrar Oferta del Proveedor</h4>
+                  <h4 className="text-sm font-bold text-slate-800">{activeProject.title}</h4>
+                  <p className="text-[10px] text-slate-500 flex items-center gap-1 font-medium">
+                    <MapPin className="h-3 w-3 shrink-0" /> {activeProject.location}
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Proveedor / Contratista</label>
-                    <SelectModal
-                      isOpen={isContractorModalOpen}
-                      onClose={() => setIsContractorModalOpen(false)}
-                      onOpen={() => setIsContractorModalOpen(true)}
-                      onSelect={(opt) => setContractorCode(opt.value as string)}
-                      onDeselect={() => setContractorCode("")}
-                      options={contractorOptions}
-                      selectedValue={contractorCode}
-                      triggerLabel="Seleccionar proveedor..."
-                      title="Seleccionar Proveedor"
-                      infoLine={`${contractorOptions.length} proveedores disponibles`}
-                      icon={<Users className="h-5 w-5" />}
-                      iconColor="sky"
-                      maxWidth="max-w-xl"
-                      searchPlaceholder="Buscar por nombre, código, especialidad..."
-                    />
+                {/* Adder Form */}
+                <form onSubmit={handleAddProposal} className="p-5 bg-gradient-to-br from-emerald-50/30 to-white rounded-xl border border-emerald-100/60 space-y-4">
+                  <div className="flex items-center gap-2.5 pb-3 border-b border-emerald-100/60">
+                    <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                      <Users className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-800">Registrar Oferta del Proveedor</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Proveedor / Contratista</label>
+                      <SelectModal
+                        isOpen={isContractorModalOpen}
+                        onClose={() => setIsContractorModalOpen(false)}
+                        onOpen={() => setIsContractorModalOpen(true)}
+                        onSelect={(opt) => setContractorCode(opt.value as string)}
+                        onDeselect={() => setContractorCode("")}
+                        options={contractorOptions}
+                        selectedValue={contractorCode}
+                        triggerLabel="Seleccionar proveedor..."
+                        title="Seleccionar Proveedor"
+                        infoLine={`${contractorOptions.length} proveedores disponibles`}
+                        icon={<Users className="h-5 w-5" />}
+                        iconColor="sky"
+                        maxWidth="max-w-xl"
+                        searchPlaceholder="Buscar por nombre, código, especialidad..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Semanas de Ejecución</label>
+                      <NumericInput
+                        id="analistas-weeks"
+                        value={deliveryWeeks}
+                        onChange={setDeliveryWeeks}
+                        min={1}
+                        integer
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Costo Materiales ($)</label>
+                      <NumericInput
+                        id="analistas-mat-cost"
+                        value={materialCost}
+                        onChange={setMaterialCost}
+                        min={0}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Costo Mano de Obra ($)</label>
+                      <NumericInput
+                        id="analistas-labor-cost"
+                        value={laborCost}
+                        onChange={setLaborCost}
+                        min={0}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Anticipo Negociado (%)</label>
+                      <select
+                        id="analistas-advance"
+                        value={advancePercent}
+                        onChange={(e) => setAdvancePercent(parseInt(e.target.value))}
+                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-bold cursor-pointer"
+                      >
+                        <option value="10">10%</option>
+                        <option value="20">20%</option>
+                        <option value="30">30%</option>
+                        <option value="40">40%</option>
+                        <option value="50">50%</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Semanas de Ejecución</label>
-                    <NumericInput
-                      id="analistas-weeks"
-                      value={deliveryWeeks}
-                      onChange={setDeliveryWeeks}
-                      min={1}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Costo Materiales ($)</label>
-                    <NumericInput
-                      id="analistas-mat-cost"
-                      value={materialCost}
-                      onChange={setMaterialCost}
-                      min={0}
-                      placeholder="0.00"
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Alcance y Condiciones de la Oferta</label>
+                    <input
+                      id="analistas-bid-desc"
+                      type="text"
+                      placeholder="Ej. Suministro total de cables, incluye garantía y flete."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-medium"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Costo Mano de Obra ($)</label>
-                    <NumericInput
-                      id="analistas-labor-cost"
-                      value={laborCost}
-                      onChange={setLaborCost}
-                      min={0}
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Anticipo Negociado (%)</label>
-                    <select
-                      id="analistas-advance"
-                      value={advancePercent}
-                      onChange={(e) => setAdvancePercent(parseInt(e.target.value))}
-                      className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-bold cursor-pointer"
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-emerald-100/60">
+                    <div className="text-xs font-bold text-slate-700">
+                      Costo Total Oferta: <span className="font-mono text-emerald-700 text-sm font-black">${formatNumber(newTotal)}</span>
+                    </div>
+                    <Button
+                      id="btn-analistas-add-bid"
+                      type="submit"
+                      variant="primary"
+                      colorScheme="emerald"
+                      icon={<Plus className="h-4 w-4" />}
                     >
-                      <option value="10">10%</option>
-                      <option value="20">20%</option>
-                      <option value="30">30%</option>
-                      <option value="40">40%</option>
-                      <option value="50">50%</option>
-                    </select>
+                      Agregar al Cuadro
+                    </Button>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Alcance y Condiciones de la Oferta</label>
-                  <input
-                    id="analistas-bid-desc"
-                    type="text"
-                    placeholder="Ej. Suministro total de cables, incluye garantía y flete."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-medium"
-                  />
-                </div>
-
-                <div className="flex justify-between items-center pt-3 border-t border-emerald-100/60">
-                  <div className="text-xs font-bold text-slate-700">
-                    Costo Total Oferta: <span className="font-mono text-emerald-700 text-sm font-black">${(Number(materialCost) + Number(laborCost)).toLocaleString()}</span>
-                  </div>
-                  <button
-                    id="btn-analistas-add-bid"
-                    type="submit"
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Agregar al Cuadro
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          )}
+                </form>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       )}
