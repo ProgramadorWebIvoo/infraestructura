@@ -84,6 +84,7 @@ export default function ComparativeTableSection({
         {!activeProject ? (
           <div className="flex-1 flex items-center">
             <EmptyState
+              className="w-full"
               icon={<Award className="h-8 w-8" />}
               message="Seleccione un expediente en el panel izquierdo para ver su cuadro comparativo."
             />

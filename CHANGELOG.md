@@ -48,3 +48,15 @@
 - Qué: Ambas cards (Carga de Propuestas y Cuadro Comparativo) ahora usan `h-full flex flex-col` para estirarse al alto de su columna en el grid, igualando su altura. Contenido interno distribuido (EmptyState centrado, botón de envío anclado abajo con mt-auto).
 - Por qué / causa raíz: Los paneles tenían alturas dispares según su contenido, rompiendo la alineación visual.
 - Archivos: src/views/AnalistasPanel/BidRegistrationSection.tsx, src/views/AnalistasPanel/ComparativeTableSection.tsx
+
+## [2026-08-03] — Mejoras UI/UX vista Finanzas
+- Tipo: feature / refactor
+- Qué: Header de departamento con icono y 4 KPIs (Anticipos por Liberar, Finiquitos por Liquidar, En Ejecución, Obras Completadas). Nuevo FinancialSummarySection con ejecución financiera del portafolio (aprobado → comprometido → liberado → pendiente con barras de progreso + anticipo/plazo promedio + badge de sobre-ejecución). Layout de dos columnas (anticipos + liquidaciones) con cards de altura normalizada (h-full flex flex-col, EmptyState centrado, lista scrollable). Skeleton actualizado.
+- Por qué / causa raíz: La vista carecía de contexto del departamento (sin KPIs ni header) y no mostraba la ejecución financiera agregada del portafolio; las cards de operaciones tenían alturas dispares.
+- Archivos: src/views/FinanzasPanel/index.tsx, src/views/FinanzasPanel/FinancialSummarySection.tsx, src/views/FinanzasPanel/AdvancesSection.tsx, src/views/FinanzasPanel/FinalSettlementsSection.tsx
+
+## [2026-08-03] — Diario de Egresos mejorado + fix EmptyState flex (Finanzas/Analistas)
+- Tipo: feature / fix
+- Qué: Diario de Egresos y Transferencias ahora incluye mini-stats (total desembolsado, anticipos liberados, finiquitos liquidados), filtro por tipo de egreso (Todos/Anticipos/Liquidaciones), columnas ordenables y footer con total desembolsado. Fix: EmptyState dentro de contenedores flex ahora usan `w-full` para no encogerse al ancho del contenido (aplicado en Finanzas y Analistas).
+- Por qué / causa raíz: La leyenda de vacío en anticipos/liquidaciones se mostraba estrecha y descentrada porque un flex item con width auto no llena el contenedor; el diario carecía de resumen y filtros para explorar los desembolsos.
+- Archivos: src/views/FinanzasPanel/LedgerSection.tsx, src/views/FinanzasPanel/AdvancesSection.tsx, src/views/FinanzasPanel/FinalSettlementsSection.tsx, src/views/AnalistasPanel/BidRegistrationSection.tsx, src/views/AnalistasPanel/ComparativeTableSection.tsx

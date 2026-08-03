@@ -102,6 +102,7 @@ export default function BidRegistrationSection({
       {pendingLicitacion.length === 0 ? (
         <div className="flex-1 flex items-center">
           <EmptyState
+            className="w-full"
             icon={<FolderOpen className="h-8 w-8" />}
             message="No hay expedientes en licitación activa. Vaya al panel de Procura o Cierre de Obra para avanzar flujos."
           />

@@ -5,11 +5,15 @@
  * Panel de Finanzas: liberación de anticipos + liquidaciones finales + diario de egresos.
  */
 
+import { useMemo } from "react";
 import { motion } from "motion/react";
+import { Banknote, CircleCheckBig, Coins, HandCoins, Wallet, Hourglass } from "lucide-react";
 import { ProjectStatus } from "../../types";
 import type { Project } from "../../types";
-import { SkeletonCard, SkeletonTable } from "../../components/SkeletonLoader";
+import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
 import { containerVariants, itemVariants } from "../../animations";
+import KpiCard from "../../components/UI/KpiCard";
+import FinancialSummarySection from "./FinancialSummarySection";
 import AdvancesSection from "./AdvancesSection";
 import FinalSettlementsSection from "./FinalSettlementsSection";
 import LedgerSection from "./LedgerSection";
@@ -29,8 +33,26 @@ export default function FinanzasPanel({
 }: FinanzasPanelProps) {
   if (isLoading) return <FinanzasSkeleton />;
 
-  const pendingAdvances = projects.filter(p => p.status === ProjectStatus.CONTRATADO);
-  const pendingFinalPayments = projects.filter(p => p.status === ProjectStatus.LISTO_PAGO_FINAL);
+  const pendingAdvances = useMemo(
+    () => projects.filter(p => p.status === ProjectStatus.CONTRATADO),
+    [projects],
+  );
+  const pendingFinalPayments = useMemo(
+    () => projects.filter(p => p.status === ProjectStatus.LISTO_PAGO_FINAL),
+    [projects],
+  );
+
+  const kpis = useMemo(
+    () => ({
+      pendingAdvances: pendingAdvances.length,
+      pendingFinal: pendingFinalPayments.length,
+      inExecution: projects.filter(
+        p => p.status === ProjectStatus.EN_EJECUCION || p.status === ProjectStatus.VERIFICANDO_FINALIZACION,
+      ).length,
+      completed: projects.filter(p => p.status === ProjectStatus.COMPLETADO_PAGADO).length,
+    }),
+    [projects, pendingAdvances, pendingFinalPayments],
+  );
 
   // Completed transactions ledger
   const paidLedger: {
@@ -77,16 +99,56 @@ export default function FinanzasPanel({
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-
       <h1 className="sr-only">Finanzas</h1>
 
-      {/* 2 Column Operations */}
+      {/* Header del departamento */}
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-2xl shadow-sm">
+            <Banknote className="h-6 w-6 text-indigo-600" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900">Gerencia de Finanzas</h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Libere anticipos, liquide finiquitos y controle el flujo de desembolsos del portafolio.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* KPIs operativos del departamento */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard icon={<HandCoins className="h-5 w-5" />} label="Anticipos por Liberar" accent="text-rose-600" borderAccent="border-l-rose-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-rose-700 to-rose-500 bg-clip-text text-transparent">{kpis.pendingAdvances}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Inicio de obra pendiente</p>
+        </KpiCard>
+
+        <KpiCard icon={<Wallet className="h-5 w-5" />} label="Finiquitos por Liquidar" accent="text-sky-600" borderAccent="border-l-sky-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{kpis.pendingFinal}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Cierre financiero pendiente</p>
+        </KpiCard>
+
+        <KpiCard icon={<Hourglass className="h-5 w-5" />} label="En Ejecución" accent="text-amber-600" borderAccent="border-l-amber-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-amber-700 to-amber-500 bg-clip-text text-transparent">{kpis.inExecution}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Obras con fondos activos</p>
+        </KpiCard>
+
+        <KpiCard icon={<CircleCheckBig className="h-5 w-5" />} label="Obras Completadas" accent="text-emerald-600" borderAccent="border-l-emerald-400">
+          <span className="text-2xl font-black font-mono bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">{kpis.completed}</span>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Ciclo financiero cerrado</p>
+        </KpiCard>
+      </motion.div>
+
+      {/* Ejecución financiera del portafolio */}
+      <FinancialSummarySection projects={projects} />
+
+      {/* Operaciones: anticipos (izq) + liquidaciones (der) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} />
         <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} />
       </motion.div>
 
-      {/* Financial ledger */}
+      {/* Diario de egresos */}
       <motion.div variants={itemVariants}>
         <LedgerSection paidLedger={paidLedger} />
       </motion.div>
@@ -98,6 +160,19 @@ export default function FinanzasPanel({
 function FinanzasSkeleton() {
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3.5">
+        <SkeletonBlock className="h-12 w-12 rounded-2xl bg-slate-200" />
+        <div className="space-y-2">
+          <SkeletonBlock className="h-5 w-56" />
+          <SkeletonBlock className="h-3 w-96" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonStats key={i} />
+        ))}
+      </div>
+      <SkeletonCard />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SkeletonCard />
         <SkeletonCard />

@@ -26,7 +26,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
   const [isPaying, setIsPaying] = useState(false);
 
   return (
-    <Card className="border-l-4 border-l-rose-400 max-h-115 overflow-y-auto scroll-smooth">
+    <Card className="border-l-4 border-l-rose-400 h-full flex flex-col">
       <SectionHeader
         icon={<Coins className="h-5 w-5" />}
         title="Liberación de Anticipos Pactados (Inicio Obra)"
@@ -35,12 +35,15 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
       />
 
       {pendingAdvances.length === 0 ? (
-        <EmptyState
-          message="No hay anticipos pendientes por liberar."
-          icon={<CheckCircle className="h-8 w-8 text-slate-300" />}
-        />
+        <div className="flex-1 flex items-center">
+          <EmptyState
+            className="w-full"
+            message="No hay anticipos pendientes por liberar."
+            icon={<CheckCircle className="h-8 w-8 text-slate-300" />}
+          />
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto scroll-smooth max-h-115 pr-1">
           {pendingAdvances.map((p) => {
             const winner = p.proposals?.find(prop => prop.contractorCode === p.selectedContractorCode);
             if (!winner) return null;
