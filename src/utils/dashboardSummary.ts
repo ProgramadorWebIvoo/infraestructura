@@ -191,3 +191,64 @@ export function computeDashboardSummary(projects: Project[]): DashboardSummary {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Salud del pipeline (cuellos de botella)
+// ---------------------------------------------------------------------------
+
+/** Estados que no representan un atasco (inicio y cierre del flujo). */
+export const TERMINAL_STATUSES: ReadonlySet<string> = new Set([
+  "CREADO",
+  "COMPLETADO_PAGADO",
+]);
+
+export interface PipelineStageHealth {
+  status: string;
+  count: number;
+  /** Obras en la fase sin actividad >= STALLED_THRESHOLD_DAYS. */
+  stalledCount: number;
+  /** Días promedio sin actividad de las obras de la fase. */
+  avgDaysSinceUpdate: number;
+  /** Días máximos sin actividad en la fase. */
+  maxDaysSinceUpdate: number;
+}
+
+/** Estados intermedios del flujo (no terminales). */
+const PIPELINE_STATUSES: ReadonlySet<string> = new Set(
+  STATUS_ORDER.filter((s) => !TERMINAL_STATUSES.has(s)),
+);
+
+/**
+ * Salud por fase del pipeline: combina volumen (count) con antigüedad del
+ * atasco (días sin actividad desde updatedAt, con fallback a createdDate).
+ * Excluye estados terminales. Ordena por obras estancadas desc, luego volumen.
+ */
+export function computePipelineHealth(projects: Project[]): PipelineStageHealth[] {
+  const byStatus = new Map<string, Project[]>();
+  projects.forEach((p) => {
+    if (!PIPELINE_STATUSES.has(p.status)) return;
+    const list = byStatus.get(p.status) ?? [];
+    list.push(p);
+    byStatus.set(p.status, list);
+  });
+
+  const stages: PipelineStageHealth[] = [];
+  byStatus.forEach((list, status) => {
+    const days = list.map((p) => {
+      const ref = p.updatedAt ? p.updatedAt.slice(0, 10) : p.createdDate;
+      return daysBetween(ref);
+    });
+    const stalledCount = days.filter((d) => d >= STALLED_THRESHOLD_DAYS).length;
+    stages.push({
+      status,
+      count: list.length,
+      stalledCount,
+      avgDaysSinceUpdate: Math.round(days.reduce((s, d) => s + d, 0) / days.length),
+      maxDaysSinceUpdate: Math.max(0, ...days),
+    });
+  });
+
+  return stages.sort(
+    (a, b) => b.stalledCount - a.stalledCount || b.count - a.count,
+  );
+}

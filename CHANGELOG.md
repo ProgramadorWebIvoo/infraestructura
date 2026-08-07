@@ -60,3 +60,9 @@
 - Qué: Diario de Egresos y Transferencias ahora incluye mini-stats (total desembolsado, anticipos liberados, finiquitos liquidados), filtro por tipo de egreso (Todos/Anticipos/Liquidaciones), columnas ordenables y footer con total desembolsado. Fix: EmptyState dentro de contenedores flex ahora usan `w-full` para no encogerse al ancho del contenido (aplicado en Finanzas y Analistas).
 - Por qué / causa raíz: La leyenda de vacío en anticipos/liquidaciones se mostraba estrecha y descentrada porque un flex item con width auto no llena el contenedor; el diario carecía de resumen y filtros para explorar los desembolsos.
 - Archivos: src/views/FinanzasPanel/LedgerSection.tsx, src/views/FinanzasPanel/AdvancesSection.tsx, src/views/FinanzasPanel/FinalSettlementsSection.tsx, src/views/AnalistasPanel/BidRegistrationSection.tsx, src/views/AnalistasPanel/ComparativeTableSection.tsx
+
+## [2026-08-03] — Presidencia: cuellos de botella, flujo de caja y conversión
+- Tipo: feature
+- Qué: Nuevas secciones en Presidencia. PipelineHealthSection: tasa de conversión (creación→contrato, creación→pagado, contrato→pagado) y cuellos de botella por fase. CashFlowSection: desembolsos mensuales reales (anticipos + finiquitos) desde advancePaidDate/finalPaidDate. Nueva función pura computePipelineHealth en dashboardSummary.ts que combina volumen (count) con antigüedad del atasco (días sin actividad desde updatedAt, fallback createdDate), excluye estados terminales y ordena por estancadas desc.
+- Por qué / causa raíz: El dashboard no mostraba dónde se frena el flujo ni la salida de caja real; la alerta de cuello de botella solo medía volumen (≥20%) sin considerar antigüedad, generando falsos positivos.
+- Archivos: src/views/PresidenciaDashboard/PipelineHealthSection.tsx, src/views/PresidenciaDashboard/CashFlowSection.tsx, src/views/PresidenciaDashboard/index.tsx, src/utils/dashboardSummary.ts, src/__tests__/utils/dashboardSummary.test.ts

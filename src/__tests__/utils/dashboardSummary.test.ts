@@ -4,8 +4,10 @@ import type { Project } from "@/types";
 import {
   COMMITTED_STATUSES,
   computeDashboardSummary,
+  computePipelineHealth,
   daysBetween,
   STALLED_THRESHOLD_DAYS,
+  TERMINAL_STATUSES,
 } from "@/utils/dashboardSummary";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
@@ -209,6 +211,64 @@ describe("computeDashboardSummary", () => {
   it("expone la semántica de estados comprometidos", () => {
     expect([...COMMITTED_STATUSES]).toEqual(
       expect.arrayContaining(["CONTRATADO", "EN_EJECUCION", "VERIFICANDO_FINALIZACION", "LISTO_PAGO_FINAL"])
+    );
+  });
+});
+
+describe("computePipelineHealth", () => {
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+
+  it("excluye estados terminales (CREADO y COMPLETADO_PAGADO)", () => {
+    const projects = [
+      makeProject({ id: "P1", status: ProjectStatus.CREADO, createdDate: daysAgo(30).slice(0, 10) }),
+      makeProject({ id: "P2", status: ProjectStatus.COMPLETADO_PAGADO, createdDate: daysAgo(30).slice(0, 10) }),
+      makeProject({ id: "P3", status: ProjectStatus.EN_EJECUCION, createdDate: daysAgo(2).slice(0, 10) }),
+    ];
+    const stages = computePipelineHealth(projects);
+    expect(stages).toHaveLength(1);
+    expect(stages[0].status).toBe(ProjectStatus.EN_EJECUCION);
+    expect(stages[0].count).toBe(1);
+  });
+
+  it("cuenta obras estancadas por antigüedad de updatedAt (fallback createdDate)", () => {
+    const projects = [
+      makeProject({
+        id: "stalled",
+        status: ProjectStatus.EN_EJECUCION,
+        createdDate: daysAgo(30).slice(0, 10),
+        updatedAt: daysAgo(STALLED_THRESHOLD_DAYS),
+      }),
+      makeProject({
+        id: "recent",
+        status: ProjectStatus.EN_EJECUCION,
+        createdDate: daysAgo(2).slice(0, 10),
+        updatedAt: daysAgo(1),
+      }),
+    ];
+    const stages = computePipelineHealth(projects);
+    const stage = stages.find((s) => s.status === ProjectStatus.EN_EJECUCION)!;
+    expect(stage.count).toBe(2);
+    expect(stage.stalledCount).toBe(1);
+    expect(stage.maxDaysSinceUpdate).toBe(STALLED_THRESHOLD_DAYS);
+  });
+
+  it("ordena por obras estancadas desc, luego por volumen", () => {
+    const projects = [
+      makeProject({ id: "A", status: ProjectStatus.REVISADO_CIERRE, createdDate: daysAgo(20).slice(0, 10) }),
+      makeProject({ id: "B", status: ProjectStatus.REVISADO_CIERRE, createdDate: daysAgo(20).slice(0, 10) }),
+      makeProject({ id: "C", status: ProjectStatus.CONFIRMADO_PROCURA, createdDate: daysAgo(3).slice(0, 10) }),
+      makeProject({ id: "D", status: ProjectStatus.CONFIRMADO_PROCURA, createdDate: daysAgo(3).slice(0, 10) }),
+      makeProject({ id: "E", status: ProjectStatus.CONFIRMADO_PROCURA, createdDate: daysAgo(3).slice(0, 10) }),
+    ];
+    const stages = computePipelineHealth(projects);
+    // REVISADO_CIERRE tiene 2 estancadas; CONFIRMADO_PROCURA tiene 3 obras pero 0 estancadas
+    expect(stages[0].status).toBe(ProjectStatus.REVISADO_CIERRE);
+    expect(stages[0].stalledCount).toBe(2);
+  });
+
+  it("expone los estados terminales", () => {
+    expect([...TERMINAL_STATUSES]).toEqual(
+      expect.arrayContaining([ProjectStatus.CREADO, ProjectStatus.COMPLETADO_PAGADO])
     );
   });
 });

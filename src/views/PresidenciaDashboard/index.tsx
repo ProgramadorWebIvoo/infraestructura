@@ -14,6 +14,8 @@ import KpiSection from "./KpiSection";
 import DistributionChart from "./DistributionChart";
 import StatusFunnelSection from "./StatusFunnelSection";
 import FinancialOverviewSection from "./FinancialOverviewSection";
+import PipelineHealthSection from "./PipelineHealthSection";
+import CashFlowSection from "./CashFlowSection";
 import InsightsSection from "./InsightsSection";
 import AuditLogSection from "./AuditLogSection";
 import MasterTableSection from "./MasterTableSection";
@@ -92,6 +94,11 @@ export default function PresidenciaDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DistributionChart summary={summary} />
         <FinancialOverviewSection summary={summary} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PipelineHealthSection summary={summary} projects={projects} />
+        <CashFlowSection projects={projects} />
       </div>
 
       <InsightsSection summary={summary} />
