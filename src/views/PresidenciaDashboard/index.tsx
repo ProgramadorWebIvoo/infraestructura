@@ -79,6 +79,8 @@ export default function PresidenciaDashboard({
       </header>
 
       <KpiSection
+        summary={summary}
+        projects={projects}
         totalApprovedInvestment={totalApprovedInvestment}
         totalReleasedFunds={totalReleasedFunds}
         releasedPercent={releasedPercent}

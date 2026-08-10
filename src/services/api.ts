@@ -29,10 +29,33 @@ export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
 // ---------------------------------------------------------------------------
-// Inicialización de la base URL desde variable de entorno
+// Inicialización de la base URL
 // ---------------------------------------------------------------------------
+// En dev, VITE_API_URL puede apuntar a localhost mientras el front se accede
+// desde otra máquina de la red local vía IP — en ese caso se reescribe el
+// host para que apunte al mismo host desde el que se sirvió el front (misma
+// IP, mismo puerto de API), evitando tener que fijar la IP a mano.
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+function resolveApiBaseUrl(): string {
+  const configured = import.meta.env.VITE_API_URL as string;
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const currentHost = window.location.hostname;
+    if (currentHost !== "localhost" && currentHost !== "127.0.0.1") {
+      try {
+        const url = new URL(configured);
+        if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+          url.hostname = currentHost;
+          return url.toString().replace(/\/$/, "");
+        }
+      } catch {
+        // configured no es una URL absoluta válida; usar tal cual
+      }
+    }
+  }
+  return configured;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 setApiBaseUrl(API_BASE_URL);
 
 export { API_BASE_URL };

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { Search } from "lucide-react";
 
 interface KpiCardProps {
   icon: ReactNode;
@@ -11,6 +12,8 @@ interface KpiCardProps {
   borderAccent?: string;
   /** @deprecated use borderAccent */
   color?: string;
+  /** Callback opcional: si se provee, muestra un botón de inspección al hover */
+  onInspect?: () => void;
 }
 
 export default function KpiCard({
@@ -23,6 +26,7 @@ export default function KpiCard({
   accent,
   borderAccent,
   color,
+  onInspect,
 }: KpiCardProps) {
   const dark = variant === "dark";
   const borderColor = borderAccent ?? color ?? (dark ? "border-l-sky-500" : "border-l-sky-400");
@@ -30,12 +34,26 @@ export default function KpiCard({
 
   return (
     <div
-      className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${
+      className={`relative group/card rounded-2xl p-5 border shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${
         dark
           ? "bg-slate-900 text-white border-slate-800"
           : "bg-white border-slate-200/80"
       } border-l-4 ${borderColor}`}
     >
+      {onInspect && (
+        <button
+          type="button"
+          aria-label={`Ver detalle de ${label}`}
+          onClick={onInspect}
+          className={`absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 transition-opacity duration-200 ${
+            dark
+              ? "text-slate-400 hover:text-white hover:bg-slate-800"
+              : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+          }`}
+        >
+          <Search className="h-3.5 w-3.5" />
+        </button>
+      )}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div
