@@ -14,9 +14,9 @@ import { useToast } from "../../components/UI/Toast";
 import { containerVariants, itemVariants } from "../../animations";
 import { SkeletonCard, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
 import KpiCard from "../../components/UI/KpiCard";
-import RequestFormSection from "./RequestFormSection";
-import MaterialAdderSection from "./MaterialAdderSection";
-import RequestsTableSection from "./RequestsTableSection";
+import RequestFormSection from "./components/RequestFormSection";
+import MaterialAdderSection from "./components/MaterialAdderSection";
+import RequestsTableSection from "./components/RequestsTableSection";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (project: Omit<Project, "id" | "createdDate" | "status">) => void;

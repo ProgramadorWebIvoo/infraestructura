@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import MiniBarChart from "@/views/AIConfigPanel/MiniBarChart";
+import MiniBarChart from "@/views/AIConfigPanel/components/MiniBarChart";
 import type { AiUsageDaily } from "@/hooks/useAIConfig";
 
 const DAYS: AiUsageDaily[] = [

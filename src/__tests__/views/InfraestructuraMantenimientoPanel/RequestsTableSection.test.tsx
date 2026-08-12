@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import RequestsTableSection from "@/views/InfraestructuraMantenimientoPanel/RequestsTableSection";
+import RequestsTableSection from "@/views/InfraestructuraMantenimientoPanel/components/RequestsTableSection";
 import type { Project } from "@/types";
 import { ProjectStatus } from "@/types";
 

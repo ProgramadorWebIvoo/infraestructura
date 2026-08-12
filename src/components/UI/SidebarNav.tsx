@@ -25,6 +25,7 @@ import {
   X,
   LogOut,
   ChevronRight,
+  House
 } from "lucide-react";
 import ConfigDropdown from "./ConfigDropdown";
 import SidebarTip from "./SidebarTip";
@@ -87,12 +88,12 @@ function SidebarNav({ isOpen, onClose, user, onLogout, canAccess, isCollapsed, o
                 {isCollapsed ? (
                   <div className="relative shrink-0">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset">
-                      <Building2 className="h-5 w-5 text-white stroke-[2.5]" />
+                      <House className="h-5 w-5 text-white stroke-[2.5]" />
                     </div>
                   </div>
                 ) : (
-                  <div className="relative shrink-0 overflow-hidden rounded-xl ring-1 ring-white/15 shadow-lg shadow-emerald-500/20">
-                    <img src="/ivoo_logoo.png" alt="IVOO" className="block h-9 w-auto" />
+                  <div className="relative shrink-0 overflow-hidden">
+                    <img src="/ivoo_logoo.svg" alt="IVOO" className="block h-9 w-auto" />
                   </div>
                 )}
 

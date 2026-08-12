@@ -131,7 +131,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <span className="flex-1 leading-snug">{toast.message}</span>
               <button
                 onClick={() => dismiss(toast.id)}
-                className="text-current opacity-50 hover:opacity-100 p-0.5 rounded-md hover:bg-black/5 transition-all shrink-0 self-start"
+                className="cursor-pointer text-current opacity-50 hover:opacity-100 p-0.5 rounded-md hover:bg-black/5 transition-all shrink-0 self-start"
                 aria-label="Cerrar notificación"
               >
                 <X className="h-4 w-4" />

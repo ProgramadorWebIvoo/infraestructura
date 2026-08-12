@@ -123,7 +123,7 @@ export default function AuthenticatedLayout({
           />
 
           {/* Main Workspace Body */}
-          <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          <main className="flex-1 max-w-8xl mx-auto w-full sm:px-6 lg: py-6 space-y-6">
 
             {/* Dynamic Role Indicator Notification — hidden on mobile */}
             <div className="hidden sm:flex flex-col sm:flex-row sm:items-center justify-between bg-gradient-to-br from-sky-50/40 to-white px-5 py-4 rounded-2xl border border-slate-200 shadow-xs gap-3 border-l-4 border-l-sky-400">

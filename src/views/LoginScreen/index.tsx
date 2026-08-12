@@ -5,8 +5,8 @@
  * Pantalla de acceso interno.
  */
 
-import BackgroundDecor from "./BackgroundDecor";
-import LoginForm from "./LoginForm";
+import BackgroundDecor from "./components/BackgroundDecor";
+import LoginForm from "./components/LoginForm";
 
 interface LoginScreenProps {
   onLogin: (email: string, password: string) => Promise<void>;

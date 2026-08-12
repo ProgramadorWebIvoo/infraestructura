@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import UsageDashboard from "@/views/AIConfigPanel/UsageDashboard";
+import UsageDashboard from "@/views/AIConfigPanel/components/UsageDashboard";
 import type { AiUsageData } from "@/hooks/useAIConfig";
 
 vi.mock("motion/react", () => ({

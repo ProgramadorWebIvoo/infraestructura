@@ -11,8 +11,8 @@ import type { Project, Contractor, Proposal } from "../../types";
 import { containerVariants, itemVariants } from "../../animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
 import KpiCard from "../../components/UI/KpiCard";
-import BidRegistrationSection from "./BidRegistrationSection";
-import ComparativeTableSection from "./ComparativeTableSection";
+import BidRegistrationSection from "./components/BidRegistrationSection";
+import ComparativeTableSection from "./components/ComparativeTableSection";
 
 interface ImportResult {
   message: string;

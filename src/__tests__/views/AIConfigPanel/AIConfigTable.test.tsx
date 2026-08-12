@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import AIConfigTable from "@/views/AIConfigPanel/AIConfigTable";
+import AIConfigTable from "@/views/AIConfigPanel/components/AIConfigTable";
 import type { AiConfigRecord } from "@/hooks/useAIConfig";
 
 vi.mock("motion/react", () => ({

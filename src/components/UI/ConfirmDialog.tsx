@@ -74,7 +74,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="cursor-pointer px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -82,7 +82,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-all disabled:opacity-50 inline-flex items-center gap-2 ${styles.confirmBg}`}
+            className={`cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center gap-2 ${styles.confirmBg}`}
           >
             {isLoading && <Spinner data-testid="spinner" />}
             {isLoading ? "Procesando..." : confirmLabel}

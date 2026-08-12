@@ -13,8 +13,8 @@ import { ProjectStatus } from "../../types";
 import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
 import { containerVariants, itemVariants } from "../../animations";
 import KpiCard from "../../components/UI/KpiCard";
-import InvestmentApprovalSection from "./InvestmentApprovalSection";
-import BidEvaluationSection from "./BidEvaluationSection";
+import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
+import BidEvaluationSection from "./components/BidEvaluationSection";
 
 interface ProcuraPanelProps {
   projects: Project[];

@@ -12,7 +12,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Building2, KeyRound, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { apiFetch } from "../../services/api";
 import { ROUTES } from "../../routes.tsx";
-import BackgroundDecor from "../LoginScreen/BackgroundDecor";
+import BackgroundDecor from "../LoginScreen/components/BackgroundDecor";
 
 export default function ResetPasswordScreen() {
   const { token } = useParams<{ token: string }>();
@@ -124,7 +124,7 @@ export default function ResetPasswordScreen() {
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
                   aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
+                  className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
                 >
                   {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                 </button>

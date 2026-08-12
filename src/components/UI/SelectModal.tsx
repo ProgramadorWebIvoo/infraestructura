@@ -185,7 +185,7 @@ export default function SelectModal<T>({
           transition-all duration-200
           ${disabled
             ? "border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
-            : "border-slate-200 text-slate-700 hover:border-sky-400 hover:bg-sky-50/50 hover:shadow-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500/20"}
+            : "cursor-pointer border-slate-200 text-slate-700 hover:border-sky-400 hover:bg-sky-50/50 hover:shadow-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500/20"}
           ${triggerClassName}
         `}
         aria-haspopup="dialog"
@@ -205,7 +205,7 @@ export default function SelectModal<T>({
         <button
           type="button"
           onClick={handleDeselect}
-          className="shrink-0 rounded-lg p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors border border-slate-200"
+          className="cursor-pointer shrink-0 rounded-lg p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors border border-slate-200"
           aria-label="Deseleccionar"
         >
           <X className="h-3.5 w-3.5" />

@@ -11,10 +11,10 @@ import type { Contractor, Project } from "../../types";
 import { useToast } from "../../components/UI/Toast";
 import { containerVariants, itemVariants } from "../../animations";
 import { useProveedores } from "../../hooks/useProveedores";
-import ContractorsSection from "./ContractorsSection";
-import SupplierProposalsList from "./SupplierProposalsList";
-import RatingModal from "./RatingModal";
-import InviteModal from "./InviteModal";
+import ContractorsSection from "./components/ContractorsSection";
+import SupplierProposalsList from "./components/SupplierProposalsList";
+import RatingModal from "./components/RatingModal";
+import InviteModal from "./components/InviteModal";
 
 interface ProveedoresRegistradosProps {
   contractors: Contractor[];

@@ -8,10 +8,10 @@ import { useParams } from "react-router-dom";
 import { useToast } from "../../components/UI/Toast";
 import { CheckCircle, Loader2, Package } from "lucide-react";
 import { apiFetch } from "../../services/api";
-import TopBar from "./TopBar";
-import ProjectSummary from "./ProjectSummary";
-import MaterialsProposalTable from "./MaterialsProposalTable";
-import ProposalDetailsSection from "./ProposalDetailsSection";
+import TopBar from "./components/TopBar";
+import ProjectSummary from "./components/ProjectSummary";
+import MaterialsProposalTable from "./components/MaterialsProposalTable";
+import ProposalDetailsSection from "./components/ProposalDetailsSection";
 import { sanitize, type DurationUnit, type InvitationPublicInfo, type ItemRow } from "./types";
 
 export default function PropuestaMaterialesPublica() {

@@ -21,6 +21,7 @@ import AuthenticatedRoutes from "./routes/AuthenticatedRoutes";
 // Hooks por dominio
 import { useAuth } from "./hooks/useAuth";
 import { useRoleAccess } from "./hooks/useRouting";
+import { useDocumentHead } from "./hooks/useDocumentHead";
 import { ROUTES, isPublicRoute } from "./routes";
 import { useProjects } from "./hooks/useProjects";
 import { useContractors } from "./hooks/useContractors";
@@ -96,6 +97,7 @@ function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  useDocumentHead();
 
   // ---- Auth ----
   const {

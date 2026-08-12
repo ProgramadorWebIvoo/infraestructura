@@ -13,9 +13,9 @@ import { ProjectStatus } from "../../types";
 import { containerVariants, itemVariants } from "../../animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
 import KpiCard from "../../components/UI/KpiCard";
-import TechnicalReviewSection from "./TechnicalReviewSection";
-import CompletionAuditSection from "./CompletionAuditSection";
-import ReturnsFlowStrip from "./ReturnsFlowStrip";
+import TechnicalReviewSection from "./components/TechnicalReviewSection";
+import CompletionAuditSection from "./components/CompletionAuditSection";
+import ReturnsFlowStrip from "./components/ReturnsFlowStrip";
 
 interface CierreObraPanelProps {
   projects: Project[];

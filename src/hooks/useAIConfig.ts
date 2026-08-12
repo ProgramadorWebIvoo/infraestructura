@@ -80,7 +80,8 @@ export interface AiUsageDaily {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
-  cost: number;
+  /** SUM() agregado en MySQL vía selectRaw — PDO lo serializa como string. */
+  cost: number | string;
   requests: number;
   successful_requests: number;
   failed_requests: number;
@@ -91,7 +92,8 @@ export interface AiUsageByProvider {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
-  cost: number;
+  /** SUM() agregado en MySQL vía selectRaw — PDO lo serializa como string. */
+  cost: number | string;
   requests: number;
 }
 
@@ -99,7 +101,8 @@ export interface AiUsageTotals {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
-  total_cost: number;
+  /** SUM() agregado en MySQL vía selectRaw — PDO lo serializa como string. */
+  total_cost: number | string;
   total_requests: number;
   successful_requests: number;
   failed_requests: number;

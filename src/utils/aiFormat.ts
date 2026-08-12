@@ -11,7 +11,8 @@
  * menores a $0.01 se muestran como "< $0.01" (los proveedores facturan por
  * milésimas de centavo; redondear a $0.00 sería engañoso).
  */
-export function formatAiCost(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(value) || value < 0.01) return "< $0.01";
-  return `$${value.toFixed(2)}`;
+export function formatAiCost(value: number | string | null | undefined): string {
+  const numeric = typeof value === "string" ? Number(value) : value;
+  if (numeric == null || Number.isNaN(numeric) || numeric < 0.01) return "< $0.01";
+  return `$${numeric.toFixed(2)}`;
 }

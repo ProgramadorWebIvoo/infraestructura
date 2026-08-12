@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import SyncBanner from "@/views/AIConfigPanel/SyncBanner";
+import SyncBanner from "@/views/AIConfigPanel/components/SyncBanner";
 
 vi.mock("motion/react", () => ({
   motion: {

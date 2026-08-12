@@ -45,7 +45,7 @@ export default function KpiCard({
           type="button"
           aria-label={`Ver detalle de ${label}`}
           onClick={onInspect}
-          className={`absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 transition-opacity duration-200 ${
+          className={`cursor-pointer absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 transition-opacity duration-200 ${
             dark
               ? "text-slate-400 hover:text-white hover:bg-slate-800"
               : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"

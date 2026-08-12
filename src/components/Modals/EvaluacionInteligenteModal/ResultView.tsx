@@ -107,7 +107,7 @@ export default function ResultView({
           <button
             onClick={onRetry}
             disabled={accepting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-30"
+            className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-30"
           >
             <RefreshCw className="h-3 w-3" />
             Re-evaluar

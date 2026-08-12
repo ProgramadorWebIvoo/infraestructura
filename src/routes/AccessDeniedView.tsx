@@ -15,7 +15,7 @@ export default function AccessDeniedView({ onLogout }: AccessDeniedViewProps) {
         </p>
         <button
           onClick={onLogout}
-          className="mt-2 px-6 py-2.5 bg-sky-500 text-white text-sm font-semibold rounded-xl hover:bg-sky-600 transition-colors"
+          className="cursor-pointer mt-2 px-6 py-2.5 bg-sky-500 text-white text-sm font-semibold rounded-xl hover:bg-sky-600 transition-colors"
         >
           Cerrar sesión
         </button>

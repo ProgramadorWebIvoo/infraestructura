@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import MaterialAdderSection from "@/views/InfraestructuraMantenimientoPanel/MaterialAdderSection";
+import MaterialAdderSection from "@/views/InfraestructuraMantenimientoPanel/components/MaterialAdderSection";
 import { ToastProvider } from "@/components/UI/Toast";
 
 vi.mock("motion/react", () => ({

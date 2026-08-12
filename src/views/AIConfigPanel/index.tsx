@@ -10,9 +10,9 @@ import {
   type AiConfigForm,
   EMPTY_CONFIG_FORM,
 } from "../../hooks/useAIConfig";
-import SyncBanner from "./SyncBanner";
-import UsageDashboard from "./UsageDashboard";
-import AIConfigTable from "./AIConfigTable";
+import SyncBanner from "./components/SyncBanner";
+import UsageDashboard from "./components/UsageDashboard";
+import AIConfigTable from "./components/AIConfigTable";
 import { validateConfigForm, buildUpdatePayload } from "./aiConfigForm";
 import AIConfigFormModal from "../../components/Modals/AIConfigFormModal";
 

@@ -64,7 +64,7 @@ export default function Button({
   return (
     <button
       disabled={disabled || isLoading}
-      className={`inline-flex items-center gap-2 rounded-xl font-bold transition-all duration-200 active:scale-[0.97] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100 ${getVariantStyles(variant, colorScheme)} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-xl font-bold transition-all duration-200 active:scale-[0.97] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400/40 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100 ${getVariantStyles(variant, colorScheme)} ${sizeStyles[size]} ${className}`}
       {...rest}
     >
       {isLoading ? (

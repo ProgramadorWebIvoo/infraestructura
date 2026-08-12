@@ -58,7 +58,7 @@ function TogglePill({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
+      className={`cursor-pointer inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
         active ? activeClass : inactiveClass
       }`}
     >
@@ -175,7 +175,7 @@ export default function AIConfigFormModal({
             <button
               type="button"
               onClick={() => onShowApiKeyChange(!showApiKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               aria-label={showApiKey ? "Ocultar API Key" : "Mostrar API Key"}
             >
               {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

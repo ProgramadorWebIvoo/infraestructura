@@ -17,7 +17,7 @@ import { apiFetch } from "../../services/api";
 import { logError, getErrorMessage } from "../../services/logger";
 import { containerVariants, itemVariants } from "../../animations";
 import { getMaterialColumns } from "./columns";
-import MaterialFormModal from "./MaterialFormModal";
+import MaterialFormModal from "./components/MaterialFormModal";
 import { EMPTY_FORM, type ConfigMaterial, type MaterialForm } from "./types";
 
 export default function MaterialConfigPanel({ authToken }: { authToken: string }) {

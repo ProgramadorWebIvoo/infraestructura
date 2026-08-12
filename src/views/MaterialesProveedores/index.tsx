@@ -7,7 +7,7 @@
 
 import { Contractor } from "../../types";
 import { Building2, ShieldCheck } from "lucide-react";
-import RegistrationForm from "./RegistrationForm";
+import RegistrationForm from "./components/RegistrationForm";
 
 interface RegistroProveedoresPublicoProps {
   contractorsCount: number;

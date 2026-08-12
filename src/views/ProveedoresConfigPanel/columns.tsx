@@ -99,7 +99,7 @@ export function getContractorColumns({ togglingCode, onEdit, onRequestToggle }: 
         <div className="flex items-center justify-center gap-1.5">
           <button
             onClick={() => onEdit(c)}
-            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md"
+            className="cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md"
             aria-label={`Editar ${c.name}`}
             title="Editar proveedor"
           >
@@ -108,7 +108,7 @@ export function getContractorColumns({ togglingCode, onEdit, onRequestToggle }: 
           <button
             onClick={() => onRequestToggle(c.code)}
             disabled={togglingCode === c.code}
-            className={`rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
+            className={`cursor-pointer rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
               c.status === "ACTIVE"
                 ? "border-red-200 bg-white text-red-400 hover:bg-red-50 hover:text-red-600"
                 : c.status === "INACTIVE"

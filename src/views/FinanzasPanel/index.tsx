@@ -13,10 +13,10 @@ import type { Project } from "../../types";
 import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
 import { containerVariants, itemVariants } from "../../animations";
 import KpiCard from "../../components/UI/KpiCard";
-import FinancialSummarySection from "./FinancialSummarySection";
-import AdvancesSection from "./AdvancesSection";
-import FinalSettlementsSection from "./FinalSettlementsSection";
-import LedgerSection from "./LedgerSection";
+import FinancialSummarySection from "./components/FinancialSummarySection";
+import AdvancesSection from "./components/AdvancesSection";
+import FinalSettlementsSection from "./components/FinalSettlementsSection";
+import LedgerSection from "./components/LedgerSection";
 
 interface FinanzasPanelProps {
   projects: Project[];

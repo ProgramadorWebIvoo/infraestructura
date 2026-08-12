@@ -17,7 +17,7 @@ import { apiFetch } from "../../services/api";
 import { logError, getErrorMessage } from "../../services/logger";
 import { containerVariants, itemVariants } from "../../animations";
 import { getContractorColumns } from "./columns";
-import ContractorFormModal from "./ContractorFormModal";
+import ContractorFormModal from "./components/ContractorFormModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
 
 export default function ProveedoresConfigPanel({ authToken, onContractorMutated }: { authToken: string; onContractorMutated?: () => void }) {

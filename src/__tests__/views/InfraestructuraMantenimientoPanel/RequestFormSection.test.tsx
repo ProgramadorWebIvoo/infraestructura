@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import RequestFormSection from "@/views/InfraestructuraMantenimientoPanel/RequestFormSection";
+import RequestFormSection from "@/views/InfraestructuraMantenimientoPanel/components/RequestFormSection";
 
 describe("RequestFormSection", () => {
   const baseProps = {

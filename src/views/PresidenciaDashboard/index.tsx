@@ -10,15 +10,15 @@ import type { Project, AuditLog } from "../../types";
 import { SkeletonStats, SkeletonStatsDark, SkeletonTable, SkeletonCard } from "../../components/SkeletonLoader";
 import { useDashboardSummary } from "../../hooks/useDashboardSummary";
 import { containerVariants } from "../../animations";
-import KpiSection from "./KpiSection";
-import DistributionChart from "./DistributionChart";
-import StatusFunnelSection from "./StatusFunnelSection";
-import FinancialOverviewSection from "./FinancialOverviewSection";
-import PipelineHealthSection from "./PipelineHealthSection";
-import CashFlowSection from "./CashFlowSection";
-import InsightsSection from "./InsightsSection";
-import AuditLogSection from "./AuditLogSection";
-import MasterTableSection from "./MasterTableSection";
+import KpiSection from "./components/KpiSection";
+import DistributionChart from "./components/DistributionChart";
+import StatusFunnelSection from "./components/StatusFunnelSection";
+import FinancialOverviewSection from "./components/FinancialOverviewSection";
+import PipelineHealthSection from "./components/PipelineHealthSection";
+import CashFlowSection from "./components/CashFlowSection";
+import InsightsSection from "./components/InsightsSection";
+import AuditLogSection from "./components/AuditLogSection";
+import MasterTableSection from "./components/MasterTableSection";
 
 interface PresidenciaDashboardProps {
   projects: Project[];

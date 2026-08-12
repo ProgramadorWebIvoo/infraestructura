@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import PipelineOverview from "@/views/InfraestructuraMantenimientoPanel/PipelineOverview";
+import PipelineOverview from "@/views/InfraestructuraMantenimientoPanel/components/PipelineOverview";
 import type { Project } from "@/types";
 import { ProjectStatus } from "@/types";
 

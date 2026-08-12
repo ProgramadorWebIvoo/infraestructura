@@ -179,7 +179,7 @@ export default function Modal({
                     aria-label="Cerrar"
                     onClick={onClose}
                     disabled={closeDisabled}
-                    className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors disabled:opacity-30 shrink-0 ml-3"
+                    className="cursor-pointer text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors disabled:cursor-not-allowed disabled:opacity-30 shrink-0 ml-3"
                   >
                     <X className="h-5 w-5" />
                   </button>

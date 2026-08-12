@@ -13,8 +13,8 @@ import { Users, Search } from "lucide-react";
 import { useToast } from "../../components/UI/Toast";
 import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
 import { containerVariants, itemVariants } from "../../animations";
-import UserRegistrationForm from "./UserRegistrationForm";
-import UserRow from "./UserRow";
+import UserRegistrationForm from "./components/UserRegistrationForm";
+import UserRow from "./components/UserRow";
 
 // Etiquetas amigables — la lista de valores válidos viene del backend
 // (GET /api/roles, fuente de verdad: UserController::VALID_ROLES) para que
