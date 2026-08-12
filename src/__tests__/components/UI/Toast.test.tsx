@@ -165,4 +165,70 @@ describe("Toast", () => {
 
     expect(screen.queryByText("Early Dismiss")).not.toBeInTheDocument();
   });
+
+  it("renders an action button and invokes onClick when clicked (ToastAlertAction)", () => {
+    const onClick = vi.fn();
+
+    function ActionTrigger() {
+      const { showToast } = useToast();
+      return (
+        <button
+          onClick={() =>
+            showToast("Acción requerida", "warning", { action: { label: "Revisar", onClick } })
+          }
+        >
+          Show Toast
+        </button>
+      );
+    }
+
+    renderWithProvider(<ActionTrigger />);
+
+    act(() => { screen.getByText("Show Toast").click(); });
+
+    const actionButton = screen.getByText("Revisar");
+    expect(actionButton).toBeInTheDocument();
+
+    act(() => { actionButton.click(); });
+
+    expect(onClick).toHaveBeenCalledTimes(1);
+
+    // Clicking the action also dismisses the toast (after the 250ms exit animation).
+    act(() => { vi.advanceTimersByTime(250); });
+    expect(screen.queryByText("Acción requerida")).not.toBeInTheDocument();
+  });
+
+  it("keeps a high-priority toast visible past the normal 4s duration", () => {
+    function PriorityTrigger() {
+      const { showToast } = useToast();
+      return (
+        <button onClick={() => showToast("Urgente", "error", { priority: "high" })}>Show Toast</button>
+      );
+    }
+
+    renderWithProvider(<PriorityTrigger />);
+
+    act(() => { screen.getByText("Show Toast").click(); });
+
+    act(() => { vi.advanceTimersByTime(4250); });
+    expect(screen.getByText("Urgente")).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(4000); });
+    expect(screen.queryByText("Urgente")).not.toBeInTheDocument();
+  });
+
+  it("uses role='alert' for high-priority toasts even when type is info", () => {
+    function PriorityTrigger() {
+      const { showToast } = useToast();
+      return (
+        <button onClick={() => showToast("Importante", "info", { priority: "high" })}>Show Toast</button>
+      );
+    }
+
+    renderWithProvider(<PriorityTrigger />);
+
+    act(() => { screen.getByText("Show Toast").click(); });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Importante");
+  });
 });

@@ -74,7 +74,10 @@ function readCookie(name: string): string | null {
 async function ensureCsrfCookie(): Promise<void> {
   if (readCookie("XSRF-TOKEN")) return;
 
-  const root = API_BASE_URL.replace(/\/api\/?$/, "");
+  // getApiBaseUrl() (no la constante API_BASE_URL congelada al importar el
+  // módulo) para respetar setApiBaseUrl() si algo la cambia después del boot
+  // inicial (ej. tests).
+  const root = getApiBaseUrl().replace(/\/api\/?$/, "");
   await fetch(`${root}/sanctum/csrf-cookie`, { credentials: "include" });
 }
 

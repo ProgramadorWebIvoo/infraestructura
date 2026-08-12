@@ -1,19 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiFetch, apiDownload, setTokenRefreshHandler } from "@/services/api";
+import { apiFetch, apiDownload, setTokenRefreshHandler, setApiBaseUrl } from "@/services/api";
 
 const BASE_URL = "http://localhost:8000/api";
 
 // ---------------------------------------------------------------------------
-// Mock VITE_API_URL (hoisted por Vitest antes del import)
-// ---------------------------------------------------------------------------
-
-vi.stubEnv("VITE_API_URL", BASE_URL);
-
-// ---------------------------------------------------------------------------
-// Mock fetch global (en cada test)
+// api.ts calcula API_BASE_URL desde VITE_API_URL como side-effect al importar
+// el módulo (antes de que cualquier vi.stubEnv de este archivo pueda surtir
+// efecto) — usa directamente el valor real del .env local. setApiBaseUrl()
+// (ya exportado por el módulo para ese propósito) fija explícitamente la URL
+// que este archivo espera, sin depender del entorno de quien ejecute el test.
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
+  setApiBaseUrl(BASE_URL);
   global.fetch = vi.fn();
   document.cookie = "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 });

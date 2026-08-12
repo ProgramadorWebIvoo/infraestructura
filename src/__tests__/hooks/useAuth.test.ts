@@ -22,6 +22,12 @@ vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+const mockRequestNotificationPermission = vi.fn();
+
+vi.mock("@/services/browserNotifications", () => ({
+  requestNotificationPermission: (...args: unknown[]) => mockRequestNotificationPermission(...args),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -138,6 +144,16 @@ describe("useAuth", () => {
 
       expect(result.current.authToken).toBe("authenticated");
       expect(localStorage.getItem("ivoo_auth_token")).toBeNull();
+    });
+
+    it("pide permiso de notificaciones nativas del navegador tras login exitoso", async () => {
+      const { result } = await renderAuthenticated();
+      mockRequestNotificationPermission.mockClear();
+
+      mockApiFetch.mockResolvedValueOnce({ user: { name: "A", email: "a@b.c" } });
+      await act(() => result.current.handleLogin("a@b.c", "p"));
+
+      expect(mockRequestNotificationPermission).toHaveBeenCalledTimes(1);
     });
   });
 

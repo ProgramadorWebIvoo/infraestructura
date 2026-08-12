@@ -26,6 +26,7 @@ import { ROUTES, isPublicRoute } from "./routes";
 import { useProjects } from "./hooks/useProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
+import { NotificationsProvider } from "./components/UI/NotificationsProvider";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -83,7 +84,13 @@ export default function App({ router: Router = BrowserRouter, ...routerProps }: 
   return (
     <Router {...routerProps}>
       <ToastProvider>
-        <AppRoutes />
+        {/* NotificationsProvider instancia useNotifications() UNA sola vez para
+            toda la app — NotificationBell se monta dos veces en el layout
+            (MobileTopBar + SidebarNav) y consumir el hook directamente ahí
+            duplicaba el polling y los toasts de "notificación nueva". */}
+        <NotificationsProvider>
+          <AppRoutes />
+        </NotificationsProvider>
       </ToastProvider>
     </Router>
   );

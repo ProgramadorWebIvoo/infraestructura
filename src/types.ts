@@ -53,6 +53,16 @@ export interface DashboardSummaryContractorEntry {
   totalAmount: number;
 }
 
+export interface AppNotification {
+  id: number;
+  project_id: string | null;
+  project_title_snapshot: string | null;
+  action: string;
+  details: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
 export interface DashboardSummaryStalledEntry {
   id: string;
   title: string;

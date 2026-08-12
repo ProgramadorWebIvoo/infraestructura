@@ -19,6 +19,15 @@ vi.mock("react-dom", () => ({
   createPortal: (content: React.ReactNode) => content,
 }));
 
+vi.mock("../../../components/UI/NotificationsProvider", () => ({
+  useNotifications: () => ({
+    notifications: [],
+    unreadCount: 0,
+    markRead: vi.fn(),
+    markAllRead: vi.fn(),
+  }),
+}));
+
 // Mock lazy-loaded InspectProjectModal
 vi.mock("../../../components/Modals/InspectProjectModal", () => ({
   default: ({ isOpen, project, onClose }: { isOpen: boolean; project: unknown; onClose: () => void }) =>
@@ -39,8 +48,6 @@ describe("AuthenticatedLayout", () => {
     user: { name: "Admin User", email: "admin@ivoo.com" },
     activeRole: "SUPERADMIN",
     canAccess: vi.fn(() => true),
-    projectsCount: 10,
-    contractorsCount: 25,
     inspectedProject: null,
     onCloseInspectedProject: vi.fn(),
     onLogout: vi.fn(),
@@ -66,14 +73,24 @@ describe("AuthenticatedLayout", () => {
 
   it("renders the role indicator with activeRole", () => {
     renderLayout({ activeRole: "ANALISTA" });
-    expect(screen.getByText(/Terminal:/)).toBeInTheDocument();
-    expect(screen.getByText(/ANALISTA/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Terminal:/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/ANALISTA/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders projects and contractors counts", () => {
-    renderLayout({ projectsCount: 15, contractorsCount: 30 });
-    expect(screen.getByText("15 Obras")).toBeInTheDocument();
-    expect(screen.getByText("30 Proveedores")).toBeInTheDocument();
+  it("renders two NotificationBell instances (MobileTopBar + SidebarNav) but only one is visible per breakpoint", () => {
+    // Bug real reportado en QA: ambas campanas se veían simultáneamente en mobile.
+    // Ambas existen en el DOM (CSS decide cuál se ve por breakpoint), pero la del
+    // sidebar debe llevar "hidden lg:flex" en su contenedor — la de MobileTopBar
+    // (lg:hidden en su <header>) nunca debe llevar la clase "hidden" fija.
+    renderLayout();
+
+    const bells = screen.getAllByLabelText(/Notificaciones/);
+    expect(bells.length).toBe(2);
+
+    const sidebarBellRow = bells
+      .map(bell => bell.closest("div.hidden"))
+      .filter(Boolean);
+    expect(sidebarBellRow.length).toBe(1);
   });
 
   it("renders the footer with IVOO branding", () => {
@@ -147,7 +164,7 @@ describe("AuthenticatedLayout", () => {
   it("shows the role indicator with the active role", () => {
     renderLayout({ activeRole: "ADMIN" });
 
-    expect(screen.getByText("Terminal: ADMIN")).toBeInTheDocument();
+    expect(screen.getAllByText("Terminal: ADMIN").length).toBeGreaterThanOrEqual(1);
   });
 
   it("persists collapsed sidebar state to localStorage on toggle", () => {

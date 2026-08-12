@@ -196,6 +196,32 @@ describe("usePolling", () => {
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
+  it("con pauseWhenHidden=false sigue ejecutando el callback aunque document.hidden=true", async () => {
+    const callback = vi.fn().mockResolvedValue(undefined);
+
+    renderHook(() => usePolling(callback, 1000, true, false));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    // Simular tab oculto — a diferencia del default, NO debe pausar.
+    Object.defineProperty(document, "hidden", { value: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+
+    // 3 ticks más mientras "oculto" — regression test del bug real: las
+    // notificaciones nativas del navegador (Notification API) exigen que el
+    // fetch ocurra MIENTRAS la pestaña sigue oculta, no al volver a mirarla
+    // (para entonces ya es tarde, notifyBrowser() exige document.hidden en
+    // el momento del disparo). Pausar el polling en background rompía eso.
+    expect(callback).toHaveBeenCalledTimes(4);
+  });
+
   // -----------------------------------------------------------------------
   // Cleanup: clearTimeout y removeEventListener al desmontar
   // -----------------------------------------------------------------------

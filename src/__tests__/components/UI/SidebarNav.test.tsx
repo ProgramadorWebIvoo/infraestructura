@@ -3,12 +3,22 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SidebarNav from "../../../components/UI/SidebarNav";
 
+vi.mock("../../../components/UI/NotificationsProvider", () => ({
+  useNotifications: () => ({
+    notifications: [],
+    unreadCount: 0,
+    markRead: vi.fn(),
+    markAllRead: vi.fn(),
+  }),
+}));
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function renderSidebar(props: Partial<Parameters<typeof SidebarNav>[0]> = {}) {
   const defaultProps = {
     isOpen: true,
     onClose: vi.fn(),
     user: { name: "Juan Pérez", email: "juan@ivoo.com" },
+    activeRole: "ANALISTA",
     onLogout: vi.fn(),
     canAccess: vi.fn(() => true),
     isCollapsed: false,
@@ -214,17 +224,50 @@ describe("SidebarNav", () => {
     expect(onToggleCollapse).toHaveBeenCalledOnce();
   });
 
+  it("mobile drawer (isOpen=true) always renders expanded content even when isCollapsed=true", () => {
+    // Bug real reportado en QA: isCollapsed es una preferencia de desktop
+    // persistida en localStorage; el drawer mobile heredaba ese valor y se
+    // abría viéndose "colapsado" (rail angosto) en vez de a ancho completo.
+    const { container } = renderSidebar({ isCollapsed: true, isOpen: true });
+
+    const aside = container.querySelector("aside");
+    expect(aside?.className).toContain("w-64");
+    expect(aside?.className).not.toMatch(/(?<!lg:)w-16/);
+
+    // El logo completo (no el tile colapsado) y el texto de marca deben verse.
+    expect(screen.getByAltText("IVOO")).toBeInTheDocument();
+    expect(screen.getByText("Gestión")).toBeInTheDocument();
+
+    const presidencia = screen.getByText("Presidencia").closest("a")!;
+    expect(presidencia.className).toContain("px-3");
+    expect(presidencia.className).toContain("gap-3");
+  });
+
+  it("desktop collapsed rail (isOpen=false) still renders the narrow layout", () => {
+    const { container } = renderSidebar({ isCollapsed: true, isOpen: false });
+
+    const aside = container.querySelector("aside");
+    expect(aside?.className).toContain("lg:w-16");
+    expect(screen.queryByAltText("IVOO")).not.toBeInTheDocument();
+  });
+
+  it("SidebarNav renders a single NotificationBell (the AuthenticatedLayout integration test covers no duplicate with MobileTopBar)", () => {
+    renderSidebar({ isCollapsed: false, isOpen: true });
+
+    expect(screen.getAllByLabelText(/Notificaciones/).length).toBe(1);
+  });
+
   it("collapse button exposes the correct action for the current state", () => {
     const { unmount } = renderSidebar({ isCollapsed: false });
     expect(screen.getByLabelText("Minimizar barra de navegación")).toBeInTheDocument();
     unmount();
 
-    renderSidebar({ isCollapsed: true });
+    renderSidebar({ isCollapsed: true, isOpen: false });
     expect(screen.getByLabelText("Expandir barra de navegación")).toBeInTheDocument();
   });
 
   it("collapsed sidebar narrows to w-16 and centers icons (no px/gap offset)", () => {
-    const { container } = renderSidebar({ isCollapsed: true });
+    const { container } = renderSidebar({ isCollapsed: true, isOpen: false });
 
     const aside = container.querySelector("aside");
     expect(aside?.className).toContain("w-16");
@@ -249,7 +292,7 @@ describe("SidebarNav", () => {
   });
 
   it("collapsed sidebar hides text labels and brand wordmark", () => {
-    renderSidebar({ isCollapsed: true });
+    renderSidebar({ isCollapsed: true, isOpen: false });
 
     const presidencia = screen.getByText("Presidencia");
     expect(presidencia.className).toContain("max-w-0");
@@ -267,7 +310,7 @@ describe("SidebarNav", () => {
   });
 
   it("collapsed sidebar centers config button and hides submenu indentation", () => {
-    renderSidebar({ isCollapsed: true });
+    renderSidebar({ isCollapsed: true, isOpen: false });
 
     const configBtn = screen.getByText("Configuración").closest("button")!;
     expect(configBtn.className).toContain("justify-center");
@@ -284,7 +327,7 @@ describe("SidebarNav", () => {
   });
 
   it("collapsed sidebar centers user avatar and logout icon", () => {
-    renderSidebar({ isCollapsed: true });
+    renderSidebar({ isCollapsed: true, isOpen: false });
 
     const logoutBtn = screen.getByText("Cerrar Sesión").closest("button")!;
     expect(logoutBtn.className).toContain("justify-center");

@@ -20,6 +20,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { apiFetch } from "../services/api";
+import { requestNotificationPermission } from "../services/browserNotifications";
 
 const STORAGE_USER = "ivoo_auth_user";
 const AUTHENTICATED_SENTINEL = "authenticated";
@@ -189,6 +190,11 @@ export function useAuth() {
     setAuthToken(AUTHENTICATED_SENTINEL);
     setAuthUser(safeUser);
     lastActivityRef.current = Date.now();
+
+    // Momento natural para pedir permiso de notificaciones nativas: el
+    // usuario ya está comprometido con usar la app. No-op si ya fue
+    // concedido/denegado en una sesión anterior (ver browserNotifications.ts).
+    requestNotificationPermission();
   }, []);
 
   // ── Logout ──

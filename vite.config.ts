@@ -39,6 +39,13 @@ export default defineConfig(({mode}) => {
     test: {
       globals: true,
       environment: 'jsdom',
+      // jsdom por defecto resuelve window.location.hostname a "127.0.0.1", lo que
+      // dispara la reescritura de host de resolveApiBaseUrl() en src/services/api.ts
+      // (pensada para dev en red local) y hace que las URLs esperadas en los tests
+      // ("localhost:8000") no coincidan con las reales ("127.0.0.1:8000").
+      environmentOptions: {
+        jsdom: { url: 'http://localhost:3000' },
+      },
       setupFiles: './src/test/setup.ts',
       coverage: {
         provider: 'v8',

@@ -48,8 +48,6 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
       user={user}
       activeRole={activeRole}
       canAccess={canAccess}
-      projectsCount={projects.length}
-      contractorsCount={contractors.length}
       inspectedProject={inspectedProject}
       onCloseInspectedProject={onCloseInspectedProject}
       onLogout={onLogout}
