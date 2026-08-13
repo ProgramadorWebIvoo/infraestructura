@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AuditLogPanel from "@/components/UI/AuditLogPanel";
 
@@ -98,5 +98,37 @@ describe("AuditLogPanel", () => {
     const root = container.firstElementChild as HTMLElement;
     // jsdom normaliza "- 1.5rem - 1.5rem" a "- 1.5rem + 1.5rem" al serializar el CSSOM.
     expect(root.style.maxHeight).toBe("calc(100vh - 1.5rem + 1.5rem)");
+  });
+
+  it("muestra el total de pagination en vez de entries.length cuando se pasa pagination", () => {
+    renderPanel({ pagination: { page: 1, lastPage: 3, total: 55, onPageChange: () => {} } });
+
+    expect(screen.getByText("55 registros")).toBeInTheDocument();
+  });
+
+  it("no muestra controles de página cuando lastPage es 1", () => {
+    renderPanel({ defaultOpen: true, pagination: { page: 1, lastPage: 1, total: 2, onPageChange: () => {} } });
+
+    expect(screen.queryByRole("button", { name: "Página siguiente" })).not.toBeInTheDocument();
+  });
+
+  it("muestra controles de página y llama a onPageChange al navegar", () => {
+    const onPageChange = vi.fn();
+    renderPanel({ defaultOpen: true, pagination: { page: 2, lastPage: 3, total: 55, onPageChange } });
+
+    expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Página siguiente" }));
+    expect(onPageChange).toHaveBeenCalledWith(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Página anterior" }));
+    expect(onPageChange).toHaveBeenCalledWith(1);
+  });
+
+  it("deshabilita 'anterior' en la primera página y 'siguiente' en la última", () => {
+    renderPanel({ defaultOpen: true, pagination: { page: 1, lastPage: 3, total: 55, onPageChange: () => {} } });
+
+    expect(screen.getByRole("button", { name: "Página anterior" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Página siguiente" })).not.toBeDisabled();
   });
 });

@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [2026-08-13] — Fix: barra de "cambios pendientes" no reaccionaba con TagMultiSelect + diff legible en el historial de auditoría
+- Tipo: fix (bug) + UX
+- Qué:
+  - **Bug de "dirty" falso positivo**: `dirtyIds` comparaba el borrador contra el valor original como string crudo. Al deseleccionar y volver a seleccionar un mismo tag en `TagMultiSelect`, el array se reinserta al final (`[...value, option]`), cambiando el orden serializado del JSON aunque el conjunto de valores sea idéntico — la barra "Guardar todo" quedaba pegada activa aun volviendo el campo a su estado original. Nueva función `isDirtyValue()` compara settings `type: json` como conjuntos ordenados en vez de string a string.
+  - **Historial de auditoría ilegible con valores largos**: el layout anterior truncaba a una sola línea tanto el *label* del setting (`truncate`) como los valores viejo/nuevo (`max-w-[100px] truncate`), volviendo el historial inútil para settings con nombres largos o valores tipo lista (ej. "Acciones que envían notificación..." cortado, o comparar dos JSON crudos de arrays). Nuevo componente `AuditLogValueDiff`: para settings `json` (listas de acciones) muestra un diff de tags añadidos (verde) / quitados (rojo tachado) en vez de dos strings JSON; para el resto, "viejo → nuevo" con wrap en vez de truncar. El label del setting ahora envuelve en varias líneas en vez de cortarse.
+- Por qué / causa raíz: el usuario detectó ambos con el selector de tags recién agregado — reportó capturas mostrando la barra de guardado activa tras revertir una selección, y labels/valores cortados en el panel de auditoría.
+- Archivos: modificados `src/views/ConfigAppPanel/index.tsx` (`isDirtyValue`, layout del historial); nuevo `src/views/ConfigAppPanel/components/AuditLogValueDiff.tsx`; test nuevo en `index.test.tsx` (toggle ida y vuelta de un tag no deja "Guardar todo" activo).
+- Verificación: `tsc --noEmit` limpio. **674/674 tests frontend.**
+
+## [2026-08-13] — Selector de tags para acciones de notificación en CONFIG APP (reemplaza textarea JSON)
+- Tipo: feature (UX)
+- Qué: `acciones_con_correo` y `acciones_con_notificacion_app` (settings `type: json`) dejan de editarse como textarea JSON crudo y pasan a un selector de chips clickeables con las acciones reales que la app dispara (consumidas desde `GET /settings/notification-actions`, no una lista inventada en el frontend). Nuevo componente reutilizable `components/UI/TagMultiSelect.tsx` (chips + "Seleccionar todas"/"Ninguna", genérico sobre cualquier lista de opciones fijas) y hook `hooks/useNotificationActionsCatalog.ts`. `SettingRow` detecta por `key` cuándo un setting `json` es una de estas dos listas de acciones y usa el selector en vez del textarea genérico (que sigue disponible como fallback para cualquier otro setting `json` futuro).
+- Por qué / causa raíz: el usuario señaló que un textarea JSON es mala experiencia para elegir entre una lista conocida de opciones, y pidió explícitamente que las opciones mostradas fueran las acciones reales que la app dispara — no datos sueltos o inventados.
+- Archivos: nuevos `src/components/UI/TagMultiSelect.tsx`, `src/hooks/useNotificationActionsCatalog.ts`; modificados `src/views/ConfigAppPanel/components/SettingRow.tsx`, `src/views/ConfigAppPanel/index.tsx`; tests nuevos `TagMultiSelect.test.tsx` (8), `useNotificationActionsCatalog.test.ts` (3), +2 en `SettingRow.test.tsx`.
+- Verificación: `tsc --noEmit` limpio. **673/673 tests frontend.**
+
+## [2026-08-13] — Errores de validación inline por campo en CONFIG APP + historial de auditoría paginado
+- Tipo: feature (UX) + escalabilidad
+- Qué:
+  - Al guardar, cada setting dirty se persiste de forma independiente (`persist()` ya no aborta todo el lote ante el primer error 422): los campos que fallan quedan marcados con borde rojo y su mensaje de validación debajo del input (`fieldErrors` en `ConfigAppPanel`, limpiado al reeditar el campo), mientras los demás cambios pendientes se guardan igual. Al fallar, hace scroll automático al primer campo con error.
+  - Nuevo componente reutilizable `components/UI/FieldError.tsx` (mensaje + `fieldErrorClasses()` para el borde/foco en rojo del control) para no duplicar este patrón en futuros formularios — usado hoy en `SettingRow`.
+  - `AuditLogPanel` gana paginación numerada server-side opcional (`pagination` prop: `page`, `lastPage`, `total`, `onPageChange`) con controles anterior/siguiente; `useConfigAuditLogs` pasó de traer todo el historial de una vez a pedir de a 20 registros por página (`goToPage`). `prependLocal` (inserción sin polling tras un guardado) solo aplica en la página 1.
+- Por qué / causa raíz: el usuario señaló que un 422 de validación no indicaba qué campo lo causó (solo un toast genérico), y que el historial de auditoría cargaba todo en una lista sin paginar — inviable cuando lleguen cientos o miles de registros.
+- Archivos: modificados `src/views/ConfigAppPanel/index.tsx`, `src/views/ConfigAppPanel/components/SettingRow.tsx`, `src/hooks/useConfigAuditLogs.ts`, `src/components/UI/AuditLogPanel.tsx`; nuevo `src/components/UI/FieldError.tsx`; tests: +1 en `index.test.tsx` (error inline conserva cambios pendientes), reescrito `useConfigAuditLogs.test.ts` (shape paginado + `goToPage` + `prependLocal` solo en página 1), +4 en `AuditLogPanel.test.tsx` (controles de paginación).
+- Verificación: `tsc --noEmit` limpio. **660/660 tests frontend.**
+
 ## [2026-08-13] — CONFIG APP: eliminado el botón "Guardar sección", solo queda el guardado global
 - Tipo: refactor (limpieza)
 - Qué: quitado el botón "Guardar sección" por tarjeta y todo su código asociado (`handleSaveGroup`, `savingGroup`, `dirtyIdsInGroup`) — el guardado ahora es exclusivamente vía la barra flotante "Guardar todo" / "Descartar cambios", que ya cubría el caso general.
@@ -21,19 +47,12 @@
 - Archivos: modificados `app/Http/Controllers/Api/AppSettingController.php` (backend), `src/hooks/useAppSettings.ts` (tipo `UpdateSettingResponse`), `src/hooks/useConfigAuditLogs.ts` (`prependLocal`), `src/views/ConfigAppPanel/index.tsx`; test nuevo en `tests/Feature/ConfigAuditLogTest.php` (respuesta anidada), test nuevo en frontend confirmando una sola consulta al endpoint tras guardar.
 - Verificación: backend **223/223**, frontend `tsc --noEmit` limpio.
 
-## [2026-08-13] — CONFIG APP: acciones que notifican (push/app) + retención de notificaciones + auditoría exclusiva de SUPERADMIN
+## [2026-08-13] — Panel de auditoría de CONFIG APP (exclusivo SUPERADMIN), componente reutilizable
 - Tipo: feature
-- Qué:
-  - Eliminados los 4 settings "correo por departamento" (`correo_procura/finanzas/cierre_obra/auditoria`) — nunca tuvieron consumidor: `ProjectActionMail` siempre envía al destinatario real de la notificación (mismo criterio por rol que el push/bandeja), nunca a una dirección fija de departamento.
-  - Nuevo setting `acciones_con_notificacion_app`: mismo patrón que `acciones_con_correo` pero para push + bandeja interna. Por defecto incluye las ~16 acciones auditadas (comportamiento actual sin cambios); editable para silenciar acciones de bajo valor sin dejar de auditarlas (`AuditLog::record()` sigue corriendo siempre).
-  - Nuevo setting `retencion_notificaciones_dias` (default 90) + comando `notifications:prune` (programado diario en el scheduler) — antes las notificaciones en `app_notifications` se acumulaban indefinidamente, sin ningún mecanismo de limpieza.
-  - Nuevos settings `polling_notificaciones_segundos` (default 8, rango 5-120) y `polling_dashboard_segundos` (default 25, rango 10-300) — catálogo listo para conectar a `NotificationsProvider`/`useDashboardSummary` en una fase futura (no conectados todavía en esta entrega).
-  - **Auditoría de CONFIG APP separada y exclusiva de SUPERADMIN**: nueva tabla `config_audit_logs` + modelo `ConfigAuditLog` + `GET /config-audit-logs` (middleware `role:SUPERADMIN`), deliberadamente distinta de `audit_logs`/`GET /audit-logs` (visible para cualquier autenticado, incluida Presidencia). `AppSettingController::update()` registra cada cambio (valor viejo, valor nuevo, usuario, timestamp).
-  - Nuevo componente reutilizable `src/components/UI/AuditLogPanel.tsx`: panel colapsable con búsqueda, pensado para reutilizarse en futuras vistas de configuración (config de IA, proveedores, etc.), no solo CONFIG APP.
-- Por qué / causa raíz: el usuario señaló que el apartado "Correos" de notificaciones no reflejaba cómo funciona la app (esos 4 campos eran configuración muerta) y pidió el equivalente de `acciones_con_correo` para notificaciones in-app. La auditoría de auditoría se pidió explícitamente restringida a SUPERADMIN — invisible para Presidencia, a diferencia de la auditoría de proyectos.
-- Archivos: nuevas migraciones `database/migrations/2026_08_13_000001_rework_notification_settings.php`, `2026_08_13_000002_create_config_audit_logs_table.php`; nuevos `app/Models/ConfigAuditLog.php`, `app/Http/Controllers/Api/ConfigAuditLogController.php`, `app/Console/Commands/PruneOldNotifications.php`; modificados `app/Services/NotificationDispatcher.php`, `app/Http/Controllers/Api/AppSettingController.php`, `app/Console/Kernel.php`, `routes/api.php`; tests nuevos `tests/Feature/PruneOldNotificationsTest.php` (2), `tests/Feature/ConfigAuditLogTest.php` (4), +2 en `tests/Feature/NotificationDispatcherTest.php` (filtro de acciones con notificación app).
-- Frontend: nuevos `src/hooks/useConfigAuditLogs.ts`, `src/components/UI/AuditLogPanel.tsx`; modificado `src/views/ConfigAppPanel/index.tsx` (layout de dos columnas para SUPERADMIN, panel de auditoría lateral); tests nuevos `src/__tests__/hooks/useConfigAuditLogs.test.ts` (4), `src/__tests__/components/UI/AuditLogPanel.test.tsx` (7).
-- Verificación: backend **228/228 tests**. Frontend `tsc --noEmit` limpio, **651/651 tests**.
+- Qué: nuevo panel lateral en `ConfigAppPanel`, visible solo cuando `activeRole === "SUPERADMIN"`, que muestra el historial de cambios de configuración (parámetro, valor viejo → nuevo, usuario, fecha) consumiendo el nuevo endpoint backend `GET /config-audit-logs`. Construido sobre un componente nuevo y genérico `src/components/UI/AuditLogPanel.tsx` (colapsable, con búsqueda, no acoplado al tipo de dato) para reutilizarse en futuras vistas de configuración (config de IA, proveedores, etc.), no solo CONFIG APP.
+- Por qué / causa raíz: el usuario pidió que los cambios de configuración quedaran auditados, pero explícitamente **invisibles para Presidencia** — a diferencia de la auditoría de proyectos que sí es visible para cualquier autenticado.
+- Archivos: nuevos `src/hooks/useConfigAuditLogs.ts`, `src/components/UI/AuditLogPanel.tsx`; modificados `src/views/ConfigAppPanel/index.tsx` (layout de dos columnas para SUPERADMIN), `src/routes/AuthenticatedRoutes.tsx` (pasa `activeRole` a `ConfigAppPanel`); tests nuevos `src/__tests__/hooks/useConfigAuditLogs.test.ts` (4), `src/__tests__/components/UI/AuditLogPanel.test.tsx` (7).
+- Verificación: `tsc --noEmit` limpio. **651/651 tests frontend.**
 
 ## [2026-08-12] — Advertencia de presupuesto excedido en carga manual de ofertas (Analistas)
 - Tipo: feature

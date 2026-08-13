@@ -23,6 +23,10 @@ const sampleLog: ConfigAuditLogRecord = {
   changedAt: "2026-08-13 10:00",
 };
 
+function page(items: ConfigAuditLogRecord[], overrides: Partial<{ currentPage: number; lastPage: number; total: number; perPage: number }> = {}) {
+  return { items, currentPage: 1, lastPage: 1, total: items.length, perPage: 20, ...overrides };
+}
+
 describe("useConfigAuditLogs", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -36,27 +40,21 @@ describe("useConfigAuditLogs", () => {
   });
 
   it("carga los logs cuando enabled es true", async () => {
-    mockApiFetch.mockResolvedValueOnce([sampleLog]);
+    mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
 
     const { result } = renderHook(() => useConfigAuditLogs("token", true));
     await flush();
 
-    expect(mockApiFetch).toHaveBeenCalledWith("/config-audit-logs", { token: "token" });
+    expect(mockApiFetch).toHaveBeenCalledWith("/config-audit-logs?page=1&per_page=20", { token: "token" });
     expect(result.current.logs).toEqual([sampleLog]);
     expect(result.current.isLoading).toBe(false);
-  });
-
-  it("cae a lista vacía si la respuesta es undefined", async () => {
-    mockApiFetch.mockResolvedValueOnce(undefined);
-
-    const { result } = renderHook(() => useConfigAuditLogs("token", true));
-    await flush();
-
-    expect(result.current.logs).toEqual([]);
+    expect(result.current.page).toBe(1);
+    expect(result.current.lastPage).toBe(1);
+    expect(result.current.total).toBe(1);
   });
 
   it("no vuelve a cargar automáticamente tras el primer fetch (hasLoaded)", async () => {
-    mockApiFetch.mockResolvedValueOnce([sampleLog]);
+    mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
 
     const { rerender } = renderHook(({ enabled }) => useConfigAuditLogs("token", enabled), {
       initialProps: { enabled: true },
@@ -67,5 +65,54 @@ describe("useConfigAuditLogs", () => {
     await flush();
 
     expect(mockApiFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("goToPage consulta la página solicitada y actualiza el estado", async () => {
+    mockApiFetch.mockResolvedValueOnce(page([sampleLog], { currentPage: 1, lastPage: 2, total: 25 }));
+
+    const { result } = renderHook(() => useConfigAuditLogs("token", true));
+    await flush();
+
+    mockApiFetch.mockResolvedValueOnce(page([{ ...sampleLog, id: 2 }], { currentPage: 2, lastPage: 2, total: 25 }));
+
+    act(() => {
+      result.current.goToPage(2);
+    });
+    await flush();
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/config-audit-logs?page=2&per_page=20", { token: "token" });
+    expect(result.current.page).toBe(2);
+    expect(result.current.logs).toEqual([{ ...sampleLog, id: 2 }]);
+  });
+
+  it("goToPage ignora páginas fuera de rango o la página actual", async () => {
+    mockApiFetch.mockResolvedValueOnce(page([sampleLog], { currentPage: 1, lastPage: 2, total: 25 }));
+
+    const { result } = renderHook(() => useConfigAuditLogs("token", true));
+    await flush();
+
+    act(() => {
+      result.current.goToPage(1);
+      result.current.goToPage(0);
+      result.current.goToPage(3);
+    });
+    await flush();
+
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("prependLocal inserta la entrada solo cuando se está en la página 1", async () => {
+    mockApiFetch.mockResolvedValueOnce(page([sampleLog], { currentPage: 1, lastPage: 1, total: 1 }));
+
+    const { result } = renderHook(() => useConfigAuditLogs("token", true));
+    await flush();
+
+    const newEntry: ConfigAuditLogRecord = { ...sampleLog, id: 99, newValue: "75" };
+    act(() => {
+      result.current.prependLocal(newEntry);
+    });
+
+    expect(result.current.logs[0]).toEqual(newEntry);
+    expect(result.current.total).toBe(2);
   });
 });

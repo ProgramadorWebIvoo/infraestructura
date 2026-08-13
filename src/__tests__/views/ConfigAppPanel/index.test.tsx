@@ -42,7 +42,15 @@ describe("ConfigAppPanel", () => {
     mockUpdateSetting.mockClear();
     mockUpdateSetting.mockResolvedValue({});
     mockApiFetch.mockReset();
-    mockApiFetch.mockResolvedValue([]);
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path.startsWith("/config-audit-logs")) {
+        return Promise.resolve({ items: [], currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
+      }
+      if (path === "/settings/notification-actions") {
+        return Promise.resolve(["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]);
+      }
+      return Promise.resolve(undefined);
+    });
   });
 
   it("muestra el spinner mientras isLoading es true", () => {
@@ -114,6 +122,49 @@ describe("ConfigAppPanel", () => {
     expect(screen.getByDisplayValue("100")).toBeInTheDocument();
   });
 
+  it("deseleccionar y volver a seleccionar el mismo tag no deja la barra de guardado activa (aunque cambie el orden serializado)", async () => {
+    mockUseAppSettings.mockReturnValue({
+      settings: {
+        notificaciones: [
+          makeSetting({
+            id: 3,
+            group: "notificaciones",
+            key: "acciones_con_correo",
+            type: "json",
+            value: '["Rechazo de cuadro comparativo","Confirmacion de contratacion"]',
+            label: "Acciones que envían correo",
+            min_value: null,
+            max_value: null,
+          }),
+        ],
+      },
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path.startsWith("/config-audit-logs")) return Promise.resolve({ items: [], currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
+      if (path === "/settings/notification-actions") {
+        return Promise.resolve(["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]);
+      }
+      return Promise.resolve(undefined);
+    });
+
+    render(<ConfigAppPanel authToken="token" />);
+
+    await waitFor(() => expect(screen.getByText("Confirmacion de contratacion")).toHaveAttribute("aria-pressed"));
+
+    // Deseleccionar "Rechazo de cuadro comparativo"...
+    fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
+    expect(screen.getByText("Rechazo de cuadro comparativo")).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Guardar todo")).toBeInTheDocument();
+
+    // ...y volver a seleccionarlo: el conjunto final es idéntico al original,
+    // aunque el orden del array cambió (queda al final en vez de al principio).
+    fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
+    expect(screen.getByText("Rechazo de cuadro comparativo")).toHaveAttribute("aria-pressed", "true");
+    await waitFor(() => expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument());
+  });
+
   it("Guardar todo persiste todos los cambios pendientes de todas las secciones", async () => {
     mockUseAppSettings.mockReturnValue({
       settings: {
@@ -156,8 +207,9 @@ describe("ConfigAppPanel", () => {
     render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
 
     // Carga inicial del historial (una sola vez, no polling).
-    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/config-audit-logs", { token: "token" }));
-    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/config-audit-logs?page=1&per_page=20", { token: "token" }));
+    const auditLogCallsBeforeSave = mockApiFetch.mock.calls.filter(([path]) => (path as string).startsWith("/config-audit-logs")).length;
+    expect(auditLogCallsBeforeSave).toBe(1);
 
     fireEvent.change(screen.getByDisplayValue("100"), { target: { value: "75" } });
     fireEvent.click(screen.getByText("Guardar todo"));
@@ -168,7 +220,41 @@ describe("ConfigAppPanel", () => {
 
     await waitFor(() => expect(screen.getByText("Admin Test", { exact: false })).toBeInTheDocument());
 
-    // Sigue siendo una sola consulta al endpoint — la entrada se insertó localmente.
-    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    // Sigue siendo una sola consulta al endpoint de auditoría — la entrada se insertó localmente.
+    const auditLogCallsAfterSave = mockApiFetch.mock.calls.filter(([path]) => (path as string).startsWith("/config-audit-logs")).length;
+    expect(auditLogCallsAfterSave).toBe(1);
+  });
+
+  it("al fallar la validación de un campo, muestra el mensaje inline junto al input y conserva los demás cambios pendientes", async () => {
+    mockUpdateSetting.mockImplementation((id: number, value: string) => {
+      if (id === 1) {
+        return Promise.reject(new Error("El valor no puede ser mayor a 100."));
+      }
+      return Promise.resolve({ id, group: "fiscal", key: "razon_social", value, type: "string", min_value: null, max_value: null, label: "Razón social", description: null, created_at: "", updated_at: "" });
+    });
+    mockUseAppSettings.mockReturnValue({
+      settings: {
+        presupuesto: [makeSetting()],
+        fiscal: [makeSetting({ id: 2, group: "fiscal", key: "razon_social", label: "Razón social", type: "string", value: "" })],
+      },
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+
+    render(<ConfigAppPanel authToken="token" />);
+
+    fireEvent.change(screen.getByDisplayValue("100"), { target: { value: "40" } });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "IVOO C.A." } });
+
+    fireEvent.click(screen.getByText("Guardar todo"));
+
+    await waitFor(() => expect(screen.getByText("El valor no puede ser mayor a 100.")).toBeInTheDocument());
+
+    // El campo que sí se guardó se limpia del draft y desaparece de "pendientes".
+    await waitFor(() => expect(screen.getByText("1 cambio pendiente")).toBeInTheDocument());
+
+    // Editar el campo con error limpia su mensaje inline.
+    fireEvent.change(screen.getByDisplayValue("40"), { target: { value: "90" } });
+    expect(screen.queryByText("El valor no puede ser mayor a 100.")).not.toBeInTheDocument();
   });
 });

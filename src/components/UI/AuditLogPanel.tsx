@@ -18,7 +18,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, History, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, History, Search } from "lucide-react";
 import Spinner from "./Spinner";
 import EmptyState from "./EmptyState";
 
@@ -41,6 +41,18 @@ export interface AuditLogPanelProps<T> {
   /** Ocupa la altura visible del viewport (con `stickyOffset` restado) en vez de crecer con el contenido; el listado interno hace su propio scroll. */
   fillViewport?: boolean;
   className?: string;
+  /**
+   * Paginación server-side (opcional). `entries` debe contener solo la
+   * página actual — con volúmenes de auditoría que crecen indefinidamente,
+   * traer todo de una vez no escala. Si se omite, el panel se comporta como
+   * lista simple (todo lo que venga en `entries`).
+   */
+  pagination?: {
+    page: number;
+    lastPage: number;
+    total: number;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function AuditLogPanel<T>({
@@ -57,6 +69,7 @@ export default function AuditLogPanel<T>({
   stickyOffset = "1.5rem",
   fillViewport = false,
   className = "",
+  pagination,
 }: AuditLogPanelProps<T>) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [search, setSearch] = useState("");
@@ -94,7 +107,8 @@ export default function AuditLogPanel<T>({
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-bold text-slate-900">{title}</h3>
           <p className="text-[11px] text-slate-500 font-medium">
-            {entries.length} {entries.length === 1 ? "registro" : "registros"}
+            {pagination ? pagination.total : entries.length}{" "}
+            {(pagination ? pagination.total : entries.length) === 1 ? "registro" : "registros"}
           </p>
         </div>
         <motion.span animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
@@ -135,6 +149,32 @@ export default function AuditLogPanel<T>({
                   {filtered.map(entry => (
                     <div key={keyOf(entry)}>{renderEntry(entry)}</div>
                   ))}
+                </div>
+              )}
+
+              {pagination && pagination.lastPage > 1 && (
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => pagination.onPageChange(pagination.page - 1)}
+                    disabled={pagination.page <= 1 || isLoading}
+                    aria-label="Página anterior"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Página {pagination.page} de {pagination.lastPage}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => pagination.onPageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.lastPage || isLoading}
+                    aria-label="Página siguiente"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )}
             </div>

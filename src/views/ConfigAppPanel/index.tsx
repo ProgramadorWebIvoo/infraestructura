@@ -37,7 +37,9 @@ import { useToast } from "../../components/UI/Toast";
 import { getErrorMessage } from "../../services/logger";
 import { useAppSettings, type AppSettingRecord } from "../../hooks/useAppSettings";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "../../hooks/useConfigAuditLogs";
+import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
 import SettingRow from "./components/SettingRow";
+import AuditLogValueDiff from "./components/AuditLogValueDiff";
 
 const GROUP_META: Record<string, { title: string; description: string; icon: React.ReactNode; color: string }> = {
   moneda: { title: "Moneda", description: "Moneda base para montos registrados en la app.", icon: <Coins className="h-5 w-5" />, color: "amber" },
@@ -55,6 +57,29 @@ const GROUP_ORDER = ["presupuesto", "notificaciones", "fiscal", "moneda", "ratin
 
 type Draft = Record<number, string>;
 
+/**
+ * Compara el valor en borrador contra el original para decidir si un
+ * setting está "dirty". Para `json` (hoy: listas de acciones vía
+ * TagMultiSelect) no alcanza con comparar el string crudo: togglear un tag
+ * fuera y volver a seleccionarlo lo reinserta al final del array, cambiando
+ * el orden serializado aunque el conjunto de valores sea idéntico — eso
+ * disparaba falsamente la barra de "cambios pendientes". Se comparan como
+ * conjuntos ordenados en vez de string a string.
+ */
+function isDirtyValue(type: AppSettingRecord["type"], draftValue: string, originalValue: string): boolean {
+  if (type !== "json") return draftValue !== originalValue;
+
+  try {
+    const a = JSON.parse(draftValue || "[]");
+    const b = JSON.parse(originalValue || "[]");
+    if (!Array.isArray(a) || !Array.isArray(b)) return draftValue !== originalValue;
+    if (a.length !== b.length) return true;
+    return [...a].sort().join(" ") !== [...b].sort().join(" ");
+  } catch {
+    return draftValue !== originalValue;
+  }
+}
+
 interface ConfigAppPanelProps {
   authToken: string;
   activeRole?: string;
@@ -65,7 +90,17 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   const { settings, isLoading, updateSetting } = useAppSettings(authToken);
 
   const isSuperadmin = activeRole === "SUPERADMIN";
-  const { logs: auditLogs, isLoading: isLoadingAuditLogs, prependLocal: prependAuditLog } = useConfigAuditLogs(authToken, isSuperadmin);
+  const {
+    logs: auditLogs,
+    isLoading: isLoadingAuditLogs,
+    page: auditLogPage,
+    lastPage: auditLogLastPage,
+    total: auditLogTotal,
+    goToPage: goToAuditLogPage,
+    prependLocal: prependAuditLog,
+  } = useConfigAuditLogs(authToken, isSuperadmin);
+
+  const { actions: notificationActionsCatalog } = useNotificationActionsCatalog(authToken);
 
   const settingLabelByKey = useMemo(() => {
     const map: Record<string, string> = {};
@@ -77,41 +112,85 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   const [draft, setDraft] = useState<Draft>({});
   const [savingAll, setSavingAll] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
 
   const valueOf = (setting: AppSettingRecord) =>
     Object.prototype.hasOwnProperty.call(draft, setting.id) ? draft[setting.id] : setting.value ?? "";
 
   const handleChange = (id: number, value: string) => {
     setDraft(prev => ({ ...prev, [id]: value }));
+    setFieldErrors(prev => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
 
   const dirtyIds = useMemo(
-    () => allSettings.filter(s => Object.prototype.hasOwnProperty.call(draft, s.id) && draft[s.id] !== (s.value ?? "")).map(s => s.id),
+    () =>
+      allSettings
+        .filter(s => Object.prototype.hasOwnProperty.call(draft, s.id) && isDirtyValue(s.type, draft[s.id], s.value ?? ""))
+        .map(s => s.id),
     [allSettings, draft],
   );
 
+  /**
+   * Persiste cada setting dirty de forma independiente: un error de
+   * validación en uno no debe descartar los demás cambios pendientes. Los
+   * ids que fallan quedan con su mensaje en `fieldErrors` (mostrado inline
+   * en el SettingRow correspondiente) y siguen en el draft para reintentar;
+   * los que sí se guardaron se limpian del draft normalmente.
+   */
   const persist = async (ids: number[]) => {
+    const succeededIds: number[] = [];
+    const errors: Record<number, string> = {};
+
     for (const id of ids) {
-      const updated = await updateSetting(id, draft[id]);
-      if (updated.auditLog && isSuperadmin) {
-        prependAuditLog(updated.auditLog);
+      try {
+        const updated = await updateSetting(id, draft[id]);
+        if (updated.auditLog && isSuperadmin) {
+          prependAuditLog(updated.auditLog);
+        }
+        succeededIds.push(id);
+      } catch (err) {
+        errors[id] = getErrorMessage(err, "Valor inválido.");
       }
     }
+
     setDraft(prev => {
       const next = { ...prev };
-      for (const id of ids) delete next[id];
+      for (const id of succeededIds) delete next[id];
       return next;
     });
+
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      for (const id of succeededIds) delete next[id];
+      return { ...next, ...errors };
+    });
+
+    return { failedIds: Object.keys(errors).map(Number) };
   };
 
   const handleSaveAll = async () => {
     if (dirtyIds.length === 0) return;
     setSavingAll(true);
     try {
-      await persist(dirtyIds);
-      showToast("Configuración actualizada.", "success");
+      const { failedIds } = await persist(dirtyIds);
+      if (failedIds.length > 0) {
+        showToast(
+          failedIds.length === 1
+            ? "Un campo tiene un valor inválido. Revísalo antes de continuar."
+            : `${failedIds.length} campos tienen valores inválidos. Revísalos antes de continuar.`,
+          "error",
+        );
+        document.getElementById(`setting-row-${failedIds[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        showToast("Configuración actualizada.", "success");
+      }
     } catch (err) {
       showToast(getErrorMessage(err, "Error al guardar la configuración."), "error");
     } finally {
@@ -121,6 +200,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   const handleDiscardAll = () => {
     setDraft({});
+    setFieldErrors({});
   };
 
   if (isLoading) {
@@ -171,7 +251,14 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                 )}
                 <div>
                   {settings[group].map(setting => (
-                    <SettingRow key={setting.id} setting={setting} value={valueOf(setting)} onChange={handleChange} />
+                    <SettingRow
+                      key={setting.id}
+                      setting={setting}
+                      value={valueOf(setting)}
+                      onChange={handleChange}
+                      error={fieldErrors[setting.id]}
+                      notificationActionsCatalog={notificationActionsCatalog}
+                    />
                   ))}
                 </div>
               </Card>
@@ -189,21 +276,18 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
           sticky
           fillViewport
           stickyOffset="1.5rem"
+          pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
           searchableText={log => `${settingLabelByKey[log.settingKey] ?? log.settingKey} ${log.userName ?? ""} ${log.oldValue ?? ""} ${log.newValue ?? ""}`}
           keyOf={log => log.id}
           searchPlaceholder="Buscar por parámetro, usuario o valor..."
           emptyMessage="Todavía no se ha modificado ningún parámetro."
           renderEntry={log => (
             <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-[11px] font-bold text-slate-700 truncate">{settingLabelByKey[log.settingKey] ?? log.settingKey}</span>
-                <span className="text-[9px] font-mono text-slate-400 shrink-0">{log.changedAt}</span>
+              <div className="mb-1.5">
+                <span className="text-[11px] font-bold text-slate-700 leading-snug wrap-break-word">{settingLabelByKey[log.settingKey] ?? log.settingKey}</span>
+                <span className="block text-[9px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                <span className="text-rose-500 line-through truncate max-w-[100px]">{log.oldValue ?? "—"}</span>
-                <span className="text-slate-300">→</span>
-                <span className="text-emerald-600 font-bold truncate max-w-[100px]">{log.newValue ?? "—"}</span>
-              </div>
+              <AuditLogValueDiff oldValue={log.oldValue} newValue={log.newValue} />
               {log.userName && <p className="text-[10px] text-slate-400 font-medium mt-1">por {log.userName}</p>}
             </div>
           )}
