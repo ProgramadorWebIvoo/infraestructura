@@ -9,12 +9,13 @@
 import { useMemo, useState } from "react";
 import type { Project } from "../../../types";
 import { useToast } from "../../../components/UI/Toast";
-import { Award, FileSpreadsheet, LayoutList, Loader2, Send, Trash2, Trophy } from "lucide-react";
+import { AlertTriangle, Award, FileSpreadsheet, LayoutList, Loader2, Send, Trash2, Trophy } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import Button from "../../../components/UI/Button";
 import EmptyState from "../../../components/UI/EmptyState";
 import ConfirmDialog from "../../../components/UI/ConfirmDialog";
+import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { formatNumber } from "../../../utils";
 
 interface ImportResult {
@@ -39,6 +40,7 @@ export default function ComparativeTableSection({
   onComparativeSubmitted,
 }: ComparativeTableSectionProps) {
   const { showToast } = useToast();
+  const maxAdvancePercent = useMaxAdvancePercent();
   const [isImporting, setIsImporting] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
@@ -153,7 +155,13 @@ export default function ComparativeTableSection({
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">Plazo: {prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} sem` : "Sin dato"} | Anticipo: {prop.negotiatedAdvancePercent}%</div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1 flex-wrap">
+                          Plazo: {prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} sem` : "Sin dato"} | Anticipo:{" "}
+                          <span className={prop.negotiatedAdvancePercent > maxAdvancePercent ? "text-amber-600 font-bold inline-flex items-center gap-0.5" : undefined}>
+                            {prop.negotiatedAdvancePercent > maxAdvancePercent && <AlertTriangle className="h-2.5 w-2.5" />}
+                            {prop.negotiatedAdvancePercent}%
+                          </span>
+                        </div>
                         <div className="font-mono text-[11px] text-emerald-600 font-bold mt-1">${prop.totalCost.toLocaleString()} USD</div>
                       </div>
                       <button

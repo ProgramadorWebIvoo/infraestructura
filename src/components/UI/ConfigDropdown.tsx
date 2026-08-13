@@ -11,7 +11,7 @@
 import { memo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Settings, ChevronDown, Users, UserCog, Package, Brain } from "lucide-react";
+import { Settings, ChevronDown, Users, UserCog, Package, Brain, SlidersHorizontal } from "lucide-react";
 import SidebarTip from "./SidebarTip";
 import { navLinkClass, sidebarIconClass, sidebarTextClass } from "./sidebarNavClasses";
 
@@ -20,7 +20,7 @@ interface ConfigDropdownProps {
   onClose: () => void;
 }
 
-const CONFIG_PATHS = ["/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"];
+const CONFIG_PATHS = ["/usuarios", "/config-proveedores", "/config-materiales", "/config-ia", "/config-app"];
 
 function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
   const location = useLocation();
@@ -130,6 +130,23 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                     <>
                       <Brain className={sidebarIconClass(isActive)} />
                       <span className={sidebarTextClass(isCollapsed)}>Modelos de IA</span>
+                    </>
+                  )}
+                </NavLink>
+              </SidebarTip>
+
+              <SidebarTip label="Configuración App" disabled={!isCollapsed}>
+                <NavLink
+                  role="menuitem"
+                  to="/config-app"
+                  id="sidebar-config-app"
+                  onClick={onClose}
+                  className={navLinkClass("bg-slate-600", "border-slate-400", isCollapsed)}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <SlidersHorizontal className={sidebarIconClass(isActive)} />
+                      <span className={sidebarTextClass(isCollapsed)}>Configuración App</span>
                     </>
                   )}
                 </NavLink>

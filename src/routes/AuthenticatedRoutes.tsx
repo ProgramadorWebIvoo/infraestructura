@@ -15,6 +15,7 @@ const ProveedoresRegistrados = lazy(() => import("../views/ProveedoresRegistrado
 const ProveedoresConfigPanel = lazy(() => import("../views/ProveedoresConfigPanel"));
 const MaterialConfigPanel = lazy(() => import("../views/MaterialConfigPanel"));
 const AIConfigPanel = lazy(() => import("../views/AIConfigPanel"));
+const ConfigAppPanel = lazy(() => import("../views/ConfigAppPanel"));
 const UsuariosPanel = lazy(() => import("../views/UsuariosPanel"));
 
 function FullScreenFallback() {
@@ -134,6 +135,14 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_IA)} redirectTo={fallbackRoute}>
               <AIConfigPanel authToken={authToken} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.CONFIG_APP}
+          element={
+            <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_APP)} redirectTo={fallbackRoute}>
+              <ConfigAppPanel authToken={authToken} activeRole={activeRole} />
             </ProtectedRoute>
           }
         />

@@ -41,8 +41,6 @@ export default function AnalistasPanel({
 }: AnalistasPanelProps) {
   const [selectedProjectId, setSelectedProjectId] = useState("");
 
-  if (isLoading) return <AnalistasSkeleton />;
-
   const pendingLicitacion = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA),
     [projects],
@@ -58,6 +56,8 @@ export default function AnalistasPanel({
     }),
     [projects, pendingLicitacion],
   );
+
+  if (isLoading) return <AnalistasSkeleton />;
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">

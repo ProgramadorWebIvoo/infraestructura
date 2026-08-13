@@ -18,6 +18,7 @@ import {
   UserCog,
   Package,
   Brain,
+  SlidersHorizontal,
 } from "lucide-react";
 import { ROUTES } from "./routes.tsx";
 
@@ -39,6 +40,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   [ROUTES.CONFIG_PROVEEDORES]: { label: "Proveedores", icon: UserCog, color: "#818CF8" },
   [ROUTES.CONFIG_MATERIALES]: { label: "Material", icon: Package, color: "#059669" },
   [ROUTES.CONFIG_IA]: { label: "Modelos de IA", icon: Brain, color: "#A78BFA" },
+  [ROUTES.CONFIG_APP]: { label: "Configuración App", icon: SlidersHorizontal, color: "#64748B" },
 };
 
 /** Busca metadata por el prefijo de path más específico (para rutas con :params) */

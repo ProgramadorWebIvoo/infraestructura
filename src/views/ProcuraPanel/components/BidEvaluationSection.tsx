@@ -8,14 +8,16 @@
 
 import { useMemo, useState } from "react";
 import Button from "../../../components/UI/Button";
-import { AlertTriangle, BrainCircuit, Clock, MapPin, ShieldCheck, Star, Trophy, Users, Wallet, XCircle } from "lucide-react";
+import { AlertTriangle, BrainCircuit, Clock, Gauge, MapPin, ShieldCheck, Star, Trophy, Users, Wallet, XCircle } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import EmptyState from "../../../components/UI/EmptyState";
-import ConfirmDialog from "../../../components/UI/ConfirmDialog";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
 import EvaluacionInteligenteModal from "../../../components/Modals/EvaluacionInteligenteModal";
+import HireConfirmDialog from "../../../components/Modals/HireConfirmDialog";
+import { useBudgetSemaphore, SEMAPHORE_COLORS } from "../../../hooks/useBudgetSemaphore";
+import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { ProjectStatus } from "../../../types";
 import type { Project, Proposal } from "../../../types";
 
@@ -88,11 +90,21 @@ export default function BidEvaluationSection({
   onSelectContractor,
   onRejectProposals,
 }: BidEvaluationSectionProps) {
+  const { levelOf } = useBudgetSemaphore();
+  const maxAdvancePercent = useMaxAdvancePercent();
+
   const [rejectingProject, setRejectingProject] = useState<Project | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
 
-  const [confirmSelect, setConfirmSelect] = useState<{ projectId: string; contractorCode: string; proposalId: string; contractorName: string } | null>(null);
+  const [confirmSelect, setConfirmSelect] = useState<{
+    projectId: string;
+    contractorCode: string;
+    proposalId: string;
+    contractorName: string;
+    advancePercent: number;
+    executedPct: number;
+  } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
   const [aiEvalProject, setAiEvalProject] = useState<Project | null>(null);
@@ -232,39 +244,76 @@ export default function BidEvaluationSection({
                             </div>
                           ),
                         },
+                        {
+                          key: "semaphore",
+                          label: "Semáforo",
+                          align: "center",
+                          render: (prop) => {
+                            const authorized = p.approvedInvestmentAmount ?? 0;
+                            const pct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
+                            const colors = SEMAPHORE_COLORS[levelOf(pct)];
+                            return (
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-[10px] border ${colors.text} ${colors.bg}`}>
+                                <Gauge className="h-3 w-3" />
+                                {Math.round(pct)}%
+                              </span>
+                            );
+                          },
+                        },
                         { key: "deliveryWeeks", label: "Entrega", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} semanas` : "Sin dato"}</span> },
                         {
                           key: "advance",
                           label: "Anticipo Pactado",
                           align: "center",
-                          render: (prop) => (
-                            <>
-                              <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[10px] border border-emerald-200">{prop.negotiatedAdvancePercent}%</span>
-                              <div className="text-[9px] text-slate-400 mt-1 font-semibold">(${(prop.totalCost * (prop.negotiatedAdvancePercent / 100)).toLocaleString("en-US", { maximumFractionDigits: 0 })})</div>
-                            </>
-                          ),
+                          render: (prop) => {
+                            const exceedsMax = prop.negotiatedAdvancePercent > maxAdvancePercent;
+                            return (
+                              <>
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-[10px] border ${
+                                    exceedsMax
+                                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  }`}
+                                >
+                                  {exceedsMax && <AlertTriangle className="h-3 w-3" />}
+                                  {prop.negotiatedAdvancePercent}%
+                                </span>
+                                <div className="text-[9px] text-slate-400 mt-1 font-semibold">(${(prop.totalCost * (prop.negotiatedAdvancePercent / 100)).toLocaleString("en-US", { maximumFractionDigits: 0 })})</div>
+                                {exceedsMax && (
+                                  <div className="text-[8px] text-amber-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>
+                                )}
+                              </>
+                            );
+                          },
                         },
                         {
                           key: "actions",
                           label: "Contratación",
                           align: "center",
-                          render: (prop) => (
-                            <Button
-                              id={`btn-hire-${p.id}-${prop.contractorCode}`}
-                              onClick={() => setConfirmSelect({
-                                projectId: p.id,
-                                contractorCode: prop.contractorCode,
-                                proposalId: prop.id,
-                                contractorName: prop.contractorName,
-                              })}
-                              variant="primary"
-                              colorScheme="sky"
-                              size="sm"
-                              icon={<ShieldCheck className="h-4 w-4" />}
-                            >
-                              Adjudicar
-                            </Button>
-                          ),
+                          render: (prop) => {
+                            const authorized = p.approvedInvestmentAmount ?? 0;
+                            const executedPct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
+                            return (
+                              <Button
+                                id={`btn-hire-${p.id}-${prop.contractorCode}`}
+                                onClick={() => setConfirmSelect({
+                                  projectId: p.id,
+                                  contractorCode: prop.contractorCode,
+                                  proposalId: prop.id,
+                                  contractorName: prop.contractorName,
+                                  advancePercent: prop.negotiatedAdvancePercent,
+                                  executedPct,
+                                })}
+                                variant="primary"
+                                colorScheme="sky"
+                                size="sm"
+                                icon={<ShieldCheck className="h-4 w-4" />}
+                              >
+                                Adjudicar
+                              </Button>
+                            );
+                          },
                         },
                       ]}
                       data={proposals}
@@ -330,7 +379,7 @@ export default function BidEvaluationSection({
       </Modal>
 
       {/* ── Confirm Contractor Selection ── */}
-      <ConfirmDialog
+      <HireConfirmDialog
         isOpen={!!confirmSelect}
         onClose={() => setConfirmSelect(null)}
         onConfirm={async () => {
@@ -343,11 +392,12 @@ export default function BidEvaluationSection({
             setIsSelecting(false);
           }
         }}
-        title="Adjudicar Contratista"
-        message={`¿Estás seguro de adjudicar el contrato a "${confirmSelect?.contractorName ?? ""}"? Esta acción seleccionará a este contratista como ganador y enviará el proyecto a Finanzas para liberación del anticipo.`}
-        variant="warning"
-        confirmLabel="Confirmar adjudicación"
         isLoading={isSelecting}
+        contractorName={confirmSelect?.contractorName ?? ""}
+        advancePercent={confirmSelect?.advancePercent ?? 0}
+        maxAdvancePercent={maxAdvancePercent}
+        executedPct={confirmSelect?.executedPct ?? 0}
+        semaphoreLevel={levelOf(confirmSelect?.executedPct ?? 0)}
       />
 
       {/* AI Evaluation Modal */}

@@ -16,6 +16,8 @@ interface NumericInputProps {
   placeholder?: string;
   step?: string;
   min?: number;
+  /** Si se define, clampa cualquier valor ingresado o pegado a este tope. */
+  max?: number;
   /** Deshabilitar sanetización de negativos (por defecto se bloquean) */
   allowNegative?: boolean;
   /** Forzar valores enteros (sin decimales). Útil para semanas, cantidades, etc. */
@@ -30,6 +32,7 @@ export default function NumericInput({
   placeholder = "0.00",
   step = "0.01",
   min = 0,
+  max,
   allowNegative = false,
   integer = false,
   id,
@@ -41,9 +44,10 @@ export default function NumericInput({
       const parsed = integer ? parseInt(v, 10) : parseFloat(v);
       if (isNaN(parsed)) return value; // mantener valor anterior
       if (!allowNegative && parsed < 0) return 0;
+      if (max !== undefined && parsed > max) return max;
       return parsed;
     },
-    [allowNegative, integer, value],
+    [allowNegative, integer, max, value],
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +75,7 @@ export default function NumericInput({
       type="number"
       step={integer ? "1" : step}
       min={min}
+      max={max}
       value={value}
       onChange={handleChange}
       onKeyDown={handleKeyDown}

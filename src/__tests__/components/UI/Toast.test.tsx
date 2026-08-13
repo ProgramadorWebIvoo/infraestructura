@@ -217,6 +217,33 @@ describe("Toast", () => {
     expect(screen.queryByText("Urgente")).not.toBeInTheDocument();
   });
 
+  it("keeps a notification-variant toast visible past the normal 4s duration (7s) but shorter than high-priority (8s)", () => {
+    function NotificationTrigger() {
+      const { showToast } = useToast();
+      return (
+        <button onClick={() => showToast("Obra Test — Rechazo", "info", { variant: "notification" })}>
+          Show Toast
+        </button>
+      );
+    }
+
+    renderWithProvider(<NotificationTrigger />);
+
+    act(() => { screen.getByText("Show Toast").click(); });
+
+    // Still visible past the normal 4s duration.
+    act(() => { vi.advanceTimersByTime(4250); });
+    expect(screen.getByText("Obra Test — Rechazo")).toBeInTheDocument();
+
+    // Still visible right before the 7s notification duration elapses.
+    act(() => { vi.advanceTimersByTime(2500); });
+    expect(screen.getByText("Obra Test — Rechazo")).toBeInTheDocument();
+
+    // Gone shortly after 7s.
+    act(() => { vi.advanceTimersByTime(500); });
+    expect(screen.queryByText("Obra Test — Rechazo")).not.toBeInTheDocument();
+  });
+
   it("uses role='alert' for high-priority toasts even when type is info", () => {
     function PriorityTrigger() {
       const { showToast } = useToast();

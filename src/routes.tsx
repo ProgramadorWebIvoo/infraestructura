@@ -31,6 +31,7 @@ export const ROUTES = {
   CONFIG_PROVEEDORES: "/config-proveedores",
   CONFIG_MATERIALES: "/config-materiales",
   CONFIG_IA: "/config-ia",
+  CONFIG_APP: "/config-app",
   REGISTRO_PROVEEDORES: "/registro-proveedores",
   PROPUESTA_MATERIALES: "/propuesta-materiales/:token",
   RESET_PASSWORD: "/reset-password/:token",

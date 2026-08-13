@@ -160,7 +160,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           const isNotification = toast.variant === "notification";
           const Icon = isNotification ? Bell : ICONS[toast.type];
           const style = isNotification ? NOTIFICATION_STYLE : STYLES[toast.type];
-          const duration = toast.priority === "high" ? HIGH_PRIORITY_DURATION_MS : TOAST_DURATION_MS;
+          const duration = getToastDuration(toast.priority, toast.variant);
 
           return (
             <div

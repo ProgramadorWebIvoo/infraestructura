@@ -8,9 +8,10 @@
  */
 
 import { motion } from "motion/react";
-import { Wallet, AlertTriangle, HandCoins, CalendarClock } from "lucide-react";
+import { Wallet, AlertTriangle, HandCoins, CalendarClock, Gauge } from "lucide-react";
 import type { DashboardSummary } from "../../../types";
 import { itemVariants } from "../../../animations";
+import { useBudgetSemaphore, SEMAPHORE_COLORS } from "../../../hooks/useBudgetSemaphore";
 
 interface FinancialOverviewSectionProps {
   summary: DashboardSummary;
@@ -47,9 +48,14 @@ export default function FinancialOverviewSection({ summary }: FinancialOverviewS
   const { totalApprovedInvestment, totalCommittedAmount, totalReleasedFunds, pendingFunds, excessReleased } = summary;
   const base = totalApprovedInvestment || 1;
   const committedPct = Math.min(100, (totalCommittedAmount / base) * 100);
-  const releasedPct = Math.min(100, (totalReleasedFunds / base) * 100);
+  const releasedPctRaw = (totalReleasedFunds / base) * 100;
+  const releasedPct = Math.min(100, releasedPctRaw);
   const pendingPct = Math.min(100, (pendingFunds / base) * 100);
   const overBudget = excessReleased > 0;
+
+  const { levelOf } = useBudgetSemaphore();
+  const semaphoreLevel = levelOf(releasedPctRaw);
+  const semaphoreColors = SEMAPHORE_COLORS[semaphoreLevel];
 
   return (
     <motion.div
@@ -64,8 +70,14 @@ export default function FinancialOverviewSection({ summary }: FinancialOverviewS
           <h2 className="font-bold text-slate-900 text-sm">Ejecución Financiera</h2>
           <p className="text-[11px] text-slate-500 font-medium">Aprobado · Comprometido · Liberado · Pendiente</p>
         </div>
+        <span
+          className={`ml-auto inline-flex items-center gap-1.5 text-[10px] font-mono font-bold rounded-lg px-2.5 py-1 border ${semaphoreColors.text} ${semaphoreColors.bg}`}
+        >
+          <Gauge className="h-3 w-3" />
+          {semaphoreColors.label} · {Math.round(releasedPctRaw)}%
+        </span>
         {overBudget && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1">
             <AlertTriangle className="h-3 w-3" />
             Sobre-ejecución ${fmtMoney(excessReleased)}
           </span>
@@ -76,7 +88,7 @@ export default function FinancialOverviewSection({ summary }: FinancialOverviewS
         <div className="space-y-4 lg:col-span-2">
           <FlowRow label="Presupuesto Aprobado" amount={totalApprovedInvestment} total={totalApprovedInvestment} barClass="bg-gradient-to-r from-sky-400 to-sky-600" sub="Referencia del total (100%)" />
           <FlowRow label="Comprometido (contratos vigentes)" amount={totalCommittedAmount} total={totalApprovedInvestment} barClass="bg-gradient-to-r from-indigo-400 to-indigo-600" sub={`${Math.round(committedPct)}% del presupuesto aprobado`} />
-          <FlowRow label="Fondos Liberados" amount={totalReleasedFunds} total={totalApprovedInvestment} barClass="bg-gradient-to-r from-emerald-400 to-emerald-600" sub={overBudget ? `${Math.round(releasedPct)}% del presupuesto (excede lo aprobado)` : `${Math.round(releasedPct)}% del presupuesto aprobado`} />
+          <FlowRow label="Fondos Liberados" amount={totalReleasedFunds} total={totalApprovedInvestment} barClass={semaphoreColors.bar} sub={overBudget ? `${Math.round(releasedPct)}% del presupuesto (excede lo aprobado) — semáforo: ${semaphoreColors.label}` : `${Math.round(releasedPct)}% del presupuesto aprobado — semáforo: ${semaphoreColors.label}`} />
           <FlowRow label="Pendiente por Ejecutar" amount={pendingFunds} total={totalApprovedInvestment} barClass={overBudget ? "bg-rose-300" : "bg-gradient-to-r from-amber-400 to-amber-600"} sub={overBudget ? "No hay pendiente — lo liberado supera lo aprobado" : `${Math.round(pendingPct)}% del presupuesto aprobado`} />
           <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
             Cada barra mide el monto contra el presupuesto aprobado (máx. 100%). Si lo liberado supera lo aprobado,

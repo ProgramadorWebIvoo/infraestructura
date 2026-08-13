@@ -1,5 +1,140 @@
 # CHANGELOG
 
+## [2026-08-13] — CONFIG APP: eliminado el botón "Guardar sección", solo queda el guardado global
+- Tipo: refactor (limpieza)
+- Qué: quitado el botón "Guardar sección" por tarjeta y todo su código asociado (`handleSaveGroup`, `savingGroup`, `dirtyIdsInGroup`) — el guardado ahora es exclusivamente vía la barra flotante "Guardar todo" / "Descartar cambios", que ya cubría el caso general.
+- Por qué / causa raíz: el usuario pidió simplificar a un único flujo de guardado, eliminando código muerto/redundante ahora que la barra global es el único punto de guardado real.
+- Archivos: modificado `src/views/ConfigAppPanel/index.tsx`; tests ajustados en `src/__tests__/views/ConfigAppPanel/index.test.tsx` (eliminado el test de "Guardar sección" por tarjeta, actualizado el test de auditoría para disparar el guardado vía "Guardar todo").
+- Verificación: `tsc --noEmit` limpio. **653/653 tests frontend.**
+
+## [2026-08-13] — Panel de auditoría persistente y a pantalla completa (patrón Odoo)
+- Tipo: fix (UX)
+- Qué: `AuditLogPanel` (componente reutilizable) gana 3 props nuevas: `sticky` (se ancla en su posición al hacer scroll del contenido principal, no se pierde de vista), `fillViewport` (fuerza `height` — no solo `max-height` — igual al alto visible del viewport menos el offset, en vez de crecer con el contenido) y `stickyOffset`. La sección animada interna usa `flex-1`/`min-h-0` para estirarse y llenar ese alto forzado, con el listado de entradas haciendo su propio scroll — sin dejar espacio en blanco cuando hay pocos registros. En `ConfigAppPanel` el panel ahora arranca **abierto** por defecto (antes colapsado).
+- Por qué / causa raíz: primera versión del panel no era sticky (desaparecía al hacer scroll del contenido principal) y su altura se ajustaba al contenido en vez de ocupar la pantalla visible, dejando un hueco en blanco notorio debajo cuando había pocos registros. El usuario pidió el comportamiento de Odoo: fijo en pantalla, ocupando el alto disponible, con scroll interno.
+- Archivos: modificado `src/components/UI/AuditLogPanel.tsx`, `src/views/ConfigAppPanel/index.tsx` (usa `sticky`, `fillViewport`, `defaultOpen`); tests nuevos en `src/__tests__/components/UI/AuditLogPanel.test.tsx` (+3: sticky con offset, sin sticky por defecto, límite de altura con fillViewport).
+- Verificación: `tsc --noEmit` limpio. **654/654 tests frontend** (antes de la limpieza del botón "Guardar sección").
+
+## [2026-08-13] — Guardado sin polling del historial de auditoría (respuesta del PATCH trae la entrada nueva)
+- Tipo: fix (eficiencia)
+- Qué: `PATCH /settings/{id}` ahora devuelve el registro de `ConfigAuditLog` recién creado, anidado dentro de `data` (no como clave hermana, porque `apiFetch` desenvuelve `json.data` automáticamente). El frontend inserta esa entrada directamente en el estado del panel (`prependLocal`) en vez de volver a consultar `/config-audit-logs` tras cada guardado.
+- Por qué / causa raíz: el usuario señaló que el registro debía llegar "automático" a la tabla en la misma vista, pero sin usar polling recurrente — ineficiente para un dato que solo cambia por la propia acción del usuario en esa vista. Como el backend ya conoce exactamente qué cambió al momento de guardar, no hace falta ninguna consulta adicional, ni recurrente ni de una sola vez.
+- Archivos: modificados `app/Http/Controllers/Api/AppSettingController.php` (backend), `src/hooks/useAppSettings.ts` (tipo `UpdateSettingResponse`), `src/hooks/useConfigAuditLogs.ts` (`prependLocal`), `src/views/ConfigAppPanel/index.tsx`; test nuevo en `tests/Feature/ConfigAuditLogTest.php` (respuesta anidada), test nuevo en frontend confirmando una sola consulta al endpoint tras guardar.
+- Verificación: backend **223/223**, frontend `tsc --noEmit` limpio.
+
+## [2026-08-13] — CONFIG APP: acciones que notifican (push/app) + retención de notificaciones + auditoría exclusiva de SUPERADMIN
+- Tipo: feature
+- Qué:
+  - Eliminados los 4 settings "correo por departamento" (`correo_procura/finanzas/cierre_obra/auditoria`) — nunca tuvieron consumidor: `ProjectActionMail` siempre envía al destinatario real de la notificación (mismo criterio por rol que el push/bandeja), nunca a una dirección fija de departamento.
+  - Nuevo setting `acciones_con_notificacion_app`: mismo patrón que `acciones_con_correo` pero para push + bandeja interna. Por defecto incluye las ~16 acciones auditadas (comportamiento actual sin cambios); editable para silenciar acciones de bajo valor sin dejar de auditarlas (`AuditLog::record()` sigue corriendo siempre).
+  - Nuevo setting `retencion_notificaciones_dias` (default 90) + comando `notifications:prune` (programado diario en el scheduler) — antes las notificaciones en `app_notifications` se acumulaban indefinidamente, sin ningún mecanismo de limpieza.
+  - Nuevos settings `polling_notificaciones_segundos` (default 8, rango 5-120) y `polling_dashboard_segundos` (default 25, rango 10-300) — catálogo listo para conectar a `NotificationsProvider`/`useDashboardSummary` en una fase futura (no conectados todavía en esta entrega).
+  - **Auditoría de CONFIG APP separada y exclusiva de SUPERADMIN**: nueva tabla `config_audit_logs` + modelo `ConfigAuditLog` + `GET /config-audit-logs` (middleware `role:SUPERADMIN`), deliberadamente distinta de `audit_logs`/`GET /audit-logs` (visible para cualquier autenticado, incluida Presidencia). `AppSettingController::update()` registra cada cambio (valor viejo, valor nuevo, usuario, timestamp).
+  - Nuevo componente reutilizable `src/components/UI/AuditLogPanel.tsx`: panel colapsable con búsqueda, pensado para reutilizarse en futuras vistas de configuración (config de IA, proveedores, etc.), no solo CONFIG APP.
+- Por qué / causa raíz: el usuario señaló que el apartado "Correos" de notificaciones no reflejaba cómo funciona la app (esos 4 campos eran configuración muerta) y pidió el equivalente de `acciones_con_correo` para notificaciones in-app. La auditoría de auditoría se pidió explícitamente restringida a SUPERADMIN — invisible para Presidencia, a diferencia de la auditoría de proyectos.
+- Archivos: nuevas migraciones `database/migrations/2026_08_13_000001_rework_notification_settings.php`, `2026_08_13_000002_create_config_audit_logs_table.php`; nuevos `app/Models/ConfigAuditLog.php`, `app/Http/Controllers/Api/ConfigAuditLogController.php`, `app/Console/Commands/PruneOldNotifications.php`; modificados `app/Services/NotificationDispatcher.php`, `app/Http/Controllers/Api/AppSettingController.php`, `app/Console/Kernel.php`, `routes/api.php`; tests nuevos `tests/Feature/PruneOldNotificationsTest.php` (2), `tests/Feature/ConfigAuditLogTest.php` (4), +2 en `tests/Feature/NotificationDispatcherTest.php` (filtro de acciones con notificación app).
+- Frontend: nuevos `src/hooks/useConfigAuditLogs.ts`, `src/components/UI/AuditLogPanel.tsx`; modificado `src/views/ConfigAppPanel/index.tsx` (layout de dos columnas para SUPERADMIN, panel de auditoría lateral); tests nuevos `src/__tests__/hooks/useConfigAuditLogs.test.ts` (4), `src/__tests__/components/UI/AuditLogPanel.test.tsx` (7).
+- Verificación: backend **228/228 tests**. Frontend `tsc --noEmit` limpio, **651/651 tests**.
+
+## [2026-08-12] — Advertencia de presupuesto excedido en carga manual de ofertas (Analistas)
+- Tipo: feature
+- Qué: `BidRegistrationSection` (carga manual de propuestas de contratista) ahora compara el costo total cotizado (`materialCost + laborCost`) contra `activeProject.approvedInvestmentAmount` en vivo mientras se tipea:
+  - Indicador inline ámbar bajo el total de la oferta cuando el costo supera la inversión autorizada, con el monto exacto de exceso.
+  - Al enviar el formulario ("Agregar al Cuadro"), si el presupuesto está excedido **y/o** el anticipo negociado supera el máximo configurado, se intercepta el submit con un `ConfirmDialog` ("¿Está seguro de cargar esta propuesta?") que detalla ambas condiciones detectadas (una, otra, o las dos combinadas) antes de persistir. Si no hay ninguna advertencia, se guarda directo sin fricción.
+  - No bloquea en ningún caso — el Analista puede confirmar y cargar la propuesta igual, cubriendo negociaciones reales que excedan cualquiera de los dos límites.
+- Por qué / causa raíz: mismo criterio ya aplicado al anticipo — el sistema debe advertir sobre condiciones fuera de política sin impedir su registro, ya que la decisión de negocio (aceptar una oferta sobre presupuesto o con anticipo elevado) es del Analista/Procura, no del formulario.
+- Archivos: modificado `src/views/AnalistasPanel/components/BidRegistrationSection.tsx`.
+- Verificación: `tsc --noEmit` limpio. **639/639 tests frontend** (sin regresiones; no existían tests previos para este componente).
+
+## [2026-08-12] — Fix: "Rendered more hooks than during the previous render" en AnalistasPanel
+- Tipo: fix (bug preexistente, no introducido en esta sesión)
+- Qué: `AnalistasPanel/index.tsx` tenía un `if (isLoading) return <AnalistasSkeleton />;` ubicado **antes** de dos `useMemo()` (`pendingLicitacion`, `kpis`). Mientras `isLoading` era `true`, React solo registraba el `useState` de `selectedProjectId`; al pasar a `false`, de golpe se registraban también los dos `useMemo` — un conteo de hooks distinto entre renders, que React detecta y aborta con este error. Se movió el `if (isLoading) return ...` a después de todos los hooks, antes del `return` del JSX.
+- Por qué / causa raíz: bug ya existente en el código (no relacionado a los cambios de anticipo/semáforo de esta sesión), pero se volvió visible al modificar `BidRegistrationSection` (nuevo hook `useMaxAdvancePercent`), lo que cambió el timing de renders y expuso la condición de carrera entre el estado de carga y el montaje de hooks condicionales.
+- Archivos: modificado `src/views/AnalistasPanel/index.tsx`.
+- Verificación: `tsc --noEmit` limpio. **639/639 tests frontend.**
+
+## [2026-08-12] — Modal de confirmación de adjudicación con 4 variantes (anticipo excedido / semáforo en riesgo)
+- Tipo: feature
+- Qué:
+  - Nuevo `src/components/Modals/HireConfirmDialog.tsx`, reemplaza el `ConfirmDialog` genérico que usaba `BidEvaluationSection` para confirmar la adjudicación de un contratista. Calcula dos condiciones de forma independiente — `advancePercent > maxAdvancePercent` (anticipo excede CONFIG APP) y `semaphoreLevel` en naranja/rojo (presupuesto en riesgo) — y renderiza hasta 4 variantes según su combinación:
+    - **Normal**: solo confirmación, banner sky de "dentro de los parámetros".
+    - **Anticipo excedido**: banner ámbar con el % pactado vs. el máximo configurado.
+    - **Semáforo en riesgo**: banner con el color/label real del nivel (naranja o rojo) y el % de ejecución de esa oferta contra la inversión autorizada.
+    - **Combinada**: ambos banners juntos cuando las dos condiciones aplican a la vez.
+  - El ícono y color del header del modal (ámbar vs. sky) y el botón de confirmar cambian según si hay alguna alerta activa, para que la severidad sea visible antes de leer el detalle.
+  - `BidEvaluationSection` ahora captura `advancePercent` y `executedPct` de la oferta en el momento de abrir el modal (ya se calculaban para la columna Semáforo y Anticipo Pactado de la tabla — se reutilizan, no hay cálculo duplicado).
+- Por qué / causa raíz: el usuario confirmó que el anticipo pactado es un dato relevante para la decisión de Procura (ya visible en la tabla comparativa) y pidió que la confirmación de adjudicación refleje explícitamente cuando la oferta elegida excede el anticipo máximo y/o el semáforo presupuestario, en vez de un mensaje genérico de "¿estás seguro?" sin contexto de riesgo.
+- Archivos: nuevo `src/components/Modals/HireConfirmDialog.tsx`; modificado `src/views/ProcuraPanel/components/BidEvaluationSection.tsx` (reemplaza `ConfirmDialog` por `HireConfirmDialog`, extiende el estado `confirmSelect` con `advancePercent`/`executedPct`); tests nuevos `src/__tests__/components/Modals/HireConfirmDialog.test.tsx` (8 tests: las 4 variantes, el corte naranja/rojo vs. amarillo, confirmar/cancelar).
+- Verificación: `tsc --noEmit` limpio. **639/639 tests frontend.**
+
+## [2026-08-12] — Alerta de anticipo excedido para Analistas (en vez de bloquear al proveedor externo)
+- Tipo: fix (corrección de diseño de negocio) + feature
+- Qué:
+  - **Revertido** en el formulario público (`PropuestaMaterialesPublica`/`ProposalDetailsSection`): ya no lee `maxAdvancePercent` del backend — vuelve al tope fijo 100% de siempre. El proveedor externo cotiza su condición real sin conocer la política interna de la empresa.
+  - **`BidRegistrationSection`** (Analistas, registro de oferta): el campo de anticipo ya no clampa contra el máximo configurado (`max` fijo en 100 para evitar valores absurdos) — en su lugar muestra una **alerta amarilla** (`AlertTriangle` + texto) debajo del campo cuando el % negociado supera el máximo configurado, sin impedir guardar. El Analista decide con la información completa.
+  - **`ComparativeTableSection`** (Analistas, cuadro comparativo): cada propuesta con anticipo por encima del máximo configurado muestra el % en ámbar con ícono de alerta, junto a plazo y costo.
+  - **`BidEvaluationSection`** (Procura, evaluación de ofertas): la columna "Anticipo Pactado" de la tabla comparativa marca en ámbar (con ícono y leyenda "Supera máx. X%") cualquier oferta por encima del máximo configurado, fila por fila.
+- Por qué / causa raíz: primera implementación bloqueaba/limitaba el campo de anticipo tanto para el proveedor externo como para el Analista usando el mismo máximo configurado. El usuario corrigió: el proveedor externo no debe estar limitado por una política que no conoce (revertido a tope fijo); el Analista y Procura sí necesitan ver la alerta al capturar y al evaluar, porque son quienes deciden si esa oferta es aceptable — pero sin bloquear el registro, ya que puede ser una condición negociable.
+- Archivos: modificados `src/views/PropuestaMaterialesPublica/types.ts`, `src/views/PropuestaMaterialesPublica/index.tsx`, `src/views/PropuestaMaterialesPublica/components/ProposalDetailsSection.tsx` (revertidos), `src/views/AnalistasPanel/components/BidRegistrationSection.tsx`, `src/views/AnalistasPanel/components/ComparativeTableSection.tsx`, `src/views/ProcuraPanel/components/BidEvaluationSection.tsx`.
+- Verificación: `tsc --noEmit` limpio. **631/631 tests frontend.**
+
+## [2026-08-12] — Anticipo máximo (CONFIG APP) conectado a los formularios de captura de anticipo
+- Tipo: fix
+- Qué:
+  - Nuevo hook `useMaxAdvancePercent()` (vistas autenticadas): lee `presupuesto.anticipo_maximo_porcentaje` desde `GET /settings`, fallback a 100 mientras carga o si falla — mismo patrón que `useBudgetSemaphore`.
+  - `PropuestaMaterialesPublica` (formulario público de cotización de proveedores, sin sesión): el tipo `InvitationPublicInfo` gana `maxAdvancePercent` (viene del backend en `GET /public/invitations/{token}`, que ya se consultaba para cargar el proyecto/materiales — no hubo que agregar un fetch nuevo). `ProposalDetailsSection` reemplazó el clamp manual `Math.min(100, v)` por el `max` real del `NumericInput`, forzado a entero, con el tope visible en el label ("Máximo permitido: X%").
+  - `BidRegistrationSection` (Analistas, registro de ofertas de contratista): el `<select>` fijo con opciones 10/20/30/40/50% — que no tenía ningún mecanismo de tope dinámico — se reemplazó por `NumericInput` con `max={maxAdvancePercent}`, permitiendo cualquier valor entero dentro del rango configurado en vez de solo 5 valores fijos.
+- Por qué / causa raíz: el usuario pidió conectar `anticipo_maximo_porcentaje` a todo lo relacionado con anticipos en la app. El `<select>` de Analistas en particular no solo estaba desconectado del setting — no tenía ninguna validación de tope, solo una lista corta de opciones que ni siquiera cubría el 100% por defecto.
+- Archivos: nuevo `src/hooks/useMaxAdvancePercent.ts`; modificados `src/views/PropuestaMaterialesPublica/types.ts`, `src/views/PropuestaMaterialesPublica/index.tsx`, `src/views/PropuestaMaterialesPublica/components/ProposalDetailsSection.tsx`, `src/views/AnalistasPanel/components/BidRegistrationSection.tsx`; tests nuevos `src/__tests__/hooks/useMaxAdvancePercent.test.ts` (4 tests: default, carga desde `/settings`, fallback ante error, fallback ante setting ausente).
+- Verificación: `tsc --noEmit` limpio. **631/631 tests frontend.**
+
+## [2026-08-12] — Componente reutilizable `InfoBanner` (cuadro de ayuda colapsable)
+- Tipo: refactor + feature
+- Qué:
+  - Extraído `src/components/UI/InfoBanner.tsx`: cuadro de ayuda contextual reutilizable, colapsable (ícono `Info` + título + chevron que rota, contenido con animación de alto vía `motion`/`AnimatePresence`). Props: `title`, `children`, `color` (sky/amber/emerald/indigo/slate), `defaultOpen` (default `true`), `className`.
+  - El banner explicativo del semáforo de ejecución presupuestaria en CONFIG APP (sección Presupuesto) ahora usa este componente en vez de JSX inline, con `defaultOpen={false}` — arranca colapsado para no ocupar espacio a quien ya conoce el mecanismo.
+- Por qué / causa raíz: el usuario pidió explícitamente que el cuadro de ayuda fuera un componente reutilizable para otras vistas futuras, y que fuera colapsable. El criterio para CONFIG APP es que todos los banners de ayuda que se agreguen ahí arranquen colapsados por defecto.
+- Archivos: nuevo `src/components/UI/InfoBanner.tsx`; modificado `src/views/ConfigAppPanel/index.tsx` (usa `InfoBanner` con `defaultOpen={false}`); tests nuevos `src/__tests__/components/UI/InfoBanner.test.tsx` (3 tests: render abierto por defecto, `defaultOpen=false`, toggle colapsar/expandir).
+- Verificación: `tsc --noEmit` limpio. **627/627 tests frontend.**
+
+## [2026-08-12] — Semáforo de ejecución presupuestaria (primer consumidor real de los umbrales de CONFIG APP)
+- Tipo: feature
+- Qué:
+  - `useBudgetSemaphore()`: hook que lee los 3 umbrales `presupuesto.semaforo_umbral_verde/amarillo/naranja` desde `GET /settings` y clasifica cualquier % de ejecución en verde (≤verde) / amarillo (≤amarillo) / naranja (≤naranja) / rojo (>naranja), con fallback a 80/95/100 si el fetch falla. Exporta también `SEMAPHORE_COLORS` (paleta consistente bar/text/bg/label por nivel) para que cualquier vista lo use sin reinventar estilos.
+  - **Dashboard de Presidencia** (`FinancialOverviewSection`): la barra "Fondos Liberados" y el badge superior ahora usan el color del semáforo según `% liberado / aprobado` de toda la cartera, en vez del emerald fijo que tenía antes. El badge de "Sobre-ejecución" (monto en rojo) se mantiene aparte porque comunica algo distinto (el exceso en dinero, no el nivel de riesgo).
+  - **Evaluación de Procura** (`BidEvaluationSection`): columna "Semáforo" agregada a la tabla comparativa de ofertas, **una fila por propuesta** — cada propuesta calcula su propio `% = totalCost_de_la_propuesta / inversión_autorizada`, sin importar de qué proveedor sea ni cuántas ofertas compitan. Se descartó una versión inicial que solo mostraba el semáforo de la oferta más barata (`best`) en un resumen agregado: con varias ofertas de varios proveedores (o del mismo proveedor con variantes), Procura necesita ver el nivel de riesgo de cada una para comparar, no solo el de la ganadora tentativa.
+- Por qué / causa raíz: los 3 umbrales de semáforo se crearon en CONFIG APP (Fase 1.4) como catálogo completo pero sin consumidor real. El usuario pidió conectar el indicador solo donde aporta a la decisión de negocio: Presidencia (supervisión de cartera) y Procura (evaluación de ofertas antes de adjudicar) — explícitamente no en Finanzas, que solo libera pagos ya aprobados y no evalúa presupuesto. Tras la primera versión, el usuario señaló que en Procura el semáforo debía ser por oferta individual, no un resumen de la mejor.
+- Archivos: nuevo `src/hooks/useBudgetSemaphore.ts`; modificados `src/views/PresidenciaDashboard/components/FinancialOverviewSection.tsx`, `src/views/ProcuraPanel/components/BidEvaluationSection.tsx` (columna Semáforo por fila en la tabla comparativa); tests nuevos `src/__tests__/hooks/useBudgetSemaphore.test.ts` (8 tests: clasificación por umbral default/personalizado, carga desde `/settings`, fallback ante error de red).
+- Verificación: `tsc --noEmit` limpio. **624/624 tests frontend.**
+
+## [2026-08-12] — CONFIG APP: validación estricta de porcentajes + guardado estilo Odoo (borrador/sección/global)
+- Tipo: feature + fix
+- Qué:
+  - **Validación de rango e integridad numérica**: `SettingRow` ahora usa el componente compartido `NumericInput` (mismo que ya sanea inputs numéricos en Procura/Analistas/Finanzas) para los settings `integer`/`float` — bloquea notación científica ('10e5'), fuerza enteros sin decimales cuando `type === "integer"`, y clampa en vivo contra `min_value`/`max_value` provistos por el backend (los 5 settings porcentuales quedan acotados a 0–100). Antes el input aceptaba cualquier texto y solo el backend rechazaba al guardar.
+  - `NumericInput` (componente compartido) ganó un prop `max` opcional que clampa el valor tecleado o pegado — antes solo clampaba negativos; ahora también topea máximos. Beneficia a los 11 consumidores existentes del componente, no solo CONFIG APP.
+  - **Guardado estilo Odoo**: se eliminó el botón "Guardar" por fila. `ConfigAppPanel` ahora mantiene un borrador local (`draft`, `Record<id, value>`) — escribir en un campo no persiste nada. Cada sección (Card) tiene su propio botón "Guardar sección (N)" que persiste solo los cambios pendientes de esa sección. Una barra flotante inferior aparece únicamente mientras hay cambios pendientes en cualquier sección, con "Guardar todo" (persiste todos los borradores) y "Descartar cambios" (revierte todo a los valores originales sin llamar al backend).
+  - `SettingRow` pasó de componente con estado propio + botón de guardado a componente controlado puro (`value`/`onChange` desde el padre) — el dueño del estado y del guardado es `ConfigAppPanel`.
+- Por qué / causa raíz: el usuario señaló dos problemas tras la primera versión del panel: (1) los inputs de porcentaje aceptaban "10e" o valores fuera de 0–100 sin bloqueo visual, mismo bug que ya se había resuelto para otros formularios con `NumericInput` — se reutilizó esa solución en vez de reinventar sanitización; (2) pidió explícitamente el patrón de guardado de Odoo (borrador + guardado por sección + guardado/descarte global) en vez de un botón de guardado inmediato por campo.
+- Archivos: modificados `src/components/UI/NumericInput.tsx` (prop `max`), `src/views/ConfigAppPanel/index.tsx` (reescrito: estado de borrador, guardado por sección, barra global), `src/views/ConfigAppPanel/components/SettingRow.tsx` (reescrito: componente controlado, usa `NumericInput`), `src/hooks/useAppSettings.ts` (tipo `AppSettingRecord` con `min_value`/`max_value`); tests reescritos `src/__tests__/views/ConfigAppPanel/SettingRow.test.tsx` (11 tests, incluye clamp/enteros/notación científica), `src/__tests__/views/ConfigAppPanel/index.test.tsx` (7 tests, incluye guardado por sección/global/descarte).
+- Verificación: `tsc --noEmit` limpio. **616/616 tests frontend** (1 test de `ExportButton` intermitente por timeout en corrida completa, verde en aislado — no relacionado a este cambio).
+
+## [2026-08-12] — Plan 90 días, Fase 1.4: panel CONFIG APP (frontend)
+- Tipo: feature
+- Qué:
+  - Nueva ruta `/config-app` (`ROUTES.CONFIG_APP`) + entrada en el dropdown de Configuración del sidebar, protegida para SUPERADMIN/ADMIN (matriz de permisos ya soporta rutas nuevas sin refactor, confirmado en la auditoría de Fase 0).
+  - `useAppSettings(authToken)`: carga `GET /settings` (agrupado por sección) y expone `updateSetting(id, value)`.
+  - `views/ConfigAppPanel/`: una `Card` por grupo (Presupuesto y anticipos, Notificaciones, Datos fiscales, Moneda, Ratings, Alertas de precio, Inflación, Aplicación — orden fijo, no alfabético), cada una con sus settings editables inline vía `SettingRow` (input tipado según `type`: texto/número/checkbox/textarea JSON, botón Guardar habilitado solo si el valor cambió).
+  - Favicon dinámico (`routeMeta.tsx`) y título de pestaña también cubren la nueva ruta.
+- Por qué / causa raíz: Fase 1.4 del plan de 90 días — contraparte de frontend del backend de CONFIG APP (`app_settings`/`SettingsService`, ver CHANGELOG de `infraestructura-back`).
+- Archivos: nuevos `src/hooks/useAppSettings.ts`, `src/views/ConfigAppPanel/index.tsx`, `src/views/ConfigAppPanel/components/SettingRow.tsx`; modificados `src/routes.tsx`, `src/routes/AuthenticatedRoutes.tsx`, `src/components/UI/ConfigDropdown.tsx`, `src/routeMeta.tsx`; tests nuevos `src/__tests__/hooks/useAppSettings.test.ts` (3 tests), `src/__tests__/views/ConfigAppPanel/SettingRow.test.tsx` (6 tests), `src/__tests__/views/ConfigAppPanel/index.test.tsx` (3 tests).
+- Verificación: `tsc --noEmit` limpio. **609/609 tests frontend.**
+
+## [2026-08-12] — Toast de notificación dura más (7s vs 4s normal) para no pasar inadvertido
+- Tipo: fix
+- Qué: nueva `NOTIFICATION_DURATION_MS = 7000` y helper `getToastDuration(priority, variant)` en `Toast.tsx` que centraliza la regla de duración (antes solo dependía de `priority`). Los toasts `variant="notification"` ahora duran 7s en vez de los 4s normales — más tiempo que el default para no pasar inadvertidos, pero menos que los 8s de `priority="high"` (reservado para casos realmente urgentes/bloqueantes).
+- Por qué / causa raíz: pedido del usuario — la duración por defecto de 4s hacía fácil perderse el toast de notificación.
+- Archivos: modificado `src/components/UI/Toast.tsx`; test nuevo en `src/__tests__/components/UI/Toast.test.tsx` (visible pasados los 4s normales, sigue visible cerca de los 7s, desaparece poco después).
+- Verificación: `tsc --noEmit` limpio. **597/597 tests.**
+
 ## [2026-08-12] — Fix: notificaciones nativas nunca llegaban en segundo plano
 - Tipo: fix
 - Qué:

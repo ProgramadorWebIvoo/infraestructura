@@ -9,14 +9,16 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Project, Contractor, Proposal } from "../../../types";
-import { FileSpreadsheet, FolderOpen, MapPin, Plus, Users } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, FolderOpen, MapPin, Plus, Users, Wallet } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import NumericInput from "../../../components/UI/NumericInput";
 import EmptyState from "../../../components/UI/EmptyState";
 import SelectModal from "../../../components/UI/SelectModal";
 import Button from "../../../components/UI/Button";
+import ConfirmDialog from "../../../components/UI/ConfirmDialog";
 import { formatNumber } from "../../../utils";
+import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 
 interface BidRegistrationSectionProps {
   pendingLicitacion: Project[];
@@ -41,8 +43,10 @@ export default function BidRegistrationSection({
   const [materialCost, setMaterialCost] = useState<number | "">(1000);
   const [laborCost, setLaborCost] = useState<number | "">(800);
   const [deliveryWeeks, setDeliveryWeeks] = useState<number | "">(2);
-  const [advancePercent, setAdvancePercent] = useState(30);
+  const maxAdvancePercent = useMaxAdvancePercent();
+  const [advancePercent, setAdvancePercent] = useState<number | "">(30);
   const [description, setDescription] = useState("");
+  const [pendingProposal, setPendingProposal] = useState<Omit<Proposal, "id"> | null>(null);
 
   // Project options for SelectModal
   const projectOptions = pendingLicitacion.map(p => ({
@@ -62,6 +66,19 @@ export default function BidRegistrationSection({
 
   const newTotal = (Number(materialCost) || 0) + (Number(laborCost) || 0);
 
+  const approvedBudget = activeProject?.approvedInvestmentAmount ?? 0;
+  const exceedsBudget = approvedBudget > 0 && newTotal > approvedBudget;
+  const budgetExcess = newTotal - approvedBudget;
+  const exceedsAdvance = advancePercent !== "" && advancePercent > maxAdvancePercent;
+
+  const commitProposal = (proposal: Omit<Proposal, "id">) => {
+    onAddProposal(selectedProjectId, proposal);
+    setDescription("");
+    setMaterialCost(1000);
+    setLaborCost(800);
+    setDeliveryWeeks(2);
+  };
+
   const handleAddProposal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProjectId) return;
@@ -73,7 +90,7 @@ export default function BidRegistrationSection({
     const laborCostNum = Number(laborCost || 0);
     const delWeeksNum = Number(deliveryWeeks || 1);
 
-    onAddProposal(selectedProjectId, {
+    const proposal: Omit<Proposal, "id"> = {
       contractorCode: contractor.code,
       contractorName: contractor.name,
       contractorRating: contractor.rating,
@@ -81,18 +98,27 @@ export default function BidRegistrationSection({
       laborCost: laborCostNum,
       totalCost: matCostNum + laborCostNum,
       deliveryWeeks: delWeeksNum,
-      negotiatedAdvancePercent: advancePercent,
+      negotiatedAdvancePercent: Number(advancePercent || 0),
       description: description.trim() || `Propuesta para trabajos de ${activeProject?.title}. Incluye materiales e instalación certificada.`
-    });
+    };
 
-    setDescription("");
-    setMaterialCost(1000);
-    setLaborCost(800);
-    setDeliveryWeeks(2);
+    if (exceedsBudget || exceedsAdvance) {
+      setPendingProposal(proposal);
+      return;
+    }
+
+    commitProposal(proposal);
+  };
+
+  const handleConfirmPending = () => {
+    if (!pendingProposal) return;
+    commitProposal(pendingProposal);
+    setPendingProposal(null);
   };
 
   return (
-    <Card className="border-l-4 border-l-emerald-400 h-full flex flex-col">
+    <>
+      <Card className="border-l-4 border-l-emerald-400 h-full flex flex-col">
       <SectionHeader
         icon={<FileSpreadsheet className="h-5 w-5" />}
         title="Carga de Propuestas de Contratistas"
@@ -218,19 +244,24 @@ export default function BidRegistrationSection({
                     </div>
 
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Anticipo Negociado (%)</label>
-                      <select
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Anticipo Negociado (%)
+                      </label>
+                      <NumericInput
                         id="analistas-advance"
                         value={advancePercent}
-                        onChange={(e) => setAdvancePercent(parseInt(e.target.value))}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-bold cursor-pointer"
-                      >
-                        <option value="10">10%</option>
-                        <option value="20">20%</option>
-                        <option value="30">30%</option>
-                        <option value="40">40%</option>
-                        <option value="50">50%</option>
-                      </select>
+                        onChange={setAdvancePercent}
+                        min={0}
+                        max={100}
+                        integer
+                        placeholder="0"
+                      />
+                      {advancePercent !== "" && advancePercent > maxAdvancePercent && (
+                        <p className="mt-1 flex items-center gap-1 text-[9px] font-bold text-amber-600">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                          Supera el máximo permitido ({maxAdvancePercent}%)
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -246,9 +277,19 @@ export default function BidRegistrationSection({
                     />
                   </div>
 
+                  {exceedsBudget && (
+                    <p className="flex items-center gap-1 text-[9px] font-bold text-amber-600">
+                      <Wallet className="h-3 w-3 shrink-0" />
+                      Supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}
+                    </p>
+                  )}
+
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-emerald-100/60">
                     <div className="text-xs font-bold text-slate-700">
-                      Costo Total Oferta: <span className="font-mono text-emerald-700 text-sm font-black">${formatNumber(newTotal)}</span>
+                      Costo Total Oferta:{" "}
+                      <span className={`font-mono text-sm font-black ${exceedsBudget ? "text-amber-700" : "text-emerald-700"}`}>
+                        ${formatNumber(newTotal)}
+                      </span>
                     </div>
                     <Button
                       id="btn-analistas-add-bid"
@@ -266,6 +307,25 @@ export default function BidRegistrationSection({
           </AnimatePresence>
         </div>
       )}
-    </Card>
+      </Card>
+
+      <ConfirmDialog
+        isOpen={!!pendingProposal}
+        onClose={() => setPendingProposal(null)}
+        onConfirm={handleConfirmPending}
+        title="¿Está seguro de cargar esta propuesta?"
+        message={[
+          exceedsBudget
+            ? `El costo total (${formatNumber(newTotal)}) supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}.`
+            : null,
+          exceedsAdvance
+            ? `El anticipo negociado (${advancePercent}%) supera el máximo permitido en CONFIG APP (${maxAdvancePercent}%).`
+            : null,
+          "Puede continuar si esta condición fue negociada o autorizada de otra forma.",
+        ].filter(Boolean).join(" ")}
+        variant="warning"
+        confirmLabel="Sí, cargar propuesta"
+      />
+    </>
   );
 }
