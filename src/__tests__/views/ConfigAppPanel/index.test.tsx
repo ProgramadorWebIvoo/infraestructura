@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import ConfigAppPanel from "@/views/ConfigAppPanel";
 import type { AppSettingRecord, SettingsByGroup } from "@/hooks/useAppSettings";
 
@@ -51,6 +51,14 @@ describe("ConfigAppPanel", () => {
           { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
           { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
         ]);
+      }
+      if (path === "/notification-rules") {
+        return Promise.resolve({
+          actions: [{ value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: false }],
+          roles: ["SUPERADMIN", "PROCURA"],
+          rules: { "Rechazo de cuadro comparativo": { app: ["PROCURA"], mail: [] } },
+          unconfigured: [],
+        });
       }
       return Promise.resolve(undefined);
     });
@@ -262,5 +270,73 @@ describe("ConfigAppPanel", () => {
     // Editar el campo con error limpia su mensaje inline.
     fireEvent.change(screen.getByDisplayValue("40"), { target: { value: "90" } });
     expect(screen.queryByText("El valor no puede ser mayor a 100.")).not.toBeInTheDocument();
+  });
+
+  it("SUPERADMIN: la barra global también guarda cambios pendientes de la matriz de notificaciones por rol", async () => {
+    mockUseAppSettings.mockReturnValue({
+      settings: { presupuesto: [makeSetting()] },
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+
+    // Expande la fila de la matriz y togglea un rol — no dispara ningún
+    // guardado por sí solo, solo queda en el borrador local.
+    await waitFor(() => expect(screen.getByText("Rechazo de cuadro comparativo")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
+    fireEvent.click(screen.getAllByText("Super Administrador")[0]);
+
+    expect(mockApiFetch).not.toHaveBeenCalledWith(
+      "/notification-rules",
+      expect.objectContaining({ method: "PUT" }),
+    );
+    expect(screen.getByText("Guardar todo")).toBeInTheDocument();
+
+    mockApiFetch.mockResolvedValueOnce({ action: "Rechazo de cuadro comparativo", app: ["PROCURA", "SUPERADMIN"], mail: [] });
+
+    fireEvent.click(screen.getByText("Guardar todo"));
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith("/notification-rules", {
+        method: "PUT",
+        body: JSON.stringify({ action: "Rechazo de cuadro comparativo", app: ["PROCURA", "SUPERADMIN"], mail: [] }),
+        token: "token",
+      }),
+    );
+    await waitFor(() => expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument());
+  });
+
+  it("SUPERADMIN: la fila de la matriz refleja cuando la acción está desmarcada en 'Acciones que envían notificación (app)'", async () => {
+    mockUseAppSettings.mockReturnValue({
+      settings: {
+        notificaciones: [
+          makeSetting({
+            id: 5,
+            group: "notificaciones",
+            key: "acciones_con_notificacion_app",
+            type: "json",
+            // "Rechazo de cuadro comparativo" quedó fuera de la lista.
+            value: '["Confirmacion de contratacion"]',
+            label: "Acciones que envían notificación (app)",
+            min_value: null,
+            max_value: null,
+          }),
+        ],
+      },
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+
+    await waitFor(() => expect(screen.getByText("Notificaciones por rol")).toBeInTheDocument());
+
+    // Solo el canal app está silenciado (acciones_con_correo no está en este
+    // mock, así que ese canal queda sin filtrar) — se expande la fila de la
+    // matriz y se verifica el aviso específico del canal app.
+    const matrixSection = screen.getByText("Notificaciones por rol").closest(".bg-white") as HTMLElement;
+    fireEvent.click(within(matrixSection).getByText("Rechazo de cuadro comparativo"));
+    expect(screen.getByText('Desactivada en "Acciones que envían notificación (app)"')).toBeInTheDocument();
   });
 });

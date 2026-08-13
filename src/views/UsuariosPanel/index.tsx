@@ -13,23 +13,9 @@ import { Users, Search } from "lucide-react";
 import { useToast } from "../../components/UI/Toast";
 import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
 import { containerVariants, itemVariants } from "../../animations";
+import { ROLE_LABELS, roleLabel } from "../../constants/roles";
 import UserRegistrationForm from "./components/UserRegistrationForm";
 import UserRow from "./components/UserRow";
-
-// Etiquetas amigables — la lista de valores válidos viene del backend
-// (GET /api/roles, fuente de verdad: UserController::VALID_ROLES) para que
-// un rol nuevo no requiera tocar el frontend para aparecer en el selector.
-const ROLE_LABELS: Record<string, string> = {
-  SUPERADMIN: "Super Administrador",
-  ADMIN: "Administrador",
-  PRESIDENCIA: "Presidencia",
-  INFRAESTRUCTURA: "Infraestructura / Mant.",
-  CIERRE_DE_OBRA: "Cierre de Obra",
-  PROCURA: "Procura",
-  ANALISTA: "Analistas",
-  FINANZAS: "Finanzas",
-  CATALOGOS: "Catálogos",
-};
 
 interface UsuariosPanelProps {
   authToken: string;
@@ -43,7 +29,6 @@ export default function UsuariosPanel({ authToken }: UsuariosPanelProps) {
     handleToggleUserStatus, handleSendPasswordReset,
   } = useUsuarios(authToken, showToast);
   const roleOptions = roles.map((value) => ({ value, label: ROLE_LABELS[value] ?? value }));
-  const roleLabel = (value: string) => ROLE_LABELS[value] ?? value;
 
   const [editingId, setEditingId] = useState<number | string | null>(null);
   const [togglingId, setTogglingId] = useState<number | string | null>(null);

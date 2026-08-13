@@ -3,13 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * CONFIG APP (Fase 1.4 del plan de 90 días) — parámetros de negocio
- * editables desde administración sin deploy, agrupados por sección:
- * moneda, presupuesto, ratings, notificaciones, datos fiscales, alertas de
- * precio, inflación, y ajustes generales de la app.
+ * editables desde administración sin deploy, organizados en 3 macro-grupos:
+ * Negocio (presupuesto, ratings, alertas, inflación, moneda, fiscal),
+ * Notificaciones (settings de notificaciones + matriz de notificaciones por
+ * rol), y Aplicación (ajustes generales).
  *
  * Guardado estilo Odoo: los cambios quedan en un borrador local (no se
- * persisten al tipear). Una barra global con "Guardar todo" / "Descartar
- * cambios" aparece solo mientras hay cambios pendientes en cualquier sección.
+ * persisten al tipear/togglear). Una barra global única con "Guardar todo" /
+ * "Descartar cambios" cubre TANTO los AppSetting como la matriz de
+ * notificaciones por rol — dos APIs distintas (PATCH /settings/{id} vs. PUT
+ * /notification-rules) pero un solo punto de guardado para el usuario.
  */
 
 import { useMemo, useState } from "react";
@@ -25,6 +28,7 @@ import {
   Settings as SettingsIcon,
   Check,
   RotateCcw,
+  Users,
 } from "lucide-react";
 import { containerVariants, itemVariants } from "../../animations";
 import Card from "../../components/UI/Card";
@@ -38,8 +42,10 @@ import { getErrorMessage } from "../../services/logger";
 import { useAppSettings, type AppSettingRecord } from "../../hooks/useAppSettings";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "../../hooks/useConfigAuditLogs";
 import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
+import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
 import SettingRow from "./components/SettingRow";
 import AuditLogValueDiff from "./components/AuditLogValueDiff";
+import NotificationMatrix from "./components/NotificationMatrix";
 
 const GROUP_META: Record<string, { title: string; description: string; icon: React.ReactNode; color: string }> = {
   moneda: { title: "Moneda", description: "Moneda base para montos registrados en la app.", icon: <Coins className="h-5 w-5" />, color: "amber" },
@@ -52,10 +58,19 @@ const GROUP_META: Record<string, { title: string; description: string; icon: Rea
   app: { title: "Aplicación", description: "Ajustes generales de la aplicación.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
 };
 
-// Orden de despliegue de secciones — no depende del orden alfabético de `group`.
-const GROUP_ORDER = ["presupuesto", "notificaciones", "fiscal", "moneda", "ratings", "alertas", "inflacion", "app"];
+/**
+ * 3 macro-grupos visuales para no dejar las secciones como una lista plana
+ * sin estructura — cada uno con un título separador simple (no otro nivel
+ * de Card/colapsable).
+ */
+const MACRO_GROUPS: { title: string; groups: string[] }[] = [
+  { title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "moneda", "fiscal"] },
+  { title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
+  { title: "Aplicación", groups: ["app"] },
+];
 
 type Draft = Record<number, string>;
+type NotificationRuleDraft = Record<string, NotificationRuleChannels>;
 
 /**
  * Compara el valor en borrador contra el original para decidir si un
@@ -80,6 +95,15 @@ function isDirtyValue(type: AppSettingRecord["type"], draftValue: string, origin
   }
 }
 
+function sameRoles(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  return [...a].sort().join(",") === [...b].sort().join(",");
+}
+
+function isDirtyRule(draft: NotificationRuleChannels, saved: NotificationRuleChannels): boolean {
+  return !sameRoles(draft.app, saved.app) || !sameRoles(draft.mail, saved.mail);
+}
+
 interface ConfigAppPanelProps {
   authToken: string;
   activeRole?: string;
@@ -102,6 +126,15 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   const { actions: notificationActionsCatalog } = useNotificationActionsCatalog(authToken);
 
+  const {
+    actions: ruleActions,
+    roles: ruleRoles,
+    rules,
+    unconfigured,
+    isLoading: isLoadingRules,
+    updateRule,
+  } = useNotificationRules(authToken, isSuperadmin);
+
   const settingLabelByKey = useMemo(() => {
     const map: Record<string, string> = {};
     for (const setting of Object.values(settings).flat()) {
@@ -110,9 +143,41 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     return map;
   }, [settings]);
 
+  /**
+   * El interruptor maestro (`acciones_con_notificacion_app`/`acciones_con_correo`)
+   * y la matriz por rol son dos capas independientes que se combinan con AND
+   * en el backend — una acción desmarcada acá no notifica a nadie sin
+   * importar qué roles tenga configurados en la matriz. Sin esto, la matriz
+   * mostraba filas con apariencia normal aunque estuvieran completamente
+   * silenciadas, generando confusión ("desactivé la acción pero sigo viendo
+   * roles marcados y no entiendo por qué no cambia nada").
+   */
+  const masterSwitchByChannel = useMemo(() => {
+    const parseList = (key: string): string[] | null => {
+      const raw = Object.values(settings).flat().find(s => s.key === key)?.value;
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch {
+        return null;
+      }
+    };
+    return { app: parseList("acciones_con_notificacion_app"), mail: parseList("acciones_con_correo") };
+  }, [settings]);
+
+  const silencedChannelsFor = (action: string): ("app" | "mail")[] => {
+    const silenced: ("app" | "mail")[] = [];
+    if (masterSwitchByChannel.app !== null && !masterSwitchByChannel.app.includes(action)) silenced.push("app");
+    if (masterSwitchByChannel.mail !== null && !masterSwitchByChannel.mail.includes(action)) silenced.push("mail");
+    return silenced;
+  };
+
   const [draft, setDraft] = useState<Draft>({});
-  const [savingAll, setSavingAll] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
+  const [ruleDraft, setRuleDraft] = useState<NotificationRuleDraft>({});
+  const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
+  const [savingAll, setSavingAll] = useState(false);
 
   const valueOf = (setting: AppSettingRecord) =>
     Object.prototype.hasOwnProperty.call(draft, setting.id) ? draft[setting.id] : setting.value ?? "";
@@ -127,6 +192,19 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     });
   };
 
+  const ruleValueOf = (action: string): NotificationRuleChannels =>
+    ruleDraft[action] ?? rules[action] ?? { app: [], mail: [] };
+
+  const handleRuleChange = (action: string, channels: NotificationRuleChannels) => {
+    setRuleDraft(prev => ({ ...prev, [action]: channels }));
+    setRuleErrors(prev => {
+      if (!(action in prev)) return prev;
+      const next = { ...prev };
+      delete next[action];
+      return next;
+    });
+  };
+
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
 
   const dirtyIds = useMemo(
@@ -135,6 +213,12 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
         .filter(s => Object.prototype.hasOwnProperty.call(draft, s.id) && isDirtyValue(s.type, draft[s.id], s.value ?? ""))
         .map(s => s.id),
     [allSettings, draft],
+  );
+
+  const dirtyRuleActions = useMemo(
+    () =>
+      Object.keys(ruleDraft).filter(action => isDirtyRule(ruleDraft[action], rules[action] ?? { app: [], mail: [] })),
+    [ruleDraft, rules],
   );
 
   /**
@@ -175,19 +259,57 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     return { failedIds: Object.keys(errors).map(Number) };
   };
 
+  /** Misma lógica que `persist()` pero para la matriz de notificaciones: cada acción se guarda independiente. */
+  const persistRules = async (actions: string[]) => {
+    const succeededActions: string[] = [];
+    const errors: Record<string, string> = {};
+
+    for (const action of actions) {
+      try {
+        await updateRule(action, ruleDraft[action]);
+        succeededActions.push(action);
+      } catch (err) {
+        errors[action] = getErrorMessage(err, "No se pudo guardar la regla.");
+      }
+    }
+
+    setRuleDraft(prev => {
+      const next = { ...prev };
+      for (const action of succeededActions) delete next[action];
+      return next;
+    });
+
+    setRuleErrors(prev => {
+      const next = { ...prev };
+      for (const action of succeededActions) delete next[action];
+      return { ...next, ...errors };
+    });
+
+    return { failedActions: Object.keys(errors) };
+  };
+
   const handleSaveAll = async () => {
-    if (dirtyIds.length === 0) return;
+    if (dirtyIds.length === 0 && dirtyRuleActions.length === 0) return;
     setSavingAll(true);
     try {
-      const { failedIds } = await persist(dirtyIds);
-      if (failedIds.length > 0) {
+      const [{ failedIds }, { failedActions }] = await Promise.all([
+        persist(dirtyIds),
+        persistRules(dirtyRuleActions),
+      ]);
+
+      const totalFailed = failedIds.length + failedActions.length;
+      if (totalFailed > 0) {
         showToast(
-          failedIds.length === 1
+          totalFailed === 1
             ? "Un campo tiene un valor inválido. Revísalo antes de continuar."
-            : `${failedIds.length} campos tienen valores inválidos. Revísalos antes de continuar.`,
+            : `${totalFailed} campos tienen valores inválidos. Revísalos antes de continuar.`,
           "error",
         );
-        document.getElementById(`setting-row-${failedIds[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (failedIds.length > 0) {
+          document.getElementById(`setting-row-${failedIds[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (failedActions.length > 0) {
+          document.getElementById(`notification-rule-${failedActions[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       } else {
         showToast("Configuración actualizada.", "success");
       }
@@ -201,6 +323,8 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   const handleDiscardAll = () => {
     setDraft({});
     setFieldErrors({});
+    setRuleDraft({});
+    setRuleErrors({});
   };
 
   if (isLoading) {
@@ -211,88 +335,122 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     );
   }
 
-  const groups = GROUP_ORDER.filter(g => settings[g]?.length);
-  const hasPendingChanges = dirtyIds.length > 0;
+  const hasSettingsFor = (group: string) => settings[group]?.length > 0;
+  const hasPendingChanges = dirtyIds.length > 0 || dirtyRuleActions.length > 0;
+  const pendingCount = dirtyIds.length + dirtyRuleActions.length;
+
+  const renderSettingGroup = (group: string) => {
+    const meta = GROUP_META[group] ?? { title: group, description: "", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" };
+
+    return (
+      <motion.div key={group} variants={itemVariants}>
+        <Card>
+          <SectionHeader icon={meta.icon} title={meta.title} description={meta.description} color={meta.color} />
+          {group === "presupuesto" && (
+            <InfoBanner title="¿Cómo funciona el semáforo de ejecución presupuestaria?" defaultOpen={false} className="mb-4">
+              <p>
+                Cada umbral es un porcentaje sobre el <strong>100% de la inversión aprobada</strong> de un
+                proyecto u oferta (monto ejecutado o cotizado ÷ monto autorizado). El semáforo toma el color
+                del primer umbral que el porcentaje no supere:
+              </p>
+              <ul className="mt-1.5 space-y-0.5 font-mono">
+                <li>🟢 Verde: hasta el umbral verde ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_verde")?.value ?? "80"}%)</li>
+                <li>🟡 Amarillo: entre el umbral verde y el amarillo ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_amarillo")?.value ?? "95"}%)</li>
+                <li>🟠 Naranja: entre el umbral amarillo y el naranja ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_naranja")?.value ?? "100"}%)</li>
+                <li>🔴 Rojo: al superar el umbral naranja (por defecto, más del 100% — sobre-ejecución)</li>
+              </ul>
+              <p className="mt-1.5">
+                Se usa hoy en el Dashboard de Presidencia (ejecución agregada de toda la cartera) y en la
+                evaluación de ofertas de Procura (cada propuesta, individualmente).
+              </p>
+            </InfoBanner>
+          )}
+          <div>
+            {settings[group].map(setting => (
+              <SettingRow
+                key={setting.id}
+                setting={setting}
+                value={valueOf(setting)}
+                onChange={handleChange}
+                error={fieldErrors[setting.id]}
+                notificationActionsCatalog={notificationActionsCatalog}
+              />
+            ))}
+          </div>
+        </Card>
+      </motion.div>
+    );
+  };
+
+  const renderNotificationRulesSection = () => (
+    <motion.div key="__notification_rules__" variants={itemVariants}>
+      <Card>
+        <SectionHeader
+          icon={<Users className="h-5 w-5" />}
+          title="Notificaciones por rol"
+          description="Qué roles reciben cada tipo de notificación (app y correo) — reemplaza la lógica fija anterior."
+          color="indigo"
+        />
+        <NotificationMatrix
+          actions={ruleActions}
+          roles={ruleRoles}
+          isLoading={isLoadingRules}
+          valueOf={ruleValueOf}
+          onChange={handleRuleChange}
+          isDirty={action => dirtyRuleActions.includes(action)}
+          unconfigured={unconfigured}
+          errors={ruleErrors}
+          silencedChannelsFor={silencedChannelsFor}
+        />
+      </Card>
+    </motion.div>
+  );
 
   return (
     <div className="space-y-6 pb-20">
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start" : ""}>
-      <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-        {groups.map(group => {
-          const meta = GROUP_META[group] ?? { title: group, description: "", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" };
+        <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
+          {MACRO_GROUPS.map(macro => {
+            const visibleGroups = macro.groups.filter(g => g === "__notification_rules__" ? isSuperadmin : hasSettingsFor(g));
+            if (visibleGroups.length === 0) return null;
 
-          return (
-            <motion.div key={group} variants={itemVariants}>
-              <Card>
-                <SectionHeader
-                  icon={meta.icon}
-                  title={meta.title}
-                  description={meta.description}
-                  color={meta.color}
-                />
-                {group === "presupuesto" && (
-                  <InfoBanner title="¿Cómo funciona el semáforo de ejecución presupuestaria?" defaultOpen={false} className="mb-4">
-                    <p>
-                      Cada umbral es un porcentaje sobre el <strong>100% de la inversión aprobada</strong> de un
-                      proyecto u oferta (monto ejecutado o cotizado ÷ monto autorizado). El semáforo toma el color
-                      del primer umbral que el porcentaje no supere:
-                    </p>
-                    <ul className="mt-1.5 space-y-0.5 font-mono">
-                      <li>🟢 Verde: hasta el umbral verde ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_verde")?.value ?? "80"}%)</li>
-                      <li>🟡 Amarillo: entre el umbral verde y el amarillo ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_amarillo")?.value ?? "95"}%)</li>
-                      <li>🟠 Naranja: entre el umbral amarillo y el naranja ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_naranja")?.value ?? "100"}%)</li>
-                      <li>🔴 Rojo: al superar el umbral naranja (por defecto, más del 100% — sobre-ejecución)</li>
-                    </ul>
-                    <p className="mt-1.5">
-                      Se usa hoy en el Dashboard de Presidencia (ejecución agregada de toda la cartera) y en la
-                      evaluación de ofertas de Procura (cada propuesta, individualmente).
-                    </p>
-                  </InfoBanner>
-                )}
-                <div>
-                  {settings[group].map(setting => (
-                    <SettingRow
-                      key={setting.id}
-                      setting={setting}
-                      value={valueOf(setting)}
-                      onChange={handleChange}
-                      error={fieldErrors[setting.id]}
-                      notificationActionsCatalog={notificationActionsCatalog}
-                    />
-                  ))}
+            return (
+              <div key={macro.title}>
+                <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 px-1">{macro.title}</h2>
+                <div className="space-y-6">
+                  {visibleGroups.map(group => (group === "__notification_rules__" ? renderNotificationRulesSection() : renderSettingGroup(group)))}
                 </div>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      {isSuperadmin && (
-        <AuditLogPanel<ConfigAuditLogRecord>
-          title="Historial de cambios (CONFIG APP)"
-          entries={auditLogs}
-          isLoading={isLoadingAuditLogs}
-          defaultOpen
-          sticky
-          fillViewport
-          stickyOffset="1.5rem"
-          pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-          searchableText={log => `${settingLabelByKey[log.settingKey] ?? log.settingKey} ${log.userName ?? ""} ${log.oldValue ?? ""} ${log.newValue ?? ""}`}
-          keyOf={log => log.id}
-          searchPlaceholder="Buscar por parámetro, usuario o valor..."
-          emptyMessage="Todavía no se ha modificado ningún parámetro."
-          renderEntry={log => (
-            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3">
-              <div className="mb-1.5">
-                <span className="text-[11px] font-bold text-slate-700 leading-snug wrap-break-word">{settingLabelByKey[log.settingKey] ?? log.settingKey}</span>
-                <span className="block text-[9px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
               </div>
-              <AuditLogValueDiff oldValue={log.oldValue} newValue={log.newValue} />
-              {log.userName && <p className="text-[10px] text-slate-400 font-medium mt-1">por {log.userName}</p>}
-            </div>
-          )}
-        />
-      )}
+            );
+          })}
+        </motion.div>
+
+        {isSuperadmin && (
+          <AuditLogPanel<ConfigAuditLogRecord>
+            title="Historial de cambios (CONFIG APP)"
+            entries={auditLogs}
+            isLoading={isLoadingAuditLogs}
+            defaultOpen
+            sticky
+            fillViewport
+            stickyOffset="1.5rem"
+            pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
+            searchableText={log => `${settingLabelByKey[log.settingKey] ?? log.settingKey} ${log.userName ?? ""} ${log.oldValue ?? ""} ${log.newValue ?? ""}`}
+            keyOf={log => log.id}
+            searchPlaceholder="Buscar por parámetro, usuario o valor..."
+            emptyMessage="Todavía no se ha modificado ningún parámetro."
+            renderEntry={log => (
+              <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3">
+                <div className="mb-1.5">
+                  <span className="text-[11px] font-bold text-slate-700 leading-snug wrap-break-word">{settingLabelByKey[log.settingKey] ?? log.settingKey}</span>
+                  <span className="block text-[9px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
+                </div>
+                <AuditLogValueDiff oldValue={log.oldValue} newValue={log.newValue} />
+                {log.userName && <p className="text-[10px] text-slate-400 font-medium mt-1">por {log.userName}</p>}
+              </div>
+            )}
+          />
+        )}
       </div>
 
       <AnimatePresence>
@@ -305,7 +463,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white border border-slate-200 shadow-xl rounded-2xl px-5 py-3"
           >
             <span className="text-xs font-bold text-slate-600">
-              {dirtyIds.length} {dirtyIds.length === 1 ? "cambio pendiente" : "cambios pendientes"}
+              {pendingCount} {pendingCount === 1 ? "cambio pendiente" : "cambios pendientes"}
             </span>
             <Button
               size="sm"
