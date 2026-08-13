@@ -126,6 +126,31 @@ describe("SettingRow", () => {
     expect(screen.getByText("Rango permitido: 0 a 100")).toBeInTheDocument();
   });
 
+  it("formatea min_value/max_value como enteros (sin decimales) para settings type: integer, aunque la BD los guarde como DECIMAL", () => {
+    render(
+      <SettingRow
+        setting={makeSetting({ min_value: 1.0, max_value: 7.0 })}
+        value="7"
+        onChange={onChange as unknown as OnChange}
+      />,
+    );
+
+    expect(screen.getByText("Rango permitido: 1 a 7")).toBeInTheDocument();
+    expect(screen.queryByText(/1\.00|7\.00/)).not.toBeInTheDocument();
+  });
+
+  it("conserva decimales en el rango para settings type: float", () => {
+    render(
+      <SettingRow
+        setting={makeSetting({ type: "float", min_value: 0, max_value: 0.5, value: "0.1" })}
+        value="0.1"
+        onChange={onChange as unknown as OnChange}
+      />,
+    );
+
+    expect(screen.getByText("Rango permitido: 0 a 0.5")).toBeInTheDocument();
+  });
+
   it("renderiza un selector de tags (no textarea) para acciones_con_correo cuando hay catálogo", () => {
     render(
       <SettingRow

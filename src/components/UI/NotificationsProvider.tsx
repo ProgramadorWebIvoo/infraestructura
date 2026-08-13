@@ -16,9 +16,11 @@
  * el usuario solo se enteraba si abría la campana.
  *
  * No hay push real (WebSockets) todavía: el backend está en Laravel 9 y
- * Laravel Reverb requiere Laravel 10+. POLL_INTERVAL_MS se bajó de 30s a 8s
- * como mitigación mientras tanto — Reverb (o Pusher/Ably como alternativa
- * sin upgrade de framework) queda pendiente en el roadmap para push real.
+ * Laravel Reverb requiere Laravel 10+. El intervalo de polling es
+ * configurable desde CONFIG APP (`polling_notificaciones_segundos`, default
+ * 8s — se bajó de 30s como mitigación mientras tanto) — Reverb (o
+ * Pusher/Ably como alternativa sin upgrade de framework) queda pendiente en
+ * el roadmap para push real.
  *
  * IMPORTANTE — instancia única: NotificationBell se monta dos veces en el
  * layout (MobileTopBar + SidebarNav, una oculta por CSS según breakpoint,
@@ -43,10 +45,9 @@ import type { AppNotification } from "../../types";
 import { apiFetch } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { usePolling } from "../../hooks/usePolling";
+import { usePollingSettings } from "../../hooks/usePollingSettings";
 import { useToast } from "./Toast";
 import { notifyBrowser } from "../../services/browserNotifications";
-
-const POLL_INTERVAL_MS = 8_000;
 
 export interface UseNotificationsResult {
   notifications: AppNotification[];
@@ -60,6 +61,7 @@ export interface UseNotificationsResult {
 function useNotificationsSource(): UseNotificationsResult {
   const { authToken } = useAuth();
   const { showToast } = useToast();
+  const { notificationsIntervalMs } = usePollingSettings();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +114,7 @@ function useNotificationsSource(): UseNotificationsResult {
   // notifyBrowser() nunca detecta nada nuevo mientras el usuario no mira la
   // pestaña, y al volver ya es tarde (la notificación nativa exige que la
   // pestaña siga oculta en el momento del fetch, ver browserNotifications.ts).
-  usePolling(useCallback(() => load(true), [load]), POLL_INTERVAL_MS, !!authToken, false);
+  usePolling(useCallback(() => load(true), [load]), notificationsIntervalMs, !!authToken, false);
 
   const markRead = useCallback(
     async (id: number) => {

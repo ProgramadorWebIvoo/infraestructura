@@ -12,6 +12,7 @@ import NumericInput from "../../../components/UI/NumericInput";
 import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
 import TagMultiSelect, { type TagOption } from "../../../components/UI/TagMultiSelect";
 import type { AppSettingRecord } from "../../../hooks/useAppSettings";
+import { formatRangeBound } from "../utils";
 
 /** Settings `json` que son en realidad listas de acciones auditadas — se
  *  editan con el selector de tags (catálogo real) en vez del textarea JSON
@@ -43,7 +44,7 @@ export default function SettingRow({ setting, value, onChange, error, notificati
 
   const rangeHint =
     isNumeric && (setting.min_value !== null || setting.max_value !== null)
-      ? `Rango permitido: ${setting.min_value ?? "–"} a ${setting.max_value ?? "–"}`
+      ? `Rango permitido: ${setting.min_value !== null ? formatRangeBound(setting.min_value, setting.type) : "–"} a ${setting.max_value !== null ? formatRangeBound(setting.max_value, setting.type) : "–"}`
       : null;
 
   const errorClasses = fieldErrorClasses(!!error);

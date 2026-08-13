@@ -8,11 +8,8 @@
  * Notificaciones (settings de notificaciones + matriz de notificaciones por
  * rol), y Aplicación (ajustes generales).
  *
- * Guardado estilo Odoo: los cambios quedan en un borrador local (no se
- * persisten al tipear/togglear). Una barra global única con "Guardar todo" /
- * "Descartar cambios" cubre TANTO los AppSetting como la matriz de
- * notificaciones por rol — dos APIs distintas (PATCH /settings/{id} vs. PUT
- * /notification-rules) pero un solo punto de guardado para el usuario.
+ * Este contenedor solo orquesta: la lógica de estado vive en useDraftState,
+ * el renderizado de cada sección vive en SettingGroupCard/NotificationRulesCard.
  */
 
 import { useMemo, useState } from "react";
@@ -28,14 +25,10 @@ import {
   Settings as SettingsIcon,
   Check,
   RotateCcw,
-  Users,
 } from "lucide-react";
-import { containerVariants, itemVariants } from "../../animations";
-import Card from "../../components/UI/Card";
-import SectionHeader from "../../components/UI/SectionHeader";
+import { containerVariants } from "../../animations";
 import Spinner from "../../components/UI/Spinner";
 import Button from "../../components/UI/Button";
-import InfoBanner from "../../components/UI/InfoBanner";
 import AuditLogPanel from "../../components/UI/AuditLogPanel";
 import { useToast } from "../../components/UI/Toast";
 import { getErrorMessage } from "../../services/logger";
@@ -43,11 +36,13 @@ import { useAppSettings, type AppSettingRecord } from "../../hooks/useAppSetting
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "../../hooks/useConfigAuditLogs";
 import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
 import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
-import SettingRow from "./components/SettingRow";
+import { useDraftState } from "../../hooks/useDraftState";
+import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import AuditLogValueDiff from "./components/AuditLogValueDiff";
-import NotificationMatrix from "./components/NotificationMatrix";
+import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
+import NotificationRulesCard from "./components/NotificationRulesCard";
 
-const GROUP_META: Record<string, { title: string; description: string; icon: React.ReactNode; color: string }> = {
+const GROUP_META: Record<string, SettingGroupMeta> = {
   moneda: { title: "Moneda", description: "Moneda base para montos registrados en la app.", icon: <Coins className="h-5 w-5" />, color: "amber" },
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
   ratings: { title: "Ratings", description: "Escala mínima y máxima de calificación para proveedores.", icon: <Star className="h-5 w-5" />, color: "purple" },
@@ -68,41 +63,6 @@ const MACRO_GROUPS: { title: string; groups: string[] }[] = [
   { title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
   { title: "Aplicación", groups: ["app"] },
 ];
-
-type Draft = Record<number, string>;
-type NotificationRuleDraft = Record<string, NotificationRuleChannels>;
-
-/**
- * Compara el valor en borrador contra el original para decidir si un
- * setting está "dirty". Para `json` (hoy: listas de acciones vía
- * TagMultiSelect) no alcanza con comparar el string crudo: togglear un tag
- * fuera y volver a seleccionarlo lo reinserta al final del array, cambiando
- * el orden serializado aunque el conjunto de valores sea idéntico — eso
- * disparaba falsamente la barra de "cambios pendientes". Se comparan como
- * conjuntos ordenados en vez de string a string.
- */
-function isDirtyValue(type: AppSettingRecord["type"], draftValue: string, originalValue: string): boolean {
-  if (type !== "json") return draftValue !== originalValue;
-
-  try {
-    const a = JSON.parse(draftValue || "[]");
-    const b = JSON.parse(originalValue || "[]");
-    if (!Array.isArray(a) || !Array.isArray(b)) return draftValue !== originalValue;
-    if (a.length !== b.length) return true;
-    return [...a].sort().join(" ") !== [...b].sort().join(" ");
-  } catch {
-    return draftValue !== originalValue;
-  }
-}
-
-function sameRoles(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  return [...a].sort().join(",") === [...b].sort().join(",");
-}
-
-function isDirtyRule(draft: NotificationRuleChannels, saved: NotificationRuleChannels): boolean {
-  return !sameRoles(draft.app, saved.app) || !sameRoles(draft.mail, saved.mail);
-}
 
 interface ConfigAppPanelProps {
   authToken: string;
@@ -135,13 +95,14 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     updateRule,
   } = useNotificationRules(authToken, isSuperadmin);
 
+  const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
+  const settingById = useMemo(() => new Map(allSettings.map(s => [s.id, s])), [allSettings]);
+
   const settingLabelByKey = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const setting of Object.values(settings).flat()) {
-      map[setting.key] = setting.label;
-    }
+    for (const setting of allSettings) map[setting.key] = setting.label;
     return map;
-  }, [settings]);
+  }, [allSettings]);
 
   /**
    * El interruptor maestro (`acciones_con_notificacion_app`/`acciones_con_correo`)
@@ -154,7 +115,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
    */
   const masterSwitchByChannel = useMemo(() => {
     const parseList = (key: string): string[] | null => {
-      const raw = Object.values(settings).flat().find(s => s.key === key)?.value;
+      const raw = allSettings.find(s => s.key === key)?.value;
       if (!raw) return null;
       try {
         const parsed = JSON.parse(raw);
@@ -164,7 +125,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
       }
     };
     return { app: parseList("acciones_con_notificacion_app"), mail: parseList("acciones_con_correo") };
-  }, [settings]);
+  }, [allSettings]);
 
   const silencedChannelsFor = (action: string): ("app" | "mail")[] => {
     const silenced: ("app" | "mail")[] = [];
@@ -173,128 +134,48 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     return silenced;
   };
 
-  const [draft, setDraft] = useState<Draft>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
-  const [ruleDraft, setRuleDraft] = useState<NotificationRuleDraft>({});
-  const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
+  /**
+   * `useDraftState` compara valores por clave sin conocer nada del dominio
+   * — pero decidir si un AppSetting está dirty depende de su `type` (ver
+   * `isDirtySettingValue`). Como la clave es el `id` numérico, se resuelve
+   * el setting completo desde `settingById` dentro del comparador.
+   */
+  const settingsDraft = useDraftState<number, string>({
+    numericKeys: true,
+    savedValueOf: id => settingById.get(id)?.value ?? "",
+    isDirty: (draftValue, savedValue, id) => {
+      const type = settingById.get(id)?.type ?? "string";
+      return isDirtySettingValue(type, draftValue, savedValue);
+    },
+    save: async (id, value) => {
+      const updated = await updateSetting(id, value);
+      if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
+    },
+    fallbackErrorMessage: "Valor inválido.",
+  });
+
+  const rulesDraft = useDraftState<string, NotificationRuleChannels>({
+    savedValueOf: action => rules[action] ?? { app: [], mail: [] },
+    isDirty: isDirtyRuleValue,
+    save: async (action, channels) => {
+      await updateRule(action, channels);
+    },
+    fallbackErrorMessage: "No se pudo guardar la regla.",
+  });
+
   const [savingAll, setSavingAll] = useState(false);
 
-  const valueOf = (setting: AppSettingRecord) =>
-    Object.prototype.hasOwnProperty.call(draft, setting.id) ? draft[setting.id] : setting.value ?? "";
-
-  const handleChange = (id: number, value: string) => {
-    setDraft(prev => ({ ...prev, [id]: value }));
-    setFieldErrors(prev => {
-      if (!(id in prev)) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  };
-
-  const ruleValueOf = (action: string): NotificationRuleChannels =>
-    ruleDraft[action] ?? rules[action] ?? { app: [], mail: [] };
-
-  const handleRuleChange = (action: string, channels: NotificationRuleChannels) => {
-    setRuleDraft(prev => ({ ...prev, [action]: channels }));
-    setRuleErrors(prev => {
-      if (!(action in prev)) return prev;
-      const next = { ...prev };
-      delete next[action];
-      return next;
-    });
-  };
-
-  const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
-
-  const dirtyIds = useMemo(
-    () =>
-      allSettings
-        .filter(s => Object.prototype.hasOwnProperty.call(draft, s.id) && isDirtyValue(s.type, draft[s.id], s.value ?? ""))
-        .map(s => s.id),
-    [allSettings, draft],
-  );
-
-  const dirtyRuleActions = useMemo(
-    () =>
-      Object.keys(ruleDraft).filter(action => isDirtyRule(ruleDraft[action], rules[action] ?? { app: [], mail: [] })),
-    [ruleDraft, rules],
-  );
-
-  /**
-   * Persiste cada setting dirty de forma independiente: un error de
-   * validación en uno no debe descartar los demás cambios pendientes. Los
-   * ids que fallan quedan con su mensaje en `fieldErrors` (mostrado inline
-   * en el SettingRow correspondiente) y siguen en el draft para reintentar;
-   * los que sí se guardaron se limpian del draft normalmente.
-   */
-  const persist = async (ids: number[]) => {
-    const succeededIds: number[] = [];
-    const errors: Record<number, string> = {};
-
-    for (const id of ids) {
-      try {
-        const updated = await updateSetting(id, draft[id]);
-        if (updated.auditLog && isSuperadmin) {
-          prependAuditLog(updated.auditLog);
-        }
-        succeededIds.push(id);
-      } catch (err) {
-        errors[id] = getErrorMessage(err, "Valor inválido.");
-      }
-    }
-
-    setDraft(prev => {
-      const next = { ...prev };
-      for (const id of succeededIds) delete next[id];
-      return next;
-    });
-
-    setFieldErrors(prev => {
-      const next = { ...prev };
-      for (const id of succeededIds) delete next[id];
-      return { ...next, ...errors };
-    });
-
-    return { failedIds: Object.keys(errors).map(Number) };
-  };
-
-  /** Misma lógica que `persist()` pero para la matriz de notificaciones: cada acción se guarda independiente. */
-  const persistRules = async (actions: string[]) => {
-    const succeededActions: string[] = [];
-    const errors: Record<string, string> = {};
-
-    for (const action of actions) {
-      try {
-        await updateRule(action, ruleDraft[action]);
-        succeededActions.push(action);
-      } catch (err) {
-        errors[action] = getErrorMessage(err, "No se pudo guardar la regla.");
-      }
-    }
-
-    setRuleDraft(prev => {
-      const next = { ...prev };
-      for (const action of succeededActions) delete next[action];
-      return next;
-    });
-
-    setRuleErrors(prev => {
-      const next = { ...prev };
-      for (const action of succeededActions) delete next[action];
-      return { ...next, ...errors };
-    });
-
-    return { failedActions: Object.keys(errors) };
-  };
+  const hasSettingsFor = (group: string) => settings[group]?.length > 0;
+  const hasPendingChanges = settingsDraft.dirtyKeys.length > 0 || rulesDraft.dirtyKeys.length > 0;
+  const pendingCount = settingsDraft.dirtyKeys.length + rulesDraft.dirtyKeys.length;
 
   const handleSaveAll = async () => {
-    if (dirtyIds.length === 0 && dirtyRuleActions.length === 0) return;
+    if (!hasPendingChanges) return;
     setSavingAll(true);
     try {
-      const [{ failedIds }, { failedActions }] = await Promise.all([
-        persist(dirtyIds),
-        persistRules(dirtyRuleActions),
+      const [{ failedKeys: failedIds }, { failedKeys: failedActions }] = await Promise.all([
+        settingsDraft.persist(),
+        rulesDraft.persist(),
       ]);
 
       const totalFailed = failedIds.length + failedActions.length;
@@ -321,10 +202,8 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   };
 
   const handleDiscardAll = () => {
-    setDraft({});
-    setFieldErrors({});
-    setRuleDraft({});
-    setRuleErrors({});
+    settingsDraft.discard();
+    rulesDraft.discard();
   };
 
   if (isLoading) {
@@ -335,90 +214,45 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     );
   }
 
-  const hasSettingsFor = (group: string) => settings[group]?.length > 0;
-  const hasPendingChanges = dirtyIds.length > 0 || dirtyRuleActions.length > 0;
-  const pendingCount = dirtyIds.length + dirtyRuleActions.length;
-
-  const renderSettingGroup = (group: string) => {
-    const meta = GROUP_META[group] ?? { title: group, description: "", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" };
-
-    return (
-      <motion.div key={group} variants={itemVariants}>
-        <Card>
-          <SectionHeader icon={meta.icon} title={meta.title} description={meta.description} color={meta.color} />
-          {group === "presupuesto" && (
-            <InfoBanner title="¿Cómo funciona el semáforo de ejecución presupuestaria?" defaultOpen={false} className="mb-4">
-              <p>
-                Cada umbral es un porcentaje sobre el <strong>100% de la inversión aprobada</strong> de un
-                proyecto u oferta (monto ejecutado o cotizado ÷ monto autorizado). El semáforo toma el color
-                del primer umbral que el porcentaje no supere:
-              </p>
-              <ul className="mt-1.5 space-y-0.5 font-mono">
-                <li>🟢 Verde: hasta el umbral verde ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_verde")?.value ?? "80"}%)</li>
-                <li>🟡 Amarillo: entre el umbral verde y el amarillo ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_amarillo")?.value ?? "95"}%)</li>
-                <li>🟠 Naranja: entre el umbral amarillo y el naranja ({settings.presupuesto?.find(s => s.key === "semaforo_umbral_naranja")?.value ?? "100"}%)</li>
-                <li>🔴 Rojo: al superar el umbral naranja (por defecto, más del 100% — sobre-ejecución)</li>
-              </ul>
-              <p className="mt-1.5">
-                Se usa hoy en el Dashboard de Presidencia (ejecución agregada de toda la cartera) y en la
-                evaluación de ofertas de Procura (cada propuesta, individualmente).
-              </p>
-            </InfoBanner>
-          )}
-          <div>
-            {settings[group].map(setting => (
-              <SettingRow
-                key={setting.id}
-                setting={setting}
-                value={valueOf(setting)}
-                onChange={handleChange}
-                error={fieldErrors[setting.id]}
-                notificationActionsCatalog={notificationActionsCatalog}
-              />
-            ))}
-          </div>
-        </Card>
-      </motion.div>
-    );
-  };
-
-  const renderNotificationRulesSection = () => (
-    <motion.div key="__notification_rules__" variants={itemVariants}>
-      <Card>
-        <SectionHeader
-          icon={<Users className="h-5 w-5" />}
-          title="Notificaciones por rol"
-          description="Qué roles reciben cada tipo de notificación (app y correo) — reemplaza la lógica fija anterior."
-          color="indigo"
-        />
-        <NotificationMatrix
-          actions={ruleActions}
-          roles={ruleRoles}
-          isLoading={isLoadingRules}
-          valueOf={ruleValueOf}
-          onChange={handleRuleChange}
-          isDirty={action => dirtyRuleActions.includes(action)}
-          unconfigured={unconfigured}
-          errors={ruleErrors}
-          silencedChannelsFor={silencedChannelsFor}
-        />
-      </Card>
-    </motion.div>
-  );
-
   return (
     <div className="space-y-6 pb-20">
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start" : ""}>
         <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
           {MACRO_GROUPS.map(macro => {
-            const visibleGroups = macro.groups.filter(g => g === "__notification_rules__" ? isSuperadmin : hasSettingsFor(g));
+            const visibleGroups = macro.groups.filter(g => (g === "__notification_rules__" ? isSuperadmin : hasSettingsFor(g)));
             if (visibleGroups.length === 0) return null;
 
             return (
               <div key={macro.title}>
                 <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 px-1">{macro.title}</h2>
                 <div className="space-y-6">
-                  {visibleGroups.map(group => (group === "__notification_rules__" ? renderNotificationRulesSection() : renderSettingGroup(group)))}
+                  {visibleGroups.map(group =>
+                    group === "__notification_rules__" ? (
+                      <NotificationRulesCard
+                        key={group}
+                        actions={ruleActions}
+                        roles={ruleRoles}
+                        isLoading={isLoadingRules}
+                        valueOf={rulesDraft.valueOf}
+                        onChange={rulesDraft.onChange}
+                        isDirty={rulesDraft.isDirty}
+                        unconfigured={unconfigured}
+                        errors={rulesDraft.errors}
+                        silencedChannelsFor={silencedChannelsFor}
+                      />
+                    ) : (
+                      <SettingGroupCard
+                        key={group}
+                        group={group}
+                        meta={GROUP_META[group] ?? { title: group, description: "", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" }}
+                        settings={settings[group]}
+                        valueOf={setting => settingsDraft.valueOf(setting.id)}
+                        onChange={settingsDraft.onChange}
+                        errors={settingsDraft.errors}
+                        notificationActionsCatalog={notificationActionsCatalog}
+                      />
+                    ),
+                  )}
                 </div>
               </div>
             );
