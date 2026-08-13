@@ -132,7 +132,10 @@ describe("SettingRow", () => {
         setting={makeSetting({ type: "json", value: '["Rechazo de cuadro comparativo"]', key: "acciones_con_correo" })}
         value='["Rechazo de cuadro comparativo"]'
         onChange={onChange as unknown as OnChange}
-        notificationActionsCatalog={["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]}
+        notificationActionsCatalog={[
+          { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
+          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
+        ]}
       />,
     );
 
@@ -147,7 +150,10 @@ describe("SettingRow", () => {
         setting={makeSetting({ type: "json", value: "[]", key: "acciones_con_notificacion_app" })}
         value="[]"
         onChange={onChange as unknown as OnChange}
-        notificationActionsCatalog={["Carga de propuesta", "Confirmacion de contratacion"]}
+        notificationActionsCatalog={[
+          { value: "Carga de propuesta", label: "Carga de propuesta" },
+          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
+        ]}
       />,
     );
 

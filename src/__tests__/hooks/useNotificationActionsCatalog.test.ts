@@ -26,14 +26,18 @@ describe("useNotificationActionsCatalog", () => {
     expect(mockApiFetch).not.toHaveBeenCalled();
   });
 
-  it("carga el catálogo real desde /settings/notification-actions", async () => {
-    mockApiFetch.mockResolvedValueOnce(["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]);
+  it("carga el catálogo real (value + label) desde /settings/notification-actions", async () => {
+    const catalog = [
+      { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
+      { value: "contractor.register", label: "Registro público de proveedor" },
+    ];
+    mockApiFetch.mockResolvedValueOnce(catalog);
 
     const { result } = renderHook(() => useNotificationActionsCatalog("token"));
     await flush();
 
     expect(mockApiFetch).toHaveBeenCalledWith("/settings/notification-actions", { token: "token" });
-    expect(result.current.actions).toEqual(["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]);
+    expect(result.current.actions).toEqual(catalog);
     expect(result.current.isLoading).toBe(false);
   });
 

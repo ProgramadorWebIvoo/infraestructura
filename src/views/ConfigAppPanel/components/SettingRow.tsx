@@ -10,7 +10,7 @@
 
 import NumericInput from "../../../components/UI/NumericInput";
 import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
-import TagMultiSelect from "../../../components/UI/TagMultiSelect";
+import TagMultiSelect, { type TagOption } from "../../../components/UI/TagMultiSelect";
 import type { AppSettingRecord } from "../../../hooks/useAppSettings";
 
 /** Settings `json` que son en realidad listas de acciones auditadas — se
@@ -34,7 +34,7 @@ interface SettingRowProps {
   onChange: (id: number, value: string) => void;
   error?: string;
   /** Catálogo real de acciones auditadas — requerido para renderizar el selector de tags de los settings de ACTION_LIST_KEYS. */
-  notificationActionsCatalog?: string[];
+  notificationActionsCatalog?: TagOption[];
 }
 
 export default function SettingRow({ setting, value, onChange, error, notificationActionsCatalog }: SettingRowProps) {

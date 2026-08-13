@@ -7,14 +7,20 @@
  * consumido por el selector de tags de `acciones_con_correo` /
  * `acciones_con_notificacion_app` en CONFIG APP. Se carga una sola vez (no
  * cambia en runtime, es un catálogo fijo del código).
+ *
+ * Cada entrada trae `value` (el string técnico que se persiste, debe
+ * coincidir exactamente con el `action` que AuditLog::record() recibe) y
+ * `label` (texto legible para el chip — para acciones cuyo string técnico
+ * no es autoexplicativo, ej. 'contractor.register').
  */
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "../services/api";
 import { logError } from "../services/logger";
+import type { TagOption } from "../components/UI/TagMultiSelect";
 
 export function useNotificationActionsCatalog(authToken: string) {
-  const [actions, setActions] = useState<string[]>([]);
+  const [actions, setActions] = useState<TagOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +28,7 @@ export function useNotificationActionsCatalog(authToken: string) {
     let cancelled = false;
     (async () => {
       try {
-        const data = await apiFetch<string[]>("/settings/notification-actions", { token: authToken });
+        const data = await apiFetch<TagOption[]>("/settings/notification-actions", { token: authToken });
         if (!cancelled) setActions(data ?? []);
       } catch (err) {
         logError("useNotificationActionsCatalog", err);

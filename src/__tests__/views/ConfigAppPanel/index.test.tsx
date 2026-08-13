@@ -47,7 +47,10 @@ describe("ConfigAppPanel", () => {
         return Promise.resolve({ items: [], currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
       }
       if (path === "/settings/notification-actions") {
-        return Promise.resolve(["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]);
+        return Promise.resolve([
+          { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
+          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
+        ]);
       }
       return Promise.resolve(undefined);
     });
@@ -144,7 +147,10 @@ describe("ConfigAppPanel", () => {
     mockApiFetch.mockImplementation((path: string) => {
       if (path.startsWith("/config-audit-logs")) return Promise.resolve({ items: [], currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
       if (path === "/settings/notification-actions") {
-        return Promise.resolve(["Rechazo de cuadro comparativo", "Confirmacion de contratacion"]);
+        return Promise.resolve([
+          { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
+          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
+        ]);
       }
       return Promise.resolve(undefined);
     });
