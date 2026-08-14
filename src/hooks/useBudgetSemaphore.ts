@@ -7,11 +7,14 @@
  * configurables en CONFIG APP (`presupuesto.semaforo_umbral_*`), en vez de
  * un corte fijo en código — un cambio de política de riesgo no requiere
  * deploy.
+ *
+ * Proyección pura sobre PublicSettingsProvider (fetch único y compartido de
+ * /settings para toda la sesión) — antes este hook hacía su propio fetch
+ * independiente; vistas que montan varios de estos hooks juntos (ej.
+ * BidEvaluationSection) disparaban un GET /settings por cada uno.
  */
 
-import { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { usePublicSettings } from "../components/UI/PublicSettingsProvider";
 
 export type SemaphoreLevel = "verde" | "amarillo" | "naranja" | "rojo";
 
@@ -22,11 +25,6 @@ export interface SemaphoreThresholds {
 }
 
 const DEFAULT_THRESHOLDS: SemaphoreThresholds = { verde: 80, amarillo: 95, naranja: 100 };
-
-interface RawSetting {
-  key: string;
-  value: string | null;
-}
 
 export function levelOf(pct: number, thresholds: SemaphoreThresholds): SemaphoreLevel {
   if (pct <= thresholds.verde) return "verde";
@@ -43,32 +41,20 @@ export const SEMAPHORE_COLORS: Record<SemaphoreLevel, { bar: string; text: strin
 };
 
 export function useBudgetSemaphore() {
-  const [thresholds, setThresholds] = useState<SemaphoreThresholds>(DEFAULT_THRESHOLDS);
+  const { settings } = usePublicSettings();
+  const presupuesto = settings.presupuesto ?? [];
 
-  useEffect(() => {
-    let cancelled = false;
+  const find = (key: string, fallback: number) => {
+    const raw = presupuesto.find(s => s.key === key)?.value;
+    const parsed = raw !== null && raw !== undefined ? Number(raw) : NaN;
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
 
-    apiFetch<Record<string, RawSetting[]>>("/settings", { token: "authenticated" })
-      .then(data => {
-        if (cancelled) return;
-        const presupuesto = data.presupuesto ?? [];
-        const find = (key: string, fallback: number) => {
-          const raw = presupuesto.find(s => s.key === key)?.value;
-          const parsed = raw !== null && raw !== undefined ? Number(raw) : NaN;
-          return Number.isFinite(parsed) ? parsed : fallback;
-        };
-        setThresholds({
-          verde: find("semaforo_umbral_verde", DEFAULT_THRESHOLDS.verde),
-          amarillo: find("semaforo_umbral_amarillo", DEFAULT_THRESHOLDS.amarillo),
-          naranja: find("semaforo_umbral_naranja", DEFAULT_THRESHOLDS.naranja),
-        });
-      })
-      .catch(err => logError("useBudgetSemaphore", err));
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const thresholds: SemaphoreThresholds = {
+    verde: find("semaforo_umbral_verde", DEFAULT_THRESHOLDS.verde),
+    amarillo: find("semaforo_umbral_amarillo", DEFAULT_THRESHOLDS.amarillo),
+    naranja: find("semaforo_umbral_naranja", DEFAULT_THRESHOLDS.naranja),
+  };
 
   return { thresholds, levelOf: (pct: number) => levelOf(pct, thresholds) };
 }

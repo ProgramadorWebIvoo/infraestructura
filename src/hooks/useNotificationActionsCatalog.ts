@@ -12,6 +12,13 @@
  * coincidir exactamente con el `action` que AuditLog::record() recibe) y
  * `label` (texto legible para el chip — para acciones cuyo string técnico
  * no es autoexplicativo, ej. 'contractor.register').
+ *
+ * Caché de módulo (no contexto React): único consumidor es ConfigAppPanel,
+ * así que no hay duplicación entre componentes simultáneos — el costo real
+ * era refetchear en cada remontaje de la vista al navegar (sin keep-alive de
+ * ruta). Cachear en memoria de módulo evita eso sin necesitar un Provider
+ * nuevo, ya que el valor no depende de qué usuario esté logueado (es un
+ * catálogo fijo del código, igual para cualquier sesión autenticada).
  */
 
 import { useEffect, useState } from "react";
@@ -19,23 +26,38 @@ import { apiFetch } from "../services/api";
 import { logError } from "../services/logger";
 import type { TagOption } from "../components/UI/TagMultiSelect";
 
+let cachedActions: TagOption[] | null = null;
+let inFlight: Promise<TagOption[]> | null = null;
+
+/** Solo para tests — el caché de módulo persiste entre montajes reales a propósito, pero contamina tests que corren en el mismo proceso. */
+export function __resetNotificationActionsCatalogCacheForTests(): void {
+  cachedActions = null;
+  inFlight = null;
+}
+
 export function useNotificationActionsCatalog(authToken: string) {
-  const [actions, setActions] = useState<TagOption[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [actions, setActions] = useState<TagOption[]>(cachedActions ?? []);
+  const [isLoading, setIsLoading] = useState(cachedActions === null);
 
   useEffect(() => {
-    if (!authToken) return;
+    if (!authToken || cachedActions !== null) return;
     let cancelled = false;
-    (async () => {
-      try {
-        const data = await apiFetch<TagOption[]>("/settings/notification-actions", { token: authToken });
-        if (!cancelled) setActions(data ?? []);
-      } catch (err) {
+
+    inFlight ??= apiFetch<TagOption[]>("/settings/notification-actions", { token: authToken });
+
+    inFlight
+      .then(data => {
+        cachedActions = data ?? [];
+        if (!cancelled) setActions(cachedActions);
+      })
+      .catch(err => {
         logError("useNotificationActionsCatalog", err);
-      } finally {
+      })
+      .finally(() => {
+        inFlight = null;
         if (!cancelled) setIsLoading(false);
-      }
-    })();
+      });
+
     return () => {
       cancelled = true;
     };

@@ -8,10 +8,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Package, Plus, Search } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 import { Table } from "../../components/UI/Table";
 import Button from "../../components/UI/Button";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import SectionHeader from "../../components/UI/SectionHeader";
+import { SearchInput } from "../../components/UI/FilterBar";
 import { useToast } from "../../components/UI/Toast";
 import { apiFetch } from "../../services/api";
 import { logError, getErrorMessage } from "../../services/logger";
@@ -19,9 +21,27 @@ import { containerVariants, itemVariants } from "../../animations";
 import { getMaterialColumns } from "./columns";
 import MaterialFormModal from "./components/MaterialFormModal";
 import { EMPTY_FORM, type ConfigMaterial, type MaterialForm } from "./types";
+import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
+import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
 
-export default function MaterialConfigPanel({ authToken }: { authToken: string }) {
+interface MaterialConfigPanelProps {
+  authToken: string;
+  activeRole?: string;
+}
+
+export default function MaterialConfigPanel({ authToken, activeRole }: MaterialConfigPanelProps) {
   const { showToast } = useToast();
+
+  const isSuperadmin = activeRole === "SUPERADMIN";
+  const {
+    logs: auditLogs,
+    isLoading: isLoadingAuditLogs,
+    page: auditLogPage,
+    lastPage: auditLogLastPage,
+    total: auditLogTotal,
+    goToPage: goToAuditLogPage,
+    prependLocal: prependAuditLog,
+  } = useConfigAuditLogs(authToken, isSuperadmin);
 
   // ---- Data state ----
   const [materials, setMaterials] = useState<ConfigMaterial[]>([]);
@@ -120,20 +140,22 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
       };
 
       if (modalMode === "create") {
-        const created = await apiFetch<ConfigMaterial>("/materials/config", {
+        const created = await apiFetch<ConfigMaterial & { auditLog?: ConfigAuditLogRecord }>("/materials/config", {
           method: "POST",
           token: authToken,
           body: JSON.stringify(payload),
         });
         setMaterials((prev) => [...prev, created]);
+        if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
         showToast("Material creado correctamente.", "success");
       } else if (editingId) {
-        const updated = await apiFetch<ConfigMaterial>(`/materials/config/${editingId}`, {
+        const updated = await apiFetch<ConfigMaterial & { auditLog?: ConfigAuditLogRecord }>(`/materials/config/${editingId}`, {
           method: "PATCH",
           token: authToken,
           body: JSON.stringify(payload),
         });
         setMaterials((prev) => prev.map((m) => (m.id === editingId ? updated : m)));
+        if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
         showToast("Material actualizado correctamente.", "success");
       }
       handleCloseModal();
@@ -149,14 +171,15 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
     setConfirmToggleId(null);
     setTogglingId(id);
     try {
-      const result = await apiFetch<{ id: number; isActive: boolean }>(
+      const result = await apiFetch<{ id: number; isActive: boolean; auditLog?: ConfigAuditLogRecord }>(
         `/materials/config/${id}/toggle-status`,
         { method: "POST", token: authToken },
       );
       setMaterials((prev) =>
         prev.map((m) => (m.id === id ? { ...m, isActive: result.isActive } : m)),
       );
-      showToast(`Material ${result.isActive ? "activado" : "desactivado"}.`, "success");
+      if (result.auditLog && isSuperadmin) prependAuditLog(result.auditLog);
+      showToast(`Material ${result.isActive ? "activado" : "desactivado"} correctamente.`, "success");
     } catch (err) {
       showToast(getErrorMessage(err, "Error al cambiar estado."), "error");
     } finally {
@@ -171,88 +194,94 @@ export default function MaterialConfigPanel({ authToken }: { authToken: string }
   });
 
   return (
-    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-      {/* ── Header ── */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-emerald-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">
-            <Package className="h-3.5 w-3.5" />
-            Configuración
-          </div>
-          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
-            Materiales
-          </h1>
-          <p className="text-xs font-medium text-slate-500">
-            Catálogo maestro de materiales. Crea, edita y administra el estado de cada registro.
-          </p>
-        </div>
-        <Button
-          onClick={handleOpenCreate}
-          variant="primary"
-          colorScheme="emerald"
-          size="md"
-          icon={<Plus className="h-4 w-4" />}
-        >
-          Nuevo material
-        </Button>
-      </motion.div>
-
-      {/* ── Table card ── */}
-      <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-emerald-400 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o unidad..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-emerald-500"
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 item-start" : ""}>
+        <div className="space-y-6">
+          {/* ── Header ── */}
+          <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200/80 border-l-4 border-l-emerald-400 bg-white p-5 shadow-xs">
+            <SectionHeader
+              icon={<Package className="h-5 w-5" />}
+              title="Materiales"
+              description="Catálogo maestro de materiales. Crea, edita y administra el estado de cada registro."
+              color="emerald"
+              actions={
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="primary"
+                  colorScheme="emerald"
+                  size="md"
+                  icon={<Plus className="h-4 w-4" />}
+                >
+                  Nuevo material
+                </Button>
+              }
             />
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-2.5 text-xs font-bold text-slate-600">
-              <Package className="h-4 w-4 text-slate-400" />
-              Total: <span className="text-slate-950">{materials.length}</span>
+          </motion.div>
+
+          {/* ── Table card ── */}
+          <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-emerald-400 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
+              <SearchInput
+                id="materiales-search"
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar por nombre o unidad..."
+                ariaLabel="Buscar material"
+                className="md:w-96"
+              />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-linear-to-br from-slate-50 to-white px-4 py-2.5 text-xs font-bold text-slate-600">
+                  <Package className="h-4 w-4 text-slate-400" />
+                  Total: <span className="text-slate-950">{materials.length}</span>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <Table
+              columns={columns}
+              data={filtered}
+              rowKey={(m) => m.id}
+              isLoading={isLoading}
+              emptyMessage="No se encontraron materiales con ese criterio."
+              maxHeight="35rem"
+              pageSize={20}
+            />
+          </motion.div>
+
+          <MaterialFormModal
+            isOpen={isModalOpen}
+            mode={modalMode}
+            editingId={editingId}
+            form={form}
+            onFormChange={setForm}
+            isSaving={isSaving}
+            onClose={handleCloseModal}
+            onSave={handleSave}
+          />
+
+          {/* ── Confirm Toggle Status ── */}
+          <ConfirmDialog
+            isOpen={confirmToggleId !== null}
+            onClose={() => setConfirmToggleId(null)}
+            onConfirm={() => {
+              if (confirmToggleId !== null) handleToggleStatus(confirmToggleId);
+            }}
+            title="Cambiar estado del material"
+            message={`¿Estás seguro de ${materials.find(m => m.id === confirmToggleId)?.isActive ? "desactivar" : "activar"} este material? ${materials.find(m => m.id === confirmToggleId)?.isActive ? "Los proyectos existentes no se verán afectados, pero el material dejará de estar disponible para nuevas obras." : "El material volverá a estar disponible en el catálogo."}`}
+            variant="warning"
+            confirmLabel={materials.find(m => m.id === confirmToggleId)?.isActive ? "Desactivar" : "Activar"}
+            isLoading={togglingId === confirmToggleId}
+          />
         </div>
 
-        <Table
-          columns={columns}
-          data={filtered}
-          rowKey={(m) => m.id}
-          isLoading={isLoading}
-          emptyMessage="No se encontraron materiales con ese criterio."
-          maxHeight="35rem"
-          pageSize={20}
-        />
-      </motion.div>
-
-      <MaterialFormModal
-        isOpen={isModalOpen}
-        mode={modalMode}
-        editingId={editingId}
-        form={form}
-        onFormChange={setForm}
-        isSaving={isSaving}
-        onClose={handleCloseModal}
-        onSave={handleSave}
-      />
-
-      {/* ── Confirm Toggle Status ── */}
-      <ConfirmDialog
-        isOpen={confirmToggleId !== null}
-        onClose={() => setConfirmToggleId(null)}
-        onConfirm={() => {
-          if (confirmToggleId !== null) handleToggleStatus(confirmToggleId);
-        }}
-        title="Cambiar estado del material"
-        message={`¿Estás seguro de ${materials.find(m => m.id === confirmToggleId)?.isActive ? "desactivar" : "activar"} este material? ${materials.find(m => m.id === confirmToggleId)?.isActive ? "Los proyectos existentes no se verán afectados, pero el material dejará de estar disponible para nuevas obras." : "El material volverá a estar disponible en el catálogo."}`}
-        variant="warning"
-        confirmLabel={materials.find(m => m.id === confirmToggleId)?.isActive ? "Desactivar" : "Activar"}
-        isLoading={togglingId === confirmToggleId}
-      />
+        {isSuperadmin && (
+          <ConfigAuditLogPanel
+            logs={auditLogs}
+            isLoading={isLoadingAuditLogs}
+            pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
+          />
+        )}
+      </div>
     </motion.div>
   );
 }

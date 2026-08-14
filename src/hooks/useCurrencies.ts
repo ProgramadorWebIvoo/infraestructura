@@ -92,9 +92,13 @@ export function useCurrencies(authToken: string, enabled: boolean) {
   );
 
   const deleteCurrency = useCallback(
-    async (id: number): Promise<void> => {
-      await apiFetch(`/currencies/${id}`, { method: "DELETE", token: authToken });
+    async (id: number): Promise<{ auditLog?: ConfigAuditLogRecord }> => {
+      const result = await apiFetch<{ auditLog?: ConfigAuditLogRecord }>(`/currencies/${id}`, {
+        method: "DELETE",
+        token: authToken,
+      });
       setCurrencies(prev => prev.filter(c => c.id !== id));
+      return result;
     },
     [authToken],
   );

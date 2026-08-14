@@ -118,7 +118,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CONFIG_PROVEEDORES}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_PROVEEDORES)} redirectTo={fallbackRoute}>
-              <ProveedoresConfigPanel authToken={authToken} onContractorMutated={onContractorMutated} />
+              <ProveedoresConfigPanel authToken={authToken} onContractorMutated={onContractorMutated} activeRole={activeRole} />
             </ProtectedRoute>
           }
         />
@@ -126,7 +126,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CONFIG_MATERIALES}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_MATERIALES)} redirectTo={fallbackRoute}>
-              <MaterialConfigPanel authToken={authToken} />
+              <MaterialConfigPanel authToken={authToken} activeRole={activeRole} />
             </ProtectedRoute>
           }
         />
@@ -134,7 +134,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CONFIG_IA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_IA)} redirectTo={fallbackRoute}>
-              <AIConfigPanel authToken={authToken} />
+              <AIConfigPanel authToken={authToken} activeRole={activeRole}/>
             </ProtectedRoute>
           }
         />
@@ -150,7 +150,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.USUARIOS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.USUARIOS)} redirectTo={fallbackRoute}>
-              <UsuariosPanel authToken={authToken} />
+              <UsuariosPanel authToken={authToken} activeRole={activeRole} />
             </ProtectedRoute>
           }
         />

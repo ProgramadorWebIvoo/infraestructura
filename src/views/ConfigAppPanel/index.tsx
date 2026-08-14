@@ -29,17 +29,16 @@ import { containerVariants } from "../../animations";
 import Spinner from "../../components/UI/Spinner";
 import Button from "../../components/UI/Button";
 import AlertBanner from "../../components/UI/AlertBanner";
-import AuditLogPanel from "../../components/UI/AuditLogPanel";
+import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
 import { useToast } from "../../components/UI/Toast";
 import { getErrorMessage } from "../../services/logger";
 import { useAppSettings, type AppSettingRecord } from "../../hooks/useAppSettings";
-import { useConfigAuditLogs, type ConfigAuditLogRecord } from "../../hooks/useConfigAuditLogs";
+import { useConfigAuditLogs } from "../../hooks/useConfigAuditLogs";
 import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
 import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
 import { useCurrencies, type CurrencyRecord } from "../../hooks/useCurrencies";
 import { useDraftState } from "../../hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
-import AuditLogValueDiff from "./components/AuditLogValueDiff";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
@@ -75,6 +74,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   const { settings, missingKeys, isLoading, updateSetting } = useAppSettings(authToken);
 
   const isSuperadmin = activeRole === "SUPERADMIN";
+
   const {
     logs: auditLogs,
     isLoading: isLoadingAuditLogs,
@@ -120,6 +120,11 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
   };
 
+  const handleDeleteCurrency = async (id: number) => {
+    const result = await deleteCurrency(id);
+    if (result.auditLog && isSuperadmin) prependAuditLog(result.auditLog);
+  };
+
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
   const settingById = useMemo(() => new Map(allSettings.map(s => [s.id, s])), [allSettings]);
 
@@ -128,16 +133,6 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     for (const setting of allSettings) map[setting.key] = setting.label;
     return map;
   }, [allSettings]);
-
-  /**
-   * Título de una entrada del historial: para cambios de CONFIG APP
-   * (`entityType: "setting"`) usa el label legible del catálogo; para el
-   * resto de acciones administrativas (usuarios, proveedores, materiales,
-   * IA, monedas, matriz de notificaciones) `settingKey` viene null — el
-   * texto legible ahí es `action` (ej. "Modificación de moneda"), no la key.
-   */
-  const entryTitle = (log: ConfigAuditLogRecord): string =>
-    log.entityType === "setting" ? (settingLabelByKey[log.settingKey ?? ""] ?? log.settingKey ?? log.action) : log.action;
 
   /**
    * El interruptor maestro (`acciones_con_notificacion_app`/`acciones_con_correo`)
@@ -227,7 +222,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
           document.getElementById(`notification-rule-${failedActions[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       } else {
-        showToast("Configuración actualizada.", "success");
+        showToast("Configuración actualizada correctamente.", "success");
       }
     } catch (err) {
       showToast(getErrorMessage(err, "Error al guardar la configuración."), "error");
@@ -298,7 +293,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                         onAdd={handleAddCurrency}
                         onUpdate={handleUpdateCurrency}
                         onSetBase={handleSetBaseCurrency}
-                        onDelete={deleteCurrency}
+                        onDelete={handleDeleteCurrency}
                       />
                     ) : (
                       <SettingGroupCard
@@ -320,29 +315,12 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
         </motion.div>
 
         {isSuperadmin && (
-          <AuditLogPanel<ConfigAuditLogRecord>
-            title="Historial de cambios (CONFIG APP)"
-            entries={auditLogs}
+          <ConfigAuditLogPanel
+            title="Historial de cambios"
+            logs={auditLogs}
             isLoading={isLoadingAuditLogs}
-            defaultOpen
-            sticky
-            fillViewport
-            stickyOffset="1.5rem"
+            settingLabelByKey={settingLabelByKey}
             pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-            searchableText={log => `${entryTitle(log)} ${log.userName ?? ""} ${log.oldValue ?? ""} ${log.newValue ?? ""}`}
-            keyOf={log => log.id}
-            searchPlaceholder="Buscar por parámetro, usuario o valor..."
-            emptyMessage="Todavía no se ha modificado ningún parámetro."
-            renderEntry={log => (
-              <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3">
-                <div className="mb-1.5">
-                  <span className="text-xs font-bold text-slate-700 leading-snug wrap-break-word">{entryTitle(log)}</span>
-                  <span className="block text-[10px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
-                </div>
-                <AuditLogValueDiff oldValue={log.oldValue} newValue={log.newValue} />
-                {log.userName && <p className="text-[10px] text-slate-400 font-medium mt-1">por {log.userName}</p>}
-              </div>
-            )}
           />
         )}
       </div>

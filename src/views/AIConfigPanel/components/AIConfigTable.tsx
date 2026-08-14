@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import {
   Check,
-  CheckCircle,
   Loader2,
   Pencil,
   Plus,
@@ -12,12 +11,13 @@ import {
   Sliders,
   Trash2,
   X,
-  XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Table, type Column } from "../../../components/UI/Table";
 import Button from "../../../components/UI/Button";
 import IconActionButton from "../../../components/UI/IconActionButton";
+import SectionHeader from "../../../components/UI/SectionHeader";
+import ActiveBadge from "../../../components/UI/ActiveBadge";
 import { itemVariants } from "../../../animations";
 import type { AiConfigRecord } from "../../../hooks/useAIConfig";
 import ProviderIcon from "./ProviderIcon";
@@ -93,18 +93,7 @@ export default function AIConfigTable({
       key: "isActive",
       label: "Estado",
       sortable: true,
-      render: (c) => (
-        <span
-          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
-            c.isActive
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-slate-200 bg-slate-100 text-slate-500"
-          }`}
-        >
-          {c.isActive ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-          {c.isActive ? "Activo" : "Inactivo"}
-        </span>
-      ),
+      render: (c) => <ActiveBadge isActive={c.isActive} />,
     },
     {
       key: "isFallback",
@@ -164,39 +153,35 @@ export default function AIConfigTable({
 
   return (
     <motion.div variants={itemVariants}>
-      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700">
-            <Sliders className="h-3.5 w-3.5" />
-            LLM Selector
-          </div>
-          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
-            Modelos de IA
-          </h1>
-          <p className="text-xs font-medium text-slate-500">
-            Selección dinámica de modelos por proveedor. Los cambios se aplican en tiempo real sin reinicio.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onSync}
-            disabled={isSyncing}
-            icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          >
-            Sincronizar
-          </Button>
-          <Button
-            variant="primary"
-            colorScheme="indigo"
-            size="md"
-            onClick={onCreateNew}
-            icon={<Plus className="h-4 w-4" />}
-          >
-            Nueva config.
-          </Button>
-        </div>
+      <div className="mb-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white p-5 shadow-xs">
+        <SectionHeader
+          icon={<Sliders className="h-5 w-5" />}
+          title="Modelos de IA"
+          description="Selección dinámica de modelos por proveedor. Los cambios se aplican en tiempo real sin reinicio."
+          color="indigo"
+          actions={
+            <>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={onSync}
+                disabled={isSyncing}
+                icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              >
+                Sincronizar
+              </Button>
+              <Button
+                variant="primary"
+                colorScheme="indigo"
+                size="md"
+                onClick={onCreateNew}
+                icon={<Plus className="h-4 w-4" />}
+              >
+                Nueva config.
+              </Button>
+            </>
+          }
+        />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">

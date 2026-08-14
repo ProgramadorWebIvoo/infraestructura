@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../services/api";
 import { logError, getErrorMessage } from "../services/logger";
+import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 // Re-export de constantes de dominio: las vistas las consumen desde el hook
 // (API pública estable) pero la fuente de verdad vive en constants/aiProviders.
 export {
@@ -37,6 +38,9 @@ export interface AiConfigRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Respuesta de POST/PATCH/DELETE /ai/config: el registro + el auditLog recién creado, mismo patrón que CurrencyMutationResponse — el panel de auditoría lo inserta directo sin re-consultar /config-audit-logs. */
+export type AiConfigMutationResponse = AiConfigRecord & { auditLog?: ConfigAuditLogRecord };
 
 export interface AiConfigForm {
   provider: AIProvider;
@@ -184,22 +188,26 @@ export function useAIConfig(authToken: string) {
   // pasa de falsy → truthy) — antes eran dos useEffect separados que ambos
   // terminaban llamando loadConfigs(), duplicando el fetch en el caso en que
   // el componente ya estaba montado sin sesión y el usuario luego iniciaba sesión.
+  //
+  // `loadUsage()` NO se llama aquí — AIConfigPanel (el único consumidor de
+  // este hook) ya lo hace en su propio efecto con el `usageDays` que
+  // controla localmente. Antes se llamaba en ambos lados: en el mount normal
+  // solo disparaba el del panel, pero justo en la transición de login los
+  // dos efectos corrían juntos y duplicaban /ai/config/usage.
   useEffect(() => {
     const justLoggedIn = !prevToken.current && authToken;
     prevToken.current = authToken;
 
     if (justLoggedIn) {
       setIsLoading(true);
-      setIsUsageLoading(true);
-      loadUsage();
     }
     loadConfigs();
     loadProviderModels();
-  }, [authToken, loadConfigs, loadUsage, loadProviderModels]);
+  }, [authToken, loadConfigs, loadProviderModels]);
 
   // Create config
-  const createConfig = useCallback(async (form: AiConfigForm): Promise<AiConfigRecord> => {
-    const created = await apiFetch<AiConfigRecord>("/ai/config", {
+  const createConfig = useCallback(async (form: AiConfigForm): Promise<AiConfigMutationResponse> => {
+    const created = await apiFetch<AiConfigMutationResponse>("/ai/config", {
       method: "POST",
       body: JSON.stringify(form),
     });
@@ -208,8 +216,8 @@ export function useAIConfig(authToken: string) {
   }, []);
 
   // Update config
-  const updateConfig = useCallback(async (id: number, form: AiConfigUpdatePayload): Promise<AiConfigRecord> => {
-    const updated = await apiFetch<AiConfigRecord>(`/ai/config/${id}`, {
+  const updateConfig = useCallback(async (id: number, form: AiConfigUpdatePayload): Promise<AiConfigMutationResponse> => {
+    const updated = await apiFetch<AiConfigMutationResponse>(`/ai/config/${id}`, {
       method: "PATCH",
       body: JSON.stringify(form),
     });
@@ -218,9 +226,10 @@ export function useAIConfig(authToken: string) {
   }, []);
 
   // Delete config
-  const deleteConfig = useCallback(async (id: number): Promise<void> => {
-    await apiFetch(`/ai/config/${id}`, { method: "DELETE" });
+  const deleteConfig = useCallback(async (id: number): Promise<{ auditLog?: ConfigAuditLogRecord }> => {
+    const result = await apiFetch<{ auditLog?: ConfigAuditLogRecord }>(`/ai/config/${id}`, { method: "DELETE" });
     setConfigs((prev) => prev.filter((c) => c.id !== id));
+    return result;
   }, []);
 
   // Test config

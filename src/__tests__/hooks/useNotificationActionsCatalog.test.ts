@@ -6,7 +6,10 @@ vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-import { useNotificationActionsCatalog } from "@/hooks/useNotificationActionsCatalog";
+import {
+  useNotificationActionsCatalog,
+  __resetNotificationActionsCatalogCacheForTests,
+} from "@/hooks/useNotificationActionsCatalog";
 
 async function flush() {
   for (let i = 0; i < 5; i++) {
@@ -17,6 +20,7 @@ async function flush() {
 describe("useNotificationActionsCatalog", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    __resetNotificationActionsCatalogCacheForTests();
   });
 
   it("no consulta el endpoint sin authToken", async () => {
@@ -48,5 +52,22 @@ describe("useNotificationActionsCatalog", () => {
     await flush();
 
     expect(result.current.actions).toEqual([]);
+  });
+
+  it("cachea el catálogo entre remontajes — un segundo montaje no vuelve a pedir el endpoint", async () => {
+    const catalog = [{ value: "Alta de material", label: "Alta de material" }];
+    mockApiFetch.mockResolvedValueOnce(catalog);
+
+    const first = renderHook(() => useNotificationActionsCatalog("token"));
+    await flush();
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    const second = renderHook(() => useNotificationActionsCatalog("token"));
+    expect(second.result.current.actions).toEqual(catalog);
+    expect(second.result.current.isLoading).toBe(false);
+    await flush();
+
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
   });
 });

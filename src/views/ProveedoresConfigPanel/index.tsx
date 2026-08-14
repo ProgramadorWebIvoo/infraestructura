@@ -8,10 +8,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Building2, Plus, Search, UserCog } from "lucide-react";
+import { Building2, Plus, UserCog } from "lucide-react";
 import { Table } from "../../components/UI/Table";
 import Button from "../../components/UI/Button";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import SectionHeader from "../../components/UI/SectionHeader";
+import { SearchInput } from "../../components/UI/FilterBar";
 import { useToast } from "../../components/UI/Toast";
 import { apiFetch } from "../../services/api";
 import { logError, getErrorMessage } from "../../services/logger";
@@ -19,9 +21,28 @@ import { containerVariants, itemVariants } from "../../animations";
 import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
+import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
+import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
-export default function ProveedoresConfigPanel({ authToken, onContractorMutated }: { authToken: string; onContractorMutated?: () => void }) {
+interface ProveedoresConfigPanelProps {
+  authToken: string
+  onContractorMutated: () => void
+  activeRole?: string
+}
+
+export default function ProveedoresConfigPanel({ authToken, onContractorMutated, activeRole }: ProveedoresConfigPanelProps ) {
   const { showToast } = useToast();
+
+  const isSuperadmin = activeRole === "SUPERADMIN";
+  const {
+    logs: auditLogs,
+    isLoading: isLoadingAuditLogs,
+    page: auditLogPage,
+    lastPage: auditLogLastPage,
+    total: auditLogTotal,
+    goToPage: goToAuditLogPage,
+    prependLocal: prependAuditLog,
+  } = useConfigAuditLogs(authToken, isSuperadmin);
 
   // ---- Data state ----
   const [contractors, setContractors] = useState<ConfigContractor[]>([]);
@@ -116,7 +137,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
     setIsSaving(true);
     try {
       if (modalMode === "create") {
-        const created = await apiFetch<ConfigContractor>("/contractors/config", {
+        const created = await apiFetch<ConfigContractor & { auditLog?: ConfigAuditLogRecord }>("/contractors/config", {
           method: "POST",
           token: authToken,
           body: JSON.stringify({
@@ -128,10 +149,11 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           }),
         });
         setContractors((prev) => [...prev, created]);
+        if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
         showToast("Proveedor creado correctamente.", "success");
         onContractorMutated?.();
       } else if (editingCode) {
-        const updated = await apiFetch<ConfigContractor>(`/contractors/config/${editingCode}`, {
+        const updated = await apiFetch<ConfigContractor & { auditLog?: ConfigAuditLogRecord }>(`/contractors/config/${editingCode}`, {
           method: "PATCH",
           token: authToken,
           body: JSON.stringify({
@@ -143,6 +165,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           }),
         });
         setContractors((prev) => prev.map((c) => (c.code === editingCode ? updated : c)));
+        if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
         showToast("Proveedor actualizado correctamente.", "success");
         onContractorMutated?.();
       }
@@ -159,7 +182,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
     setConfirmToggleCode(null);
     setTogglingCode(code);
     try {
-      const result = await apiFetch<{ code: string; status: string }>(`/contractors/config/${code}/toggle-status`, {
+      const result = await apiFetch<{ code: string; status: string; auditLog?: ConfigAuditLogRecord }>(`/contractors/config/${code}/toggle-status`, {
         method: "POST",
         token: authToken,
       });
@@ -168,7 +191,11 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
           c.code === code ? { ...c, status: result.status as ConfigContractor["status"] } : c,
         ),
       );
-      showToast(`Proveedor ${result.status === "ACTIVE" ? "activado" : result.status === "INACTIVE" ? "desactivado" : "pendiente"}.`, "success");
+      if (result.auditLog && isSuperadmin) prependAuditLog(result.auditLog);
+      showToast(
+        `Proveedor ${result.status === "ACTIVE" ? "activado" : result.status === "INACTIVE" ? "desactivado" : "puesto en revisión"} correctamente.`,
+        "success",
+      );
       onContractorMutated?.();
     } catch (err) {
       showToast(getErrorMessage(err, "Error al cambiar estado."), "error");
@@ -177,6 +204,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
     }
   };
 
+  
   const columns = getContractorColumns({
     togglingCode,
     onEdit: handleOpenEdit,
@@ -184,88 +212,96 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated 
   });
 
   return (
-    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-      {/* ── Header ── */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-700">
-            <UserCog className="h-3.5 w-3.5" />
-            Configuración
-          </div>
-          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
-            Proveedores
-          </h1>
-          <p className="text-xs font-medium text-slate-500">
-            Catálogo maestro de proveedores. Crea, edita y administra el estado de cada registro.
-          </p>
-        </div>
-        <Button
-          onClick={handleOpenCreate}
-          variant="primary"
-          colorScheme="sky"
-          size="md"
-          icon={<Plus className="h-4 w-4" />}
-        >
-          Nuevo proveedor
-        </Button>
-      </motion.div>
-
-      {/* ── Table card ── */}
-      <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre, código, especialidad o contacto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-sky-500"
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 item-start" : ""}>
+        <div className="space-y-6">
+          {/* ── Header ── */}
+          <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs">
+            <SectionHeader
+              icon={<UserCog className="h-5 w-5" />}
+              title="Proveedores"
+              description="Catálogo maestro de proveedores. Crea, edita y administra el estado de cada registro."
+              color="sky"
+              actions={
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="primary"
+                  colorScheme="sky"
+                  size="md"
+                  icon={<Plus className="h-4 w-4" />}
+                >
+                  Nuevo proveedor
+                </Button>
+              }
             />
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-2.5 text-xs font-bold text-slate-600">
-              <Building2 className="h-4 w-4 text-slate-400" />
-              Total: <span className="text-slate-950">{contractors.length}</span>
+          </motion.div>
+
+          {/* ── Table card ── */}
+          <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
+              <SearchInput
+                id="proveedores-search"
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar por nombre, código, especialidad o contacto..."
+                ariaLabel="Buscar proveedor"
+                className="md:w-96"
+              />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-linear-to-br from-slate-50 to-white px-4 py-2.5 text-xs font-bold text-slate-600">
+                  <Building2 className="h-4 w-4 text-slate-400" />
+                  Total: <span className="text-slate-950">{contractors.length}</span>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <Table
+              columns={columns}
+              data={filtered}
+              rowKey={(c) => c.code}
+              isLoading={isLoading}
+              emptyMessage="No se encontraron proveedores con ese criterio."
+              maxHeight="35rem"
+              pageSize={20}
+            />
+          </motion.div>
+
+          <ContractorFormModal
+            isOpen={isModalOpen}
+            mode={modalMode}
+            editingCode={editingCode}
+            form={form}
+            onFormChange={setForm}
+            isSaving={isSaving}
+            onClose={handleCloseModal}
+            onSave={handleSave}
+          />
+
+          {/* ── Confirm Toggle Status ── */}
+          <ConfirmDialog
+            isOpen={confirmToggleCode !== null}
+            onClose={() => setConfirmToggleCode(null)}
+            onConfirm={() => {
+              if (confirmToggleCode !== null) handleToggleStatus(confirmToggleCode);
+            }}
+            title="Cambiar estado del proveedor"
+            message={`¿Estás seguro de cambiar el estado de este proveedor?`}
+            variant="warning"
+            confirmLabel="Cambiar estado"
+            isLoading={togglingCode === confirmToggleCode}
+          />
+
+          
         </div>
-
-        <Table
-          columns={columns}
-          data={filtered}
-          rowKey={(c) => c.code}
-          isLoading={isLoading}
-          emptyMessage="No se encontraron proveedores con ese criterio."
-          maxHeight="35rem"
-          pageSize={20}
-        />
-      </motion.div>
-
-      <ContractorFormModal
-        isOpen={isModalOpen}
-        mode={modalMode}
-        editingCode={editingCode}
-        form={form}
-        onFormChange={setForm}
-        isSaving={isSaving}
-        onClose={handleCloseModal}
-        onSave={handleSave}
-      />
-
-      {/* ── Confirm Toggle Status ── */}
-      <ConfirmDialog
-        isOpen={confirmToggleCode !== null}
-        onClose={() => setConfirmToggleCode(null)}
-        onConfirm={() => {
-          if (confirmToggleCode !== null) handleToggleStatus(confirmToggleCode);
-        }}
-        title="Cambiar estado del proveedor"
-        message={`¿Estás seguro de cambiar el estado de este proveedor?`}
-        variant="warning"
-        confirmLabel="Cambiar estado"
-        isLoading={togglingCode === confirmToggleCode}
-      />
+        
+        {isSuperadmin && (
+          <ConfigAuditLogPanel
+            logs={auditLogs}
+            isLoading={isLoadingAuditLogs}
+            pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
+          />
+        )}
+      </div>
     </motion.div>
   );
 }

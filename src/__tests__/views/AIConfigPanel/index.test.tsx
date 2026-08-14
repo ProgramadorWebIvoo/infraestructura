@@ -42,7 +42,7 @@ const mockHook = {
   loadUsage: vi.fn().mockResolvedValue(undefined),
   createConfig: vi.fn().mockResolvedValue({} as AiConfigRecord),
   updateConfig: vi.fn().mockResolvedValue({} as AiConfigRecord),
-  deleteConfig: vi.fn().mockResolvedValue(undefined),
+  deleteConfig: vi.fn().mockResolvedValue({}),
   testConfig: vi.fn().mockResolvedValue({ success: true, message: "Conexión exitosa." }),
   syncConfig: vi.fn().mockResolvedValue({ message: "Sincronizado.", activeConfigs: 1 }),
   dismissSyncMessage: vi.fn(),
@@ -160,7 +160,7 @@ describe("AIConfigPanel (integración)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
 
     await waitFor(() => expect(mockHook.deleteConfig).toHaveBeenCalledWith(CONFIG.id));
-    expect(mockShowToast).toHaveBeenCalledWith("Configuración eliminada.", "success");
+    expect(mockShowToast).toHaveBeenCalledWith("Configuración eliminada correctamente.", "success");
   });
 
   it("sincroniza y muestra el banner de éxito", async () => {

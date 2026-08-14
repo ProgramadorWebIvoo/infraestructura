@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+const mockUseAuth = vi.fn(() => ({ authToken: "token" }));
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
 import { useBudgetSemaphore, levelOf, type SemaphoreThresholds } from "@/hooks/useBudgetSemaphore";
+import { PublicSettingsProvider } from "@/components/UI/PublicSettingsProvider";
 
 const DEFAULT_THRESHOLDS: SemaphoreThresholds = { verde: 80, amarillo: 95, naranja: 100 };
 
@@ -14,6 +21,10 @@ async function flush() {
   for (let i = 0; i < 5; i++) {
     await act(async () => { await Promise.resolve(); });
   }
+}
+
+function wrapper({ children }: { children: ReactNode }) {
+  return <PublicSettingsProvider>{children}</PublicSettingsProvider>;
 }
 
 describe("levelOf", () => {
@@ -47,12 +58,13 @@ describe("levelOf", () => {
 describe("useBudgetSemaphore", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockUseAuth.mockReturnValue({ authToken: "token" });
   });
 
   it("usa umbrales por defecto mientras carga y hasta que responda el fetch", async () => {
     mockApiFetch.mockResolvedValueOnce({});
 
-    const { result } = renderHook(() => useBudgetSemaphore());
+    const { result } = renderHook(() => useBudgetSemaphore(), { wrapper });
 
     expect(result.current.thresholds).toEqual(DEFAULT_THRESHOLDS);
     await flush();
@@ -68,7 +80,7 @@ describe("useBudgetSemaphore", () => {
       ],
     });
 
-    const { result } = renderHook(() => useBudgetSemaphore());
+    const { result } = renderHook(() => useBudgetSemaphore(), { wrapper });
     await flush();
 
     expect(result.current.thresholds).toEqual({ verde: 70, amarillo: 85, naranja: 95 });
@@ -78,7 +90,7 @@ describe("useBudgetSemaphore", () => {
   it("cae a los defaults si el fetch falla", async () => {
     mockApiFetch.mockRejectedValueOnce(new Error("network error"));
 
-    const { result } = renderHook(() => useBudgetSemaphore());
+    const { result } = renderHook(() => useBudgetSemaphore(), { wrapper });
     await flush();
 
     expect(result.current.thresholds).toEqual(DEFAULT_THRESHOLDS);

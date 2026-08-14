@@ -318,6 +318,68 @@ describe("apiFetch", () => {
 
     await expect(apiFetch("/plain")).rejects.toThrow(); // JSON.parse lanza
   });
+
+  // -----------------------------------------------------------------------
+  // Dedup de GETs concurrentes — evita multiplicar requests idénticas en
+  // vuelo (ej. StrictMode duplicando efectos de montaje, o dos componentes
+  // pidiendo el mismo endpoint al mismo tiempo). Ver Hallazgo de 429 en
+  // cascada por agotamiento del rate limit del backend.
+  // -----------------------------------------------------------------------
+
+  it("dos GET concurrentes al mismo path comparten una sola llamada a fetch", async () => {
+    let resolveFetch!: (value: unknown) => void;
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    const p1 = apiFetch("/dedup-test");
+    const p2 = apiFetch("/dedup-test");
+
+    resolveFetch({
+      status: 200,
+      ok: true,
+      headers: { get: () => null },
+      text: () => Promise.resolve(JSON.stringify({ data: { id: 1 } })),
+    });
+
+    const [r1, r2] = await Promise.all([p1, p2]);
+    expect(r1).toEqual({ id: 1 });
+    expect(r2).toEqual({ id: 1 });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("dos GET secuenciales (uno después de que el otro ya resolvió) disparan fetch por separado", async () => {
+    mockFetch({ body: { data: { id: 1 } } });
+
+    await apiFetch("/dedup-sequential");
+    await apiFetch("/dedup-sequential");
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("dos POST concurrentes al mismo path NUNCA comparten promesa (solo GET se deduplica)", async () => {
+    document.cookie = "XSRF-TOKEN=token-value-123"; // evita el fetch extra de /sanctum/csrf-cookie
+    mockFetch({ body: { data: { ok: true } } });
+
+    await Promise.all([
+      apiFetch("/dedup-mutation", { method: "POST", body: JSON.stringify({ a: 1 }) }),
+      apiFetch("/dedup-mutation", { method: "POST", body: JSON.stringify({ a: 2 }) }),
+    ]);
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("un GET que falla no deja la entrada de dedup colgada — el siguiente intento dispara un fetch nuevo", async () => {
+    mockFetch({ status: 500, body: { message: "Server Error" } });
+
+    await expect(apiFetch("/dedup-error")).rejects.toThrow();
+    await expect(apiFetch("/dedup-error")).rejects.toThrow();
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
 });
 
 // ---------------------------------------------------------------------------

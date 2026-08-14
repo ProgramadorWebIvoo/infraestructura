@@ -27,6 +27,7 @@ import { useProjects } from "./hooks/useProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
 import { NotificationsProvider } from "./components/UI/NotificationsProvider";
+import { PublicSettingsProvider } from "./components/UI/PublicSettingsProvider";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -84,13 +85,21 @@ export default function App({ router: Router = BrowserRouter, ...routerProps }: 
   return (
     <Router {...routerProps}>
       <ToastProvider>
-        {/* NotificationsProvider instancia useNotifications() UNA sola vez para
-            toda la app — NotificationBell se monta dos veces en el layout
-            (MobileTopBar + SidebarNav) y consumir el hook directamente ahí
-            duplicaba el polling y los toasts de "notificación nueva". */}
-        <NotificationsProvider>
-          <AppRoutes />
-        </NotificationsProvider>
+        {/* PublicSettingsProvider por fuera de NotificationsProvider: este último
+            depende de usePollingSettings(), que ahora lee de aquel contexto en
+            vez de fetchear /settings por su cuenta — un solo GET /settings
+            compartido por toda la sesión en vez de uno por cada hook que lo
+            necesitaba (usePollingSettings, useMaxAdvancePercent,
+            useBudgetSemaphore). */}
+        <PublicSettingsProvider>
+          {/* NotificationsProvider instancia useNotifications() UNA sola vez para
+              toda la app — NotificationBell se monta dos veces en el layout
+              (MobileTopBar + SidebarNav) y consumir el hook directamente ahí
+              duplicaba el polling y los toasts de "notificación nueva". */}
+          <NotificationsProvider>
+            <AppRoutes />
+          </NotificationsProvider>
+        </PublicSettingsProvider>
       </ToastProvider>
     </Router>
   );

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import AuditLogValueDiff from "@/views/ConfigAppPanel/components/AuditLogValueDiff";
+import AuditLogValueDiff from "@/components/UI/AuditLogValueDiff";
 
 describe("AuditLogValueDiff", () => {
   it("muestra un diff escalar simple para valores no-JSON", () => {

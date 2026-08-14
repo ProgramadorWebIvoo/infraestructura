@@ -12,6 +12,21 @@ import { apiFetch } from "../services/api";
 import { getErrorMessage, logError } from "../services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
+import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
+
+// Caché de módulo (no contexto React): único consumidor es UsuariosPanel, así
+// que no hay duplicación entre componentes simultáneos — el costo real era
+// refetchear /roles en cada remontaje de la vista al navegar (sin keep-alive
+// de ruta). Los roles válidos son fuente de verdad del backend (CheckRole/
+// UserController), fijos en código, iguales para cualquier sesión.
+let cachedRoles: string[] | null = null;
+let rolesInFlight: Promise<string[]> | null = null;
+
+/** Solo para tests — el caché de módulo persiste entre montajes reales a propósito, pero contamina tests que corren en el mismo proceso. */
+export function __resetRolesCacheForTests(): void {
+  cachedRoles = null;
+  rolesInFlight = null;
+}
 
 export interface UserRecord {
   id: number | string;
@@ -44,17 +59,25 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
 
   // Lista de roles válidos — servida por el backend (fuente de verdad de
   // CheckRole/UserController) en vez de hardcodeada en el frontend.
-  const [roles, setRoles] = useState<string[]>([]);
+  const [roles, setRoles] = useState<string[]>(cachedRoles ?? []);
   useEffect(() => {
-    if (!authToken) return;
+    if (!authToken || cachedRoles !== null) return;
     let cancelled = false;
-    apiFetch<string[]>("/roles")
+
+    rolesInFlight ??= apiFetch<string[]>("/roles");
+
+    rolesInFlight
       .then((data) => {
-        if (!cancelled) setRoles(data);
+        cachedRoles = data;
+        if (!cancelled) setRoles(cachedRoles);
       })
       .catch((err) => {
         if (!cancelled) logError("useUsuarios.loadRoles", err);
+      })
+      .finally(() => {
+        rolesInFlight = null;
       });
+
     return () => {
       cancelled = true;
     };
@@ -67,9 +90,9 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
       password: string;
       password_confirmation: string;
       role: string;
-    }): Promise<UserRecord> => {
+    }): Promise<UserRecord & { auditLog?: ConfigAuditLogRecord }> => {
       try {
-        const created = await apiFetch<UserRecord>("/users", {
+        const created = await apiFetch<UserRecord & { auditLog?: ConfigAuditLogRecord }>("/users", {
           method: "POST",
           body: JSON.stringify(payload),
         });
@@ -85,9 +108,9 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
   );
 
   const handleUpdateUser = useCallback(
-    async (id: number | string, payload: UpdateUserPayload): Promise<UserRecord> => {
+    async (id: number | string, payload: UpdateUserPayload): Promise<UserRecord & { auditLogs?: ConfigAuditLogRecord[] }> => {
       try {
-        const updated = await apiFetch<UserRecord>(`/users/${id}`, {
+        const updated = await apiFetch<UserRecord & { auditLogs?: ConfigAuditLogRecord[] }>(`/users/${id}`, {
           method: "PATCH",
           body: JSON.stringify(payload),
         });
@@ -104,16 +127,16 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
   );
 
   const handleToggleUserStatus = useCallback(
-    async (id: number | string): Promise<"Active" | "Inactive"> => {
+    async (id: number | string): Promise<{ status: "Active" | "Inactive"; auditLog?: ConfigAuditLogRecord }> => {
       try {
-        const result = await apiFetch<{ id: number | string; status: "Active" | "Inactive" }>(
+        const result = await apiFetch<{ id: number | string; status: "Active" | "Inactive"; auditLog?: ConfigAuditLogRecord }>(
           `/users/${id}/toggle-status`,
           { method: "POST" },
         );
         setUsers(prev => prev.map(u => (u.id === id ? { ...u, status: result.status } : u)));
         const label = result.status === "Active" ? "activado" : "desactivado";
         showToast(`Usuario ${label} correctamente.`, "success");
-        return result.status;
+        return result;
       } catch (err) {
         const message = getErrorMessage(err, "Error al cambiar el estado del usuario.");
         showToast(message, "error");

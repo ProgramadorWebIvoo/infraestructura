@@ -6,33 +6,24 @@
  * (`notificaciones.polling_notificaciones_segundos` y
  * `notificaciones.polling_dashboard_segundos`) — antes hardcodeados en
  * NotificationsProvider y useDashboardSummary, con el mismo default que la
- * migración de settings define en BD. Mismo patrón que useMaxAdvancePercent:
- * lectura pública vía GET /settings (cualquier autenticado, no solo
- * SUPERADMIN), fallback a los valores por defecto mientras carga o si el
- * fetch falla.
+ * migración de settings define en BD. Fallback a los valores por defecto
+ * mientras carga o si el fetch falla.
+ *
+ * Proyección pura sobre PublicSettingsProvider (fetch único y compartido de
+ * /settings para toda la sesión) — antes este hook hacía su propio fetch
+ * independiente, duplicando el mismo GET /settings que useMaxAdvancePercent/
+ * useBudgetSemaphore/etc. ya pedían por su cuenta.
  */
 
-import { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { usePublicSettings } from "../components/UI/PublicSettingsProvider";
 
 const DEFAULT_NOTIFICATIONS_POLL_SECONDS = 8;
 const DEFAULT_DASHBOARD_POLL_SECONDS = 25;
-
-interface RawSetting {
-  key: string;
-  value: string | null;
-}
 
 export interface PollingSettings {
   notificationsIntervalMs: number;
   dashboardIntervalMs: number;
 }
-
-const DEFAULTS: PollingSettings = {
-  notificationsIntervalMs: DEFAULT_NOTIFICATIONS_POLL_SECONDS * 1000,
-  dashboardIntervalMs: DEFAULT_DASHBOARD_POLL_SECONDS * 1000,
-};
 
 function parseSeconds(raw: string | null | undefined, fallbackSeconds: number): number {
   const parsed = raw !== null && raw !== undefined ? Number(raw) : NaN;
@@ -40,34 +31,20 @@ function parseSeconds(raw: string | null | undefined, fallbackSeconds: number): 
 }
 
 export function usePollingSettings(): PollingSettings {
-  const [settings, setSettings] = useState<PollingSettings>(DEFAULTS);
+  const { settings } = usePublicSettings();
+  const notificaciones = settings.notificaciones ?? [];
 
-  useEffect(() => {
-    let cancelled = false;
+  const notificationsSeconds = parseSeconds(
+    notificaciones.find(s => s.key === "polling_notificaciones_segundos")?.value,
+    DEFAULT_NOTIFICATIONS_POLL_SECONDS,
+  );
+  const dashboardSeconds = parseSeconds(
+    notificaciones.find(s => s.key === "polling_dashboard_segundos")?.value,
+    DEFAULT_DASHBOARD_POLL_SECONDS,
+  );
 
-    apiFetch<Record<string, RawSetting[]>>("/settings", { token: "authenticated" })
-      .then(data => {
-        if (cancelled) return;
-        const notificaciones = data.notificaciones ?? [];
-        const notificationsSeconds = parseSeconds(
-          notificaciones.find(s => s.key === "polling_notificaciones_segundos")?.value,
-          DEFAULT_NOTIFICATIONS_POLL_SECONDS,
-        );
-        const dashboardSeconds = parseSeconds(
-          notificaciones.find(s => s.key === "polling_dashboard_segundos")?.value,
-          DEFAULT_DASHBOARD_POLL_SECONDS,
-        );
-        setSettings({
-          notificationsIntervalMs: notificationsSeconds * 1000,
-          dashboardIntervalMs: dashboardSeconds * 1000,
-        });
-      })
-      .catch(err => logError("usePollingSettings", err));
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return settings;
+  return {
+    notificationsIntervalMs: notificationsSeconds * 1000,
+    dashboardIntervalMs: dashboardSeconds * 1000,
+  };
 }

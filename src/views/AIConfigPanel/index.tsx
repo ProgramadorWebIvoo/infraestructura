@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
 import { containerVariants } from "../../animations";
 import { useToast } from "../../components/UI/Toast";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
@@ -15,8 +16,15 @@ import UsageDashboard from "./components/UsageDashboard";
 import AIConfigTable from "./components/AIConfigTable";
 import { validateConfigForm, buildUpdatePayload } from "./aiConfigForm";
 import AIConfigFormModal from "../../components/Modals/AIConfigFormModal";
+import { useConfigAuditLogs } from "../../hooks/useConfigAuditLogs";
 
-export default function AIConfigPanel({ authToken }: { authToken: string }) {
+interface AIConfigPanelProps {
+  authToken: string;
+  activeRole?: string;
+}
+
+
+export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelProps) {
   const { showToast } = useToast();
 
   const {
@@ -35,6 +43,17 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     syncConfig,
     dismissSyncMessage,
   } = useAIConfig(authToken);
+
+  const isSuperadmin = activeRole === "SUPERADMIN";
+  const {
+    logs: auditLogs,
+    isLoading: isLoadingAuditLogs,
+    page: auditLogPage,
+    lastPage: auditLogLastPage,
+    total: auditLogTotal,
+    goToPage: goToAuditLogPage,
+    prependLocal: prependAuditLog,
+  } = useConfigAuditLogs(authToken, isSuperadmin);
 
   const [usageDays, setUsageDays] = useState(30);
 
@@ -97,10 +116,12 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     setIsSaving(true);
     try {
       if (modalMode === "create") {
-        await createConfig(form);
+        const created = await createConfig(form);
+        if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
         showToast("Configuración creada correctamente.", "success");
       } else if (editingId) {
-        await updateConfig(editingId, buildUpdatePayload(form));
+        const updated = await updateConfig(editingId, buildUpdatePayload(form));
+        if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
         showToast("Configuración actualizada correctamente.", "success");
       }
       handleCloseModal();
@@ -131,8 +152,9 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
     setConfirmDeleteId(null);
     setDeletingId(id);
     try {
-      await deleteConfig(id);
-      showToast("Configuración eliminada.", "success");
+      const result = await deleteConfig(id);
+      if (result.auditLog && isSuperadmin) prependAuditLog(result.auditLog);
+      showToast("Configuración eliminada correctamente.", "success");
     } catch (err) {
       showToast(getErrorMessage(err, "Error al eliminar."), "error");
     } finally {
@@ -154,65 +176,76 @@ export default function AIConfigPanel({ authToken }: { authToken: string }) {
 
   const handleToggleActive = async (c: AiConfigRecord) => {
     try {
-      await updateConfig(c.id, { isActive: !c.isActive });
-      showToast(`Modelo ${c.isActive ? "desactivado" : "activado"}.`, "success");
+      const updated = await updateConfig(c.id, { isActive: !c.isActive });
+      if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
+      showToast(`Modelo ${c.isActive ? "desactivado" : "activado"} correctamente.`, "success");
     } catch (err) {
       showToast(getErrorMessage(err, "Error al cambiar estado."), "error");
     }
   };
 
   return (
-    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-      <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={dismissSyncMessage} />
+    <motion.div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 item-start" : ""} variants={containerVariants} initial="hidden" animate="visible">
+      <div className="space-y-6">
+        <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={dismissSyncMessage} />
 
-      <UsageDashboard
-        usage={usage}
-        isUsageLoading={isUsageLoading}
-        usageDays={usageDays}
-        onUsageDaysChange={setUsageDays}
-      />
+        <UsageDashboard
+          usage={usage}
+          isUsageLoading={isUsageLoading}
+          usageDays={usageDays}
+          onUsageDaysChange={setUsageDays}
+        />
 
-      <AIConfigTable
-        configs={configs}
-        isLoading={isLoading}
-        testingId={testingId}
-        deletingId={deletingId}
-        isSyncing={isSyncing}
-        onTest={handleTest}
-        onEdit={handleOpenEdit}
-        onDelete={(id) => setConfirmDeleteId(id)}
-        onToggleActive={handleToggleActive}
-        onSync={handleSync}
-        onCreateNew={handleOpenCreate}
-      />
+        <AIConfigTable
+          configs={configs}
+          isLoading={isLoading}
+          testingId={testingId}
+          deletingId={deletingId}
+          isSyncing={isSyncing}
+          onTest={handleTest}
+          onEdit={handleOpenEdit}
+          onDelete={(id) => setConfirmDeleteId(id)}
+          onToggleActive={handleToggleActive}
+          onSync={handleSync}
+          onCreateNew={handleOpenCreate}
+        />
 
-      {/* ── Confirm Delete ── */}
-      <ConfirmDialog
-        isOpen={confirmDeleteId !== null}
-        onClose={() => setConfirmDeleteId(null)}
-        onConfirm={() => {
-          if (confirmDeleteId !== null) handleDelete(confirmDeleteId);
-        }}
-        title="Eliminar configuración de IA"
-        message="¿Estás seguro de eliminar esta configuración? Esta acción no se puede deshacer."
-        variant="danger"
-        confirmLabel="Eliminar"
-        isLoading={deletingId === confirmDeleteId}
-      />
+        {/* ── Confirm Delete ── */}
+        <ConfirmDialog
+          isOpen={confirmDeleteId !== null}
+          onClose={() => setConfirmDeleteId(null)}
+          onConfirm={() => {
+            if (confirmDeleteId !== null) handleDelete(confirmDeleteId);
+          }}
+          title="Eliminar configuración de IA"
+          message="¿Estás seguro de eliminar esta configuración? Esta acción no se puede deshacer."
+          variant="danger"
+          confirmLabel="Eliminar"
+          isLoading={deletingId === confirmDeleteId}
+        />
 
-      <AIConfigFormModal
-        isOpen={isModalOpen}
-        mode={modalMode}
-        editingId={editingId}
-        form={form}
-        isSaving={isSaving}
-        showApiKey={showApiKey}
-        availableModels={providerModels[form.provider] ?? []}
-        onClose={handleCloseModal}
-        onSave={handleSave}
-        onFormChange={setForm}
-        onShowApiKeyChange={setShowApiKey}
-      />
+        <AIConfigFormModal
+          isOpen={isModalOpen}
+          mode={modalMode}
+          editingId={editingId}
+          form={form}
+          isSaving={isSaving}
+          showApiKey={showApiKey}
+          availableModels={providerModels[form.provider] ?? []}
+          onClose={handleCloseModal}
+          onSave={handleSave}
+          onFormChange={setForm}
+          onShowApiKeyChange={setShowApiKey}
+        />
+      </div>
+
+      {isSuperadmin && (
+        <ConfigAuditLogPanel
+          logs={auditLogs}
+          isLoading={isLoadingAuditLogs}
+          pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
+        />
+      )}
     </motion.div>
   );
 }

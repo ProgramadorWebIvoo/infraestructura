@@ -37,6 +37,25 @@ export interface ApiFetchOptions extends RequestInit {
 }
 
 // ---------------------------------------------------------------------------
+// Dedup de GETs concurrentes
+// ---------------------------------------------------------------------------
+// Varios componentes (o StrictMode duplicando efectos de montaje) pueden
+// pedir la misma URL al mismo tiempo — sin esto, cada uno dispara su propio
+// fetch, multiplicando el consumo del rate limit del backend por nada (la
+// respuesta iba a ser idéntica). Solo GET/sin-método: mutaciones (POST/PATCH/
+// PUT/DELETE) nunca deben compartir promesa entre sí. No es una caché de
+// tiempo — la entrada se borra apenas la promesa resuelve o rechaza, así que
+// dos llamadas secuenciales (una después de que la anterior ya terminó)
+// siempre disparan su propio fetch nuevo; solo se deduplican las que están
+// realmente en vuelo al mismo tiempo.
+const inFlightGets = new Map<string, Promise<unknown>>();
+
+function isDedupableGet(options: ApiFetchOptions): boolean {
+  const method = (options.method ?? "GET").toUpperCase();
+  return method === "GET";
+}
+
+// ---------------------------------------------------------------------------
 // Fetch wrapper
 // ---------------------------------------------------------------------------
 
@@ -49,6 +68,27 @@ export interface ApiFetchOptions extends RequestInit {
  * - Desenvuelve `response.data ?? response` (convención Laravel)
  */
 export async function apiFetch<T = unknown>(
+  path: string,
+  options: ApiFetchOptions = {},
+): Promise<T> {
+  if (!isDedupableGet(options)) {
+    return apiFetchUncached<T>(path, options);
+  }
+
+  const key = `${path}::${options.token ?? ""}`;
+  const existing = inFlightGets.get(key);
+  if (existing) {
+    return existing as Promise<T>;
+  }
+
+  const promise = apiFetchUncached<T>(path, options).finally(() => {
+    inFlightGets.delete(key);
+  });
+  inFlightGets.set(key, promise);
+  return promise;
+}
+
+async function apiFetchUncached<T = unknown>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {

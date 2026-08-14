@@ -18,6 +18,7 @@ import {
   UserX,
 } from "lucide-react";
 import StatusBadge from "../../../components/UI/StatusBadge";
+import IconActionButton from "../../../components/UI/IconActionButton";
 import type { UserRecord, UpdateUserPayload } from "../../../hooks/useUsuarios";
 import { itemVariants } from "../../../animations";
 
@@ -167,57 +168,30 @@ export default function UserRow({
               whileHover={{ opacity: 1 }}
               className="flex items-center gap-0.5"
             >
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+              <IconActionButton
+                label={`Editar ${user.name}`}
+                tooltip="Editar usuario"
                 onClick={onStartEdit}
-                title="Editar usuario"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors duration-200 cursor-pointer"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                tone="sky"
+                icon={<Pencil className="h-3.5 w-3.5" />}
+              />
+              <IconActionButton
+                label={isInactive ? `Activar ${user.name}` : `Desactivar ${user.name}`}
+                tooltip={isInactive ? "Activar usuario" : "Desactivar usuario"}
                 onClick={onToggleStatus}
-                disabled={isToggling}
-                title={isInactive ? "Activar usuario" : "Desactivar usuario"}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors duration-200 disabled:opacity-50 cursor-pointer"
-              >
-                {isToggling ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-                  >
-                    <Loader2 className="h-3.5 w-3.5" />
-                  </motion.div>
-                ) : isInactive ? (
-                  <RotateCcw className="h-3.5 w-3.5" />
-                ) : (
-                  <UserX className="h-3.5 w-3.5" />
-                )}
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                isBusy={isToggling}
+                tone="amber"
+                icon={isInactive ? <RotateCcw className="h-3.5 w-3.5" /> : <UserX className="h-3.5 w-3.5" />}
+              />
+              <IconActionButton
+                label={`Enviar restablecimiento de contraseña a ${user.name}`}
+                tooltip="Enviar link de restablecimiento de contraseña"
                 onClick={onSendReset}
-                disabled={isSending || isInactive}
-                title="Enviar link de restablecimiento de contraseña"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSending ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-                  >
-                    <Loader2 className="h-3.5 w-3.5" />
-                  </motion.div>
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
-                )}
-              </motion.button>
+                disabled={isInactive}
+                isBusy={isSending}
+                tone="indigo"
+                icon={<Send className="h-3.5 w-3.5" />}
+              />
             </motion.div>
           </motion.div>
         ) : null}

@@ -19,7 +19,7 @@ vi.mock("@/services/logger", () => ({
   logError: (...args: unknown[]) => mockLogError(...args),
 }));
 
-import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
+import { useUsuarios, type UserRecord, __resetRolesCacheForTests } from "../../hooks/useUsuarios";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockUser(overrides: Partial<UserRecord> = {}): UserRecord {
@@ -49,6 +49,7 @@ describe("useUsuarios", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetRolesCacheForTests();
     mockUsePolledFetch.mockReturnValue(defaultReturn);
     mockGetErrorMessage.mockImplementation((_err: unknown, fallback: string) => fallback);
     // Default para el fetch de /roles disparado al montar (con authToken);
@@ -113,6 +114,27 @@ describe("useUsuarios", () => {
     it("no llama a /roles sin authToken", () => {
       renderHook(() => useUsuarios("", showToast));
       expect(mockApiFetch).not.toHaveBeenCalledWith("/roles", expect.anything());
+    });
+
+    it("cachea /roles entre remontajes — un segundo montaje no vuelve a pedir el endpoint", async () => {
+      mockApiFetch.mockResolvedValue(["SUPERADMIN", "ADMIN"]);
+
+      const first = renderHook(() => useUsuarios("token", showToast));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const rolesCallsAfterFirst = mockApiFetch.mock.calls.filter(c => c[0] === "/roles").length;
+      expect(rolesCallsAfterFirst).toBe(1);
+      first.unmount();
+
+      const second = renderHook(() => useUsuarios("token", showToast));
+      expect(second.result.current.roles).toEqual(["SUPERADMIN", "ADMIN"]);
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const rolesCallsAfterSecond = mockApiFetch.mock.calls.filter(c => c[0] === "/roles").length;
+      expect(rolesCallsAfterSecond).toBe(1);
     });
   });
 
@@ -207,7 +229,8 @@ describe("useUsuarios", () => {
 
       let newStatus: "Active" | "Inactive" | undefined;
       await act(async () => {
-        newStatus = await result.current.handleToggleUserStatus(1);
+        const result_ = await result.current.handleToggleUserStatus(1);
+        newStatus = result_.status;
       });
 
       expect(mockApiFetch).toHaveBeenCalledWith("/users/1/toggle-status", {

@@ -6,9 +6,10 @@
  * MaterialConfigPanel.
  */
 
-import { CheckCircle, Pencil, ToggleLeft, ToggleRight, XCircle } from "lucide-react";
+import { Pencil, ToggleLeft, ToggleRight } from "lucide-react";
 import type { Column } from "../../components/UI/Table";
 import IconActionButton from "../../components/UI/IconActionButton";
+import ActiveBadge from "../../components/UI/ActiveBadge";
 import type { ConfigMaterial } from "./types";
 
 interface GetMaterialColumnsArgs {
@@ -60,22 +61,7 @@ export function getMaterialColumns({ togglingId, onEdit, onRequestToggle }: GetM
       key: "isActive",
       label: "Estado",
       sortable: true,
-      render: (m) => (
-        <span
-          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
-            m.isActive
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-slate-200 bg-slate-100 text-slate-500"
-          }`}
-        >
-          {m.isActive ? (
-            <CheckCircle className="h-3 w-3" />
-          ) : (
-            <XCircle className="h-3 w-3" />
-          )}
-          {m.isActive ? "Activo" : "Inactivo"}
-        </span>
-      ),
+      render: (m) => <ActiveBadge isActive={m.isActive} />,
     },
     {
       key: "actions",
