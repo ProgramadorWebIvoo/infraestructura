@@ -47,6 +47,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { usePolling } from "../../hooks/usePolling";
 import { usePollingSettings } from "../../hooks/usePollingSettings";
 import { useToast } from "./Toast";
+import { BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
 import { notifyBrowser } from "../../services/browserNotifications";
 
 export interface UseNotificationsResult {
@@ -87,8 +88,9 @@ function useNotificationsSource(): UseNotificationsResult {
           for (const n of fresh) {
             const title = n.project_title_snapshot ?? "IVOO Gestión";
             const message = n.project_title_snapshot ? `${n.project_title_snapshot} — ${n.action}` : n.action;
+            const alertType = BACKEND_NOTIFICATION_TYPE_MAP[n.type] ?? "info";
 
-            showToast(message, "info", { variant: "notification" });
+            showToast(message, alertType, { variant: "notification" });
             notifyBrowser(title, n.action);
           }
         }

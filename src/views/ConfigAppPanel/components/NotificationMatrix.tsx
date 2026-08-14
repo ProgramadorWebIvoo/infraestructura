@@ -14,9 +14,10 @@
  */
 
 import { useMemo, useState } from "react";
-import { Search, AlertTriangle } from "lucide-react";
 import InfoBanner from "../../../components/UI/InfoBanner";
+import AlertBanner from "../../../components/UI/AlertBanner";
 import Spinner from "../../../components/UI/Spinner";
+import { SearchInput } from "../../../components/UI/FilterBar";
 import type { NotificationActionOption, NotificationRuleChannels } from "../../../hooks/useNotificationRules";
 import ActionRuleRow from "./ActionRuleRow";
 
@@ -87,26 +88,24 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
       </InfoBanner>
 
       {unconfigured.length > 0 && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5">
-          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800 leading-relaxed">
-            <strong>{unconfigured.length}</strong> {unconfigured.length === 1 ? "acción no tiene" : "acciones no tienen"}{" "}
-            destinatarios configurados todavía — por ahora solo notifican a SUPERADMIN/ADMIN por defecto.
-          </p>
-        </div>
+        <AlertBanner
+          type="warning"
+          message={
+            <>
+              <strong>{unconfigured.length}</strong> {unconfigured.length === 1 ? "acción no tiene" : "acciones no tienen"}{" "}
+              destinatarios configurados todavía — por ahora solo notifican a SUPERADMIN/ADMIN por defecto.
+            </>
+          }
+        />
       )}
 
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar acción..."
-          aria-label="Buscar acción"
-          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-medium text-slate-700"
-        />
-      </div>
+      <SearchInput
+        id="notification-matrix-search"
+        value={search}
+        onChange={setSearch}
+        placeholder="Buscar acción..."
+        ariaLabel="Buscar acción"
+      />
 
       {groupsPresent.length === 0 ? (
         <p className="text-center text-xs text-slate-400 py-8">Sin resultados para esa búsqueda.</p>

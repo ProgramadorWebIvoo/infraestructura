@@ -17,6 +17,7 @@ function makeNotification(overrides: Partial<AppNotification> = {}): AppNotifica
     project_id: "PRJ-001",
     project_title_snapshot: "Obra Test",
     action: "Rechazo de cuadro comparativo",
+    type: "accion_requerida",
     details: "Motivo del rechazo",
     read_at: null,
     created_at: new Date().toISOString(),

@@ -58,6 +58,8 @@ export interface AppNotification {
   project_id: string | null;
   project_title_snapshot: string | null;
   action: string;
+  /** Taxonomía de 6 valores (ver App\Support\NotificationType en backend). */
+  type: string;
   details: string | null;
   read_at: string | null;
   created_at: string;

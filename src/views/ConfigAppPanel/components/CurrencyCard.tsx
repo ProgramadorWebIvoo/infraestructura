@@ -17,6 +17,7 @@ import SectionHeader from "../../../components/UI/SectionHeader";
 import Button from "../../../components/UI/Button";
 import Spinner from "../../../components/UI/Spinner";
 import IconActionButton from "../../../components/UI/IconActionButton";
+import { RequiredMark } from "../../../components/UI/HintSignals";
 import { useToast } from "../../../components/UI/Toast";
 import { getErrorMessage } from "../../../services/logger";
 import type { CurrencyRecord } from "../../../hooks/useCurrencies";
@@ -119,7 +120,9 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
             >
               <div className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código (ISO 4217)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    Código (ISO 4217) <RequiredMark />
+                  </label>
                   <input
                     value={code}
                     onChange={e => setCode(e.target.value.toUpperCase().slice(0, 3))}
@@ -129,7 +132,9 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nombre</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    Nombre <RequiredMark />
+                  </label>
                   <input
                     value={name}
                     onChange={e => setName(e.target.value)}
@@ -138,7 +143,9 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Símbolo</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    Símbolo <RequiredMark />
+                  </label>
                   <input
                     value={symbol}
                     onChange={e => setSymbol(e.target.value)}

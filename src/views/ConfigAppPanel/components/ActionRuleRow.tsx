@@ -25,6 +25,7 @@ import { ChevronDown, AlertTriangle, BellOff } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import RoleMultiSelect from "../../../components/UI/RoleMultiSelect";
 import FieldError from "../../../components/UI/FieldError";
+import Tooltip from "../../../components/UI/Tooltip";
 import type { NotificationRuleChannels } from "../../../hooks/useNotificationRules";
 
 type Channel = "app" | "mail";
@@ -81,8 +82,16 @@ export default function ActionRuleRow({
               Silenciada
             </span>
           )}
-          {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Cambios sin guardar" />}
-          {isUnconfigured && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+          {isDirty && (
+            <Tooltip content="Cambios sin guardar">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            </Tooltip>
+          )}
+          {isUnconfigured && (
+            <Tooltip content="Sin configurar — usando SUPERADMIN/ADMIN por defecto">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            </Tooltip>
+          )}
           {isCritical && (
             <span className="text-[10px] font-bold uppercase tracking-wide text-rose-500 bg-rose-50 border border-rose-100 rounded-full px-1.5 py-0.5">
               Crítica

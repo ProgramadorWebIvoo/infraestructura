@@ -10,7 +10,7 @@ import { ALERT_ICONS, ALERT_STYLES, type AlertType } from "./alertStyles";
 
 interface AlertBannerProps {
   type: AlertType;
-  message: string;
+  message: ReactNode;
   icon?: ReactNode;
   className?: string;
 }
@@ -22,10 +22,10 @@ export default function AlertBanner({ type, message, icon, className = "" }: Ale
   return (
     <div
       role={type === "error" || type === "warning" ? "alert" : "status"}
-      className={`flex items-center gap-2.5 text-xs ${s.bg} ${s.text} ${s.border} p-3.5 rounded-xl font-medium border ${className}`}
+      className={`flex items-start gap-2.5 text-xs ${s.bg} ${s.text} ${s.border} p-3.5 rounded-xl font-medium border ${className}`}
     >
-      {icon ?? <Icon className="h-4 w-4 shrink-0" />}
-      <span>{message}</span>
+      {icon ?? <Icon className="h-4 w-4 shrink-0 mt-0.5" />}
+      <span className="leading-relaxed">{message}</span>
     </div>
   );
 }

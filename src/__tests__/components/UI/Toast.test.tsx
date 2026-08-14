@@ -3,7 +3,13 @@ import { render, screen, act } from "@testing-library/react";
 import { ToastProvider, useToast } from "../../../components/UI/Toast";
 
 // ── Helper component to trigger toasts ────────────────────────────────────────
-function ToastTrigger({ message, type }: { message: string; type?: "success" | "error" | "warning" | "info" }) {
+function ToastTrigger({
+  message,
+  type,
+}: {
+  message: string;
+  type?: "success" | "error" | "warning" | "info" | "action-required" | "urgent";
+}) {
   const { showToast } = useToast();
   return <button onClick={() => showToast(message, type)}>Show Toast</button>;
 }
@@ -149,6 +155,26 @@ describe("Toast", () => {
     // Error has role="alert", others role="status"
     expect(screen.getAllByRole("alert").length).toBe(1);
     expect(screen.getAllByRole("status").length).toBe(3);
+  });
+
+  it("renders the action-required and urgent types from the notification taxonomy", () => {
+    renderWithProvider(<ToastTrigger message="Requiere corrección" type="action-required" />);
+
+    act(() => {
+      screen.getByText("Show Toast").click();
+    });
+
+    expect(screen.getByText("Requiere corrección")).toBeInTheDocument();
+  });
+
+  it("renders the urgent type from the notification taxonomy", () => {
+    renderWithProvider(<ToastTrigger message="Pago liberado" type="urgent" />);
+
+    act(() => {
+      screen.getByText("Show Toast").click();
+    });
+
+    expect(screen.getByText("Pago liberado")).toBeInTheDocument();
   });
 
   it("does not leak timers when toasts are dismissed early", () => {

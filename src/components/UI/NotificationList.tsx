@@ -10,6 +10,16 @@
 
 import { Check, CheckCheck } from "lucide-react";
 import type { AppNotification } from "../../types";
+import { ALERT_ICONS, BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
+
+const TYPE_ICON_CLASS: Record<string, string> = {
+  success: "text-emerald-500",
+  error: "text-rose-500",
+  warning: "text-amber-500",
+  info: "text-sky-500",
+  "action-required": "text-violet-500",
+  urgent: "text-orange-500",
+};
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -57,13 +67,17 @@ export default function NotificationList({
         {notifications.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-slate-400">Sin notificaciones</p>
         )}
-        {notifications.map(n => (
+        {notifications.map(n => {
+          const alertType = BACKEND_NOTIFICATION_TYPE_MAP[n.type] ?? "info";
+          const TypeIcon = ALERT_ICONS[alertType];
+          return (
           <div
             key={n.id}
             className={`flex items-start gap-2 px-4 py-3 border-b border-slate-50 last:border-0 ${
               n.read_at ? "bg-white" : "bg-sky-50/50"
             }`}
           >
+            <TypeIcon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${TYPE_ICON_CLASS[alertType]}`} aria-hidden="true" />
             <div className="flex-1 min-w-0">
               {n.project_title_snapshot && (
                 <p className="text-xs font-bold text-slate-700 truncate">{n.project_title_snapshot}</p>
@@ -82,7 +96,8 @@ export default function NotificationList({
               </button>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );

@@ -19,8 +19,6 @@ export type ShowToastOptions = {
   action?: ToastAction;
   priority?: ToastPriority;
   variant?: ToastVariant;
-  /** Rol destinatario informativo (para bandeja/registro); no filtra la UI local. */
-  targetRole?: string;
 };
 
 type Toast = {
@@ -79,6 +77,16 @@ const STYLES: Record<ToastType, { container: string; progress: string; icon: str
     container: `${ALERT_STYLES.info.bg} ${ALERT_STYLES.info.border} text-sky-800`,
     progress: "bg-sky-400",
     icon: "text-sky-500",
+  },
+  "action-required": {
+    container: `${ALERT_STYLES["action-required"].bg} ${ALERT_STYLES["action-required"].border} text-violet-800`,
+    progress: "bg-violet-400",
+    icon: "text-violet-500",
+  },
+  urgent: {
+    container: `${ALERT_STYLES.urgent.bg} ${ALERT_STYLES.urgent.border} text-orange-800`,
+    progress: "bg-orange-400",
+    icon: "text-orange-500",
   },
 };
 

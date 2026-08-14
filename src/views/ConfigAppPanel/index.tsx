@@ -24,11 +24,11 @@ import {
   Settings as SettingsIcon,
   Check,
   RotateCcw,
-  AlertTriangle,
 } from "lucide-react";
 import { containerVariants } from "../../animations";
 import Spinner from "../../components/UI/Spinner";
 import Button from "../../components/UI/Button";
+import AlertBanner from "../../components/UI/AlertBanner";
 import AuditLogPanel from "../../components/UI/AuditLogPanel";
 import { useToast } from "../../components/UI/Toast";
 import { getErrorMessage } from "../../services/logger";
@@ -252,14 +252,16 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   return (
     <div className="space-y-6 pb-20">
       {isSuperadmin && missingKeys && missingKeys.length > 0 && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5">
-          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800 leading-relaxed">
-            <strong>{missingKeys.length}</strong> {missingKeys.length === 1 ? "parámetro documentado no tiene" : "parámetros documentados no tienen"}{" "}
-            fila en la base de datos y por eso no aparecen abajo — probablemente falta correr una migración. Claves:{" "}
-            <span className="font-mono">{missingKeys.join(", ")}</span>.
-          </p>
-        </div>
+        <AlertBanner
+          type="warning"
+          message={
+            <>
+              <strong>{missingKeys.length}</strong> {missingKeys.length === 1 ? "parámetro documentado no tiene" : "parámetros documentados no tienen"}{" "}
+              fila en la base de datos y por eso no aparecen abajo — probablemente falta correr una migración. Claves:{" "}
+              <span className="font-mono">{missingKeys.join(", ")}</span>.
+            </>
+          }
+        />
       )}
 
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start" : ""}>

@@ -34,6 +34,7 @@ function makeNotification(overrides: Partial<AppNotification> = {}): AppNotifica
     project_id: "PRJ-001",
     project_title_snapshot: "Obra Test",
     action: "Creacion de peticion de obra",
+    type: "informacion",
     details: null,
     read_at: null,
     created_at: "2026-08-12T10:00:00.000000Z",
@@ -196,6 +197,37 @@ describe("useNotifications", () => {
     expect(mockShowToast).toHaveBeenCalledWith(
       "Obra Nueva — Rechazo de cuadro comparativo",
       "info",
+      { variant: "notification" },
+    );
+  });
+
+  it("mapea el type del backend al AlertType correcto del toast", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([makeNotification({ id: 1 })])
+      .mockResolvedValueOnce({ count: 1 });
+
+    renderNotifications();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const pollCallback = mockUsePolling.mock.calls[0][0] as () => Promise<void>;
+
+    mockApiFetch
+      .mockResolvedValueOnce([
+        makeNotification({ id: 1 }),
+        makeNotification({ id: 2, action: "Rechazo de cuadro comparativo", type: "accion_requerida" }),
+      ])
+      .mockResolvedValueOnce({ count: 2 });
+
+    await act(async () => {
+      await pollCallback();
+    });
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      expect.stringContaining("Rechazo de cuadro comparativo"),
+      "action-required",
       { variant: "notification" },
     );
   });

@@ -100,7 +100,7 @@ describe("ActionRuleRow", () => {
     await waitFor(() => expect(onChange).toHaveBeenCalledWith({ app: ["PROCURA", "FINANZAS"], mail: [] }));
   });
 
-  it("muestra un indicador visual cuando isDirty es true", () => {
+  it("muestra un indicador visual cuando isDirty es true", async () => {
     const { rerender } = render(
       <ActionRuleRow
         action="X"
@@ -114,7 +114,7 @@ describe("ActionRuleRow", () => {
       />,
     );
 
-    expect(screen.queryByTitle("Cambios sin guardar")).not.toBeInTheDocument();
+    expect(document.querySelector(".bg-amber-400")).not.toBeInTheDocument();
 
     rerender(
       <ActionRuleRow
@@ -129,7 +129,11 @@ describe("ActionRuleRow", () => {
       />,
     );
 
-    expect(screen.getByTitle("Cambios sin guardar")).toBeInTheDocument();
+    const dirtyIndicator = document.querySelector(".bg-amber-400");
+    expect(dirtyIndicator).toBeInTheDocument();
+
+    fireEvent.focus(dirtyIndicator!);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent("Cambios sin guardar"));
   });
 
   it("muestra un mensaje de error inline cuando se pasa `error`", () => {
