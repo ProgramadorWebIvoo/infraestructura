@@ -16,6 +16,8 @@ async function flush() {
 
 const sampleLog: ConfigAuditLogRecord = {
   id: 1,
+  entityType: "setting",
+  action: "anticipo_maximo_porcentaje",
   settingKey: "anticipo_maximo_porcentaje",
   oldValue: "100",
   newValue: "60",

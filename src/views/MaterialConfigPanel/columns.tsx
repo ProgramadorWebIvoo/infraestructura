@@ -6,8 +6,9 @@
  * MaterialConfigPanel.
  */
 
-import { CheckCircle, Loader2, Pencil, ToggleLeft, ToggleRight, XCircle } from "lucide-react";
+import { CheckCircle, Pencil, ToggleLeft, ToggleRight, XCircle } from "lucide-react";
 import type { Column } from "../../components/UI/Table";
+import IconActionButton from "../../components/UI/IconActionButton";
 import type { ConfigMaterial } from "./types";
 
 interface GetMaterialColumnsArgs {
@@ -82,33 +83,21 @@ export function getMaterialColumns({ togglingId, onEdit, onRequestToggle }: GetM
       align: "center",
       render: (m) => (
         <div className="flex items-center justify-center gap-1.5">
-          <button
+          <IconActionButton
+            label={`Editar ${m.name}`}
+            tooltip="Editar material"
             onClick={() => onEdit(m)}
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md"
-            aria-label={`Editar ${m.name}`}
-            title="Editar material"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
+            tone="sky"
+            icon={<Pencil className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
+            label={`${m.isActive ? "Desactivar" : "Activar"} ${m.name}`}
+            tooltip={m.isActive ? "Desactivar material" : "Activar material"}
             onClick={() => onRequestToggle(m.id)}
-            disabled={togglingId === m.id}
-            className={`cursor-pointer rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
-              m.isActive
-                ? "border-red-200 bg-white text-red-400 hover:bg-red-50 hover:text-red-600"
-                : "border-emerald-200 bg-white text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
-            } disabled:cursor-not-allowed disabled:opacity-50`}
-            aria-label={`${m.isActive ? "Desactivar" : "Activar"} ${m.name}`}
-            title={m.isActive ? "Desactivar material" : "Activar material"}
-          >
-            {togglingId === m.id ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : m.isActive ? (
-              <ToggleRight className="h-3.5 w-3.5" />
-            ) : (
-              <ToggleLeft className="h-3.5 w-3.5" />
-            )}
-          </button>
+            isBusy={togglingId === m.id}
+            tone={m.isActive ? "rose" : "emerald"}
+            icon={m.isActive ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+          />
         </div>
       ),
     },

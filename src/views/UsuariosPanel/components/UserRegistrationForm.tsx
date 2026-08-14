@@ -22,6 +22,7 @@ import {
 import { getErrorMessage } from "../../../services/logger";
 import type { UserRecord } from "../../../hooks/useUsuarios";
 import { itemVariants } from "../../../animations";
+import { RequiredMark } from "../../../components/UI/HintSignals";
 
 const bannerVariants = {
   hidden: { opacity: 0, height: 0, marginBottom: 0 },
@@ -143,7 +144,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Nombre completo
+              Nombre completo <RequiredMark />
             </label>
             <div className="relative">
               <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -158,7 +159,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Correo electrónico
+              Correo electrónico <RequiredMark />
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -173,7 +174,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Contraseña
+              Contraseña <RequiredMark />
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -197,7 +198,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Confirmar contraseña
+              Confirmar contraseña <RequiredMark />
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -230,7 +231,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Rol / Módulo de acceso
+              Rol / Módulo de acceso <RequiredMark />
             </label>
             <div className="relative">
               <Shield className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />

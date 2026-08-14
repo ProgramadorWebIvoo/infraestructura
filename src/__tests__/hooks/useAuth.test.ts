@@ -28,6 +28,13 @@ vi.mock("@/services/browserNotifications", () => ({
   requestNotificationPermission: (...args: unknown[]) => mockRequestNotificationPermission(...args),
 }));
 
+// useAppGroupSettings hace su propio fetch a /settings al montar — mockeado
+// aparte para no contaminar la secuencia de mockResolvedValueOnce que este
+// archivo usa para las llamadas de useAuth (GET /user, /login, /logout).
+vi.mock("@/hooks/useAppGroupSettings", () => ({
+  useAppGroupSettings: () => ({ maxFileSizeBytes: 25 * 1024 * 1024, maxFileCount: 10, sessionTimeoutMs: 30 * 60_000 }),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

@@ -87,6 +87,46 @@ describe("ConfigAppPanel", () => {
     expect(screen.getByText("Razón social")).toBeInTheDocument();
   });
 
+  it("SUPERADMIN: muestra un banner cuando el backend reporta settings documentados sin fila en BD", () => {
+    mockUseAppSettings.mockReturnValue({
+      settings: { presupuesto: [makeSetting()] },
+      missingKeys: ["proyecto_estancado_umbral_dias", "sesion_inactividad_minutos"],
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+
+    expect(screen.getByText(/parámetros documentados no tienen/)).toBeInTheDocument();
+    expect(screen.getByText("proyecto_estancado_umbral_dias, sesion_inactividad_minutos")).toBeInTheDocument();
+  });
+
+  it("no SUPERADMIN: no muestra el banner de settings faltantes aunque missingKeys tenga datos", () => {
+    mockUseAppSettings.mockReturnValue({
+      settings: { presupuesto: [makeSetting()] },
+      missingKeys: ["proyecto_estancado_umbral_dias"],
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+
+    render(<ConfigAppPanel authToken="token" activeRole="PROCURA" />);
+
+    expect(screen.queryByText(/parámetros documentados no tienen/)).not.toBeInTheDocument();
+  });
+
+  it("no muestra el banner de settings faltantes cuando missingKeys está vacío", () => {
+    mockUseAppSettings.mockReturnValue({
+      settings: { presupuesto: [makeSetting()] },
+      missingKeys: [],
+      isLoading: false,
+      updateSetting: mockUpdateSetting,
+    });
+
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+
+    expect(screen.queryByText(/parámetros documentados no tienen/)).not.toBeInTheDocument();
+  });
+
   it("no renderiza secciones para grupos sin settings", () => {
     mockUseAppSettings.mockReturnValue({
       settings: { presupuesto: [makeSetting()] },

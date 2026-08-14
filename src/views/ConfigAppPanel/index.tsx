@@ -15,7 +15,6 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Coins,
   Gauge,
   Star,
   Bell,
@@ -25,6 +24,7 @@ import {
   Settings as SettingsIcon,
   Check,
   RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { containerVariants } from "../../animations";
 import Spinner from "../../components/UI/Spinner";
@@ -36,21 +36,22 @@ import { useAppSettings, type AppSettingRecord } from "../../hooks/useAppSetting
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "../../hooks/useConfigAuditLogs";
 import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
 import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
+import { useCurrencies, type CurrencyRecord } from "../../hooks/useCurrencies";
 import { useDraftState } from "../../hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import AuditLogValueDiff from "./components/AuditLogValueDiff";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";
+import CurrencyCard from "./components/CurrencyCard";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
-  moneda: { title: "Moneda", description: "Moneda base para montos registrados en la app.", icon: <Coins className="h-5 w-5" />, color: "amber" },
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
   ratings: { title: "Ratings", description: "Escala mínima y máxima de calificación para proveedores.", icon: <Star className="h-5 w-5" />, color: "purple" },
   notificaciones: { title: "Notificaciones", description: "Correos por departamento y acciones que disparan envío de correo.", icon: <Bell className="h-5 w-5" />, color: "indigo" },
   fiscal: { title: "Datos fiscales", description: "Datos de la empresa usados en comprobantes de pago a proveedores.", icon: <Landmark className="h-5 w-5" />, color: "emerald" },
   alertas: { title: "Alertas de precio", description: "Umbral de variación a partir del cual un precio se marca fuera de rango.", icon: <TrendingUp className="h-5 w-5" />, color: "rose" },
   inflacion: { title: "Inflación", description: "Tasa de inflación de referencia para el análisis de precios.", icon: <BarChart3 className="h-5 w-5" />, color: "slate" },
-  app: { title: "Aplicación", description: "Ajustes generales de la aplicación.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
+  app: { title: "Aplicación", description: "Umbrales operativos, límites de carga de archivos, vigencia de invitaciones y tiempo de sesión.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
 };
 
 /**
@@ -59,7 +60,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
  * de Card/colapsable).
  */
 const MACRO_GROUPS: { title: string; groups: string[] }[] = [
-  { title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "moneda", "fiscal"] },
+  { title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "__currencies__", "fiscal"] },
   { title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
   { title: "Aplicación", groups: ["app"] },
 ];
@@ -71,7 +72,7 @@ interface ConfigAppPanelProps {
 
 export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanelProps) {
   const { showToast } = useToast();
-  const { settings, isLoading, updateSetting } = useAppSettings(authToken);
+  const { settings, missingKeys, isLoading, updateSetting } = useAppSettings(authToken);
 
   const isSuperadmin = activeRole === "SUPERADMIN";
   const {
@@ -95,6 +96,30 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     updateRule,
   } = useNotificationRules(authToken, isSuperadmin);
 
+  const {
+    currencies,
+    isLoading: isLoadingCurrencies,
+    addCurrency,
+    updateCurrency,
+    setBaseCurrency,
+    deleteCurrency,
+  } = useCurrencies(authToken, isSuperadmin);
+
+  const handleAddCurrency = async (input: { code: string; name: string; symbol: string }) => {
+    const created = await addCurrency(input);
+    if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
+  };
+
+  const handleUpdateCurrency = async (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => {
+    const updated = await updateCurrency(id, input);
+    if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
+  };
+
+  const handleSetBaseCurrency = async (id: number) => {
+    const updated = await setBaseCurrency(id);
+    if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
+  };
+
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
   const settingById = useMemo(() => new Map(allSettings.map(s => [s.id, s])), [allSettings]);
 
@@ -103,6 +128,16 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     for (const setting of allSettings) map[setting.key] = setting.label;
     return map;
   }, [allSettings]);
+
+  /**
+   * Título de una entrada del historial: para cambios de CONFIG APP
+   * (`entityType: "setting"`) usa el label legible del catálogo; para el
+   * resto de acciones administrativas (usuarios, proveedores, materiales,
+   * IA, monedas, matriz de notificaciones) `settingKey` viene null — el
+   * texto legible ahí es `action` (ej. "Modificación de moneda"), no la key.
+   */
+  const entryTitle = (log: ConfigAuditLogRecord): string =>
+    log.entityType === "setting" ? (settingLabelByKey[log.settingKey ?? ""] ?? log.settingKey ?? log.action) : log.action;
 
   /**
    * El interruptor maestro (`acciones_con_notificacion_app`/`acciones_con_correo`)
@@ -216,10 +251,23 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   return (
     <div className="space-y-6 pb-20">
+      {isSuperadmin && missingKeys && missingKeys.length > 0 && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5">
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800 leading-relaxed">
+            <strong>{missingKeys.length}</strong> {missingKeys.length === 1 ? "parámetro documentado no tiene" : "parámetros documentados no tienen"}{" "}
+            fila en la base de datos y por eso no aparecen abajo — probablemente falta correr una migración. Claves:{" "}
+            <span className="font-mono">{missingKeys.join(", ")}</span>.
+          </p>
+        </div>
+      )}
+
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start" : ""}>
         <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
           {MACRO_GROUPS.map(macro => {
-            const visibleGroups = macro.groups.filter(g => (g === "__notification_rules__" ? isSuperadmin : hasSettingsFor(g)));
+            const visibleGroups = macro.groups.filter(g =>
+              g === "__notification_rules__" || g === "__currencies__" ? isSuperadmin : hasSettingsFor(g),
+            );
             if (visibleGroups.length === 0) return null;
 
             return (
@@ -239,6 +287,16 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                         unconfigured={unconfigured}
                         errors={rulesDraft.errors}
                         silencedChannelsFor={silencedChannelsFor}
+                      />
+                    ) : group === "__currencies__" ? (
+                      <CurrencyCard
+                        key={group}
+                        currencies={currencies}
+                        isLoading={isLoadingCurrencies}
+                        onAdd={handleAddCurrency}
+                        onUpdate={handleUpdateCurrency}
+                        onSetBase={handleSetBaseCurrency}
+                        onDelete={deleteCurrency}
                       />
                     ) : (
                       <SettingGroupCard
@@ -269,15 +327,15 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             fillViewport
             stickyOffset="1.5rem"
             pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-            searchableText={log => `${settingLabelByKey[log.settingKey] ?? log.settingKey} ${log.userName ?? ""} ${log.oldValue ?? ""} ${log.newValue ?? ""}`}
+            searchableText={log => `${entryTitle(log)} ${log.userName ?? ""} ${log.oldValue ?? ""} ${log.newValue ?? ""}`}
             keyOf={log => log.id}
             searchPlaceholder="Buscar por parámetro, usuario o valor..."
             emptyMessage="Todavía no se ha modificado ningún parámetro."
             renderEntry={log => (
               <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3">
                 <div className="mb-1.5">
-                  <span className="text-[11px] font-bold text-slate-700 leading-snug wrap-break-word">{settingLabelByKey[log.settingKey] ?? log.settingKey}</span>
-                  <span className="block text-[9px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
+                  <span className="text-xs font-bold text-slate-700 leading-snug wrap-break-word">{entryTitle(log)}</span>
+                  <span className="block text-[10px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
                 </div>
                 <AuditLogValueDiff oldValue={log.oldValue} newValue={log.newValue} />
                 {log.userName && <p className="text-[10px] text-slate-400 font-medium mt-1">por {log.userName}</p>}

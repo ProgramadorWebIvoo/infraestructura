@@ -13,9 +13,10 @@ import AIConfigTable from "@/views/AIConfigPanel/components/AIConfigTable";
 import type { AiConfigRecord } from "@/hooks/useAIConfig";
 
 vi.mock("motion/react", () => ({
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, variants, ...rest } = props;
+      const { initial, animate, exit, variants, transition, ...rest } = props;
       return <div {...rest}>{children}</div>;
     },
   },

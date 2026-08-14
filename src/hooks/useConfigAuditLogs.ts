@@ -19,7 +19,9 @@ import { logError } from "../services/logger";
 
 export interface ConfigAuditLogRecord {
   id: number;
-  settingKey: string;
+  entityType: string;
+  action: string;
+  settingKey: string | null;
   oldValue: string | null;
   newValue: string | null;
   userName: string | null;

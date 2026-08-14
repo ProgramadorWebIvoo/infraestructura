@@ -8,6 +8,7 @@
 
 import { CheckCircle, Loader2, Pencil, ToggleLeft, ToggleRight, XCircle } from "lucide-react";
 import type { Column } from "../../components/UI/Table";
+import IconActionButton from "../../components/UI/IconActionButton";
 import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "./types";
 
 interface GetContractorColumnsArgs {
@@ -97,41 +98,27 @@ export function getContractorColumns({ togglingCode, onEdit, onRequestToggle }: 
       align: "center",
       render: (c) => (
         <div className="flex items-center justify-center gap-1.5">
-          <button
+          <IconActionButton
+            label={`Editar ${c.name}`}
+            tooltip="Editar proveedor"
             onClick={() => onEdit(c)}
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md"
-            aria-label={`Editar ${c.name}`}
-            title="Editar proveedor"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => onRequestToggle(c.code)}
-            disabled={togglingCode === c.code}
-            className={`cursor-pointer rounded-lg border p-1.5 transition-all duration-200 hover:shadow-md ${
-              c.status === "ACTIVE"
-                ? "border-red-200 bg-white text-red-400 hover:bg-red-50 hover:text-red-600"
-                : c.status === "INACTIVE"
-                  ? "border-emerald-200 bg-white text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
-                  : "border-amber-200 bg-white text-amber-400 hover:bg-amber-50 hover:text-amber-600"
-            } disabled:cursor-not-allowed disabled:opacity-50`}
-            aria-label={`Cambiar estado de ${c.name}`}
-            title={
+            tone="sky"
+            icon={<Pencil className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
+            label={`Cambiar estado de ${c.name}`}
+            tooltip={
               c.status === "ACTIVE"
                 ? "Desactivar proveedor"
                 : c.status === "INACTIVE"
                   ? "Activar proveedor"
                   : "Aprobar proveedor"
             }
-          >
-            {togglingCode === c.code ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : c.status === "ACTIVE" ? (
-              <ToggleRight className="h-3.5 w-3.5" />
-            ) : (
-              <ToggleLeft className="h-3.5 w-3.5" />
-            )}
-          </button>
+            onClick={() => onRequestToggle(c.code)}
+            isBusy={togglingCode === c.code}
+            tone={c.status === "ACTIVE" ? "rose" : c.status === "INACTIVE" ? "emerald" : "amber"}
+            icon={c.status === "ACTIVE" ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+          />
         </div>
       ),
     },

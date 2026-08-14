@@ -21,10 +21,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { apiFetch } from "../services/api";
 import { requestNotificationPermission } from "../services/browserNotifications";
+import { useAppGroupSettings } from "./useAppGroupSettings";
 
 const STORAGE_USER = "ivoo_auth_user";
 const AUTHENTICATED_SENTINEL = "authenticated";
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos de inactividad
 const INACTIVITY_CHECK_MS = 15_000; // cada 15s verificar tiempo real transcurrido
 
 export type AuthUser = { name: string; email: string; role?: string } | null;
@@ -44,6 +44,10 @@ function validatePassword(password: string): string | null {
 }
 
 export function useAuth() {
+  const { sessionTimeoutMs } = useAppGroupSettings();
+  const sessionTimeoutMsRef = useRef(sessionTimeoutMs);
+  sessionTimeoutMsRef.current = sessionTimeoutMs;
+
   const [authToken, setAuthToken] = useState<string>("");
   const [authUser, setAuthUser] = useState<AuthUser>(() => {
     try {
@@ -112,7 +116,7 @@ export function useAuth() {
   const checkInactivity = useCallback(() => {
     if (!authToken || isTimingOutRef.current) return;
     const elapsed = Date.now() - lastActivityRef.current;
-    if (elapsed >= SESSION_TIMEOUT_MS) {
+    if (elapsed >= sessionTimeoutMsRef.current) {
       isTimingOutRef.current = true;
       // Debe invalidar la cookie de sesión en el backend antes de recargar:
       // clearSession() solo limpia estado local, y como la sesión Sanctum

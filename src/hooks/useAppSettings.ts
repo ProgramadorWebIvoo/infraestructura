@@ -38,8 +38,15 @@ export type SettingsByGroup = Record<string, AppSettingRecord[]>;
  *  propia acción del usuario en la misma vista). */
 export type UpdateSettingResponse = AppSettingRecord & { auditLog?: ConfigAuditLogRecord };
 
+/** Respuesta cruda de GET /settings: los grupos + `missing` (keys
+ *  documentadas en AppSettingCatalog sin fila en app_settings — ver
+ *  AppSettingController::index()). `missing` no es un `AppSettingRecord[]`
+ *  como el resto de las claves, así que se separa antes de guardar `settings`. */
+type SettingsIndexResponse = SettingsByGroup & { missing?: string[] };
+
 export function useAppSettings(authToken: string) {
   const [settings, setSettings] = useState<SettingsByGroup>({});
+  const [missingKeys, setMissingKeys] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const authTokenRef = useRef(authToken);
@@ -49,8 +56,9 @@ export function useAppSettings(authToken: string) {
   const loadSettings = useCallback(async () => {
     if (!authTokenRef.current) return;
     try {
-      const data = await apiFetch<SettingsByGroup>("/settings", { token: authTokenRef.current });
-      setSettings(data);
+      const { missing, ...groups } = await apiFetch<SettingsIndexResponse>("/settings", { token: authTokenRef.current });
+      setSettings(groups);
+      setMissingKeys(missing ?? []);
     } catch (err) {
       logError("useAppSettings.loadSettings", err);
     } finally {
@@ -84,5 +92,5 @@ export function useAppSettings(authToken: string) {
     return updated;
   }, []);
 
-  return { settings, isLoading, loadSettings, updateSetting };
+  return { settings, missingKeys, isLoading, loadSettings, updateSetting };
 }

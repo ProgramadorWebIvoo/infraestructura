@@ -89,7 +89,7 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
       {unconfigured.length > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-amber-800 leading-relaxed">
+          <p className="text-xs text-amber-800 leading-relaxed">
             <strong>{unconfigured.length}</strong> {unconfigured.length === 1 ? "acción no tiene" : "acciones no tienen"}{" "}
             destinatarios configurados todavía — por ahora solo notifican a SUPERADMIN/ADMIN por defecto.
           </p>
@@ -113,7 +113,7 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
       ) : (
         groupsPresent.map(group => (
           <div key={group}>
-            <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
               {GROUP_LABELS[group] ?? group}
             </h3>
             <div className="rounded-2xl border border-slate-200/80 bg-white px-4">

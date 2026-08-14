@@ -10,6 +10,7 @@ import { Contractor } from "../../../types";
 import { CheckCircle, Loader2, Mail, Send, UserRound } from "lucide-react";
 import { apiFetch } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
+import { RequiredMark } from "../../../components/UI/HintSignals";
 
 interface RegistrationFormProps {
   onAddContractor: (contractor: Contractor) => void;
@@ -126,7 +127,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-name"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Nombre de la empresa
+            Nombre de la empresa <RequiredMark />
           </label>
           <input
             id="public-provider-name"
@@ -159,7 +160,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-specialty"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Especialidad tecnica
+            Especialidad tecnica <RequiredMark />
           </label>
           <input
             id="public-provider-specialty"
@@ -192,7 +193,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-contact"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Correo de contacto
+            Correo de contacto <RequiredMark />
           </label>
           <div className="relative">
             <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />

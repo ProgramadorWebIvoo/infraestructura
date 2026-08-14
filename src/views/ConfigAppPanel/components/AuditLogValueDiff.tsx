@@ -9,14 +9,46 @@
  * de leerlo completo. Los settings `json` (listas de acciones vía
  * TagMultiSelect) se muestran como un diff de tags añadidos/quitados en vez
  * de dos strings JSON crudos, mucho más legible que comparar `["a","b"]`
- * contra `["a","c"]` a simple vista.
+ * contra `["a","c"]` a simple vista. Igual criterio para acciones que auditan
+ * un objeto completo (ej. ConfigAuditLog::recordAdminAction en
+ * CurrencyController) — en vez de mostrar el JSON crudo tachado/nuevo
+ * (`{"name":"Euro","symbol":"€","is_active":false}` línea por línea), se
+ * muestra solo los campos que realmente cambiaron, con su label.
  */
+
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nombre",
+  symbol: "Símbolo",
+  is_active: "Estado",
+  is_base: "Moneda base",
+};
+
+/** Campos que identifican de forma estable el registro auditado (no cambian
+ *  entre before/after) — se muestran como contexto arriba del diff en vez de
+ *  como una fila de campo cambiado. */
+const IDENTIFIER_KEYS = new Set(["code"]);
+
+function formatFieldValue(value: unknown): string {
+  if (typeof value === "boolean") return value ? "Activo" : "Inactivo";
+  if (value === null || value === undefined) return "—";
+  return String(value);
+}
 
 function tryParseArray(value: string | null): string[] | null {
   if (!value) return null;
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) && parsed.every(v => typeof v === "string") ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function tryParseObject(value: string | null): Record<string, unknown> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -52,6 +84,41 @@ export default function AuditLogValueDiff({ oldValue, newValue }: AuditLogValueD
           <span key={`added-${tag}`} className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
             + {tag}
           </span>
+        ))}
+      </div>
+    );
+  }
+
+  const oldObject = tryParseObject(oldValue);
+  const newObject = tryParseObject(newValue);
+
+  if (oldObject !== null || newObject !== null) {
+    const before = oldObject ?? {};
+    const after = newObject ?? {};
+    const identifier = [...Object.keys(before), ...Object.keys(after)]
+      .filter(key => IDENTIFIER_KEYS.has(key))
+      .map(key => after[key] ?? before[key])
+      .find(value => value !== undefined);
+    const keys = Array.from(new Set([...Object.keys(before), ...Object.keys(after)])).filter(
+      key => !IDENTIFIER_KEYS.has(key) && JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+    );
+
+    if (keys.length === 0) {
+      return <p className="text-[10px] text-slate-400 italic">Sin cambios.</p>;
+    }
+
+    return (
+      <div className="space-y-0.5">
+        {identifier !== undefined && (
+          <p className="font-mono text-[10px] font-bold text-slate-500">{formatFieldValue(identifier)}</p>
+        )}
+        {keys.map(key => (
+          <div key={key} className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px]">
+            <span className="font-bold text-slate-500 shrink-0">{FIELD_LABELS[key] ?? key}:</span>
+            <span className="font-mono text-rose-500 line-through break-all">{formatFieldValue(before[key])}</span>
+            <span className="text-slate-300 shrink-0">→</span>
+            <span className="font-mono text-emerald-600 font-bold break-all">{formatFieldValue(after[key])}</span>
+          </div>
         ))}
       </div>
     );

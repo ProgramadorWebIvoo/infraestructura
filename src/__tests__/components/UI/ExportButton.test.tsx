@@ -120,7 +120,9 @@ describe("ExportButton — Excel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Exportar Excel" }));
 
     // el handler es async: esperar a que se genere y descargue el blob
-    await vi.waitFor(() => expect(cap.createObjectUrlSpy).toHaveBeenCalled());
+    // timeout explícito: generar el XLSX real (write-excel-file, ZIP+XML)
+    // bajo la suite completa en paralelo puede superar el default de 1000ms.
+    await vi.waitFor(() => expect(cap.createObjectUrlSpy).toHaveBeenCalled(), { timeout: 5000 });
 
     expect(cap.getAnchor().download).toBe("master.xlsx");
     expect(cap.getBlob().type).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -167,7 +169,9 @@ describe("ExportButton — Excel", () => {
       </ExportButton>
     );
     fireEvent.click(screen.getByRole("button", { name: "Exportar Excel" }));
-    await vi.waitFor(() => expect(cap.createObjectUrlSpy).toHaveBeenCalled());
+    // timeout explícito: generar el XLSX real (write-excel-file, ZIP+XML)
+    // bajo la suite completa en paralelo puede superar el default de 1000ms.
+    await vi.waitFor(() => expect(cap.createObjectUrlSpy).toHaveBeenCalled(), { timeout: 5000 });
 
     const bytes = new Uint8Array(await cap.getBlob().arrayBuffer());
     const entries = readZipEntries(bytes);

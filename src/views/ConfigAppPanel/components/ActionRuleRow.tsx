@@ -76,7 +76,7 @@ export default function ActionRuleRow({
 
         <div className="flex items-center gap-1.5 shrink-0">
           {isFullySilenced && (
-            <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-1.5 py-0.5">
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-1.5 py-0.5">
               <BellOff className="h-2.5 w-2.5" />
               Silenciada
             </span>
@@ -84,7 +84,7 @@ export default function ActionRuleRow({
           {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Cambios sin guardar" />}
           {isUnconfigured && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
           {isCritical && (
-            <span className="text-[9px] font-bold uppercase tracking-wide text-rose-500 bg-rose-50 border border-rose-100 rounded-full px-1.5 py-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-rose-500 bg-rose-50 border border-rose-100 rounded-full px-1.5 py-0.5">
               Crítica
             </span>
           )}
@@ -111,7 +111,7 @@ export default function ActionRuleRow({
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Notificación (app)</span>
                   {isAppSilenced && (
-                    <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 rounded-full px-1.5 py-0.5">
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-1.5 py-0.5">
                       Desactivada en "Acciones que envían notificación (app)"
                     </span>
                   )}
@@ -122,7 +122,7 @@ export default function ActionRuleRow({
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Correo</span>
                   {isMailSilenced && (
-                    <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 rounded-full px-1.5 py-0.5">
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-1.5 py-0.5">
                       Desactivada en "Acciones que envían correo"
                     </span>
                   )}

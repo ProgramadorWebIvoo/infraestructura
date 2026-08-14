@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import {
   Check,
   CheckCircle,
@@ -17,6 +17,7 @@ import {
 import { motion } from "motion/react";
 import { Table, type Column } from "../../../components/UI/Table";
 import Button from "../../../components/UI/Button";
+import IconActionButton from "../../../components/UI/IconActionButton";
 import { itemVariants } from "../../../animations";
 import type { AiConfigRecord } from "../../../hooks/useAIConfig";
 import ProviderIcon from "./ProviderIcon";
@@ -30,38 +31,6 @@ import ProviderIcon from "./ProviderIcon";
 function maskApiKey(record: AiConfigRecord): string {
   if (!record.hasApiKey) return "";
   return record.apiKey.length > 8 ? "••••••••" : record.apiKey;
-}
-
-// ---------------------------------------------------------------------------
-// Botón de acción de fila (4 usos idénticos salvo hover/estado)
-// ---------------------------------------------------------------------------
-function RowActionButton({
-  label,
-  title,
-  onClick,
-  disabled = false,
-  hoverClass,
-  children,
-}: {
-  label: string;
-  title: string;
-  onClick: () => void;
-  disabled?: boolean;
-  hoverClass: string;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40 ${hoverClass}`}
-      aria-label={label}
-      title={title}
-    >
-      {children}
-    </button>
-  );
 }
 
 export default function AIConfigTable({
@@ -157,52 +126,37 @@ export default function AIConfigTable({
       align: "center",
       render: (c) => (
         <div className="flex items-center justify-center gap-1">
-          <RowActionButton
+          <IconActionButton
             label={`Probar conexión ${c.model}`}
-            title="Probar conexión"
+            tooltip="Probar conexión"
             onClick={() => onTest(c.id)}
-            disabled={testingId === c.id || !c.isActive}
-            hoverClass="hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600"
-          >
-            {testingId === c.id ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Server className="h-3.5 w-3.5" />
-            )}
-          </RowActionButton>
-          <RowActionButton
+            disabled={!c.isActive}
+            isBusy={testingId === c.id}
+            tone="sky"
+            icon={<Server className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
             label={`Editar ${c.model}`}
-            title="Editar configuración"
+            tooltip="Editar configuración"
             onClick={() => onEdit(c)}
-            hoverClass="hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </RowActionButton>
-          <RowActionButton
+            tone="indigo"
+            icon={<Pencil className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
             label={c.isActive ? "Desactivar" : "Activar"}
-            title={c.isActive ? "Desactivar modelo" : "Activar modelo"}
+            tooltip={c.isActive ? "Desactivar modelo" : "Activar modelo"}
             onClick={() => onToggleActive(c)}
-            hoverClass={
-              c.isActive
-                ? "border-amber-200 text-amber-400 hover:bg-amber-50 hover:text-amber-600"
-                : "border-emerald-200 text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
-            }
-          >
-            {c.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-          </RowActionButton>
-          <RowActionButton
+            tone={c.isActive ? "amber" : "emerald"}
+            icon={c.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
             label={`Eliminar ${c.model}`}
-            title="Eliminar configuración"
+            tooltip="Eliminar configuración"
             onClick={() => onDelete(c.id)}
-            disabled={deletingId === c.id}
-            hoverClass="border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600"
-          >
-            {deletingId === c.id ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
-          </RowActionButton>
+            isBusy={deletingId === c.id}
+            tone="rose"
+            icon={<Trash2 className="h-3.5 w-3.5" />}
+          />
         </div>
       ),
     },

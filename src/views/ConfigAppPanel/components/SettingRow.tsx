@@ -57,7 +57,7 @@ export default function SettingRow({ setting, value, onChange, error, notificati
       <div className="sm:w-64 shrink-0">
         <p className="text-sm font-bold text-slate-700">{setting.label}</p>
         {setting.description && <p className="text-xs text-slate-400 mt-0.5">{setting.description}</p>}
-        {rangeHint && <p className="text-[11px] text-slate-400 mt-0.5">{rangeHint}</p>}
+        {rangeHint && <p className="text-[10px] text-slate-400 mt-0.5">{rangeHint}</p>}
       </div>
 
       <div className="flex-1 min-w-0">

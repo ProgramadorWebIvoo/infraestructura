@@ -21,6 +21,7 @@ import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
 import { formatNumber } from "../../../utils";
+import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
 
 interface TechnicalReviewSectionProps {
   projects: Project[];
@@ -45,6 +46,7 @@ function ProjectTypeBadge({ type }: { type: Project["type"] }) {
 
 export default function TechnicalReviewSection({ projects, onReviewProject }: TechnicalReviewSectionProps) {
   const { showToast } = useToast();
+  const { maxFileSizeBytes } = useAppGroupSettings();
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [step, setStep] = useState(1);
   const [cierreNotes, setCierreNotes] = useState("");
@@ -308,13 +310,14 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
                   files={calcFiles}
                   onFilesChange={setCalcFiles}
                   label="Hoja de Cálculo / Cubicaciones"
-                  accept=".xlsx,.xls,.csv,.pdf,.ods,.numbers"
+                  accept=".xlsx,.xls,.csv,.pdf,.ods"
                   extensionsLabel=".xlsx · .xls · .csv · .pdf · .ods"
                   color="sky"
                   icon={<FileSpreadsheet className="h-6 w-6 text-slate-400" />}
                   fileIcon={<FileSpreadsheet className="h-3.5 w-3.5" />}
                   id="cierre-calc-upload"
                   required
+                  maxSizeBytes={maxFileSizeBytes}
                   onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
                 />
 
@@ -327,6 +330,7 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
                   color="indigo"
                   icon={<Map className="h-6 w-6 text-slate-400" />}
                   fileIcon={<Map className="h-3.5 w-3.5" />}
+                  maxSizeBytes={maxFileSizeBytes}
                   id="cierre-plan-upload"
                   required
                   countLabel="plano adjunto"
