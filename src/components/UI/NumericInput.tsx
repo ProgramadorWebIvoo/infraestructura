@@ -8,6 +8,7 @@
  */
 
 import { useCallback } from "react";
+import type { SemanticColor } from "./colorTokens";
 
 interface NumericInputProps {
   value: number | "";
@@ -22,8 +23,19 @@ interface NumericInputProps {
   allowNegative?: boolean;
   /** Forzar valores enteros (sin decimales). Útil para semanas, cantidades, etc. */
   integer?: boolean;
+  /** Color de foco/acento. Default "brand" (celeste), el histórico de este campo. */
+  accent?: SemanticColor;
   id?: string;
 }
+
+const FOCUS_RING_CLASSES: Record<SemanticColor, string> = {
+  brand: "focus:border-brand-400 focus:ring-brand-100",
+  success: "focus:border-success-400 focus:ring-success-100",
+  danger: "focus:border-danger-400 focus:ring-danger-100",
+  warning: "focus:border-warning-400 focus:ring-warning-100",
+  info: "focus:border-info-400 focus:ring-info-100",
+  neutral: "focus:border-neutral-400 focus:ring-neutral-100",
+};
 
 export default function NumericInput({
   value,
@@ -35,6 +47,7 @@ export default function NumericInput({
   max,
   allowNegative = false,
   integer = false,
+  accent = "brand",
   id,
 }: NumericInputProps) {
   const sanitize = useCallback(
@@ -81,7 +94,7 @@ export default function NumericInput({
       onKeyDown={handleKeyDown}
       onPaste={handlePaste}
       placeholder={placeholder}
-      className={`w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white font-mono font-bold ${className}`}
+      className={`w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 bg-surface font-mono font-bold text-text-secondary ${FOCUS_RING_CLASSES[accent]} ${className}`}
     />
   );
 }

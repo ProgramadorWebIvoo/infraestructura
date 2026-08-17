@@ -10,7 +10,13 @@ import { Package } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
 import SelectModal from "../../../components/UI/SelectModal";
+import NumericInput from "../../../components/UI/NumericInput";
+import { RequiredMark } from "../../../components/UI/HintSignals";
 import { STATUS_OPTIONS, type MaterialForm } from "../types";
+
+const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
+const inputClass =
+  "w-full rounded-control border border-border-default px-3.5 py-2.5 text-xs font-semibold text-text-secondary placeholder-text-muted outline-hidden focus:border-success-400 focus:ring-2 focus:ring-success-100";
 
 interface MaterialFormModalProps {
   isOpen: boolean;
@@ -71,53 +77,47 @@ export default function MaterialFormModal({
       <div className="space-y-4">
         {/* Name */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Nombre *
+          <label htmlFor="material-name" className={labelClass}>
+            Nombre <RequiredMark filled={form.name.trim().length > 0} />
           </label>
           <input
+            id="material-name"
             type="text"
             value={form.name}
             onChange={(e) => onFormChange({ ...form, name: e.target.value })}
             maxLength={180}
             placeholder="Ej: Cemento Portland (Saco 42.5kg)"
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            className={inputClass}
           />
         </div>
 
         {/* Unit + Price inline */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Unidad *
+            <label htmlFor="material-unit" className={labelClass}>
+              Unidad <RequiredMark filled={form.unit.trim().length > 0} />
             </label>
             <input
+              id="material-unit"
               type="text"
               value={form.unit}
               onChange={(e) => onFormChange({ ...form, unit: e.target.value })}
               maxLength={80}
               placeholder="Ej: Saco, m3, Unidad"
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Precio unitario est. ($)
+            <label htmlFor="material-price" className={labelClass}>
+              Precio unitario est. ($) <RequiredMark filled={form.estimatedUnitPrice !== "" && form.estimatedUnitPrice > 0} />
             </label>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
+            <NumericInput
+              id="material-price"
               value={form.estimatedUnitPrice}
-              onChange={(e) => {
-                const v = e.target.value.replace(/[eE]/g, "");
-                if (v === "") { onFormChange({ ...form, estimatedUnitPrice: "" }); return; }
-                const val = Math.max(0, parseFloat(v) || 0);
-                onFormChange({ ...form, estimatedUnitPrice: Math.round(val * 100) / 100 });
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "e" || e.key === "E" || e.key === "-" || e.key === "Subtract") e.preventDefault();
-              }}
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-center font-mono text-sm font-black text-emerald-600 outline-hidden focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              onChange={(v) => onFormChange({ ...form, estimatedUnitPrice: v === "" ? "" : Math.round(v * 100) / 100 })}
+              placeholder="0.00"
+              accent="success"
+              className="text-center font-black text-success-600"
             />
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function MaterialFormModal({
         {/* Status toggle only in edit mode */}
         {mode === "edit" && (
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <label className={labelClass}>
               Estado
             </label>
             <SelectModal

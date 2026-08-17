@@ -153,11 +153,12 @@ Botón que abre un modal tipo tabla con búsqueda — reemplazo de `<select>` na
 
 **Path**: `src/components/UI/Table.tsx`
 
-Tabla de datos genérica con ordenamiento, paginación, skeleton de carga, empty state, header sticky, click/dblclick/selección de filas, y virtualización opcional. **Exportación nombrada** (`Table`, `Column<T>`), no default.
+Tabla de datos genérica con ordenamiento, paginación, skeleton de carga, empty state, header sticky y click/dblclick/selección de filas. **Exportación nombrada** (`Table`, `Column<T>`), no default.
 
-- **Props**: `columns: Column<T>[]` (`key,label,align?,width?,className?,sortable?,render?`), `data: T[]`, `rowKey`, `isLoading?`, `loadingRows?`, `emptyMessage?`, `emptyState?`, `footer?`, `pageSize?` (activa paginación), `maxHeight?`, `containerClassName?`, `className?`, `stickyHeader?`, `rowHoverClass?`, `alternating?`, `onRowClick?`, `onRowDoubleClick?`, `selectedRowKey?`, `selectedRowClass?`, `virtualizeThreshold?` (default `Infinity`, desactivada)
+- **Props**: `columns: Column<T>[]` (`key,label,align?,width?,className?,sortable?,render?`), `data: T[]`, `rowKey`, `isLoading?`, `loadingRows?`, `emptyMessage?`, `emptyState?`, `footer?`, `pageSize?` (activa paginación), `maxHeight?`, `containerClassName?`, `className?`, `stickyHeader?`, `rowHoverClass?`, `alternating?`, `onRowClick?`, `onRowDoubleClick?`, `selectedRowKey?`, `selectedRowClass?`
 - **Cuándo usarlo**: cualquier vista tabular — es el primitivo base (usado también dentro de `SelectModal`).
-- **Convenciones**: virtualización vía `@tanstack/react-virtual`, solo activa si `data.length > virtualizeThreshold` y hay `maxHeight`; sort/paginación client-side. Botones de paginación con radio `rounded-control` (token).
+- **Convenciones**: sort/paginación client-side. Botones de paginación con radio `rounded-control` (token). Transición skeleton→contenido vía `AnimatePresence mode="wait"` (crossfade, no swap abrupto) — dentro del `tbody` de datos, las filas entran con stagger (`itemVariants`, `staggerChildren: 0.03`); el cambio de página anima solo la entrada (sin `exit` por fila, para no bloquear la interacción en clicks rápidos de paginación).
+- **Nota histórica**: tuvo un sistema de virtualización (`virtualizeThreshold` + `@tanstack/react-virtual`) que ningún consumidor activaba nunca y sin tests — eliminado como código muerto (auditoría de MaterialConfigPanel). Si una tabla futura necesita virtualización real (miles de filas), reintroducir con un caso de uso concreto, no especulativamente.
 
 ## EmptyState
 
@@ -187,9 +188,9 @@ Panel de historial/auditoría colapsable genérico, con búsqueda y paginación 
 
 `<input type="number">` saneado que bloquea notación científica y (por defecto) negativos.
 
-- **Props**: `value: number | ""`, `onChange`, `step?`, `min?` (default `0`), `max?` (clampa), `allowNegative?`, `integer?`, `id?`, `placeholder?`, `className?`
+- **Props**: `value: number | ""`, `onChange`, `step?`, `min?` (default `0`), `max?` (clampa), `allowNegative?`, `integer?`, `accent?: SemanticColor` (default `"brand"`), `id?`, `placeholder?`, `className?`
 - **Cuándo usarlo**: cualquier campo numérico de cantidad/moneda/semanas.
-- **Convenciones**: el estado externo debe ser `number | ""`; sanea en change/keydown/paste; fuente mono-bold integrada.
+- **Convenciones**: el estado externo debe ser `number | ""`; sanea en change/keydown/paste; fuente mono-bold integrada; consume `SEMANTIC_COLOR_MAP` para el color de foco vía `accent` (igual criterio que `Select`).
 
 ## Select
 

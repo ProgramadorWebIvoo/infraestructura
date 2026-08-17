@@ -17,7 +17,6 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.8",
     "dompurify": "^3.4.12",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
