@@ -16,7 +16,7 @@ interface CardProps {
 export default function Card({ children, className = "", hoverable = true }: CardProps) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 ${
+      className={`bg-surface rounded-container border border-border-default/80 shadow-sm p-6 ${
         hoverable ? "hover:shadow-md transition-all duration-300" : ""
       } ${className}`}
     >

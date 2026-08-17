@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { type ReactNode, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
+import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -53,13 +54,23 @@ interface ModalProps {
 // Colores de icono
 // ---------------------------------------------------------------------------
 
-const ICON_COLORS: Record<string, { bg: string; text: string }> = {
-  sky:   { bg: "bg-sky-400/20", text: "text-sky-400" },
-  amber: { bg: "bg-amber-400/20", text: "text-amber-400" },
-  emerald: { bg: "bg-emerald-400/20", text: "text-emerald-400" },
-  purple: { bg: "bg-purple-400/20", text: "text-purple-400" },
-  rose:  { bg: "bg-rose-400/20", text: "text-rose-400" },
-  slate: { bg: "bg-slate-400/20", text: "text-slate-400" },
+/**
+ * Vocabulario de color histórico de los modales (nombres Tailwind "crudos")
+ * mapeado a los 6 roles semánticos de `colorTokens.ts` — mismo criterio que
+ * `SectionHeader.COLOR_TO_SEMANTIC`. Corrige un bug preexistente: "indigo"
+ * se usaba en 2 modales (`AIConfigFormModal`, `ContractorFormModal`) pero no
+ * estaba en el `ICON_COLORS` original, así que caían silenciosamente al
+ * fallback `amber` sin que nadie lo notara.
+ */
+const ICON_COLOR_TO_SEMANTIC: Record<string, SemanticColor> = {
+  sky: "brand",
+  blue: "brand",
+  purple: "info",
+  indigo: "info",
+  emerald: "success",
+  amber: "warning",
+  rose: "danger",
+  slate: "neutral",
 };
 
 // ---------------------------------------------------------------------------
@@ -80,7 +91,8 @@ export default function Modal({
   infoLine,
   iconColor = "amber",
 }: ModalProps) {
-  const iconStyle = ICON_COLORS[iconColor] ?? ICON_COLORS.amber;
+  const semantic = SEMANTIC_COLOR_MAP[ICON_COLOR_TO_SEMANTIC[iconColor] ?? "warning"];
+  const iconStyle = { bg: semantic.bgAlpha400, text: semantic.icon400 };
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -148,14 +160,14 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className={`bg-white rounded-2xl w-full ${maxWidth} border border-slate-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
+            className={`bg-surface rounded-container w-full ${maxWidth} border border-border-default shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
           >
             {/* ── Header ── */}
             {(title || icon || badge) && (
-              <div className="p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+              <div className="p-5 bg-surface-inverted text-text-inverted flex items-center justify-between border-b border-border-inverted shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   {icon && (
-                    <div data-testid="modal-icon" className={`${iconStyle.bg} ${iconStyle.text} p-2 rounded-xl shrink-0`}>
+                    <div data-testid="modal-icon" className={`${iconStyle.bg} ${iconStyle.text} p-2 rounded-control shrink-0`}>
                       {icon}
                     </div>
                   )}
@@ -169,7 +181,7 @@ export default function Modal({
                       <h3 className="text-md font-bold font-sans truncate">{title}</h3>
                     )}
                     {infoLine && (
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">{infoLine}</p>
+                      <p className="text-[11px] text-text-muted font-mono mt-0.5 truncate">{infoLine}</p>
                     )}
                   </div>
                 </div>
@@ -179,7 +191,7 @@ export default function Modal({
                     aria-label="Cerrar"
                     onClick={onClose}
                     disabled={closeDisabled}
-                    className="cursor-pointer text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors disabled:cursor-not-allowed disabled:opacity-30 shrink-0 ml-3"
+                    className="cursor-pointer text-text-muted hover:text-text-inverted p-1 rounded-full hover:bg-border-inverted transition-colors disabled:cursor-not-allowed disabled:opacity-30 shrink-0 ml-3"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -194,7 +206,7 @@ export default function Modal({
 
             {/* ── Footer ── */}
             {footer && (
-              <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
+              <div className="p-4 border-t border-border-subtle bg-surface-sunken shrink-0">
                 {footer}
               </div>
             )}

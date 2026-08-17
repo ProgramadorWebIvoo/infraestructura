@@ -2,6 +2,29 @@
 
 > Referencia rápida antes de escribir UI nueva: revisar si ya existe un componente que resuelva el caso, en vez de reimplementar markup/lógica ya cubierta en otra vista. Actualizar este archivo cada vez que se agregue, renombre o elimine un componente de `src/components/UI/`.
 
+## Design Tokens
+
+Tokens centralizados en `@theme` (`src/index.css`) — Tailwind v4, sin `tailwind.config.js` separado. Objetivo: que los componentes compartidos consuman una única fuente de verdad de color/radio/densidad/animación en vez de que cada uno (`SectionHeader`, `Modal`, `Button`, `alertStyles.ts`, `KpiCard`) defina su propio mapa paralelo. La migración de los componentes existentes a estos tokens es incremental — ver `PENDIENTES.md` o el historial de PRs; que un componente todavía no los use no es un error, es trabajo en curso.
+
+- **Paleta semántica** (`--color-{rol}-{escalón}`, 6 roles × escalones 50/100/200/400/500/600/700): `brand`, `success`, `danger`, `warning`, `info`, `neutral`. Consumida vía `SEMANTIC_COLOR_MAP` en [`colorTokens.ts`](#colortokensts) — no leer las variables CSS crudas desde un componente nuevo, usar el mapa. **Al agregar un campo nuevo a `SemanticColorClasses`, verificar que el escalón de color que referencia (ej. `-200`) esté definido en `@theme` — Tailwind v4 no genera la utilidad si la variable CSS no existe, falla en silencio sin error de build** (aprendido migrando `alertStyles.ts`: `border200` no se generaba porque faltaba `--color-{rol}-200`).
+- **Radios en 3 niveles** (no niveles sueltos por componente): `--radius-container` (16px, tarjetas/paneles/modales), `--radius-control` (12px, botones/inputs), `--radius-pill` (full, badges/chips/tags).
+- **Densidad de padding**: `--spacing-card-padding` (24px, `Card`) vs `--spacing-card-padding-compact` (20px, `KpiCard` y header/footer de `Modal`) — la densidad más alta de `KpiCard` es intencional (suele ir en grilla de 3-4 columnas), no una inconsistencia a corregir.
+- **Escala tipográfica caption/label**: `--text-caption` (11px, metadatos secundarios: sub de `KpiCard`, headers de `Table`) vs `--text-label` (12px, texto de control/badge).
+- **Duración/easing**: `--duration-fast` (150ms, hover/focus sin cambio de layout), `--duration-base` (250ms, aparición de card/toggle), `--duration-slow` (350ms, paneles grandes) + `--ease-standard`/`--ease-out`/`--ease-in`. **`--duration-*` no es un namespace nativo de Tailwind v4** (confirmado por build: a diferencia de `--radius-*`/`--text-*`/`--color-*`, no genera clase utilitaria `duration-fast`) — se consume como variable CSS pura: `transition-duration: var(--duration-fast)` en un `style={{}}` o en un selector CSS, nunca como clase Tailwind. Regla de cuándo usar esto vs Framer Motion: si la animación cambia layout, es entrada/salida, o necesita spring → `motion/react` (ver `springs.gentle`/`springs.snappy` en [`animations.ts`](../src/animations.ts)); si es solo un cambio de color/sombra en hover sin mover nada → CSS con `transition-colors` + `var(--duration-fast)`. Excepción documentada: los `@keyframes` de `Toast.tsx` (`slide-up`, `slide-in/out-right`, `toast-progress`) se quedan en CSS puro — ya resuelven timing de auto-dismiss de forma madura.
+- **Neutrales: superficie/texto/borde** — distinto del rol de acento `neutral` de `SEMANTIC_COLOR_MAP` (que es gris pero para KpiCard/SectionHeader/etc. igual que `brand`/`success`/etc.). Nombrados por **rol funcional**, no por el tono Tailwind que resuelven hoy — es el habilitante real de un dark mode futuro: el día que se implemente, solo se redefinen estos valores bajo un selector de tema, sin tocar componentes ni vistas.
+  - Superficie: `bg-surface` (blanco, `Card`/`Modal`/`Button` secondary), `bg-surface-sunken` (gris muy claro, fondo hundido/inputs), `bg-surface-raised` (gris claro, hover de superficie), `bg-surface-inverted` (slate-900, headers oscuros de `Modal`/`KpiCard` variant dark).
+  - Texto: `text-text-primary` (títulos), `text-text-secondary` (cuerpo secundario), `text-text-tertiary` (labels/metadatos), `text-text-muted` (placeholders/íconos inactivos), `text-text-inverted` (texto sobre superficie oscura).
+  - Borde: `border-border-default` (borde estándar), `border-border-subtle` (separador interno, menos contraste), `border-border-inverted` (borde sobre superficie oscura).
+  - **Migrados**: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button` (variant secondary). Pendiente para la fase de vistas (reactivo, no barrido dedicado): `Table.tsx` y el resto de componentes/vistas — sus `bg-white`/`text-slate-*` literales siguen funcionando igual, solo no pasan aún por el token.
+  - **Nota de variantes `dark` locales** (ej. `KpiCard variant="dark"`): no confundir con un futuro tema oscuro de la app — es una variante visual fija elegida por el consumidor, independiente del theme. Usa `surface-inverted`/`text-inverted` porque ese es su color fijo esperado, no porque "reaccione" a dark mode.
+
+### colorTokens.ts
+
+**Path**: `src/components/UI/colorTokens.ts`
+
+- **Exports**: `SemanticColor` (`"brand"|"success"|"danger"|"warning"|"info"|"neutral"`), `SEMANTIC_COLOR_MAP: Record<SemanticColor, SemanticColorClasses>` (clases Tailwind ya resueltas: `bg50`, `bg100`, `border100`, `border200` (alertas), `borderL400`/`borderL500` (borde izquierdo de acento, 4px), `text600`, `text700`, `icon400`, `icon500`, `bgAlpha400` (fondo translúcido 20%, chips sobre superficies oscuras — Modal), `gradientFrom`/`gradientTo` (500/600), `gradientFromHover`/`gradientToHover` (600/700, hover de `Button`), `shadow500`/`shadowHover500` (sombra de color a 20%/30%, acompaña el gradiente de `Button`).
+- **Usado por**: `KpiCard.tsx` (borde de acento + ícono default, rol `brand`), `SectionHeader.tsx`/`Modal.tsx`/`Button.tsx` (mapeo de color histórico → rol semántico, mismo criterio en los tres: `COLOR_TO_SEMANTIC`/`ICON_COLOR_TO_SEMANTIC`/`COLOR_SCHEME_TO_SEMANTIC`), `alertStyles.ts` (`ALERT_STYLES` de `success`/`error`/`warning`/`info`). Todos los componentes de la sección "Design Tokens" ya están migrados — futuros componentes con color deben consumir este mapa desde el inicio, no crear uno nuevo.
+
 ## Índice por escenario de uso
 
 - **Botones/acciones**: [Button](#button), [IconActionButton](#iconactionbutton)
@@ -15,7 +38,8 @@
 - **Notificaciones internas**: [NotificationBell](#notificationbell), [NotificationList](#notificationlist), [NotificationsProvider](#notificationsprovider--usenotifications)
 - **Tooltips**: [Tooltip](#tooltip), [SidebarTip](#sidebartip) (solo sidebar colapsado)
 - **Exportación**: [ExportButton](#exportbutton)
-- **Helpers no-componente**: [alertStyles.ts](#alertstylests), [sidebarNavClasses.ts](#sidebarnavclassests)
+- **Helpers no-componente**: [alertStyles.ts](#alertstylests), [sidebarNavClasses.ts](#sidebarnavclassests), [colorTokens.ts](#colortokensts)
+- **Design tokens / animación**: ver [sección Design Tokens](#design-tokens) arriba y `springs` en `src/animations.ts`.
 
 ---
 
@@ -25,9 +49,9 @@
 
 Botón estándar con sistema de variante/tamaño/color y estado de carga integrado.
 
-- **Props**: `variant?: "primary"|"secondary"|"danger"`, `size?: "sm"|"md"`, `colorScheme?: "sky"|"emerald"|"purple"|"rose"|"indigo"|"amber"|"violet"|"slate"`, `isLoading?: boolean`, `icon?: ReactNode`, + atributos nativos de `<button>`
+- **Props**: `variant?: "primary"|"secondary"|"danger"`, `size?: "sm"|"md"`, `colorScheme?: "sky"|"emerald"|"purple"|"rose"|"indigo"|"amber"|"violet"|"slate"` (default `"indigo"` en `primary`), `isLoading?: boolean`, `icon?: ReactNode`, + atributos nativos de `<button>`
 - **Cuándo usarlo**: cualquier botón de acción primaria/secundaria/peligrosa en la app.
-- **Convenciones**: `primary` usa gradiente por `colorScheme`; `danger` siempre renderiza gradiente rose sin importar `colorScheme`; muestra `Spinner` interno si `isLoading`.
+- **Convenciones**: `primary` compone su gradiente desde `SEMANTIC_COLOR_MAP` (`colorTokens.ts`) vía `COLOR_SCHEME_TO_SEMANTIC` — mismo mapeo que `SectionHeader`/`Modal` (`purple/indigo/violet→info`, `sky→brand`, etc.); `danger` siempre renderiza el gradiente del rol `danger` sin importar `colorScheme` (antes era un `Record<ColorScheme,...>` de 8 entradas con el mismo string repetido — colapsado a una función). Radio `rounded-control`; duración de transición `var(--duration-fast)` vía `style` (no clase Tailwind, `--duration-*` no genera utilidad — ver sección Design Tokens). Muestra `Spinner` interno si `isLoading`.
 
 ## IconActionButton
 
@@ -99,9 +123,9 @@ Mensaje de error inline para un campo de formulario, más un helper de clases pa
 
 Shell de modal genérico basado en portal, con slots de header/body/footer, focus trap y cierre por ESC.
 
-- **Props**: `isOpen`, `onClose`, `children`, `footer?`, `maxWidth?` (`max-w-sm`…`max-w-4xl`), `closeDisabled?`, `hideCloseButton?`, `icon?`, `badge?`, `title?`, `infoLine?`, `iconColor?: "sky"|"amber"|"emerald"|"purple"|"rose"|"slate"`
+- **Props**: `isOpen`, `onClose`, `children`, `footer?`, `maxWidth?` (`max-w-sm`…`max-w-4xl`), `closeDisabled?`, `hideCloseButton?`, `icon?`, `badge?`, `title?`, `infoLine?`, `iconColor?: "sky"|"blue"|"amber"|"emerald"|"purple"|"indigo"|"rose"|"slate"` (default `"amber"`)
 - **Cuándo usarlo**: base de todo modal nuevo — no crear un modal desde cero con `createPortal` propio.
-- **Convenciones**: portal a `document.body`; focus trap con ciclo de Tab y restauración de foco al cerrar; header slate-900; `role="dialog" aria-modal="true"`.
+- **Convenciones**: portal a `document.body`; focus trap con ciclo de Tab y restauración de foco al cerrar; header slate-900; `role="dialog" aria-modal="true"`. El chip de ícono resuelve sus clases desde `SEMANTIC_COLOR_MAP` (`colorTokens.ts`, campo `bgAlpha400`/`icon400`) vía `ICON_COLOR_TO_SEMANTIC` — mismo mapeo que `SectionHeader.COLOR_TO_SEMANTIC`. Esta migración corrigió un bug real: `iconColor="indigo"` se usaba en 2 modales pero no existía en el `ICON_COLORS` viejo, así que caían silenciosamente al fallback `amber`; ahora resuelve a `info` (violeta) correctamente. Radio del panel `rounded-container`; radio del chip de ícono `rounded-control`.
 
 ## ConfirmDialog
 
@@ -133,7 +157,7 @@ Tabla de datos genérica con ordenamiento, paginación, skeleton de carga, empty
 
 - **Props**: `columns: Column<T>[]` (`key,label,align?,width?,className?,sortable?,render?`), `data: T[]`, `rowKey`, `isLoading?`, `loadingRows?`, `emptyMessage?`, `emptyState?`, `footer?`, `pageSize?` (activa paginación), `maxHeight?`, `containerClassName?`, `className?`, `stickyHeader?`, `rowHoverClass?`, `alternating?`, `onRowClick?`, `onRowDoubleClick?`, `selectedRowKey?`, `selectedRowClass?`, `virtualizeThreshold?` (default `Infinity`, desactivada)
 - **Cuándo usarlo**: cualquier vista tabular — es el primitivo base (usado también dentro de `SelectModal`).
-- **Convenciones**: virtualización vía `@tanstack/react-virtual`, solo activa si `data.length > virtualizeThreshold` y hay `maxHeight`; sort/paginación client-side.
+- **Convenciones**: virtualización vía `@tanstack/react-virtual`, solo activa si `data.length > virtualizeThreshold` y hay `maxHeight`; sort/paginación client-side. Botones de paginación con radio `rounded-control` (token).
 
 ## EmptyState
 
@@ -239,7 +263,7 @@ Contenedor blanco redondeado estilo "bento".
 
 - **Props**: `children`, `hoverable?: boolean` (default `true`), `className?`
 - **Cuándo usarlo**: wrapper genérico de contenido/sección en dashboards y paneles.
-- **Convenciones**: `hoverable` agrega transición de sombra; sin slots de header/footer (se componen manualmente).
+- **Convenciones**: `hoverable` agrega transición de sombra; sin slots de header/footer (se componen manualmente). Radio `rounded-container` (token, 16px) — mismo nivel que `KpiCard`/`Modal`.
 
 ## SectionHeader
 
@@ -249,7 +273,7 @@ Encabezado de sección: ícono + título + descripción, con acciones opcionales
 
 - **Props**: `icon: ReactNode`, `title: string`, `description: string`, `color?` (`sky|blue|purple|emerald|amber|rose|indigo|slate`), `actions?: ReactNode`
 - **Cuándo usarlo**: encabezado de cualquier panel/tab/sección (frecuentemente con un `ExportButton` en `actions`).
-- **Convenciones**: borde inferior + margen integrados; mapa de color para el chip del ícono.
+- **Convenciones**: borde inferior + margen integrados; el chip del ícono resuelve sus clases desde `SEMANTIC_COLOR_MAP` (`colorTokens.ts`) — la prop `color` sigue aceptando los 8 nombres históricos por compatibilidad (no se fuerza rename en las vistas), pero internamente se mapean a los 6 roles semánticos vía `COLOR_TO_SEMANTIC`: `sky/blue→brand`, `purple/indigo→info` (mismo tono, antes eran dos violetas ligeramente distintos), `emerald→success`, `amber→warning`, `rose→danger`, `slate→neutral`.
 
 ## KpiCard
 
@@ -259,7 +283,7 @@ Tarjeta de estadística de dashboard: ícono, label, value/sub o children person
 
 - **Props**: `icon: ReactNode`, `label: string`, `value?`, `sub?`, `children?`, `variant?: "light"|"dark"`, `accent?: string`, `borderAccent?: string`, `color?` (deprecado, usar `borderAccent`), `onInspect?: () => void`
 - **Cuándo usarlo**: grillas de KPIs/métricas en dashboards (Presidencia, Finanzas, etc.).
-- **Convenciones**: `onInspect` muestra un botón de lupa en hover; variante `dark` es una tarjeta slate-900; color del borde izquierdo personalizable vía clase Tailwind.
+- **Convenciones**: `onInspect` muestra un botón de lupa en hover; variante `dark` es una tarjeta slate-900; color del borde izquierdo personalizable vía clase Tailwind (`borderAccent`/`accent`) — casi todas las vistas lo pasan explícito para diferenciar KPIs entre sí; el default (sin pasar nada) usa `SEMANTIC_COLOR_MAP.brand` (`colorTokens.ts`). Radio `rounded-container`; padding `p-5` (`--spacing-card-padding-compact`) intencionalmente más denso que `Card` (`p-6`) porque suele ir en grilla de 3-4 columnas.
 
 ## FilterBar (SearchInput + SelectFilter)
 
@@ -377,8 +401,9 @@ Botón único que exporta datos tabulares a CSV, XLSX, o una vista imprimible PD
 
 **Path**: `src/components/UI/alertStyles.ts`
 
-- **Exports**: `AlertType` (`"success"|"error"|"warning"|"info"`), `ALERT_ICONS: Record<AlertType, LucideIcon>`, `ALERT_STYLES: Record<AlertType, {bg,text,border}>`
+- **Exports**: `AlertType` (`"success"|"error"|"warning"|"info"|"action-required"|"urgent"`), `ALERT_ICONS: Record<AlertType, LucideIcon>`, `ALERT_STYLES: Record<AlertType, {bg,text,border}>`, `BACKEND_NOTIFICATION_TYPE_MAP`
 - **Usado por**: `AlertBanner.tsx` y `Toast.tsx` — paleta/mapa de íconos compartido para no duplicar los mismos estilos carácter por carácter en ambos.
+- **Convenciones de color**: `ALERT_STYLES` resuelve `success/error/warning` desde `SEMANTIC_COLOR_MAP` (roles `success`/`danger`/`warning`); `info` usa el rol `brand` (sky) — es el estándar de mercado para "informativo", no el rol interno `info` del mapa (que quedó anclado a violeta por `SectionHeader`, son solo nombres de rol distintos). `action-required` (violeta) y `urgent` (naranja) se quedan con color literal fuera del sistema de 6 roles — colapsarlos perdería la distinción real de negocio entre "requiere acción", "informativo" y "más urgente que error".
 
 ### sidebarNavClasses.ts
 
@@ -398,6 +423,8 @@ Estos patrones fueron identificados como duplicados y consolidados — si aparec
 - **Indicador de campo obligatorio** (asterisco o check/alerta junto al label) → [`RequiredMark`](#hintsignals-requiredmark--helphint). No escribir el ícono/estilo a mano.
 - **Paleta de colores de alertas** (success/error/warning/info) → `alertStyles.ts`, ya consumido por `AlertBanner`/`Toast`. No crear un tercer mapa de colores igual.
 - **Clases de estado activo del sidebar** → `sidebarNavClasses.ts`, ya consumido por `SidebarNav`/`ConfigDropdown`.
+- **Mapa de color propio por componente** (`COLOR_MAP`, `ICON_COLORS`, `primaryGradients`/`dangerGradients`, etc.) → [`SEMANTIC_COLOR_MAP`](#colortokensts) (`colorTokens.ts`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button`, `alertStyles.ts`/`Toast`/`AlertBanner`, `StatusBadge` (radio). Un componente nuevo con color propio no debe crear un sexto mapa — consumir este.
+- **`bg-white`/`text-slate-*`/`border-slate-*` escritos a mano** en un componente compartido → tokens de [neutrales](#design-tokens) (`bg-surface`, `text-text-*`, `border-border-*`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button` (secondary). No escribir `bg-white`/`text-slate-900` etc. en un componente nuevo de `src/components/UI/` — usar el token de rol equivalente.
 
 ## Candidatos a revisar (no consolidados aún, fuera de alcance de 1.5)
 

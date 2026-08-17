@@ -6,7 +6,19 @@
  * Patrón: container (stagger) + item (spring fade/slide/scale).
  */
 
-import type { Variants } from "motion/react";
+import type { Transition, Variants } from "motion/react";
+
+/**
+ * Configuraciones de spring reutilizables — evita que cada vista invente
+ * su propia combinación de stiffness/damping para el mismo propósito
+ * visual (se encontraron 3 divergentes: 260/24, 300/20, 400/20 para
+ * casos equivalentes de "aparición" y "pop" de badges/contadores).
+ * `gentle` es la misma curva que ya usa `itemVariants` abajo.
+ */
+export const springs = {
+  gentle: { type: "spring", stiffness: 260, damping: 24 },
+  snappy: { type: "spring", stiffness: 400, damping: 25 },
+} as const satisfies Record<string, Transition>;
 
 export const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -22,7 +34,7 @@ export const itemVariants: Variants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 260, damping: 24 },
+    transition: springs.gentle,
   },
 };
 

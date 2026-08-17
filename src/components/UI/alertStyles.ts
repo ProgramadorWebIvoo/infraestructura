@@ -7,6 +7,7 @@
  */
 
 import { CheckCircle, AlertCircle, AlertTriangle, Info, Hand, Zap } from "lucide-react";
+import { SEMANTIC_COLOR_MAP } from "./colorTokens";
 
 /**
  * Taxonomía de 6 tipos pedida por el plan de 90 días (1.1) — mismos 6
@@ -28,11 +29,24 @@ export const ALERT_ICONS: Record<AlertType, typeof CheckCircle> = {
   urgent: Zap,
 };
 
+/**
+ * 4 de los 6 `AlertType` mapean 1:1 a un rol de `SEMANTIC_COLOR_MAP`.
+ * "info" usa el rol `brand` (sky) — es el uso histórico y el estándar de
+ * mercado para "informativo" (no el rol `info` interno del mapa, que
+ * quedó anclado a violeta por el mapeo purple/indigo de `SectionHeader`;
+ * son nombres de rol, no el mismo concepto de negocio en cada componente).
+ * `action-required` se queda con violeta literal, distinto de `success/
+ * error/warning/brand` — perdería su distinción real si colapsara con
+ * cualquiera de los 4. `urgent` es la otra excepción consciente: no
+ * fuerza un rol semántico existente porque perdería la señal de negocio
+ * de "más urgente que warning/error" — naranja literal, fuera del sistema
+ * de 6 roles.
+ */
 export const ALERT_STYLES: Record<AlertType, { bg: string; text: string; border: string }> = {
-  success: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  error: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
-  warning: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
-  info: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-200" },
+  success: { bg: SEMANTIC_COLOR_MAP.success.bg50, text: SEMANTIC_COLOR_MAP.success.text700, border: SEMANTIC_COLOR_MAP.success.border200 },
+  error: { bg: SEMANTIC_COLOR_MAP.danger.bg50, text: SEMANTIC_COLOR_MAP.danger.text700, border: SEMANTIC_COLOR_MAP.danger.border200 },
+  warning: { bg: SEMANTIC_COLOR_MAP.warning.bg50, text: SEMANTIC_COLOR_MAP.warning.text700, border: SEMANTIC_COLOR_MAP.warning.border200 },
+  info: { bg: SEMANTIC_COLOR_MAP.brand.bg50, text: SEMANTIC_COLOR_MAP.brand.text700, border: SEMANTIC_COLOR_MAP.brand.border200 },
   "action-required": { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200" },
   urgent: { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200" },
 };

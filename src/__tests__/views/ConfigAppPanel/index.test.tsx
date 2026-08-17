@@ -375,7 +375,7 @@ describe("ConfigAppPanel", () => {
     // Solo el canal app está silenciado (acciones_con_correo no está en este
     // mock, así que ese canal queda sin filtrar) — se expande la fila de la
     // matriz y se verifica el aviso específico del canal app.
-    const matrixSection = screen.getByText("Notificaciones por rol").closest(".bg-white") as HTMLElement;
+    const matrixSection = screen.getByText("Notificaciones por rol").closest(".bg-surface") as HTMLElement;
     fireEvent.click(within(matrixSection).getByText("Rechazo de cuadro comparativo"));
     expect(screen.getByText('Desactivada en "Acciones que envían notificación (app)"')).toBeInTheDocument();
   });

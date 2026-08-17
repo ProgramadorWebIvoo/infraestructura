@@ -9,6 +9,126 @@
   --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-slide-out-right: slide-out-right 0.25s ease-in forwards;
   --animate-toast-progress: toast-progress 4s linear forwards;
+
+  /* ── Paleta semántica ────────────────────────────────────────
+   * Fuente única de verdad de color por rol de negocio, consumida
+   * gradualmente por los componentes de src/components/UI/ (ver
+   * docs/COMPONENTES_UI.md → sección "Design Tokens") en reemplazo
+   * de los mapas de color paralelos que hoy define cada componente
+   * por separado (SectionHeader.COLOR_MAP, Modal.ICON_COLORS,
+   * Button.primaryGradients/dangerGradients, alertStyles.ALERT_STYLES).
+   * Los acentos "crudos" de Tailwind (sky, purple, violet, etc.)
+   * siguen disponibles para casos puntuales fuera de componentes UI. */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bae6fd;
+  --color-brand-400: #38bdf8;
+  --color-brand-500: #0284c7;
+  --color-brand-600: #0369a1;
+  --color-brand-700: #075985;
+
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+
+  --color-danger-50: #fff1f2;
+  --color-danger-100: #ffe4e6;
+  --color-danger-200: #fecdd3;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-600: #e11d48;
+  --color-danger-700: #be123c;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-info-50: #f5f3ff;
+  --color-info-100: #ede9fe;
+  --color-info-200: #ddd6fe;
+  --color-info-400: #a78bfa;
+  --color-info-500: #8b5cf6;
+  --color-info-600: #7c3aed;
+  --color-info-700: #6d28d9;
+
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-900: #0f172a;
+
+  /* ── Radios: 3 niveles jerárquicos ────────────────────────────
+   * container = tarjetas/paneles/modales, control = botones/inputs,
+   * pill = badges/chips/tags. Reemplaza el rounded-md/lg/xl/2xl
+   * hoy repartido sin criterio entre componentes. */
+  --radius-container: 1rem;
+  --radius-control: 0.75rem;
+  --radius-pill: 9999px;
+
+  /* ── Densidad de padding por nivel de componente ──────────────
+   * card-padding = Card (p-6); card-padding-compact = KpiCard y
+   * header/footer de Modal (p-5) — densidad más alta intencional
+   * en componentes que suelen ir en grilla, no inconsistencia. */
+  --spacing-card-padding: 1.5rem;
+  --spacing-card-padding-compact: 1.25rem;
+
+  /* ── Escala tipográfica caption/label ──────────────────────────
+   * caption = metadatos secundarios (KpiCard sub, headers de Table);
+   * label = texto de control/badge. Reemplaza el choque sin criterio
+   * semántico entre text-[11px] y text-xs (12px) en distintos
+   * componentes. */
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1rem;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+
+  /* ── Duración/easing de transición ────────────────────────────
+   * fast = hover/focus; base = aparición de card/toggle;
+   * slow = paneles grandes (Toast, Modal). Ver docs/COMPONENTES_UI.md
+   * para la regla de "CSS vs Framer Motion" que consume esta escala. */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ── Neutrales: superficie / texto / borde ─────────────────────
+   * Distinto de --color-neutral-* (acento gris de SEMANTIC_COLOR_MAP,
+   * usado para KpiCard/SectionHeader/etc. con rol "neutral" como los
+   * demás roles de acento). Estos son el habilitante real de un dark
+   * mode futuro: nombrados por ROL funcional (surface, texto, borde),
+   * no por el tono Tailwind que hoy resuelven — el día que se agregue
+   * dark mode, solo se redefinen estos valores bajo un selector de tema
+   * (ej. [data-theme="dark"]), sin tocar componentes ni vistas.
+   * Cobertura basada en frecuencia real de uso (grep sobre
+   * src/components/UI + src/views): bg-white (116), text-slate-400
+   * (229), text-slate-500 (174), border-slate-200 (143), etc. */
+  --color-surface: #ffffff;             /* bg-white */
+  --color-surface-sunken: #f8fafc;      /* bg-slate-50 — fondo de body, inputs, filas alternas */
+  --color-surface-raised: #f1f5f9;      /* bg-slate-100 — hover de superficie, chips neutros */
+  --color-surface-inverted: #0f172a;    /* bg-slate-900 — headers oscuros, sidebar, Modal header */
+
+  --color-text-primary: #0f172a;        /* text-slate-900 — títulos, texto principal */
+  --color-text-secondary: #475569;      /* text-slate-600/700 — cuerpo de texto secundario */
+  --color-text-tertiary: #64748b;       /* text-slate-500 — labels, metadatos */
+  --color-text-muted: #94a3b8;          /* text-slate-400 — placeholders, iconos inactivos */
+  --color-text-inverted: #ffffff;       /* texto sobre superficie oscura (surface-inverted) */
+
+  --color-border-default: #e2e8f0;      /* border-slate-200 — borde estándar de card/input */
+  --color-border-subtle: #f1f5f9;       /* border-slate-100 — separador interno, menos contraste */
+  --color-border-inverted: #1e293b;     /* border-slate-800 — borde sobre surface-inverted */
 }
 
 @keyframes slide-up {
@@ -70,33 +190,9 @@
   }
 }
 
-/* Bento aesthetic custom scrollbar and card shadows */
 body {
   background-color: #F8FAFC;
   font-family: var(--font-sans);
-}
-
-.bento-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem; /* rounded-2xl */
-  padding: 1.25rem; /* p-5 */
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.bento-card:hover {
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
-  border-color: #cbd5e1;
-}
-
-.bento-card-dark {
-  background-color: #0f172a;
-  color: #ffffff;
-  border: 1px solid #1e293b;
-  border-radius: 1rem; /* rounded-2xl */
-  padding: 1.25rem; /* p-5 */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* ── Reduced motion ─────────────────────────────── */

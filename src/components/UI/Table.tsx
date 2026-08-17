@@ -242,7 +242,7 @@ export function Table<T>({
             type="button"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
             aria-label="Página anterior"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -258,7 +258,7 @@ export function Table<T>({
                 key={p}
                 type="button"
                 onClick={() => goToPage(p)}
-                className={`cursor-pointer min-w-[28px] h-7 px-2 rounded-lg text-[11px] font-bold transition-colors ${
+                className={`cursor-pointer min-w-[28px] h-7 px-2 rounded-control text-[11px] font-bold transition-colors ${
                   p === currentPage
                     ? "bg-sky-500 text-white shadow-sm shadow-sky-500/20"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -273,7 +273,7 @@ export function Table<T>({
             type="button"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
             aria-label="Página siguiente"
           >
             <ChevronRight className="h-4 w-4" />
