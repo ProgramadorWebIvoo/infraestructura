@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../services/api";
-import { logError, getErrorMessage } from "../services/logger";
+import { logError } from "../services/logger";
 import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 // Re-export de constantes de dominio: las vistas las consumen desde el hook
 // (API pública estable) pero la fuente de verdad vive en constants/aiProviders.
@@ -128,8 +128,6 @@ export function useAIConfig(authToken: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [usage, setUsage] = useState<AiUsageData | null>(null);
   const [isUsageLoading, setIsUsageLoading] = useState(true);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [syncIsError, setSyncIsError] = useState(false);
   // Catálogo constante como base editable en código (constants/aiModels.ts).
   // El endpoint solo puede EXTENDERLO (modelos nuevos que aparezcan en
   // backend/producción) — nunca deja el selector vacío aunque falle.
@@ -239,27 +237,9 @@ export function useAIConfig(authToken: string) {
 
   // Sync to runtime
   const syncConfig = useCallback(async () => {
-    setSyncMessage(null);
-    setSyncIsError(false);
-    try {
-      const result = await apiFetch<{ message: string; activeConfigs: number }>("/ai/config/sync", {
-        method: "POST",
-      });
-      setSyncMessage(result.message);
-      return result;
-    } catch (err) {
-      const msg = getErrorMessage(err, "Error al sincronizar.");
-      setSyncMessage(msg);
-      setSyncIsError(true);
-      throw err;
-    }
-  }, []);
-
-  // Descarta el mensaje de sincronización — expone intención de dominio en
-  // vez de los setters de estado interno crudos.
-  const dismissSyncMessage = useCallback(() => {
-    setSyncMessage(null);
-    setSyncIsError(false);
+    return apiFetch<{ message: string; activeConfigs: number }>("/ai/config/sync", {
+      method: "POST",
+    });
   }, []);
 
   return {
@@ -268,8 +248,6 @@ export function useAIConfig(authToken: string) {
     usage,
     isUsageLoading,
     providerModels,
-    syncMessage,
-    syncIsError,
     loadConfigs,
     loadUsage,
     createConfig,
@@ -277,6 +255,5 @@ export function useAIConfig(authToken: string) {
     deleteConfig,
     testConfig,
     syncConfig,
-    dismissSyncMessage,
   };
 }

@@ -1,16 +1,19 @@
 import { type ReactNode } from "react";
+import { motion } from "motion/react";
 import { Brain, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
 import Modal from "../../components/UI/Modal";
 import Button from "../../components/UI/Button";
+import { RequiredMark } from "../../components/UI/HintSignals";
+import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
 import { AI_PROVIDERS, PROVIDER_LABELS } from "../../constants/aiProviders";
 import type { AiConfigForm } from "../../hooks/useAIConfig";
 
 const labelClass =
-  "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500";
+  "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const selectClass =
-  "w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-control border border-border-default px-3.5 py-2.5 text-xs font-semibold text-text-secondary outline-hidden focus:border-info-400 focus:ring-2 focus:ring-info-100";
 const inputClass =
-  "w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-control border border-border-default px-3.5 py-2.5 text-xs font-mono font-semibold text-text-secondary placeholder-text-muted outline-hidden focus:border-info-400 focus:ring-2 focus:ring-info-100";
 
 // ---------------------------------------------------------------------------
 // Wrappers de presentación (DRY de los 6 campos del formulario)
@@ -19,52 +22,55 @@ function AiFormField({
   label,
   htmlFor,
   required = false,
+  filled,
   hint,
   children,
 }: {
   label: string;
   htmlFor?: string;
   required?: boolean;
+  /** Si `required`, indica si el campo tiene valor — activa el indicador dinámico de RequiredMark. */
+  filled?: boolean;
   hint?: string;
   children: ReactNode;
 }) {
   return (
     <div>
       <label htmlFor={htmlFor} className={labelClass}>
-        {label} {required && "*"}
+        {label} {required && <RequiredMark filled={!!filled} />}
       </label>
       {children}
-      {hint && <p className="mt-1 text-[10px] font-medium text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-[10px] font-medium text-text-muted">{hint}</p>}
     </div>
   );
 }
 
 function TogglePill({
   active,
-  activeClass,
-  inactiveClass,
+  activeRole,
   icon,
   label,
   onClick,
 }: {
   active: boolean;
-  activeClass: string;
-  inactiveClass: string;
+  activeRole: "success" | "warning";
   icon: ReactNode;
   label: string;
   onClick: () => void;
 }) {
+  const c = SEMANTIC_COLOR_MAP[activeRole];
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
-      className={`cursor-pointer inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
-        active ? activeClass : inactiveClass
+      whileTap={{ scale: 0.96 }}
+      className={`cursor-pointer inline-flex items-center gap-2 rounded-control border px-4 py-2.5 text-xs font-bold transition-colors ${
+        active ? `${c.border100} ${c.bg50} ${c.text700}` : "border-border-default bg-surface-raised text-text-tertiary"
       }`}
     >
       {icon}
       {label}
-    </button>
+    </motion.button>
   );
 }
 
@@ -121,7 +127,7 @@ export default function AIConfigFormModal({
       }
     >
       <div className="space-y-4">
-        <AiFormField label="Proveedor" htmlFor="ai-provider" required>
+        <AiFormField label="Proveedor" htmlFor="ai-provider">
           <select
             id="ai-provider"
             value={form.provider}
@@ -139,7 +145,7 @@ export default function AIConfigFormModal({
           </select>
         </AiFormField>
 
-        <AiFormField label="Modelo" htmlFor="ai-model" required>
+        <AiFormField label="Modelo" htmlFor="ai-model" required filled={form.model.trim().length > 0}>
           <select
             id="ai-model"
             value={form.model}
@@ -159,6 +165,7 @@ export default function AIConfigFormModal({
           label="API Key"
           htmlFor="ai-api-key"
           required={mode === "create"}
+          filled={form.apiKey.trim().length > 0}
           hint="Se almacenará cifrada (AES-256-GCM) en la base de datos."
         >
           <div className="relative">
@@ -175,7 +182,7 @@ export default function AIConfigFormModal({
             <button
               type="button"
               onClick={() => onShowApiKeyChange(!showApiKey)}
-              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
               aria-label={showApiKey ? "Ocultar API Key" : "Mostrar API Key"}
             >
               {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -209,7 +216,7 @@ export default function AIConfigFormModal({
                 }
                 set("maxTokens", Math.max(1, parseInt(v, 10) || 1));
               }}
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-center text-xs font-mono font-bold text-slate-700 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-center text-xs font-mono font-bold text-text-secondary outline-hidden focus:border-info-400 focus:ring-2 focus:ring-info-100"
             />
           </AiFormField>
         </div>
@@ -218,8 +225,7 @@ export default function AIConfigFormModal({
           <AiFormField label="Estado">
             <TogglePill
               active={form.isActive}
-              activeClass="border-emerald-200 bg-emerald-50 text-emerald-700"
-              inactiveClass="border-slate-200 bg-slate-100 text-slate-500"
+              activeRole="success"
               icon={form.isActive ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
               label={form.isActive ? "Activo" : "Inactivo"}
               onClick={() => set("isActive", !form.isActive)}
@@ -228,15 +234,14 @@ export default function AIConfigFormModal({
           <AiFormField label="Respaldo (Fallback)">
             <TogglePill
               active={form.isFallback}
-              activeClass="border-amber-200 bg-amber-50 text-amber-700"
-              inactiveClass="border-slate-200 bg-slate-100 text-slate-500"
+              activeRole="warning"
               icon={<Shield className="h-4 w-4" />}
               label={form.isFallback ? "Fallback activo" : "Principal"}
               onClick={() => set("isFallback", !form.isFallback)}
             />
           </AiFormField>
         </div>
-        <p className="text-[10px] font-medium text-slate-400">
+        <p className="text-[10px] font-medium text-text-muted">
           {form.isFallback
             ? "Este modelo se usará como respaldo si el principal falla."
             : "Marca como respaldo para usarlo cuando el modelo principal no esté disponible."}

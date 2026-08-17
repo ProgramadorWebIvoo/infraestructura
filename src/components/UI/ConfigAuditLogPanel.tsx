@@ -71,15 +71,15 @@ export default function ConfigAuditLogPanel({
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       renderEntry={log => (
-        <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3">
+        <div className="rounded-xl border border-border-subtle bg-surface-sunken/50 p-3">
           <div className="mb-1.5">
-            <span className="text-xs font-bold text-slate-700 leading-snug wrap-break-word">
+            <span className="text-xs font-bold text-text-secondary leading-snug wrap-break-word">
               {entryTitle(log, settingLabelByKey)}
             </span>
-            <span className="block text-[10px] font-mono text-slate-400 mt-0.5">{log.changedAt}</span>
+            <span className="block text-[10px] font-mono text-text-muted mt-0.5">{log.changedAt}</span>
           </div>
           <AuditLogValueDiff oldValue={log.oldValue} newValue={log.newValue} />
-          {log.userName && <p className="text-[10px] text-slate-400 font-medium mt-1">por {log.userName}</p>}
+          {log.userName && <p className="text-[10px] text-text-muted font-medium mt-1">por {log.userName}</p>}
         </div>
       )}
     />

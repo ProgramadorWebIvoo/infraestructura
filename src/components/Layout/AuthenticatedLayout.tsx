@@ -12,7 +12,7 @@ import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Database } from "lucide-react";
 
-import Spinner from "../UI/Spinner";
+import { SkeletonCard } from "../SkeletonLoader";
 import SidebarNav from "../UI/SidebarNav";
 import MobileTopBar from "../UI/MobileTopBar";
 import OfflineBanner from "../UI/OfflineBanner";
@@ -41,14 +41,17 @@ interface SidebarNavProps {
 // ---------------------------------------------------------------------------
 // Suspense fallback para el contenido de rutas
 // ---------------------------------------------------------------------------
+// Skeleton, no spinner: es el único mecanismo de loading visible en la app.
+// Esta etapa cubre la descarga del chunk JS de la vista lazy-loaded (típico
+// milisegundos) — la vista real, una vez montada, muestra su propio
+// skeleton específico (forma real de sus datos) sin salto de lenguaje
+// visual entre una etapa y la otra.
 
 function PageFallback() {
   return (
-    <div className="flex items-center justify-center py-20">
-      <div className="flex flex-col items-center gap-4 text-slate-400">
-        <Spinner size="xl" />
-        <p className="text-sm font-medium">Cargando módulo…</p>
-      </div>
+    <div className="py-2">
+      <div className="skeleton-shimmer h-3 w-32 rounded mb-4" />
+      <SkeletonCard />
     </div>
   );
 }

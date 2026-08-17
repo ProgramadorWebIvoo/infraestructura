@@ -169,6 +169,47 @@
   to { width: 0%; }
 }
 
+/* ── Skeleton shimmer (SkeletonLoader.tsx) ──────────────────────
+ * Barrido de brillo sobre gradiente en vez de animate-pulse (opacidad en
+ * bloque) — se percibe más pulido/moderno. `.skeleton-shimmer-inverted`
+ * es la variante para skeletons sobre superficie oscura (KpiCard dark, etc).
+ * El brillo central usa --color-surface (blanco) en vez de mezclarlo con
+ * surface-raised — con dos grises casi idénticos el barrido no se notaba. */
+@keyframes skeleton-shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.skeleton-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-surface-raised) 35%,
+    color-mix(in oklab, var(--color-surface) 85%, var(--color-surface-raised)) 50%,
+    var(--color-surface-raised) 65%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+.skeleton-shimmer-inverted {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-border-inverted) 35%,
+    color-mix(in oklab, var(--color-text-muted) 45%, var(--color-border-inverted)) 50%,
+    var(--color-border-inverted) 65%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer, .skeleton-shimmer-inverted {
+    animation: none;
+    background-image: none;
+    background-color: var(--color-surface-raised);
+  }
+  .skeleton-shimmer-inverted {
+    background-color: var(--color-border-inverted);
+  }
+}
+
 /* ── Scrollbar estilizada para sidebar (tema oscuro) ─────────── */
 .sidebar-scrollbar::-webkit-scrollbar {
   width: 6px;

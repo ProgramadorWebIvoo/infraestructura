@@ -5,6 +5,7 @@
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { SkeletonBlock } from "../SkeletonLoader";
 
 // ─── Types ───
 
@@ -191,11 +192,11 @@ export function Table<T>({
   const SkeletonRows = () => (
     <tbody>
       {Array.from({ length: skeletonRowCount }).map((_, r) => (
-        <tr key={r} data-testid="skeleton-row" className="border-b border-slate-50">
+        <tr key={r} data-testid="skeleton-row" className="border-b border-border-subtle">
           {columns.map((col) => (
             <td key={col.key} className={`py-3.5 px-4 ${tdAlign(col)}`}>
-              <div
-                className="animate-pulse bg-slate-200 rounded-xl h-4"
+              <SkeletonBlock
+                className="h-4"
                 style={{ width: col.width ?? (r === 0 && col.key === columns[0]?.key ? "7rem" : "5.5rem") }}
               />
             </td>

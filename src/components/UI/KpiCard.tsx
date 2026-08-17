@@ -82,9 +82,10 @@ export default function KpiCard({
             {value !== undefined && (
               <p className="text-lg font-black text-text-primary">{value}</p>
             )}
-            {sub !== undefined && (
-              <p className="text-[11px] font-medium text-text-muted">{sub}</p>
-            )}
+            {/* Reserva la altura de la línea `sub` aunque no se pase — así
+             * las KpiCard de una misma grilla no quedan de distinta altura
+             * cuando algunas traen `sub` y otras no. */}
+            <p className="text-[11px] font-medium text-text-muted min-h-[1em]">{sub ?? " "}</p>
           </>
         )}
       </div>

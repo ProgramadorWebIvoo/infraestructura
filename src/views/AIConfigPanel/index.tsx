@@ -11,7 +11,6 @@ import {
   type AiConfigForm,
   EMPTY_CONFIG_FORM,
 } from "../../hooks/useAIConfig";
-import SyncBanner from "./components/SyncBanner";
 import UsageDashboard from "./components/UsageDashboard";
 import AIConfigTable from "./components/AIConfigTable";
 import { validateConfigForm, buildUpdatePayload } from "./aiConfigForm";
@@ -33,15 +32,12 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
     usage,
     isUsageLoading,
     providerModels,
-    syncMessage,
-    syncIsError,
     loadUsage,
     createConfig,
     updateConfig,
     deleteConfig,
     testConfig,
     syncConfig,
-    dismissSyncMessage,
   } = useAIConfig(authToken);
 
   const isSuperadmin = activeRole === "SUPERADMIN";
@@ -186,9 +182,7 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
 
   return (
     <motion.div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""} variants={containerVariants} initial="hidden" animate="visible">
-      <div className="space-y-6">
-        <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={dismissSyncMessage} />
-
+      <motion.div className="space-y-6" variants={containerVariants}>
         <UsageDashboard
           usage={usage}
           isUsageLoading={isUsageLoading}
@@ -237,7 +231,7 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
           onFormChange={setForm}
           onShowApiKeyChange={setShowApiKey}
         />
-      </div>
+      </motion.div>
 
       {isSuperadmin && (
         <ConfigAuditLogPanel

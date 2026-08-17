@@ -27,6 +27,10 @@ vi.mock("motion/react", () => ({
       const { initial, animate, exit, variants, transition, whileHover, whileTap, ...rest } = props;
       return <button {...rest}>{children}</button>;
     },
+    span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+      const { initial, animate, exit, variants, transition, whileHover, whileTap, ...rest } = props;
+      return <span {...rest}>{children}</span>;
+    },
   },
 }));
 
@@ -109,8 +113,8 @@ describe("AIConfigPanel (integración)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Nueva config." }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText("Modelo *"), { target: { value: "gpt-5.6-sol" } });
-    fireEvent.change(screen.getByLabelText("API Key *"), { target: { value: "sk-test-1234" } });
+    fireEvent.change(screen.getByLabelText("Modelo"), { target: { value: "gpt-5.6-sol" } });
+    fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "sk-test-1234" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear" }));
 
     await waitFor(() => {

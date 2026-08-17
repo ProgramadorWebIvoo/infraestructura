@@ -1,15 +1,32 @@
-import { motion } from "motion/react";
-import { Activity, Brain, Database, Loader2 } from "lucide-react";
-import { itemVariants } from "../../../animations";
+import { AnimatePresence, motion, type Variants } from "motion/react";
+import { Activity, Brain, Database } from "lucide-react";
+import { itemVariants, springs } from "../../../animations";
 import { PROVIDER_LABELS, providerColor } from "../../../constants/aiProviders";
 import type { AiUsageByProvider, AiUsageData, AiUsageTotals } from "../../../hooks/useAIConfig";
 import KpiCard from "../../../components/UI/KpiCard";
+import Card from "../../../components/UI/Card";
+import { SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import MiniBarChart from "./MiniBarChart";
 import { formatAiCost } from "../../../utils/aiFormat";
 
 // ---------------------------------------------------------------------------
 // KPIs del período
 // ---------------------------------------------------------------------------
+// Variante propia (no reusa itemVariants genérico): itemVariants fue pensado
+// para listas verticales con desplazamiento — en un grid de 4 columnas, su
+// scale:0.98 + 4 elementos casi simultáneos con staggerChildren:0.04 se
+// percibía como un "salto" en bloque en vez de una entrada fluida. Menos
+// scale + stagger más pausado da una cascada más legible en grid.
+const kpiGridVariants: Variants = {
+  hidden: {},
+  visible: { transition: { when: "beforeChildren", staggerChildren: 0.08 } },
+};
+const kpiCardVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: springs.gentle },
+};
+
 const EMPTY_TOTALS: AiUsageTotals = {
   prompt_tokens: 0,
   completion_tokens: 0,
@@ -28,35 +45,43 @@ function UsageKpis({ totals }: { totals: AiUsageTotals | null }) {
       : "—";
 
   return (
-    <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <KpiCard
-        icon={<Activity className="h-5 w-5" />}
-        label="Peticiones"
-        value={(totals?.total_requests ?? 0).toLocaleString()}
-        sub={`${(totals?.successful_requests ?? 0).toLocaleString()} exitosas`}
-        color="border-l-violet-400"
-      />
-      <KpiCard
-        icon={<Brain className="h-5 w-5" />}
-        label="Tokens"
-        value={(totals?.total_tokens ?? 0).toLocaleString()}
-        sub={`${(totals?.prompt_tokens ?? 0).toLocaleString()} prompt / ${(totals?.completion_tokens ?? 0).toLocaleString()} completion`}
-        color="border-l-sky-400"
-      />
-      <KpiCard
-        icon={<Database className="h-5 w-5" />}
-        label="Costo estimado"
-        value={formatAiCost(totals?.total_cost)}
-        color="border-l-emerald-400"
-      />
-      <KpiCard
-        icon={<Activity className="h-5 w-5" />}
-        label="Tasa de éxito"
-        value={successRate}
-        sub={`${failedRequests.toLocaleString()} fallidas`}
-        color="border-l-amber-400"
-      />
-    </div>
+    <motion.div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4" variants={kpiGridVariants} initial="hidden" animate="visible">
+      <motion.div variants={kpiCardVariants}>
+        <KpiCard
+          icon={<Activity className="h-5 w-5" />}
+          label="Peticiones"
+          value={(totals?.total_requests ?? 0).toLocaleString()}
+          sub={`${(totals?.successful_requests ?? 0).toLocaleString()} exitosas`}
+          borderAccent={SEMANTIC_COLOR_MAP.info.borderL400}
+        />
+      </motion.div>
+      <motion.div variants={kpiCardVariants}>
+        <KpiCard
+          icon={<Brain className="h-5 w-5" />}
+          label="Tokens"
+          value={(totals?.total_tokens ?? 0).toLocaleString()}
+          sub={`${(totals?.prompt_tokens ?? 0).toLocaleString()} prompt / ${(totals?.completion_tokens ?? 0).toLocaleString()} completion`}
+          borderAccent={SEMANTIC_COLOR_MAP.brand.borderL400}
+        />
+      </motion.div>
+      <motion.div variants={kpiCardVariants}>
+        <KpiCard
+          icon={<Database className="h-5 w-5" />}
+          label="Costo estimado"
+          value={formatAiCost(totals?.total_cost)}
+          borderAccent={SEMANTIC_COLOR_MAP.success.borderL400}
+        />
+      </motion.div>
+      <motion.div variants={kpiCardVariants}>
+        <KpiCard
+          icon={<Activity className="h-5 w-5" />}
+          label="Tasa de éxito"
+          value={successRate}
+          sub={`${failedRequests.toLocaleString()} fallidas`}
+          borderAccent={SEMANTIC_COLOR_MAP.warning.borderL400}
+        />
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -73,20 +98,22 @@ function ProviderUsageBar({ provider }: { provider: ProviderUsage }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-bold text-slate-700">
+        <span className="font-bold text-text-secondary">
           {PROVIDER_LABELS[provider.provider.provider] ?? provider.provider.provider}
         </span>
-        <span className="font-mono text-[11px] font-black text-slate-900">
+        <span className="font-mono text-[11px] font-black text-text-primary">
           {provider.provider.total_tokens.toLocaleString()} tokens
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${providerColor(provider.provider.provider).bar}`}
-          style={{ width: `${provider.pctOfTotal * 100}%` }}
+      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+        <motion.div
+          className={`h-full rounded-full ${providerColor(provider.provider.provider).bar}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${provider.pctOfTotal * 100}%` }}
+          transition={springs.gentle}
         />
       </div>
-      <div className="flex justify-between text-[10px] text-slate-400">
+      <div className="flex justify-between text-[10px] text-text-muted">
         <span>{provider.provider.requests} peticiones</span>
         <span>{formatAiCost(provider.provider.cost)}</span>
       </div>
@@ -115,53 +142,81 @@ export default function UsageDashboard({
       pctOfTotal: totalTokens > 0 ? p.total_tokens / totalTokens : 0,
     })) ?? [];
 
+  const info = SEMANTIC_COLOR_MAP.info;
+
   return (
     <motion.div variants={itemVariants}>
-      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200/80 border-l-4 border-l-violet-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
+      <Card className={`mb-4 flex flex-col gap-3 border-l-4 ${info.borderL400} md:flex-row md:items-center md:justify-between`}>
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-violet-700">
+          <div className={`mb-2 inline-flex items-center gap-2 rounded-pill px-3 py-1 text-[10px] font-black uppercase tracking-wider ${info.bg50} ${info.text700}`}>
             <Activity className="h-3.5 w-3.5" />
             Analytics
           </div>
-          <h1 className="font-sans text-lg font-black tracking-tight text-slate-900">
+          <h1 className="font-sans text-lg font-black tracking-tight text-text-primary">
             Dashboard de Uso
           </h1>
-          <p className="text-xs font-medium text-slate-500">
+          <p className="text-xs font-medium text-text-tertiary">
             Monitoreo de consumo de tokens, peticiones y costos por proveedor.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-slate-500">Período:</span>
+          <span className="text-[10px] font-bold text-text-tertiary">Período:</span>
           <select
             value={usageDays}
             onChange={(e) => onUsageDaysChange(Number(e.target.value))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 outline-hidden focus:ring-2 focus:ring-violet-200"
+            className={`rounded-control border border-border-default bg-surface px-3 py-1.5 text-xs font-bold text-text-secondary outline-hidden focus:ring-2 focus:ring-info-200`}
           >
             <option value={7}>7 días</option>
             <option value={30}>30 días</option>
             <option value={90}>90 días</option>
           </select>
         </div>
-      </div>
+      </Card>
 
-      {isUsageLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
-        </div>
-      ) : (
-        <>
+      <AnimatePresence mode="wait">
+        {isUsageLoading ? (
+          <motion.div
+            key="skeleton"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <SkeletonGroup className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonGroupItem key={i}><SkeletonStats /></SkeletonGroupItem>
+              ))}
+            </SkeletonGroup>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <Card hoverable={false} className={`p-4 border-l-4 ${info.borderL400} lg:col-span-2`}>
+                <div className="skeleton-shimmer h-3 w-40 rounded mb-4" />
+                <SkeletonBarChart rows={6} />
+              </Card>
+              <Card hoverable={false} className={`p-4 border-l-4 ${info.borderL400}`}>
+                <div className="skeleton-shimmer h-3 w-24 rounded mb-4" />
+                <SkeletonProviderList items={3} />
+              </Card>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+          >
           <UsageKpis totals={usage?.totals ?? null} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-xl border border-slate-200/80 border-l-4 border-l-violet-400 bg-white p-4 shadow-xs lg:col-span-2">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+            <Card hoverable={false} className={`p-4 border-l-4 ${info.borderL400} lg:col-span-2`}>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Consumo diario de tokens
               </h3>
               <MiniBarChart data={usage?.daily ?? []} />
-            </div>
+            </Card>
 
-            <div className="rounded-xl border border-slate-200/80 border-l-4 border-l-violet-400 bg-white p-4 shadow-xs">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+            <Card hoverable={false} className={`p-4 border-l-4 ${info.borderL400}`}>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Por proveedor
               </h3>
               <div className="space-y-3">
@@ -170,13 +225,14 @@ export default function UsageDashboard({
                     <ProviderUsageBar key={p.provider.provider} provider={p} />
                   ))
                 ) : (
-                  <p className="py-8 text-center text-xs text-slate-400">Sin actividad registrada.</p>
+                  <p className="py-8 text-center text-xs text-text-muted">Sin actividad registrada.</p>
                 )}
               </div>
-            </div>
+            </Card>
           </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

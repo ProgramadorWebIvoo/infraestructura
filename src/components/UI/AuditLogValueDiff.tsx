@@ -16,6 +16,11 @@
  * muestra solo los campos que realmente cambiaron, con su label.
  */
 
+import { SEMANTIC_COLOR_MAP } from "./colorTokens";
+
+const danger = SEMANTIC_COLOR_MAP.danger;
+const success = SEMANTIC_COLOR_MAP.success;
+
 const FIELD_LABELS: Record<string, string> = {
   name: "Nombre",
   symbol: "Símbolo",
@@ -70,18 +75,18 @@ export default function AuditLogValueDiff({ oldValue, newValue }: AuditLogValueD
     const removed = before.filter(v => !after.includes(v));
 
     if (added.length === 0 && removed.length === 0) {
-      return <p className="text-[10px] text-slate-400 italic">Sin cambios en la lista.</p>;
+      return <p className="text-[10px] text-text-muted italic">Sin cambios en la lista.</p>;
     }
 
     return (
       <div className="flex flex-wrap gap-1">
         {removed.map(tag => (
-          <span key={`removed-${tag}`} className="px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-500 text-[10px] font-semibold line-through">
+          <span key={`removed-${tag}`} className={`px-1.5 py-0.5 rounded-pill ${danger.bg50} ${danger.text600} text-[10px] font-semibold line-through`}>
             {tag}
           </span>
         ))}
         {added.map(tag => (
-          <span key={`added-${tag}`} className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
+          <span key={`added-${tag}`} className={`px-1.5 py-0.5 rounded-pill ${success.bg50} ${success.text700} text-[10px] font-semibold`}>
             + {tag}
           </span>
         ))}
@@ -104,20 +109,20 @@ export default function AuditLogValueDiff({ oldValue, newValue }: AuditLogValueD
     );
 
     if (keys.length === 0) {
-      return <p className="text-[10px] text-slate-400 italic">Sin cambios.</p>;
+      return <p className="text-[10px] text-text-muted italic">Sin cambios.</p>;
     }
 
     return (
       <div className="space-y-0.5">
         {identifier !== undefined && (
-          <p className="font-mono text-[10px] font-bold text-slate-500">{formatFieldValue(identifier)}</p>
+          <p className="font-mono text-[10px] font-bold text-text-tertiary">{formatFieldValue(identifier)}</p>
         )}
         {keys.map(key => (
           <div key={key} className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px]">
-            <span className="font-bold text-slate-500 shrink-0">{FIELD_LABELS[key] ?? key}:</span>
-            <span className="font-mono text-rose-500 line-through break-all">{formatFieldValue(before[key])}</span>
-            <span className="text-slate-300 shrink-0">→</span>
-            <span className="font-mono text-emerald-600 font-bold break-all">{formatFieldValue(after[key])}</span>
+            <span className="font-bold text-text-tertiary shrink-0">{FIELD_LABELS[key] ?? key}:</span>
+            <span className={`font-mono ${danger.text600} line-through break-all`}>{formatFieldValue(before[key])}</span>
+            <span className="text-text-muted shrink-0">→</span>
+            <span className={`font-mono ${success.text700} font-bold break-all`}>{formatFieldValue(after[key])}</span>
           </div>
         ))}
       </div>
@@ -126,9 +131,9 @@ export default function AuditLogValueDiff({ oldValue, newValue }: AuditLogValueD
 
   return (
     <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] font-mono">
-      <span className="text-rose-500 line-through break-all">{oldValue ?? "—"}</span>
-      <span className="text-slate-300 shrink-0">→</span>
-      <span className="text-emerald-600 font-bold break-all">{newValue ?? "—"}</span>
+      <span className={`${danger.text600} line-through break-all`}>{oldValue ?? "—"}</span>
+      <span className="text-text-muted shrink-0">→</span>
+      <span className={`${success.text700} font-bold break-all`}>{newValue ?? "—"}</span>
     </div>
   );
 }

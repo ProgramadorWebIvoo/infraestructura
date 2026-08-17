@@ -18,6 +18,8 @@ import Button from "../../../components/UI/Button";
 import IconActionButton from "../../../components/UI/IconActionButton";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import ActiveBadge from "../../../components/UI/ActiveBadge";
+import Card from "../../../components/UI/Card";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { itemVariants } from "../../../animations";
 import type { AiConfigRecord } from "../../../hooks/useAIConfig";
 import ProviderIcon from "./ProviderIcon";
@@ -70,7 +72,7 @@ export default function AIConfigTable({
       label: "Modelo",
       sortable: true,
       render: (c) => (
-        <span className="font-mono text-xs font-bold text-slate-800">{c.model}</span>
+        <span className="font-mono text-xs font-bold text-text-primary">{c.model}</span>
       ),
     },
     {
@@ -78,13 +80,13 @@ export default function AIConfigTable({
       label: "API Key",
       render: (c) => (
         <span
-          className="font-mono text-[11px] text-slate-500 tracking-wider"
+          className="font-mono text-[11px] text-text-tertiary tracking-wider"
           title={c.hasApiKey ? "Clave configurada (solo últimos 4 visibles)" : "Sin clave"}
         >
           {c.hasApiKey ? (
             maskApiKey(c)
           ) : (
-            <span className="text-slate-300 italic">—</span>
+            <span className="text-text-muted italic">—</span>
           )}
         </span>
       ),
@@ -101,12 +103,12 @@ export default function AIConfigTable({
       align: "center",
       render: (c) =>
         c.isFallback ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+          <span className={`inline-flex items-center gap-1 rounded-pill border ${SEMANTIC_COLOR_MAP.warning.border100} ${SEMANTIC_COLOR_MAP.warning.bg50} px-2 py-0.5 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.warning.text700}`}>
             <Shield className="h-3 w-3" />
             Fallback
           </span>
         ) : (
-          <span className="text-slate-300">—</span>
+          <span className="text-text-muted">—</span>
         ),
     },
     {
@@ -151,43 +153,45 @@ export default function AIConfigTable({
     },
   ], [testingId, deletingId, onTest, onEdit, onToggleActive, onDelete]);
 
+  const info = SEMANTIC_COLOR_MAP.info;
+
   return (
     <motion.div variants={itemVariants}>
-      <div className="mb-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white p-5 shadow-xs">
-        <SectionHeader
-          icon={<Sliders className="h-5 w-5" />}
-          title="Modelos de IA"
-          description="Selección dinámica de modelos por proveedor. Los cambios se aplican en tiempo real sin reinicio."
-          color="indigo"
-          actions={
-            <>
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={onSync}
-                disabled={isSyncing}
-                icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              >
-                Sincronizar
-              </Button>
-              <Button
-                variant="primary"
-                colorScheme="indigo"
-                size="md"
-                onClick={onCreateNew}
-                icon={<Plus className="h-4 w-4" />}
-              >
-                Nueva config.
-              </Button>
-            </>
-          }
-        />
-      </div>
+      <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${info.borderL400}`}>
+        <div className="px-5 pt-5">
+          <SectionHeader
+            icon={<Sliders className="h-5 w-5" />}
+            title="Modelos de IA"
+            description="Selección dinámica de modelos por proveedor. Los cambios se aplican en tiempo real sin reinicio."
+            color="indigo"
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={onSync}
+                  disabled={isSyncing}
+                  icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                >
+                  Sincronizar
+                </Button>
+                <Button
+                  variant="primary"
+                  colorScheme="indigo"
+                  size="md"
+                  onClick={onCreateNew}
+                  icon={<Plus className="h-4 w-4" />}
+                >
+                  Nueva config.
+                </Button>
+              </>
+            }
+          />
+        </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
-        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
-          <Settings2 className="h-4 w-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-600">
+        <div className="flex items-center gap-3 border-b border-border-subtle bg-surface-sunken/60 px-5 py-3">
+          <Settings2 className="h-4 w-4 text-text-muted" />
+          <span className="text-xs font-bold text-text-secondary">
             {configs.length} configuración(es)
           </span>
         </div>
@@ -200,7 +204,7 @@ export default function AIConfigTable({
           maxHeight="30rem"
           pageSize={20}
         />
-      </div>
+      </Card>
     </motion.div>
   );
 }

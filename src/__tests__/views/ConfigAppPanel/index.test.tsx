@@ -64,12 +64,12 @@ describe("ConfigAppPanel", () => {
     });
   });
 
-  it("muestra el spinner mientras isLoading es true", () => {
+  it("muestra el skeleton mientras isLoading es true", () => {
     mockUseAppSettings.mockReturnValue({ settings: {}, isLoading: true, updateSetting: mockUpdateSetting });
 
     const { container } = render(<ConfigAppPanel authToken="token" />);
 
-    expect(container.querySelector("[class*='animate-spin']")).toBeTruthy();
+    expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
 
   it("renderiza una sección por grupo con settings, con su título", () => {

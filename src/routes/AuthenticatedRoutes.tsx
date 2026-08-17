@@ -1,7 +1,6 @@
-import { Suspense, lazy } from "react";
+import { lazy } from "react";
 import { Location, Navigate, Route, Routes } from "react-router-dom";
 import { ROUTES, ProtectedRoute } from "../routes.tsx";
-import Spinner from "../components/UI/Spinner";
 import AuthenticatedLayout from "../components/Layout/AuthenticatedLayout";
 // Types are enforced at the leaf view component level; this shell passes through any props.
 
@@ -17,17 +16,6 @@ const MaterialConfigPanel = lazy(() => import("../views/MaterialConfigPanel"));
 const AIConfigPanel = lazy(() => import("../views/AIConfigPanel"));
 const ConfigAppPanel = lazy(() => import("../views/ConfigAppPanel"));
 const UsuariosPanel = lazy(() => import("../views/UsuariosPanel"));
-
-function FullScreenFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-      <div className="flex flex-col items-center gap-4 text-slate-400">
-        <Spinner size="xl" />
-        <p className="text-sm font-medium">Cargando módulo…</p>
-      </div>
-    </div>
-  );
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AuthenticatedRoutesProps = Record<string, any>;

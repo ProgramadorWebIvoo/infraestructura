@@ -47,9 +47,9 @@ describe("CurrencyCard", () => {
     );
   }
 
-  it("muestra un spinner mientras isLoading es true", () => {
+  it("muestra un skeleton mientras isLoading es true", () => {
     renderCard([], {}, true);
-    expect(document.querySelector("svg.animate-spin")).toBeInTheDocument();
+    expect(document.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
 
   it("renderiza el catálogo vacío sin errores", () => {

@@ -12,10 +12,15 @@ import UsageDashboard from "@/views/AIConfigPanel/components/UsageDashboard";
 import type { AiUsageData } from "@/hooks/useAIConfig";
 
 vi.mock("motion/react", () => ({
+  AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
   motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, variants, ...rest } = props;
-      return <div {...rest}>{children}</div>;
+    div: ({ children, animate, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+      const { initial, exit, variants, transition, ...rest } = props;
+      // Aplica `animate` como estilo final directo (sin animación real) para
+      // que los tests puedan leer el valor "de llegada" (ej. width de una
+      // barra) sin depender del motor de Framer Motion.
+      const style = animate && typeof animate === "object" ? (animate as Record<string, unknown>) : undefined;
+      return <div {...rest} style={style}>{children}</div>;
     },
   },
 }));
@@ -51,8 +56,9 @@ describe("UsageDashboard", () => {
       />
     );
     expect(screen.getByRole("heading", { name: "Dashboard de Uso" })).toBeInTheDocument();
-    // El Loader2 con animate-spin se identifica por su clase
-    expect(document.querySelector(".animate-spin")).toBeInTheDocument();
+    // Skeleton (misma forma que el contenido final) reemplaza al spinner
+    // centrado — se identifica por su clase de shimmer.
+    expect(document.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
 
   it("renderiza los 4 KPIs con valores formateados", () => {

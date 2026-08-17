@@ -26,7 +26,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { containerVariants, itemVariants, springs } from "../../animations";
-import Spinner from "../../components/UI/Spinner";
+import { SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
 import Button from "../../components/UI/Button";
 import AlertBanner from "../../components/UI/AlertBanner";
 import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
@@ -238,8 +238,12 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Spinner size="xl" />
+      <div className="space-y-6">
+        <div className="skeleton-shimmer h-3 w-24 rounded mb-1" />
+        <SkeletonGroup className="space-y-6">
+          <SkeletonGroupItem><SkeletonCard /></SkeletonGroupItem>
+          <SkeletonGroupItem><SkeletonCard /></SkeletonGroupItem>
+        </SkeletonGroup>
       </div>
     );
   }

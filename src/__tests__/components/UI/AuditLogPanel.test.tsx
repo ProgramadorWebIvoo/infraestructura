@@ -71,10 +71,10 @@ describe("AuditLogPanel", () => {
     expect(screen.getByText("Nada por aquí")).toBeInTheDocument();
   });
 
-  it("muestra el spinner mientras isLoading es true", () => {
+  it("muestra el skeleton mientras isLoading es true", () => {
     const { container } = renderPanel({ isLoading: true, defaultOpen: true });
 
-    expect(container.querySelector("[class*='animate-spin']")).toBeTruthy();
+    expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
 
   it("aplica posición sticky con el offset dado cuando sticky=true", () => {

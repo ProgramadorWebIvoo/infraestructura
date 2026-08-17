@@ -243,6 +243,16 @@ Badge de color para códigos de estado de proyecto o de rol.
 - **Cuándo usarlo**: columna de estado en tablas, visualización de rol.
 - **Convenciones**: colores/labels resueltos vía `getRoleColor`/`getStatusColor`/`STATUS_LABELS` de `../../utils` — fuente única de verdad, no crear mapas locales.
 
+## ActiveBadge
+
+**Path**: `src/components/UI/ActiveBadge.tsx`
+
+Badge "Activo/Inactivo" booleano puro con ícono — no está atado a semántica de estado-de-proyecto/rol como `StatusBadge` (por eso no es una variante de ese componente).
+
+- **Props**: `isActive: boolean`, `activeLabel?` (default "Activo"), `inactiveLabel?` (default "Inactivo"), `className?`
+- **Cuándo usarlo**: columnas/badges de "activo" en tablas de catálogo (monedas, configuraciones de IA, proveedores) — cualquier booleano activo/inactivo genérico, no un estado de flujo con más de 2 valores.
+- **Convenciones**: `isActive` → rol `success` de `SEMANTIC_COLOR_MAP`; `false` → neutrales (`border-border-default`/`bg-surface-raised`/`text-text-tertiary`). Radio `rounded-pill`.
+
 ## RoleBadge
 
 **Path**: `src/components/UI/RoleBadge.tsx`

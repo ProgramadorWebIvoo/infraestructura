@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronLeft, ChevronRight, History, Search } from "lucide-react";
-import Spinner from "./Spinner";
+import { SkeletonAuditList } from "../SkeletonLoader";
 import EmptyState from "./EmptyState";
 
 export interface AuditLogPanelProps<T> {
@@ -212,9 +212,7 @@ export default function AuditLogPanel<T>({
               </div>
 
               {isLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Spinner size="lg" />
-                </div>
+                <SkeletonAuditList items={4} />
               ) : filtered.length === 0 ? (
                 <EmptyState message={entries.length === 0 ? emptyMessage : "Sin resultados para esa búsqueda."} />
               ) : (

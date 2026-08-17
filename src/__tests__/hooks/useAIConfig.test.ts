@@ -256,7 +256,7 @@ describe("useAIConfig", () => {
   });
 
   describe("syncConfig", () => {
-    it("POSTs to /ai/config/sync and updates syncMessage", async () => {
+    it("POSTs to /ai/config/sync y devuelve el resultado", async () => {
       const syncResult = { message: "Synced 3 configs", activeConfigs: 3 };
       mockApiFetch
         .mockResolvedValueOnce([])      // loadConfigs
@@ -271,12 +271,10 @@ describe("useAIConfig", () => {
       expect(mockApiFetch).toHaveBeenCalledWith("/ai/config/sync", {
         method: "POST",
       });
-      expect(result.current.syncMessage).toBe("Synced 3 configs");
-      expect(result.current.syncIsError).toBe(false);
       expect(res).toEqual(syncResult);
     });
 
-    it("sets syncIsError on failure", async () => {
+    it("propaga el error al caller sin estado interno (lo maneja la vista con toast)", async () => {
       mockApiFetch
         .mockResolvedValueOnce([])  // loadConfigs
         .mockRejectedValue(new Error("Sync failed"));
@@ -285,12 +283,7 @@ describe("useAIConfig", () => {
 
       await waitForLoad();
 
-      await act(async () => {
-        await result.current.syncConfig().catch(() => {});
-      });
-
-      expect(result.current.syncIsError).toBe(true);
-      expect(result.current.syncMessage).toBeTruthy();
+      await expect(act(async () => result.current.syncConfig())).rejects.toThrow("Sync failed");
     });
   });
 

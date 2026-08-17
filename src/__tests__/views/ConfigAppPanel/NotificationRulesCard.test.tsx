@@ -42,6 +42,6 @@ describe("NotificationRulesCard", () => {
       />,
     );
 
-    expect(container.querySelector("[class*='animate-spin']")).toBeTruthy();
+    expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
 });

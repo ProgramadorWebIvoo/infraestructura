@@ -15,7 +15,7 @@ import { itemVariants, bannerVariants } from "../../../animations";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import Button from "../../../components/UI/Button";
-import Spinner from "../../../components/UI/Spinner";
+import { SkeletonCatalogRow, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
 import IconActionButton from "../../../components/UI/IconActionButton";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import { useToast } from "../../../components/UI/Toast";
@@ -166,9 +166,11 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
         </AnimatePresence>
 
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Spinner size="md" />
-          </div>
+          <SkeletonGroup className="space-y-2">
+            <SkeletonGroupItem><SkeletonCatalogRow /></SkeletonGroupItem>
+            <SkeletonGroupItem><SkeletonCatalogRow /></SkeletonGroupItem>
+            <SkeletonGroupItem><SkeletonCatalogRow /></SkeletonGroupItem>
+          </SkeletonGroup>
         ) : (
           <div className="space-y-2">
             <AnimatePresence initial={false}>

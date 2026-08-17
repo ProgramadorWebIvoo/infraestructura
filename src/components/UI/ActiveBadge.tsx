@@ -11,6 +11,7 @@
  */
 
 import { CheckCircle, XCircle } from "lucide-react";
+import { SEMANTIC_COLOR_MAP } from "./colorTokens";
 
 interface ActiveBadgeProps {
   isActive: boolean;
@@ -25,12 +26,12 @@ export default function ActiveBadge({
   inactiveLabel = "Inactivo",
   className = "",
 }: ActiveBadgeProps) {
+  const c = isActive ? SEMANTIC_COLOR_MAP.success : null;
+
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
-        isActive
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-slate-200 bg-slate-100 text-slate-500"
+      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${
+        c ? `${c.border100} ${c.bg50} ${c.text700}` : "border-border-default bg-surface-raised text-text-tertiary"
       } ${className}`}
     >
       {isActive ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}

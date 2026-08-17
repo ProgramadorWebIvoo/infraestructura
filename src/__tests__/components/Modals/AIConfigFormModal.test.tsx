@@ -42,23 +42,23 @@ describe("AIConfigFormModal", () => {
     renderModal();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Nueva configuración de IA")).toBeInTheDocument();
-    expect(screen.getByText("Proveedor *")).toBeInTheDocument();
-    expect(screen.getByText("Modelo *")).toBeInTheDocument();
-    expect(screen.getByText("API Key *")).toBeInTheDocument();
+    expect(screen.getByText("Proveedor")).toBeInTheDocument();
+    expect(screen.getByText("Modelo")).toBeInTheDocument();
+    expect(screen.getByText("API Key")).toBeInTheDocument();
     expect(screen.getByText("Base URL")).toBeInTheDocument();
     expect(screen.getByText("Max Tokens")).toBeInTheDocument();
   });
 
   it("lista los modelos disponibles según el provider", () => {
     renderModal();
-    const modelSelect = screen.getByLabelText("Modelo *") as HTMLSelectElement;
+    const modelSelect = screen.getByLabelText("Modelo") as HTMLSelectElement;
     const options = Array.from(modelSelect.options).map((o) => o.value);
     expect(options).toEqual(["", ...AVAILABLE]);
   });
 
   it("cambiar de proveedor resetea el modelo seleccionado", () => {
     renderModal();
-    fireEvent.change(screen.getByLabelText("Proveedor *"), { target: { value: "anthropic" } });
+    fireEvent.change(screen.getByLabelText("Proveedor"), { target: { value: "anthropic" } });
     expect(onFormChange).toHaveBeenCalledWith({
       ...EMPTY_CONFIG_FORM,
       provider: "anthropic",

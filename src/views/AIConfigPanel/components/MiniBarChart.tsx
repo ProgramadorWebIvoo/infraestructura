@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { motion } from "motion/react";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import { springs } from "../../../animations";
 import type { AiUsageDaily } from "../../../hooks/useAIConfig";
 
 type ViewMode = "daily" | "weekly";
@@ -14,14 +17,15 @@ function TabButton({
   active: boolean;
   onClick: (mode: ViewMode) => void;
 }) {
+  const info = SEMANTIC_COLOR_MAP.info;
   return (
     <button
       type="button"
       onClick={() => onClick(mode)}
       className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-t-md transition-colors cursor-pointer ${
         active
-          ? "bg-violet-100 text-violet-700 border-b-2 border-violet-500"
-          : "text-slate-500 hover:text-slate-700"
+          ? `${info.bg100} ${info.text700} border-b-2 border-info-500`
+          : "text-text-tertiary hover:text-text-secondary"
       }`}
     >
       {label}
@@ -55,17 +59,18 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-xs text-slate-400">
+      <div className="flex h-40 items-center justify-center text-xs text-text-muted">
         Sin datos de uso en este período.
       </div>
     );
   }
 
   const isDaily = viewMode === "daily";
+  const brand = SEMANTIC_COLOR_MAP.brand;
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-1 border-b border-slate-200 pb-2">
+      <div className="flex gap-1 border-b border-border-default pb-2">
         <TabButton label="Diario (14d)" mode="daily" active={isDaily} onClick={setViewMode} />
         <TabButton label="7 días" mode="weekly" active={!isDaily} onClick={setViewMode} />
       </div>
@@ -74,19 +79,21 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
         {isDaily ? (
           /* ── Horizontal bar chart ── */
           <div className="space-y-1.5">
-            {currentData.map((d) => {
+            {currentData.map((d, i) => {
               const pct = Math.max(1, (d.total_tokens / maxVal) * 100);
               const shortDate = d.date.slice(5);
               const tokensStr = d.total_tokens.toLocaleString();
 
               return (
                 <div key={d.date} className="flex items-center gap-2 text-[10px]">
-                  <span className="text-slate-400 w-14 text-right shrink-0 font-mono">{shortDate}</span>
-                  <span className="text-slate-500 w-[72px] text-right shrink-0 font-mono font-bold">{tokensStr}</span>
-                  <div className="flex-1 h-5 rounded-md bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-md bg-gradient-to-r from-sky-500 to-sky-400 transition-all duration-500"
-                      style={{ width: `${pct}%` }}
+                  <span className="text-text-muted w-14 text-right shrink-0 font-mono">{shortDate}</span>
+                  <span className="text-text-tertiary w-18 text-right shrink-0 font-mono font-bold">{tokensStr}</span>
+                  <div className="flex-1 h-5 rounded-md bg-surface-raised overflow-hidden">
+                    <motion.div
+                      className={`h-full rounded-md bg-linear-to-r ${brand.gradientFrom} ${brand.gradientTo}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ ...springs.gentle, delay: i * 0.02 }}
                     />
                   </div>
                 </div>
@@ -96,7 +103,7 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
         ) : (
           /* ── Vertical bar chart ── */
           <div className="flex items-end gap-1 h-32 pb-4">
-            {currentData.map((d) => {
+            {currentData.map((d, i) => {
               const pct = Math.max(0, (d.total_tokens / maxVal) * 100);
               const barHeightPx = Math.max(3, (d.total_tokens / maxVal) * 96); // 96px = alto útil de h-32
               const shortDate = d.date.slice(5);
@@ -104,15 +111,17 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
 
               return (
                 <div key={d.date} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
-                  <span className="text-[9px] text-slate-500 font-mono font-bold">{tokensStr}</span>
+                  <span className="text-[9px] text-text-tertiary font-mono font-bold">{tokensStr}</span>
                   <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden">
-                    <div
-                      className="w-full rounded-t-md bg-gradient-to-t from-sky-500 to-sky-400 transition-all duration-500"
-                      style={{ height: `${barHeightPx}px` }}
+                    <motion.div
+                      className={`w-full rounded-t-md bg-linear-to-t ${brand.gradientFrom} ${brand.gradientTo}`}
+                      initial={{ height: 0 }}
+                      animate={{ height: barHeightPx }}
+                      transition={{ ...springs.gentle, delay: i * 0.03 }}
                       title={`${d.date}: ${tokensStr} tokens (${Math.round(pct)}% del máximo)`}
                     />
                   </div>
-                  <span className="text-[9px] text-slate-400 font-mono">{shortDate}</span>
+                  <span className="text-[9px] text-text-muted font-mono">{shortDate}</span>
                 </div>
               );
             })}
@@ -120,12 +129,12 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-[10px] text-slate-400">
+      <div className="flex items-center gap-2 text-[10px] text-text-muted">
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-gradient-to-r from-sky-500 to-sky-400" />
+          <span className={`w-3 h-3 rounded bg-linear-to-r ${brand.gradientFrom} ${brand.gradientTo}`} />
           Tokens
         </span>
-        <span className="ml-auto font-mono font-bold text-slate-500">Max: {maxVal.toLocaleString()}</span>
+        <span className="ml-auto font-mono font-bold text-text-tertiary">Max: {maxVal.toLocaleString()}</span>
       </div>
     </div>
   );
