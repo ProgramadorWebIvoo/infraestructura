@@ -7,6 +7,7 @@
 
 import { BrainCircuit, DollarSign, TrendingUp, Clock, Zap } from "lucide-react";
 import { Table, type Column } from "../../UI/Table";
+import Select from "../../UI/Select";
 import type { IdleViewProps } from "./types";
 
 type ProposalRow = IdleViewProps["proposals"][number];
@@ -139,16 +140,17 @@ export default function IdleView({
         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
           Proveedor de IA
         </label>
-        <select
+        <Select
           value={selectedProvider}
-          onChange={(e) => onProviderChange(e.target.value as typeof selectedProvider)}
-          className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-amber-500 bg-white"
-        >
-          <option value="auto">Automático (Failover: ChatGPT → Gemini → Claude)</option>
-          <option value="chatgpt">ChatGPT (OpenAI)</option>
-          <option value="gemini">Gemini (Google)</option>
-          <option value="claude">Claude (Anthropic)</option>
-        </select>
+          onChange={(v) => onProviderChange(v as typeof selectedProvider)}
+          accent="warning"
+          options={[
+            { value: "auto", label: "Automático (Failover: ChatGPT → Gemini → Claude)" },
+            { value: "chatgpt", label: "ChatGPT (OpenAI)" },
+            { value: "gemini", label: "Gemini (Google)" },
+            { value: "claude", label: "Claude (Anthropic)" },
+          ]}
+        />
       </div>
 
       <button

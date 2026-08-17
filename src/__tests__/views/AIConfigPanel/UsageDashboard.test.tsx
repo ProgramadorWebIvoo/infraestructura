@@ -22,6 +22,10 @@ vi.mock("motion/react", () => ({
       const style = animate && typeof animate === "object" ? (animate as Record<string, unknown>) : undefined;
       return <div {...rest} style={style}>{children}</div>;
     },
+    ul: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+      const { initial, animate, exit, variants, transition, ...rest } = props;
+      return <ul {...rest}>{children}</ul>;
+    },
   },
 }));
 
@@ -102,7 +106,8 @@ describe("UsageDashboard", () => {
     render(
       <UsageDashboard usage={USAGE} isUsageLoading={false} usageDays={30} onUsageDaysChange={onUsageDaysChange} />
     );
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "7" } });
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: "7 días" }));
     expect(onUsageDaysChange).toHaveBeenCalledWith(7);
   });
 });

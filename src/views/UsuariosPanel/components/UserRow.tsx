@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import IconActionButton from "../../../components/UI/IconActionButton";
+import Select from "../../../components/UI/Select";
 import type { UserRecord, UpdateUserPayload } from "../../../hooks/useUsuarios";
 import { itemVariants } from "../../../animations";
 
@@ -227,14 +228,16 @@ export default function UserRow({
                       placeholder="Correo electrónico"
                       className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                     />
-                    <select
+                    <Select
                       value={editStatus}
-                      onChange={e => setEditStatus(e.target.value as "Active" | "Inactive")}
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[10px] font-bold uppercase tracking-wider outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                    >
-                      <option value="Active">Activo</option>
-                      <option value="Inactive">Inactivo</option>
-                    </select>
+                      onChange={(v) => setEditStatus(v as "Active" | "Inactive")}
+                      options={[
+                        { value: "Active", label: "Activo" },
+                        { value: "Inactive", label: "Inactivo" },
+                      ]}
+                      size="sm"
+                      className="shrink-0 w-28"
+                    />
                   </div>
                 </div>
               </div>
@@ -245,15 +248,11 @@ export default function UserRow({
                   <Shield className="h-3.5 w-3.5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <select
+                  <Select
                     value={editRole}
-                    onChange={e => setEditRole(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 appearance-none"
-                  >
-                    {roleOptions.map(r => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                    onChange={setEditRole}
+                    options={roleOptions}
+                  />
                 </div>
               </div>
 

@@ -17,12 +17,12 @@ import {
   Eye,
   EyeOff,
   XCircle,
-  ChevronDown,
 } from "lucide-react";
 import { getErrorMessage } from "../../../services/logger";
 import type { UserRecord } from "../../../hooks/useUsuarios";
 import { itemVariants } from "../../../animations";
 import { RequiredMark } from "../../../components/UI/HintSignals";
+import Select from "../../../components/UI/Select";
 
 const bannerVariants = {
   hidden: { opacity: 0, height: 0, marginBottom: 0 },
@@ -236,19 +236,13 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Rol / Módulo de acceso <RequiredMark filled={role.trim().length > 0} />
             </label>
-            <div className="relative">
-              <Shield className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-              <select
-                required value={role}
-                onChange={e => setRole(e.target.value)}
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 focus:shadow-sm"
-              >
-                {roleOptions.map(r => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-            </div>
+            <Select
+              required
+              value={role}
+              onChange={setRole}
+              options={roleOptions}
+              icon={<Shield />}
+            />
           </div>
 
           <motion.button

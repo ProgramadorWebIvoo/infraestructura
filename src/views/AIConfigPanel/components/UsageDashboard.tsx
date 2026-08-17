@@ -7,6 +7,7 @@ import KpiCard from "../../../components/UI/KpiCard";
 import Card from "../../../components/UI/Card";
 import { SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import Select from "../../../components/UI/Select";
 import MiniBarChart from "./MiniBarChart";
 import { formatAiCost } from "../../../utils/aiFormat";
 
@@ -26,6 +27,12 @@ const kpiCardVariants: Variants = {
   hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: springs.gentle },
 };
+
+const USAGE_DAYS_OPTIONS = [
+  { value: "7", label: "7 días" },
+  { value: "30", label: "30 días" },
+  { value: "90", label: "90 días" },
+];
 
 const EMPTY_TOTALS: AiUsageTotals = {
   prompt_tokens: 0,
@@ -161,15 +168,14 @@ export default function UsageDashboard({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold text-text-tertiary">Período:</span>
-          <select
-            value={usageDays}
-            onChange={(e) => onUsageDaysChange(Number(e.target.value))}
-            className={`rounded-control border border-border-default bg-surface px-3 py-1.5 text-xs font-bold text-text-secondary outline-hidden focus:ring-2 focus:ring-info-200`}
-          >
-            <option value={7}>7 días</option>
-            <option value={30}>30 días</option>
-            <option value={90}>90 días</option>
-          </select>
+          <Select
+            value={String(usageDays)}
+            onChange={(v) => onUsageDaysChange(Number(v))}
+            options={USAGE_DAYS_OPTIONS}
+            size="sm"
+            className="w-28"
+            ariaLabel="Período de uso"
+          />
         </div>
       </Card>
 

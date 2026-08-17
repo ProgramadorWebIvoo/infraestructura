@@ -8,6 +8,7 @@
 
 import { Clock, HandCoins, Send } from "lucide-react";
 import NumericInput from "../../../components/UI/NumericInput";
+import Select from "../../../components/UI/Select";
 import { DURATION_UNITS, sanitize, type DurationUnit } from "../types";
 
 interface ProposalDetailsSectionProps {
@@ -56,17 +57,11 @@ export default function ProposalDetailsSection({
           </div>
           <div className="w-36">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Unidad</label>
-            <select
+            <Select
               value={durationUnit}
-              onChange={(e) => onDurationUnitChange(e.target.value as DurationUnit)}
-              className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-sky-500 bg-white font-mono font-bold appearance-none cursor-pointer"
-            >
-              {DURATION_UNITS.map((u) => (
-                <option key={u.value} value={u.value}>
-                  {u.label}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => onDurationUnitChange(v as DurationUnit)}
+              options={DURATION_UNITS}
+            />
           </div>
         </div>
       </div>

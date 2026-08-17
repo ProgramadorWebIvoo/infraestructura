@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Brain, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
 import Modal from "../../components/UI/Modal";
 import Button from "../../components/UI/Button";
+import Select from "../../components/UI/Select";
 import { RequiredMark } from "../../components/UI/HintSignals";
 import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
 import { AI_PROVIDERS, PROVIDER_LABELS } from "../../constants/aiProviders";
@@ -10,8 +11,6 @@ import type { AiConfigForm } from "../../hooks/useAIConfig";
 
 const labelClass =
   "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
-const selectClass =
-  "w-full rounded-control border border-border-default px-3.5 py-2.5 text-xs font-semibold text-text-secondary outline-hidden focus:border-info-400 focus:ring-2 focus:ring-info-100";
 const inputClass =
   "w-full rounded-control border border-border-default px-3.5 py-2.5 text-xs font-mono font-semibold text-text-secondary placeholder-text-muted outline-hidden focus:border-info-400 focus:ring-2 focus:ring-info-100";
 
@@ -128,37 +127,27 @@ export default function AIConfigFormModal({
     >
       <div className="space-y-4">
         <AiFormField label="Proveedor" htmlFor="ai-provider">
-          <select
+          <Select
             id="ai-provider"
             value={form.provider}
-            onChange={(e) => {
-              const provider = e.target.value as AiConfigForm["provider"];
+            onChange={(v) => {
+              const provider = v as AiConfigForm["provider"];
               onFormChange({ ...form, provider, model: "" });
             }}
-            className={selectClass}
-          >
-            {AI_PROVIDERS.map((provider) => (
-              <option key={provider} value={provider}>
-                {PROVIDER_LABELS[provider]}
-              </option>
-            ))}
-          </select>
+            options={AI_PROVIDERS.map((provider) => ({ value: provider, label: PROVIDER_LABELS[provider] }))}
+          />
         </AiFormField>
 
         <AiFormField label="Modelo" htmlFor="ai-model" required filled={form.model.trim().length > 0}>
-          <select
+          <Select
             id="ai-model"
             value={form.model}
-            onChange={(e) => set("model", e.target.value)}
-            className={selectClass}
-          >
-            <option value="">Seleccionar modelo...</option>
-            {availableModels.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => set("model", v)}
+            options={[
+              { value: "", label: "Seleccionar modelo..." },
+              ...availableModels.map((m) => ({ value: m, label: m })),
+            ]}
+          />
         </AiFormField>
 
         <AiFormField

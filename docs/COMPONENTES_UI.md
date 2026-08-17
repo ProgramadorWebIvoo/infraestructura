@@ -31,7 +31,7 @@ Tokens centralizados en `@theme` (`src/index.css`) — Tailwind v4, sin `tailwin
 - **Feedback/alertas**: [AlertBanner](#alertbanner), [InfoBanner](#infobanner), [Toast](#toast--toastprovider--usetoast), [OfflineBanner](#offlinebanner), [FieldError](#fielderror)
 - **Diálogos/modales**: [Modal](#modal), [ConfirmDialog](#confirmdialog), [SelectModal](#selectmodal)
 - **Tablas/listados**: [Table](#table), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel)
-- **Formularios**: [NumericInput](#numericinput), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint)
+- **Formularios**: [NumericInput](#numericinput), [Select](#select), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint)
 - **Badges/estado**: [StatusBadge](#statusbadge), [RoleBadge](#rolebadge)
 - **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [FilterBar](#filterbar-searchinput--selectfilter)
 - **Navegación/shell**: [SidebarNav](#sidebarnav), [ConfigDropdown](#configdropdown), [MobileTopBar](#mobiletopbar), [SidebarTip](#sidebartip)
@@ -191,6 +191,16 @@ Panel de historial/auditoría colapsable genérico, con búsqueda y paginación 
 - **Cuándo usarlo**: cualquier campo numérico de cantidad/moneda/semanas.
 - **Convenciones**: el estado externo debe ser `number | ""`; sanea en change/keydown/paste; fuente mono-bold integrada.
 
+## Select
+
+**Path**: `src/components/UI/Select.tsx`
+
+`<select>` estilizado TRUE VALUE: reemplaza los `<select>` con clases hardcoded duplicadas (radios/paddings/focus-rings distintos entre sí) que existían sueltos por la app antes de este componente. Chevron propio vía `lucide-react` (`appearance-none` oculta el nativo del navegador).
+
+- **Props**: `value: string`, `onChange: (value: string) => void`, `options: SelectOption[]` (`{value,label}`), `id?`, `accent?: SemanticColor` (default `"info"`), `size?: "sm"|"md"` (default `"md"`), `icon?: ReactNode` (ícono inset a la izquierda, ajusta padding automáticamente), `hasError?`, `disabled?`, `required?`, `ariaLabel?`, `title?`, `className?`
+- **Cuándo usarlo**: cualquier `<select>` de la app — reemplaza por completo el patrón de escribir un `<select>` a mano con clases propias.
+- **Convenciones**: consume `SEMANTIC_COLOR_MAP` para el color de foco (`accent`) vía un mapa estático de clases (nunca interpolar `focus:ring-${accent}-200` directamente — Tailwind v4 no puede purgar/generar clases dinámicas construidas en runtime); consume `fieldErrorClasses` de `FieldError.tsx` para el estado `hasError`; `size="sm"` para selects inline en filas de tabla/tarjeta (ej. estado Activo/Inactivo en `UserRow`); `icon` para selects con ícono de contexto (ej. `Shield` en selector de rol).
+
 ## FileDropZone
 
 **Path**: `src/components/UI/FileDropZone.tsx`
@@ -303,7 +313,7 @@ No tiene default export — expone dos controles pequeños: `SearchInput` y `Sel
 
 - **Props**: `SearchInput`: `id,value,onChange,placeholder,ariaLabel,className?`. `SelectFilter`: `id,value,onChange,ariaLabel,options: SelectOption[],title?,className?`
 - **Cuándo usarlo**: barra de búsqueda + filtros dropdown arriba de tablas (extraído de patrones duplicados de Presidencia).
-- **Convenciones**: named exports (sin default); constante `INPUT_CLASS` compartida para estilo consistente del select.
+- **Convenciones**: named exports (sin default); `SelectFilter` es un wrapper delgado sobre `Select` (ver arriba) — `SelectOption` se define en `Select.tsx` y se re-exporta acá para no duplicar el tipo.
 
 ---
 
@@ -435,6 +445,7 @@ Estos patrones fueron identificados como duplicados y consolidados — si aparec
 - **Clases de estado activo del sidebar** → `sidebarNavClasses.ts`, ya consumido por `SidebarNav`/`ConfigDropdown`.
 - **Mapa de color propio por componente** (`COLOR_MAP`, `ICON_COLORS`, `primaryGradients`/`dangerGradients`, etc.) → [`SEMANTIC_COLOR_MAP`](#colortokensts) (`colorTokens.ts`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button`, `alertStyles.ts`/`Toast`/`AlertBanner`, `StatusBadge` (radio). Un componente nuevo con color propio no debe crear un sexto mapa — consumir este.
 - **`bg-white`/`text-slate-*`/`border-slate-*` escritos a mano** en un componente compartido → tokens de [neutrales](#design-tokens) (`bg-surface`, `text-text-*`, `border-border-*`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button` (secondary). No escribir `bg-white`/`text-slate-900` etc. en un componente nuevo de `src/components/UI/` — usar el token de rol equivalente.
+- **`<select>` crudo con clases propias** (radio/padding/focus-ring distintos en cada sitio) → [`Select`](#select). Ya migrados: `AIConfigFormModal` (proveedor/modelo), `UsageDashboard` (período), `UserRegistrationForm`/`UserRow` (rol/estado), `ProposalDetailsSection` (unidad de duración), `EvaluacionInteligenteModal/IdleView` (proveedor IA), `FilterBar.SelectFilter`. No escribir un `<select>` a mano en ninguna vista nueva.
 
 ## Candidatos a revisar (no consolidados aún, fuera de alcance de 1.5)
 

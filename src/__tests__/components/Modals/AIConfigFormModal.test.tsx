@@ -51,14 +51,15 @@ describe("AIConfigFormModal", () => {
 
   it("lista los modelos disponibles según el provider", () => {
     renderModal();
-    const modelSelect = screen.getByLabelText("Modelo") as HTMLSelectElement;
-    const options = Array.from(modelSelect.options).map((o) => o.value);
-    expect(options).toEqual(["", ...AVAILABLE]);
+    fireEvent.click(screen.getByLabelText("Modelo"));
+    const listOptions = screen.getAllByRole("option").map((o) => o.textContent);
+    expect(listOptions).toEqual(["Seleccionar modelo...", ...AVAILABLE]);
   });
 
   it("cambiar de proveedor resetea el modelo seleccionado", () => {
     renderModal();
-    fireEvent.change(screen.getByLabelText("Proveedor"), { target: { value: "anthropic" } });
+    fireEvent.click(screen.getByLabelText("Proveedor"));
+    fireEvent.click(screen.getByRole("option", { name: "Anthropic (Claude)" }));
     expect(onFormChange).toHaveBeenCalledWith({
       ...EMPTY_CONFIG_FORM,
       provider: "anthropic",

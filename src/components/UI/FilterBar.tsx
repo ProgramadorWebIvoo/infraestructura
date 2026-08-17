@@ -7,14 +7,9 @@
  */
 
 import { Search } from "lucide-react";
+import Select, { type SelectOption } from "./Select";
 
-export interface SelectOption {
-  value: string;
-  label: string;
-}
-
-const INPUT_CLASS =
-  "px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-bold cursor-pointer";
+export type { SelectOption };
 
 interface SearchInputProps {
   id: string;
@@ -54,19 +49,14 @@ interface SelectFilterProps {
 
 export function SelectFilter({ id, value, onChange, ariaLabel, options, title, className = "" }: SelectFilterProps) {
   return (
-    <select
+    <Select
       id={id}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label={ariaLabel}
+      onChange={onChange}
+      options={options}
+      ariaLabel={ariaLabel}
       title={title}
-      className={`${INPUT_CLASS} ${className}`}
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+      className={className}
+    />
   );
 }

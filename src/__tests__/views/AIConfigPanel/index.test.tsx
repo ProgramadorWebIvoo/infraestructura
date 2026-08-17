@@ -31,6 +31,10 @@ vi.mock("motion/react", () => ({
       const { initial, animate, exit, variants, transition, whileHover, whileTap, ...rest } = props;
       return <span {...rest}>{children}</span>;
     },
+    ul: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+      const { initial, animate, exit, variants, transition, ...rest } = props;
+      return <ul {...rest}>{children}</ul>;
+    },
   },
 }));
 
@@ -45,15 +49,12 @@ const mockHook = {
   usage: null,
   isUsageLoading: false,
   providerModels: PROVIDER_MODELS,
-  syncMessage: null,
-  syncIsError: false,
   loadUsage: vi.fn().mockResolvedValue(undefined),
   createConfig: vi.fn().mockResolvedValue({} as AiConfigRecord),
   updateConfig: vi.fn().mockResolvedValue({} as AiConfigRecord),
   deleteConfig: vi.fn().mockResolvedValue({}),
   testConfig: vi.fn().mockResolvedValue({ success: true, message: "Conexión exitosa." }),
   syncConfig: vi.fn().mockResolvedValue({ message: "Sincronizado.", activeConfigs: 1 }),
-  dismissSyncMessage: vi.fn(),
 };
 
 vi.mock("@/hooks/useAIConfig", async (importOriginal) => {
@@ -84,8 +85,6 @@ describe("AIConfigPanel (integración)", () => {
     vi.clearAllMocks();
     mockHook.configs = [];
     mockHook.usage = null;
-    mockHook.syncMessage = null;
-    mockHook.syncIsError = false;
   });
 
   it("renderiza el dashboard de uso y la tabla de modelos", () => {
@@ -113,7 +112,8 @@ describe("AIConfigPanel (integración)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Nueva config." }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText("Modelo"), { target: { value: "gpt-5.6-sol" } });
+    fireEvent.click(screen.getByLabelText("Modelo"));
+    fireEvent.click(screen.getByRole("option", { name: "gpt-5.6-sol" }));
     fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "sk-test-1234" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear" }));
 
