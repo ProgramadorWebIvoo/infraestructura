@@ -49,6 +49,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
   const [role, setRole] = useState("INFRAESTRUCTURA");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [justSucceeded, setJustSucceeded] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -85,6 +86,8 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
       setPassword("");
       setPasswordConfirmation("");
       setRole("INFRAESTRUCTURA");
+      setJustSucceeded(true);
+      setTimeout(() => setJustSucceeded(false), 1200);
     } catch (err) {
       setErrorMsg(getErrorMessage(err, "Error al registrar el usuario."));
     } finally {
@@ -144,7 +147,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Nombre completo <RequiredMark />
+              Nombre completo <RequiredMark filled={name.trim().length > 0} />
             </label>
             <div className="relative">
               <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -159,7 +162,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Correo electrónico <RequiredMark />
+              Correo electrónico <RequiredMark filled={email.trim().length > 0} />
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -174,7 +177,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Contraseña <RequiredMark />
+              Contraseña <RequiredMark filled={password.length > 0} />
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -198,7 +201,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Confirmar contraseña <RequiredMark />
+              Confirmar contraseña <RequiredMark filled={passwordConfirmation.length > 0 && passwordConfirmation === password} />
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -231,7 +234,7 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Rol / Módulo de acceso <RequiredMark />
+              Rol / Módulo de acceso <RequiredMark filled={role.trim().length > 0} />
             </label>
             <div className="relative">
               <Shield className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -250,9 +253,15 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
 
           <motion.button
             type="submit" disabled={isSubmitting}
+            animate={justSucceeded ? { scale: [1, 1.04, 1] } : {}}
+            transition={justSucceeded ? { duration: 0.4, ease: "easeOut" } : undefined}
             whileHover={isSubmitting ? {} : { scale: 1.01 }}
             whileTap={isSubmitting ? {} : { scale: 0.99 }}
-            className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 px-5 py-3 text-sm font-black text-white shadow-md shadow-sky-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-md"
+            className={`mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-black text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-md ${
+              justSucceeded
+                ? "bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30"
+                : "bg-gradient-to-r from-sky-600 to-sky-500 shadow-sky-500/20 hover:shadow-lg hover:shadow-sky-500/30"
+            }`}
           >
             {isSubmitting ? (
               <>
@@ -263,6 +272,8 @@ export default function UserRegistrationForm({ roleOptions, onCreateUser }: User
                 />
                 Registrando...
               </>
+            ) : justSucceeded ? (
+              <><CheckCircle className="h-4 w-4" /> Usuario creado</>
             ) : (
               <><UserPlus className="h-4 w-4" /> Crear usuario</>
             )}

@@ -195,7 +195,7 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 item-start" : ""}>
+      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""}>
         <div className="space-y-6">
           {/* ── Header ── */}
           <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200/80 border-l-4 border-l-emerald-400 bg-white p-5 shadow-xs">

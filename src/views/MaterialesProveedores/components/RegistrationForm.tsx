@@ -127,7 +127,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-name"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Nombre de la empresa <RequiredMark />
+            Nombre de la empresa <RequiredMark filled={name.trim().length > 0} />
           </label>
           <input
             id="public-provider-name"
@@ -160,7 +160,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-specialty"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Especialidad tecnica <RequiredMark />
+            Especialidad tecnica <RequiredMark filled={specialty.trim().length > 0} />
           </label>
           <input
             id="public-provider-specialty"
@@ -193,7 +193,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-contact"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Correo de contacto <RequiredMark />
+            Correo de contacto <RequiredMark filled={contact.trim().length > 0} />
           </label>
           <div className="relative">
             <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />

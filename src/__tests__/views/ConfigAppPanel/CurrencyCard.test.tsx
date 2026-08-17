@@ -82,8 +82,8 @@ describe("CurrencyCard", () => {
     expect(screen.getByPlaceholderText("EUR")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Euro")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("€")).toBeInTheDocument();
-    // RequiredMark renderiza un asterisco visible por campo obligatorio.
-    expect(screen.getAllByText("*")).toHaveLength(3);
+    // RequiredMark renderiza una alerta por campo obligatorio mientras está vacío.
+    expect(screen.getAllByLabelText("Campo obligatorio pendiente")).toHaveLength(3);
   });
 
   it("no llama onAdd y muestra un toast si se intenta guardar con campos vacíos", async () => {

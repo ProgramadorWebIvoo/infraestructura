@@ -10,6 +10,7 @@
  */
 
 import type { ReactNode } from "react";
+import { motion } from "motion/react";
 import Spinner from "./Spinner";
 import Tooltip, { type TooltipPlacement } from "./Tooltip";
 
@@ -45,15 +46,17 @@ export default function IconActionButton({
 }: IconActionButtonProps) {
   return (
     <Tooltip content={tooltip} placement={placement}>
-      <button
+      <motion.button
         type="button"
         onClick={onClick}
         disabled={disabled || isBusy}
+        whileHover={disabled || isBusy ? {} : { scale: 1.08 }}
+        whileTap={disabled || isBusy ? {} : { scale: 0.92 }}
         className={`cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40 ${TONE_CLASSES[tone]}`}
         aria-label={label}
       >
         {isBusy ? <Spinner size="sm" /> : icon}
-      </button>
+      </motion.button>
     </Tooltip>
   );
 }

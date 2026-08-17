@@ -259,7 +259,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
         />
       )}
 
-      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start" : ""}>
+      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 items-start" : ""}>
         <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
           {MACRO_GROUPS.map(macro => {
             const visibleGroups = macro.groups.filter(g =>

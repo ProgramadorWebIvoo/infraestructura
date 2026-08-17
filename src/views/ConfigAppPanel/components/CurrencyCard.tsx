@@ -121,7 +121,7 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
               <div className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                    Código (ISO 4217) <RequiredMark />
+                    Código (ISO 4217) <RequiredMark filled={code.trim().length > 0} />
                   </label>
                   <input
                     value={code}
@@ -133,7 +133,7 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                    Nombre <RequiredMark />
+                    Nombre <RequiredMark filled={name.trim().length > 0} />
                   </label>
                   <input
                     value={name}
@@ -144,7 +144,7 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                    Símbolo <RequiredMark />
+                    Símbolo <RequiredMark filled={symbol.trim().length > 0} />
                   </label>
                   <input
                     value={symbol}

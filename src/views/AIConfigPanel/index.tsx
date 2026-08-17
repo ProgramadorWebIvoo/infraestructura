@@ -185,7 +185,7 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
   };
 
   return (
-    <motion.div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 item-start" : ""} variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""} variants={containerVariants} initial="hidden" animate="visible">
       <div className="space-y-6">
         <SyncBanner message={syncMessage} isError={syncIsError} onDismiss={dismissSyncMessage} />
 

@@ -15,6 +15,7 @@ import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
 import { containerVariants, itemVariants } from "../../animations";
 import { ROLE_LABELS, roleLabel } from "../../constants/roles";
 import { SearchInput, SelectFilter } from "../../components/UI/FilterBar";
+import SectionHeader from "../../components/UI/SectionHeader";
 import UserRegistrationForm from "./components/UserRegistrationForm";
 import UserRow from "./components/UserRow";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
@@ -92,24 +93,20 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
 
   return (
     <motion.div
-      className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 item-start" : ""}
+      className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""}
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       <div className="space-y-6">
         {/* ── Panel header ────────────────────────────────────────────────── */}
-        <motion.div className="flex items-center gap-3" variants={itemVariants}>
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 shadow-lg shadow-sky-500/20">
-            <Users className="h-5 w-5 text-white stroke-[2.5]" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-900">Gestión de Usuarios</h1>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-              Registro y administración de accesos
-            </p>
-          </div>
+        <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs">
+          <SectionHeader
+            icon={<Users className="h-5 w-5" />}
+            title="Gestión de Usuarios"
+            description="Registro y administración de accesos al sistema."
+            color="sky"
+          />
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">

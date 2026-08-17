@@ -38,7 +38,7 @@ describe("AuditLogPanel", () => {
   });
 
   it("muestra la cantidad de registros en el encabezado", () => {
-    renderPanel();
+    renderPanel({ defaultOpen: true });
 
     expect(screen.getByText("2 registros")).toBeInTheDocument();
   });
@@ -101,7 +101,7 @@ describe("AuditLogPanel", () => {
   });
 
   it("muestra el total de pagination en vez de entries.length cuando se pasa pagination", () => {
-    renderPanel({ pagination: { page: 1, lastPage: 3, total: 55, onPageChange: () => {} } });
+    renderPanel({ defaultOpen: true, pagination: { page: 1, lastPage: 3, total: 55, onPageChange: () => {} } });
 
     expect(screen.getByText("55 registros")).toBeInTheDocument();
   });

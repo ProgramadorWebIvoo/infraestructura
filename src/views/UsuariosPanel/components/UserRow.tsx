@@ -96,8 +96,6 @@ export default function UserRow({
     <motion.li
       layout
       variants={itemVariants}
-      initial="hidden"
-      animate="visible"
       exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
       transition={{ type: "spring", stiffness: 300, damping: 26, mass: 0.8 }}
       className={`px-6 py-3 transition-all duration-200 group ${

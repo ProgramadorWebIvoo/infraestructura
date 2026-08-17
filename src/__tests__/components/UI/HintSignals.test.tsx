@@ -10,10 +10,22 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
 
 describe("RequiredMark", () => {
-  it("renderiza el asterisco visible y el texto accesible", () => {
-    render(<RequiredMark />);
-    expect(screen.getByText("*")).toBeInTheDocument();
-    expect(screen.getByText("(obligatorio)")).toBeInTheDocument();
+  it("muestra alerta y 'Este campo es obligatorio' cuando el campo está vacío", async () => {
+    render(<RequiredMark filled={false} />);
+    expect(screen.getByLabelText("Campo obligatorio pendiente")).toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByLabelText("Campo obligatorio pendiente"));
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Este campo es obligatorio"),
+    );
+  });
+
+  it("muestra check y '¡Válido!' cuando el campo está completo", async () => {
+    render(<RequiredMark filled={true} />);
+    expect(screen.getByLabelText("Campo obligatorio completo")).toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByLabelText("Campo obligatorio completo"));
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip")).toHaveTextContent("¡Válido!"),
+    );
   });
 });
 

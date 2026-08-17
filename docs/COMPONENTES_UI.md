@@ -201,11 +201,11 @@ Wrapper de `TagMultiSelect` específico para roles, con etiquetas legibles.
 
 **Path**: `src/components/UI/HintSignals.tsx`
 
-Dos indicadores pequeños para componer junto a labels: `RequiredMark` (asterisco rojo) y `HelpHint` (ícono de ayuda + `Tooltip`).
+Dos indicadores pequeños para componer junto a labels: `RequiredMark` (indicador dinámico de obligatoriedad) y `HelpHint` (ícono de ayuda + `Tooltip`).
 
-- **Props**: `RequiredMark`: `className?`. `HelpHint`: `content: string`, `placement?: TooltipPlacement`, `className?`
-- **Cuándo usarlo**: junto a labels de campos de formulario, para marcar obligatoriedad o dar ayuda contextual.
-- **Convenciones**: ambos son named exports; `HelpHint` envuelve `Tooltip`; sin opinión sobre el layout del label (se compone en el call site, ej. `<label className="flex items-center gap-1">Nombre <RequiredMark /></label>`).
+- **Props**: `RequiredMark`: `filled: boolean` (obligatoria), `placement?: TooltipPlacement`, `className?`. `HelpHint`: `content: string`, `placement?: TooltipPlacement`, `className?`
+- **Cuándo usarlo**: junto a labels de campos de formulario, para marcar obligatoriedad (con feedback en vivo del estado del campo) o dar ayuda contextual.
+- **Convenciones**: ambos son named exports; ambos envuelven `Tooltip`; sin opinión sobre el layout del label (se compone en el call site, ej. `<label className="flex items-center gap-1">Nombre <RequiredMark filled={name.trim().length > 0} /></label>`). `RequiredMark` NO es un asterisco estático: mientras `filled` es `false` muestra un triángulo de alerta rojo con tooltip "Este campo es obligatorio"; apenas `filled` es `true` cruza-desvanece (`AnimatePresence`, spring) a un check verde con tooltip "¡Válido!". El caller decide el criterio de "lleno" (ej. trim().length > 0, o coincidencia de confirmación de contraseña) y debe pasarlo de forma controlada — no hay validación interna.
 
 ---
 
@@ -395,7 +395,7 @@ Estos patrones fueron identificados como duplicados y consolidados — si aparec
 
 - **Botón icon-only de acción de fila** (borde + hover de color + tooltip) → [`IconActionButton`](#iconactionbutton). Antes reimplementado por separado en `AIConfigTable`, `CurrencyCard`, `MaterialConfigPanel/columns`, `ProveedoresConfigPanel/columns`.
 - **Tooltip nativo (`title="..."`)** en elementos interactivos → [`Tooltip`](#tooltip) o [`IconActionButton`](#iconactionbutton). Preferir siempre el componente accesible (funciona también por teclado) sobre el atributo nativo.
-- **Indicador de campo obligatorio** (asterisco junto al label) → [`RequiredMark`](#hintsignals-requiredmark--helphint). No escribir el asterisco/estilo a mano.
+- **Indicador de campo obligatorio** (asterisco o check/alerta junto al label) → [`RequiredMark`](#hintsignals-requiredmark--helphint). No escribir el ícono/estilo a mano.
 - **Paleta de colores de alertas** (success/error/warning/info) → `alertStyles.ts`, ya consumido por `AlertBanner`/`Toast`. No crear un tercer mapa de colores igual.
 - **Clases de estado activo del sidebar** → `sidebarNavClasses.ts`, ya consumido por `SidebarNav`/`ConfigDropdown`.
 
