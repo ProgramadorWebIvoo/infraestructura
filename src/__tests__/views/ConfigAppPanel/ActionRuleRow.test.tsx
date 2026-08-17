@@ -114,7 +114,7 @@ describe("ActionRuleRow", () => {
       />,
     );
 
-    expect(document.querySelector(".bg-amber-400")).not.toBeInTheDocument();
+    expect(document.querySelector(".bg-warning-400")).not.toBeInTheDocument();
 
     rerender(
       <ActionRuleRow
@@ -129,7 +129,7 @@ describe("ActionRuleRow", () => {
       />,
     );
 
-    const dirtyIndicator = document.querySelector(".bg-amber-400");
+    const dirtyIndicator = document.querySelector(".bg-warning-400");
     expect(dirtyIndicator).toBeInTheDocument();
 
     fireEvent.focus(dirtyIndicator!);

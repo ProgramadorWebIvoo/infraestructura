@@ -9,8 +9,11 @@
  * (ej. el id de un setting) y así saber en qué campo mostrarlo.
  */
 
+import { SEMANTIC_COLOR_MAP } from "./colorTokens";
+
 export function fieldErrorClasses(hasError: boolean): string {
-  return hasError ? "border-rose-400! focus:border-rose-400! focus:ring-rose-100!" : "";
+  if (!hasError) return "";
+  return `border-danger-400! focus:border-danger-400! focus:ring-danger-100!`;
 }
 
 interface FieldErrorProps {
@@ -20,5 +23,5 @@ interface FieldErrorProps {
 
 export default function FieldError({ message, className = "" }: FieldErrorProps) {
   if (!message) return null;
-  return <p className={`text-[11px] font-semibold text-rose-500 mt-1 ${className}`}>{message}</p>;
+  return <p className={`text-[11px] font-semibold ${SEMANTIC_COLOR_MAP.danger.text600} mt-1 ${className}`}>{message}</p>;
 }

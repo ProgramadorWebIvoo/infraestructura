@@ -20,6 +20,7 @@ import IconActionButton from "../../../components/UI/IconActionButton";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import { useToast } from "../../../components/UI/Toast";
 import { getErrorMessage } from "../../../services/logger";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import type { CurrencyRecord } from "../../../hooks/useCurrencies";
 
 interface CurrencyCardProps {
@@ -118,9 +119,9 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
               exit="exit"
               className="overflow-hidden"
             >
-              <div className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
+              <div className="mb-4 flex flex-wrap items-end gap-2 rounded-control border border-border-subtle bg-surface-sunken/50 p-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <label className="block text-[10px] font-bold text-text-tertiary uppercase mb-1">
                     Código (ISO 4217) <RequiredMark filled={code.trim().length > 0} />
                   </label>
                   <input
@@ -128,29 +129,29 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                     onChange={e => setCode(e.target.value.toUpperCase().slice(0, 3))}
                     maxLength={3}
                     placeholder="EUR"
-                    className="w-20 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-mono uppercase focus:outline-hidden focus:ring-2 focus:ring-amber-400/40 transition-shadow"
+                    className="w-20 rounded-control border border-border-default px-2.5 py-1.5 text-xs font-mono uppercase focus:outline-hidden focus:ring-2 focus:ring-warning-400/40 transition-shadow"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <label className="block text-[10px] font-bold text-text-tertiary uppercase mb-1">
                     Nombre <RequiredMark filled={name.trim().length > 0} />
                   </label>
                   <input
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Euro"
-                    className="w-40 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-amber-400/40 transition-shadow"
+                    className="w-40 rounded-control border border-border-default px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-warning-400/40 transition-shadow"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <label className="block text-[10px] font-bold text-text-tertiary uppercase mb-1">
                     Símbolo <RequiredMark filled={symbol.trim().length > 0} />
                   </label>
                   <input
                     value={symbol}
                     onChange={e => setSymbol(e.target.value)}
                     placeholder="€"
-                    className="w-16 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-amber-400/40 transition-shadow"
+                    className="w-16 rounded-control border border-border-default px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-warning-400/40 transition-shadow"
                   />
                 </div>
                 <Button size="sm" variant="primary" colorScheme="amber" isLoading={submitting} onClick={handleAdd}>
@@ -179,12 +180,12 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                   animate="visible"
                   exit={{ opacity: 0, x: -12, scale: 0.98, transition: { duration: 0.15 } }}
                   whileHover={{ scale: 1.01 }}
-                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors ${
-                    currency.is_base ? "border-amber-200 bg-amber-50/50" : "border-slate-100"
+                  className={`flex items-center justify-between gap-3 rounded-control border p-3 transition-colors ${
+                    currency.is_base ? `${SEMANTIC_COLOR_MAP.warning.border100} ${SEMANTIC_COLOR_MAP.warning.bg50}/50` : "border-border-subtle"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">
+                    <span className={`rounded-control border ${SEMANTIC_COLOR_MAP.brand.border100} ${SEMANTIC_COLOR_MAP.brand.bg50}/80 px-2 py-0.5 font-mono text-[10px] font-bold ${SEMANTIC_COLOR_MAP.brand.text600}`}>
                       {currency.code}
                     </span>
                     {editingId === currency.id ? (
@@ -192,31 +193,31 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                         <input
                           value={editName}
                           onChange={e => setEditName(e.target.value)}
-                          className="w-36 rounded-lg border border-slate-200 px-2 py-1 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-400/40"
+                          className="w-36 rounded-control border border-border-default px-2 py-1 text-xs font-bold text-text-primary focus:outline-hidden focus:ring-2 focus:ring-info-400/40"
                         />
                         <input
                           value={editSymbol}
                           onChange={e => setEditSymbol(e.target.value)}
-                          className="w-14 rounded-lg border border-slate-200 px-2 py-1 text-xs font-mono font-semibold text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-400/40"
+                          className="w-14 rounded-control border border-border-default px-2 py-1 text-xs font-mono font-semibold text-text-tertiary focus:outline-hidden focus:ring-2 focus:ring-info-400/40"
                         />
                       </>
                     ) : (
                       <>
-                        <span className="font-bold text-xs text-slate-800">{currency.name}</span>
-                        <span className="font-mono text-xs font-semibold text-slate-500">{currency.symbol}</span>
+                        <span className="font-bold text-xs text-text-primary">{currency.name}</span>
+                        <span className="font-mono text-xs font-semibold text-text-tertiary">{currency.symbol}</span>
                       </>
                     )}
                     {currency.is_base && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
+                      <span className={`inline-flex items-center gap-1 rounded-pill border ${SEMANTIC_COLOR_MAP.warning.border100} ${SEMANTIC_COLOR_MAP.warning.bg50} px-2.5 py-0.5 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.warning.text700}`}>
                         <Star className="h-3 w-3" />
                         Base
                       </span>
                     )}
                     <span
-                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
+                      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${
                         currency.is_active
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-slate-100 text-slate-500"
+                          ? `${SEMANTIC_COLOR_MAP.success.border100} ${SEMANTIC_COLOR_MAP.success.bg50} ${SEMANTIC_COLOR_MAP.success.text700}`
+                          : "border-border-default bg-surface-raised text-text-tertiary"
                       }`}
                     >
                       {currency.is_active ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}

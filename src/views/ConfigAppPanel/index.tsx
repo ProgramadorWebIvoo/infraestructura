@@ -25,7 +25,7 @@ import {
   Check,
   RotateCcw,
 } from "lucide-react";
-import { containerVariants } from "../../animations";
+import { containerVariants, itemVariants, springs } from "../../animations";
 import Spinner from "../../components/UI/Spinner";
 import Button from "../../components/UI/Button";
 import AlertBanner from "../../components/UI/AlertBanner";
@@ -268,8 +268,8 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             if (visibleGroups.length === 0) return null;
 
             return (
-              <div key={macro.title}>
-                <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 px-1">{macro.title}</h2>
+              <motion.div key={macro.title} variants={itemVariants}>
+                <h2 className="text-xs font-black text-text-muted uppercase tracking-wider mb-3 px-1">{macro.title}</h2>
                 <div className="space-y-6">
                   {visibleGroups.map(group =>
                     group === "__notification_rules__" ? (
@@ -309,7 +309,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                     ),
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </motion.div>
@@ -331,10 +331,10 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white border border-slate-200 shadow-xl rounded-2xl px-5 py-3"
+            transition={springs.gentle}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-surface border border-border-default shadow-xl rounded-container px-5 py-3"
           >
-            <span className="text-xs font-bold text-slate-600">
+            <span className="text-xs font-bold text-text-secondary">
               {pendingCount} {pendingCount === 1 ? "cambio pendiente" : "cambios pendientes"}
             </span>
             <Button

@@ -14,10 +14,13 @@
  */
 
 import { useMemo, useState } from "react";
+import { motion } from "motion/react";
 import InfoBanner from "../../../components/UI/InfoBanner";
 import AlertBanner from "../../../components/UI/AlertBanner";
 import Spinner from "../../../components/UI/Spinner";
+import Card from "../../../components/UI/Card";
 import { SearchInput } from "../../../components/UI/FilterBar";
+import { springs } from "../../../animations";
 import type { NotificationActionOption, NotificationRuleChannels } from "../../../hooks/useNotificationRules";
 import ActionRuleRow from "./ActionRuleRow";
 
@@ -108,32 +111,40 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
       />
 
       {groupsPresent.length === 0 ? (
-        <p className="text-center text-xs text-slate-400 py-8">Sin resultados para esa búsqueda.</p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center text-xs text-text-muted py-8"
+        >
+          Sin resultados para esa búsqueda.
+        </motion.p>
       ) : (
-        groupsPresent.map(group => (
-          <div key={group}>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-              {GROUP_LABELS[group] ?? group}
-            </h3>
-            <div className="rounded-2xl border border-slate-200/80 bg-white px-4">
-              {grouped[group].map(action => (
-                <ActionRuleRow
-                  key={action.value}
-                  action={action.value}
-                  label={action.label}
-                  roles={roles}
-                  value={valueOf(action.value)}
-                  onChange={channels => onChange(action.value, channels)}
-                  isCritical={action.critical}
-                  isUnconfigured={unconfigured.includes(action.value)}
-                  isDirty={isDirty(action.value)}
-                  error={errors[action.value]}
-                  silencedChannels={silencedChannelsFor(action.value)}
-                />
-              ))}
-            </div>
-          </div>
-        ))
+        <div className="space-y-4">
+          {groupsPresent.map(group => (
+            <motion.div key={group} layout="position" transition={springs.gentle}>
+              <h3 className="text-xs font-bold text-text-tertiary uppercase tracking-wide mb-1.5">
+                {GROUP_LABELS[group] ?? group}
+              </h3>
+              <Card hoverable={false} className="p-0 px-4">
+                {grouped[group].map(action => (
+                  <ActionRuleRow
+                    key={action.value}
+                    action={action.value}
+                    label={action.label}
+                    roles={roles}
+                    value={valueOf(action.value)}
+                    onChange={channels => onChange(action.value, channels)}
+                    isCritical={action.critical}
+                    isUnconfigured={unconfigured.includes(action.value)}
+                    isDirty={isDirty(action.value)}
+                    error={errors[action.value]}
+                    silencedChannels={silencedChannelsFor(action.value)}
+                  />
+                ))}
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       )}
     </div>
   );

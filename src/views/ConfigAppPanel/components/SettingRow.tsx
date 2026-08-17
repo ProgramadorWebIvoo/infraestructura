@@ -8,9 +8,11 @@
  * estilo Odoo) los maneja ConfigAppPanel.
  */
 
+import { motion } from "motion/react";
 import NumericInput from "../../../components/UI/NumericInput";
 import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
 import TagMultiSelect, { type TagOption } from "../../../components/UI/TagMultiSelect";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import type { AppSettingRecord } from "../../../hooks/useAppSettings";
 import { formatRangeBound } from "../utils";
 
@@ -52,25 +54,26 @@ export default function SettingRow({ setting, value, onChange, error, notificati
   return (
     <div
       id={`setting-row-${setting.id}`}
-      className="flex flex-col sm:flex-row sm:items-start gap-3 py-3.5 border-b border-slate-100 last:border-0"
+      className="flex flex-col sm:flex-row sm:items-start gap-3 -mx-3 px-3 py-3.5 rounded-control border-b border-border-subtle last:border-0 transition-colors hover:bg-surface-sunken"
     >
       <div className="sm:w-64 shrink-0">
-        <p className="text-sm font-bold text-slate-700">{setting.label}</p>
-        {setting.description && <p className="text-xs text-slate-400 mt-0.5">{setting.description}</p>}
-        {rangeHint && <p className="text-[10px] text-slate-400 mt-0.5">{rangeHint}</p>}
+        <p className="text-sm font-bold text-text-secondary">{setting.label}</p>
+        {setting.description && <p className="text-xs text-text-muted mt-0.5">{setting.description}</p>}
+        {rangeHint && <p className="text-[10px] text-text-muted mt-0.5">{rangeHint}</p>}
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           {setting.type === "boolean" ? (
             <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input
+              <motion.input
                 type="checkbox"
                 checked={value === "true"}
                 onChange={e => onChange(setting.id, e.target.checked ? "true" : "false")}
-                className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-400 cursor-pointer"
+                whileTap={{ scale: 0.85 }}
+                className={`h-4 w-4 rounded border-border-default ${SEMANTIC_COLOR_MAP.brand.text600} focus:ring-brand-400 cursor-pointer`}
               />
-              <span className="text-xs text-slate-500">{value === "true" ? "Activado" : "Desactivado"}</span>
+              <span className="text-xs text-text-tertiary">{value === "true" ? "Activado" : "Desactivado"}</span>
             </label>
           ) : isActionList ? (
             <TagMultiSelect
@@ -83,7 +86,7 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               value={value}
               onChange={e => onChange(setting.id, e.target.value)}
               rows={2}
-              className={`flex-1 min-w-0 text-xs font-mono px-3 py-2 rounded-lg border border-slate-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 outline-none ${errorClasses}`}
+              className={`flex-1 min-w-0 text-xs font-mono px-3 py-2 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors ${errorClasses}`}
             />
           ) : isNumeric ? (
             <NumericInput
@@ -100,7 +103,7 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               type="text"
               value={value}
               onChange={e => onChange(setting.id, e.target.value)}
-              className={`flex-1 min-w-0 text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 outline-none ${errorClasses}`}
+              className={`flex-1 min-w-0 text-sm px-3 py-1.5 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors ${errorClasses}`}
             />
           )}
         </div>
