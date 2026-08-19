@@ -92,7 +92,8 @@ export interface Contractor {
   name: string;
   specialty: string;
   rating: number;
-  contact: string;
+  email: string;
+  phone?: string | null;
   status?: string;
 }
 

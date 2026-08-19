@@ -72,7 +72,7 @@ export default function InviteModal({ contractor, projects, onClose, onInvite }:
         project_id: inviteProjectId,
         supplierName: contractor.name,
         supplierCompany: null,
-        supplierContact: contractor.contact,
+        supplierContact: contractor.email,
       });
       setGeneratedToken(data.token);
       setGeneratedProjectTitle(data.projectTitle);
@@ -105,7 +105,7 @@ export default function InviteModal({ contractor, projects, onClose, onInvite }:
       onClose={onClose}
       title={contractor?.name}
       badge="Propuesta de materiales"
-      infoLine={contractor?.contact}
+      infoLine={contractor?.email}
       icon={<Link2 className="h-5 w-5" />}
       iconColor="purple"
       maxWidth="max-w-lg"

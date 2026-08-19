@@ -307,9 +307,13 @@ describe("ConfigAppPanel", () => {
     // El campo que sí se guardó se limpia del draft y desaparece de "pendientes".
     await waitFor(() => expect(screen.getByText("1 cambio pendiente")).toBeInTheDocument());
 
-    // Editar el campo con error limpia su mensaje inline.
+    // Editar el campo con error limpia su mensaje inline (el texto sale con
+    // una transición corta vía AnimatePresence, no desaparece del DOM al
+    // instante — se espera a que termine).
     fireEvent.change(screen.getByDisplayValue("40"), { target: { value: "90" } });
-    expect(screen.queryByText("El valor no puede ser mayor a 100.")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByText("El valor no puede ser mayor a 100.")).not.toBeInTheDocument(),
+    );
   });
 
   it("SUPERADMIN: la barra global también guarda cambios pendientes de la matriz de notificaciones por rol", async () => {

@@ -3,12 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { SemanticColor } from "../../components/UI/colorTokens";
+
 export interface ConfigContractor {
   code: string;
   name: string;
   specialty: string;
   rating: number;
-  contact: string;
+  email: string;
+  phone: string | null;
   registrationSource: "SEED" | "PUBLIC_PORTAL" | "INTERNAL";
   status: "PENDING_REVIEW" | "ACTIVE" | "INACTIVE";
   createdAt: string;
@@ -18,7 +21,8 @@ export interface ConfigContractor {
 export type ContractorForm = {
   name: string;
   specialty: string;
-  contact: string;
+  email: string;
+  phone: string;
   rating: number | "";
   status: "PENDING_REVIEW" | "ACTIVE" | "INACTIVE";
 };
@@ -26,7 +30,8 @@ export type ContractorForm = {
 export const EMPTY_FORM: ContractorForm = {
   name: "",
   specialty: "",
-  contact: "",
+  email: "",
+  phone: "",
   rating: 4.0,
   status: "ACTIVE",
 };
@@ -38,14 +43,21 @@ export const STATUS_OPTIONS = [
   { value: "PENDING_REVIEW", label: "Pendiente de revisión", description: "Proveedor pendiente de aprobación", raw: "PENDING_REVIEW" },
 ];
 
-export const SOURCE_BADGE: Record<string, { label: string; class: string }> = {
-  INTERNAL:      { label: "Interno",        class: "bg-sky-50 text-sky-700 border-sky-200" },
-  PUBLIC_PORTAL: { label: "Portal público", class: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-  SEED:          { label: "Seed",           class: "bg-slate-100 text-slate-500 border-slate-200" },
+/**
+ * Vocabulario de color específico de esta vista (origen/estado de
+ * proveedor) — mapeado a los 6 roles semánticos de `colorTokens.ts` en vez
+ * de clases Tailwind escritas a mano, mismo criterio que
+ * `SectionHeader.COLOR_TO_SEMANTIC`. Se resuelve en el render vía
+ * `SEMANTIC_COLOR_MAP[role]`, no se guarda la clase final acá.
+ */
+export const SOURCE_BADGE: Record<string, { label: string; role: SemanticColor }> = {
+  INTERNAL: { label: "Interno", role: "brand" },
+  PUBLIC_PORTAL: { label: "Portal público", role: "info" },
+  SEED: { label: "Seed", role: "neutral" },
 };
 
-export const STATUS_BADGE: Record<string, { label: string; class: string }> = {
-  ACTIVE:         { label: "Activo",              class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  INACTIVE:       { label: "Inactivo",            class: "bg-red-50 text-red-700 border-red-200" },
-  PENDING_REVIEW: { label: "Pendiente de revisión", class: "bg-amber-50 text-amber-700 border-amber-200" },
+export const STATUS_BADGE: Record<string, { label: string; role: SemanticColor }> = {
+  ACTIVE: { label: "Activo", role: "success" },
+  INACTIVE: { label: "Inactivo", role: "danger" },
+  PENDING_REVIEW: { label: "Pendiente de revisión", role: "warning" },
 };

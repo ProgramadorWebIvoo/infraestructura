@@ -5,12 +5,19 @@
  * Modal de creación / edición de proveedor — extraído de ProveedoresConfigPanel.
  */
 
-import { useState } from "react";
-import { Loader2, Shield, UserCheck, UserCog } from "lucide-react";
+import { Shield, UserCheck, UserCog } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
-import SelectModal from "../../../components/UI/SelectModal";
+import Select from "../../../components/UI/Select";
+import NumericInput from "../../../components/UI/NumericInput";
+import { RequiredMark } from "../../../components/UI/HintSignals";
+import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
+import { isValidEmail, isValidPhone } from "../../../utils/validators";
 import { STATUS_OPTIONS, type ContractorForm } from "../types";
+
+const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
+const inputClass =
+  "w-full rounded-control border border-border-default px-3.5 py-2.5 text-xs font-semibold text-text-secondary placeholder-text-muted outline-hidden focus:border-info-400 focus:ring-2 focus:ring-info-100";
 
 interface ContractorFormModalProps {
   isOpen: boolean;
@@ -33,7 +40,26 @@ export default function ContractorFormModal({
   onClose,
   onSave,
 }: ContractorFormModalProps) {
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const hasEmail = form.email.trim().length > 0;
+  const hasPhone = form.phone.trim().length > 0;
+  const hasAnyContact = hasEmail || hasPhone;
+
+  const emailFormatInvalid = hasEmail && !isValidEmail(form.email);
+  const phoneFormatInvalid = hasPhone && !isValidPhone(form.phone);
+
+  // El error de "falta contacto" se marca en ambos campos a la vez (ninguno
+  // es individualmente responsable), pero el de formato es por campo — así
+  // el usuario ve exactamente cuál de los dos está mal y por qué.
+  const emailError = emailFormatInvalid
+    ? "Formato de email inválido (ej: nombre@dominio.com)."
+    : !hasAnyContact
+      ? "Completa este campo o el de Teléfono."
+      : undefined;
+  const phoneError = phoneFormatInvalid
+    ? "Formato de teléfono inválido (mínimo 7 dígitos)."
+    : !hasAnyContact
+      ? "Completa este campo o el de Email."
+      : undefined;
 
   return (
     <Modal
@@ -67,99 +93,115 @@ export default function ContractorFormModal({
       <div className="space-y-4">
         {/* Name */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Nombre / Empresa *
+          <label htmlFor="contractor-name" className={labelClass}>
+            Nombre / Empresa <RequiredMark filled={form.name.trim().length > 0} />
           </label>
           <input
+            id="contractor-name"
             type="text"
             value={form.name}
             onChange={(e) => onFormChange({ ...form, name: e.target.value })}
             maxLength={180}
             placeholder="Ej: Construcciones del Sur S.A."
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className={inputClass}
           />
         </div>
 
         {/* Specialty */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Especialidad *
+          <label htmlFor="contractor-specialty" className={labelClass}>
+            Especialidad <RequiredMark filled={form.specialty.trim().length > 0} />
           </label>
           <input
+            id="contractor-specialty"
             type="text"
             value={form.specialty}
             onChange={(e) => onFormChange({ ...form, specialty: e.target.value })}
             maxLength={180}
             placeholder="Ej: Obra civil, Instalaciones eléctricas..."
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className={inputClass}
           />
         </div>
 
-        {/* Contact */}
+        {/* Email + Phone — al menos uno de los dos es obligatorio */}
         <div>
-          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Contacto (email/teléfono) *
-          </label>
-          <input
-            type="text"
-            value={form.contact}
-            onChange={(e) => onFormChange({ ...form, contact: e.target.value })}
-            maxLength={180}
-            placeholder="Ej: contacto@constructora.com"
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="contractor-email" className={labelClass}>
+                Email
+                {hasEmail && <RequiredMark filled={!emailFormatInvalid} />}
+              </label>
+              <input
+                id="contractor-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => onFormChange({ ...form, email: e.target.value })}
+                maxLength={180}
+                placeholder="contacto@constructora.com"
+                aria-invalid={!!emailError}
+                aria-describedby={emailError ? "contractor-email-error" : undefined}
+                className={`${inputClass} ${fieldErrorClasses(!!emailError)}`}
+              />
+              <FieldError message={emailError} />
+            </div>
+            <div>
+              <label htmlFor="contractor-phone" className={labelClass}>
+                Teléfono
+                {hasPhone && <RequiredMark filled={!phoneFormatInvalid} />}
+              </label>
+              <input
+                id="contractor-phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => onFormChange({ ...form, phone: e.target.value })}
+                maxLength={40}
+                placeholder="+58 412-1234567"
+                aria-invalid={!!phoneError}
+                aria-describedby={phoneError ? "contractor-phone-error" : undefined}
+                className={`${inputClass} ${fieldErrorClasses(!!phoneError)}`}
+              />
+              <FieldError message={phoneError} />
+            </div>
+          </div>
+          {hasAnyContact && !emailFormatInvalid && !phoneFormatInvalid && (
+            <p className="mt-1.5 text-[11px] font-medium text-text-muted">Con uno de los dos alcanza.</p>
+          )}
         </div>
 
         {/* Rating + Status inline */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <label htmlFor="contractor-rating" className={labelClass}>
               Rating (0.0 – 5.0)
             </label>
-            <input
-              type="number"
-              min={0}
-              max={5}
-              step={0.1}
+            <NumericInput
+              id="contractor-rating"
               value={form.rating}
-              onChange={(e) => {
-                const v = e.target.value.replace(/[eE]/g, "");
-                if (v === "") { onFormChange({ ...form, rating: "" }); return; }
-                const val = Math.min(5, Math.max(0, parseFloat(v) || 0));
-                onFormChange({ ...form, rating: Math.round(val * 10) / 10 });
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "e" || e.key === "E" || e.key === "-" || e.key === "Subtract") e.preventDefault();
-              }}
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-center font-mono text-sm font-black text-amber-600 outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              onChange={(v) => onFormChange({ ...form, rating: v === "" ? "" : Math.min(5, Math.round(v * 10) / 10) })}
+              placeholder="0.0"
+              step="0.1"
+              max={5}
+              accent="warning"
+              className="text-center font-black text-warning-600"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <label htmlFor="contractor-status" className={labelClass}>
               Estado
             </label>
-            <SelectModal
-              isOpen={isStatusModalOpen}
-              onClose={() => setIsStatusModalOpen(false)}
-              onOpen={() => setIsStatusModalOpen(true)}
-              onSelect={(opt) => onFormChange({ ...form, status: opt.value as ContractorForm["status"] })}
+            <Select
+              id="contractor-status"
+              value={form.status}
+              onChange={(v) => onFormChange({ ...form, status: v as ContractorForm["status"] })}
               options={STATUS_OPTIONS}
-              selectedValue={form.status}
-              allowDeselect={false}
-              triggerLabel="Seleccionar estado..."
-              title="Seleccionar Estado"
-              infoLine={`${STATUS_OPTIONS.length} opciones disponibles`}
-              icon={<Shield className="h-5 w-5" />}
-              iconColor="amber"
-              maxWidth="max-w-md"
-              searchPlaceholder="Buscar estado..."
+              accent="info"
             />
           </div>
         </div>
 
         {/* Origin hint on create */}
         {mode === "create" && (
-          <p className="text-[11px] font-medium text-slate-400 italic">
+          <p className="text-[11px] font-medium text-text-muted italic">
             <Shield className="inline h-3 w-3 mr-1" />
             El proveedor se registrará con origen "Interno".
           </p>

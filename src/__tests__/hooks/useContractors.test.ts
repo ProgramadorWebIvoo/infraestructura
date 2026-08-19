@@ -22,7 +22,7 @@ function createMockContractor(overrides: Partial<Contractor> = {}): Contractor {
     name: "Test Contractor",
     specialty: "General",
     rating: 4.0,
-    contact: "test@test.com",
+    email: "test@test.com",
     ...overrides,
   };
 }

@@ -12,35 +12,35 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
     name: "Constructora Andes C.A.",
     specialty: "Obras Civiles y Estructuras",
     rating: 4.8,
-    contact: "contacto@constandes.com",
+    email: "contacto@constandes.com",
   },
   {
     code: "CON-302",
     name: "Sistemas Eléctricos Voltio, S.A.",
     specialty: "Alta Tensión e Iluminación",
     rating: 4.5,
-    contact: "proyectos@voltiosa.com",
+    email: "proyectos@voltiosa.com",
   },
   {
     code: "CON-303",
     name: "Mantenimiento Integral Express",
     specialty: "Pintura, Drywall y Acabados",
     rating: 4.2,
-    contact: "gerencia@mantexpress.net",
+    email: "gerencia@mantexpress.net",
   },
   {
     code: "CON-304",
     name: "Tuberías y Soldaduras Occidente",
     specialty: "Sistemas de Enfriamiento e Hidráulicos",
     rating: 4.7,
-    contact: "ventas@tuboccidente.com",
+    email: "ventas@tuboccidente.com",
   },
   {
     code: "CON-305",
     name: "Soluciones de Climatización Termo-Control",
     specialty: "Aire Acondicionado y Ventilación",
     rating: 4.6,
-    contact: "soporte@termocontrol.ve",
+    email: "soporte@termocontrol.ve",
   }
 ];
 

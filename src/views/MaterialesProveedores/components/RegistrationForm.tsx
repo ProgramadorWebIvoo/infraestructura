@@ -11,6 +11,7 @@ import { CheckCircle, Loader2, Mail, Send, UserRound } from "lucide-react";
 import { apiFetch } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { RequiredMark } from "../../../components/UI/HintSignals";
+import { isValidEmail } from "../../../utils/validators";
 
 interface RegistrationFormProps {
   onAddContractor: (contractor: Contractor) => void;
@@ -30,7 +31,6 @@ function sanitize(value: string): string {
     .trim();
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_NAME_LENGTH = 120;
 const MAX_SPECIALTY_LENGTH = 200;
 const MAX_CONTACT_LENGTH = 254;
@@ -47,7 +47,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
   const [touched, setTouched] = useState({ name: false, specialty: false, contact: false });
   const nameError = touched.name && !sanitize(name);
   const specialtyError = touched.specialty && !sanitize(specialty);
-  const contactError = touched.contact && !EMAIL_RE.test(sanitize(contact));
+  const contactError = touched.contact && !isValidEmail(sanitize(contact));
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -62,7 +62,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
       return;
     }
 
-    if (!EMAIL_RE.test(cleanContact)) {
+    if (!isValidEmail(cleanContact)) {
       showToast("Ingresa un correo electrónico válido.", "warning");
       setTouched((prev) => ({ ...prev, contact: true }));
       return;
@@ -76,7 +76,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
         body: JSON.stringify({
           name: cleanName,
           specialty: cleanSpecialty,
-          contact: cleanContact,
+          email: cleanContact,
           // rating: no se envía desde el portal público; el backend asigna valor por defecto
         }),
       });
@@ -193,7 +193,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-contact"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Correo de contacto <RequiredMark filled={contact.trim().length > 0} />
+            Correo de contacto <RequiredMark filled={isValidEmail(contact)} />
           </label>
           <div className="relative">
             <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />

@@ -34,7 +34,7 @@ export default function ContractorsSection({
           c.name.toLowerCase().includes(search.toLowerCase()) ||
           c.code.toLowerCase().includes(search.toLowerCase()) ||
           c.specialty.toLowerCase().includes(search.toLowerCase()) ||
-          c.contact.toLowerCase().includes(search.toLowerCase())
+          c.email.toLowerCase().includes(search.toLowerCase())
       ),
     [contractors, search],
   );
@@ -43,7 +43,7 @@ export default function ContractorsSection({
     { key: "code", label: "Codigo", render: (c) => <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">{c.code}</span> },
     { key: "name", label: "Empresa", render: (c) => <span className="font-bold text-slate-800">{c.name}</span> },
     { key: "specialty", label: "Especialidad", render: (c) => <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{c.specialty}</span> },
-    { key: "contact", label: "Contacto", render: (c) => <div className="flex items-center gap-2 font-mono font-semibold text-slate-500"><Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />{c.contact}</div> },
+    { key: "email", label: "Contacto", render: (c) => <div className="flex items-center gap-2 font-mono font-semibold text-slate-500"><Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />{c.email}</div> },
     {
       key: "actions",
       label: "Acciones",

@@ -5,11 +5,10 @@
  * Modal de creación / edición de material — extraído de MaterialConfigPanel.
  */
 
-import { useState } from "react";
 import { Package } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
-import SelectModal from "../../../components/UI/SelectModal";
+import Select from "../../../components/UI/Select";
 import NumericInput from "../../../components/UI/NumericInput";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import { STATUS_OPTIONS, type MaterialForm } from "../types";
@@ -39,8 +38,6 @@ export default function MaterialFormModal({
   onClose,
   onSave,
 }: MaterialFormModalProps) {
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-
   return (
     <Modal
       isOpen={isOpen}
@@ -125,24 +122,15 @@ export default function MaterialFormModal({
         {/* Status toggle only in edit mode */}
         {mode === "edit" && (
           <div>
-            <label className={labelClass}>
+            <label htmlFor="material-status" className={labelClass}>
               Estado
             </label>
-            <SelectModal
-              isOpen={isStatusModalOpen}
-              onClose={() => setIsStatusModalOpen(false)}
-              onOpen={() => setIsStatusModalOpen(true)}
-              onSelect={(opt) => onFormChange({ ...form, isActive: opt.value === 1 })}
-              options={STATUS_OPTIONS}
-              selectedValue={form.isActive ? 1 : 0}
-              allowDeselect={false}
-              triggerLabel={form.isActive ? "Activo" : "Inactivo"}
-              title="Seleccionar Estado"
-              infoLine={`${STATUS_OPTIONS.length} opciones disponibles`}
-              icon={<Package className="h-5 w-5" />}
-              iconColor="emerald"
-              maxWidth="max-w-md"
-              searchPlaceholder="Buscar estado..."
+            <Select
+              id="material-status"
+              value={form.isActive ? "1" : "0"}
+              onChange={(v) => onFormChange({ ...form, isActive: v === "1" })}
+              options={STATUS_OPTIONS.map((opt) => ({ value: String(opt.value), label: opt.label }))}
+              accent="success"
             />
           </div>
         )}

@@ -49,7 +49,7 @@ vi.mock("@/hooks/useProveedores", () => ({
 }));
 
 const contractors: Contractor[] = [
-  { code: "P-001", name: "Constructora Acme", specialty: "Electricidad", rating: 4.2, contact: "acme@test.com" },
+  { code: "P-001", name: "Constructora Acme", specialty: "Electricidad", rating: 4.2, email: "acme@test.com" },
 ];
 
 const projects: Project[] = [
