@@ -113,7 +113,7 @@ Mensaje de error inline para un campo de formulario, más un helper de clases pa
 
 - **API**: componente `<FieldError message? className? />`; helper `fieldErrorClasses(hasError: boolean): string`
 - **Cuándo usarlo**: debajo de cualquier input/select/textarea para mostrar errores de validación, junto con `fieldErrorClasses` para el borde/focus-ring en rojo.
-- **Convenciones**: retorna `null` si no hay `message`.
+- **Convenciones**: entra/sale con `AnimatePresence` (altura+opacidad, 150ms) en vez de aparecer de golpe — evita el salto de layout cuando el campo cambia de válido a inválido mientras el usuario escribe. No renderiza nada si no hay `message`.
 
 ---
 
@@ -447,6 +447,8 @@ Estos patrones fueron identificados como duplicados y consolidados — si aparec
 - **Mapa de color propio por componente** (`COLOR_MAP`, `ICON_COLORS`, `primaryGradients`/`dangerGradients`, etc.) → [`SEMANTIC_COLOR_MAP`](#colortokensts) (`colorTokens.ts`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button`, `alertStyles.ts`/`Toast`/`AlertBanner`, `StatusBadge` (radio). Un componente nuevo con color propio no debe crear un sexto mapa — consumir este.
 - **`bg-white`/`text-slate-*`/`border-slate-*` escritos a mano** en un componente compartido → tokens de [neutrales](#design-tokens) (`bg-surface`, `text-text-*`, `border-border-*`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button` (secondary). No escribir `bg-white`/`text-slate-900` etc. en un componente nuevo de `src/components/UI/` — usar el token de rol equivalente.
 - **`<select>` crudo con clases propias** (radio/padding/focus-ring distintos en cada sitio) → [`Select`](#select). Ya migrados: `AIConfigFormModal` (proveedor/modelo), `UsageDashboard` (período), `UserRegistrationForm`/`UserRow` (rol/estado), `ProposalDetailsSection` (unidad de duración), `EvaluacionInteligenteModal/IdleView` (proveedor IA), `FilterBar.SelectFilter`. No escribir un `<select>` a mano en ninguna vista nueva.
+- **Mapa local de badge por enum de vista** (`{label, class}` con clases Tailwind crudas) → mapear a `{label, role: SemanticColor}` y resolver el color en el render vía `SEMANTIC_COLOR_MAP[role]`, no guardar la clase final en el mapa. Patrón usado en `ProveedoresConfigPanel/types.ts` (`SOURCE_BADGE`, `STATUS_BADGE`). No crear un componente compartido para esto salvo que el mismo enum se repita en 2+ vistas — hasta entonces es vocabulario local de la vista, no un componente genérico.
+- **Input numérico con sanitización manual** (bloqueo de notación científica/negativos escrito a mano) → [`NumericInput`](#numericinput). Ya migrados: `MaterialFormModal` (precio), `ContractorFormModal` (rating).
 
 ## Candidatos a revisar (no consolidados aún, fuera de alcance de 1.5)
 

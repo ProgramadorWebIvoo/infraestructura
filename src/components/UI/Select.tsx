@@ -7,11 +7,19 @@
  * estilo del navegador/SO. Reemplaza los `<select>` con clases hardcoded
  * duplicadas que existían sueltos por toda la app antes de este componente.
  *
+ * El panel de opciones se porta a `document.body` (mismo mecanismo que
+ * `Tooltip.tsx`: `createPortal` + `position: fixed` vía
+ * `getBoundingClientRect()`) en vez de `position: absolute` relativo al
+ * trigger — así no queda atrapado dentro de un ancestro con `overflow-y-auto`
+ * (ej. el body scrolleable de `Modal`), que de otro modo expande su
+ * scrollHeight para "contener" el dropdown y genera una scrollbar espuria.
+ *
  * API pública idéntica a la versión anterior basada en `<select>` — value/
  * onChange sobre strings — para no requerir cambios en los consumidores.
  */
 
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronDown } from "lucide-react";
 import type { SemanticColor } from "./colorTokens";
@@ -105,6 +113,7 @@ export default function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((o) => o.value === value)));
+  const [panelRect, setPanelRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const generatedId = useId();
@@ -115,10 +124,34 @@ export default function Select({
 
   const close = useCallback(() => setIsOpen(false), []);
 
+  const updatePanelRect = useCallback(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPanelRect({ left: rect.left, top: rect.bottom + 6, width: rect.width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    updatePanelRect();
+  }, [isOpen, updatePanelRect]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.addEventListener("scroll", updatePanelRect, true);
+    window.addEventListener("resize", updatePanelRect);
+    return () => {
+      window.removeEventListener("scroll", updatePanelRect, true);
+      window.removeEventListener("resize", updatePanelRect);
+    };
+  }, [isOpen, updatePanelRect]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) close();
+      if (rootRef.current && !rootRef.current.contains(e.target as Node) && !listRef.current?.contains(e.target as Node)) {
+        close();
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -199,48 +232,52 @@ export default function Select({
           isOpen ? "-translate-y-1/2 rotate-180" : "-translate-y-1/2"
         } ${disabled ? "opacity-60" : ""}`}
       />
-      <AnimatePresence>
-        {isOpen && (
-          <motion.ul
-            ref={(node) => {
-              listRef.current = node;
-              if (node) requestAnimationFrame(() => node.focus());
-            }}
-            id={listboxId}
-            role="listbox"
-            tabIndex={-1}
-            aria-activedescendant={`${listboxId}-opt-${activeIndex}`}
-            onKeyDown={handleListKeyDown}
-            initial={{ opacity: 0, scale: 0.97, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -4 }}
-            transition={springs.snappy}
-            className="absolute z-20 mt-1.5 max-h-56 w-full min-w-max overflow-auto rounded-control border border-border-default bg-surface py-1 shadow-lg outline-hidden"
-          >
-            {options.map((opt, i) => {
-              const isSelected = opt.value === value;
-              const isActive = i === activeIndex;
-              return (
-                <li
-                  key={opt.value}
-                  id={`${listboxId}-opt-${i}`}
-                  role="option"
-                  aria-selected={isSelected}
-                  data-active={isActive}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  onClick={() => commitSelection(i)}
-                  className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs font-semibold transition-colors ${
-                    isActive ? ACCENT_BG_CLASSES[accent] : ""
-                  } ${isSelected ? ACCENT_TEXT_CLASSES[accent] : "text-text-secondary"}`}
-                >
-                  <span className="truncate">{opt.label}</span>
-                  {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
-                </li>
-              );
-            })}
-          </motion.ul>
-        )}
-      </AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && panelRect && (
+            <motion.ul
+              ref={(node) => {
+                listRef.current = node;
+                if (node) requestAnimationFrame(() => node.focus());
+              }}
+              id={listboxId}
+              role="listbox"
+              tabIndex={-1}
+              aria-activedescendant={`${listboxId}-opt-${activeIndex}`}
+              onKeyDown={handleListKeyDown}
+              initial={{ opacity: 0, scale: 0.97, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: -4 }}
+              transition={springs.snappy}
+              style={{ left: panelRect.left, top: panelRect.top, width: panelRect.width }}
+              className="fixed z-50 max-h-56 overflow-auto rounded-control border border-border-default bg-surface py-1 shadow-lg outline-hidden"
+            >
+              {options.map((opt, i) => {
+                const isSelected = opt.value === value;
+                const isActive = i === activeIndex;
+                return (
+                  <li
+                    key={opt.value}
+                    id={`${listboxId}-opt-${i}`}
+                    role="option"
+                    aria-selected={isSelected}
+                    data-active={isActive}
+                    onMouseEnter={() => setActiveIndex(i)}
+                    onClick={() => commitSelection(i)}
+                    className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs font-semibold transition-colors ${
+                      isActive ? ACCENT_BG_CLASSES[accent] : ""
+                    } ${isSelected ? ACCENT_TEXT_CLASSES[accent] : "text-text-secondary"}`}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                  </li>
+                );
+              })}
+            </motion.ul>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }
