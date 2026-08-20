@@ -190,9 +190,12 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
       animate="visible"
       variants={containerVariants}
     >
-      <div className="space-y-6">
+      <div
+        className={`space-y-6 ${isSuperadmin ? "flex min-h-0 flex-col lg:sticky lg:top-6" : ""}`}
+        style={isSuperadmin ? { height: "calc(100vh - 3rem)" } : undefined}
+      >
         {/* ── Panel header ────────────────────────────────────────────────── */}
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="shrink-0">
           <Card hoverable={false} className={`border-l-4 ${SEMANTIC_COLOR_MAP.brand.borderL400}`}>
             <SectionHeader
               icon={<Users className="h-5 w-5" />}
@@ -215,8 +218,8 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
         </motion.div>
 
         {/* ── Users table ───────────────────────────────────────────────── */}
-        <motion.div variants={itemVariants}>
-          <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400}`}>
+        <motion.div variants={itemVariants} className={isSuperadmin ? "flex-1 min-h-0 flex flex-col" : ""}>
+          <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400} ${isSuperadmin ? "flex flex-col min-h-0" : ""}`}>
             <TableToolbar
               searchId="usuarios-search"
               searchValue={searchQuery}
@@ -251,7 +254,7 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
                   ? "No hay usuarios registrados. Crea el primero con el botón «Nuevo usuario»."
                   : "Ningún usuario coincide con los filtros aplicados."
               }
-              maxHeight="35rem"
+              fillViewport
               pageSize={20}
             />
           </Card>

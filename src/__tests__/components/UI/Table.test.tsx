@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Table, type Column } from "@/components/UI/Table";
 
 // ---------------------------------------------------------------------------
@@ -217,7 +217,7 @@ describe("Table", () => {
   // Pagination
   // -----------------------------------------------------------------------
 
-  it("pagina correctamente con pageSize", () => {
+  it("pagina correctamente con pageSize", async () => {
     render(
       <Table columns={columns} data={testData} rowKey={(r) => r.id} pageSize={2} />
     );
@@ -232,7 +232,11 @@ describe("Table", () => {
     fireEvent.click(nextButton);
 
     expect(screen.getByText("Beta")).toBeInTheDocument();
-    expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
+    // Las filas salientes animan su salida (AnimatePresence) antes de
+    // desmontarse — esperar a que termine en vez de asertar sincrónicamente.
+    await waitFor(() => {
+      expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
+    });
   });
 
   it("muestra info de paginación correcta", () => {
@@ -245,7 +249,7 @@ describe("Table", () => {
     ).toBeInTheDocument();
   });
 
-  it("navega entre páginas con botones (pageSize=1)", () => {
+  it("navega entre páginas con botones (pageSize=1)", async () => {
     render(
       <Table columns={columns} data={testData} rowKey={(r) => r.id} pageSize={1} />
     );
@@ -254,15 +258,20 @@ describe("Table", () => {
     expect(screen.getByText("Charlie")).toBeInTheDocument();
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
 
-    // Página 2
+    // Página 2 — las filas salientes animan su salida (AnimatePresence)
+    // antes de desmontarse, así que se espera a que termine.
     fireEvent.click(screen.getByLabelText("Página siguiente"));
     expect(screen.getByText("Alpha")).toBeInTheDocument();
-    expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
+    });
 
     // Página 3
     fireEvent.click(screen.getByLabelText("Página siguiente"));
     expect(screen.getByText("Beta")).toBeInTheDocument();
-    expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
+    });
 
     // Botón anterior → vuelve a página 2
     fireEvent.click(screen.getByLabelText("Página anterior"));
@@ -425,6 +434,44 @@ describe("Table", () => {
 
     const scrollContainer = container.querySelector(".overflow-y-auto");
     expect(scrollContainer).toBeInTheDocument();
-    expect(scrollContainer?.getAttribute("style")).toContain("max-height");
+    expect(scrollContainer?.getAttribute("style")).toContain("max-height: 200px");
+  });
+
+  it("con fillViewport, el contenedor raíz usa flex-col h-full para ocupar el alto del padre", () => {
+    const { container } = render(
+      <Table columns={columns} data={testData} rowKey={(r) => r.id} fillViewport />
+    );
+
+    const root = container.firstElementChild;
+    expect(root).toHaveClass("flex", "h-full", "flex-col", "min-h-0");
+  });
+
+  it("con fillViewport, el contenedor scrolleable usa flex-1 min-h-0 (se reparte el espacio con la paginación, sin cálculo en px)", () => {
+    const { container } = render(
+      <Table columns={columns} data={testData} rowKey={(r) => r.id} fillViewport pageSize={2} />
+    );
+
+    const scrollContainer = container.querySelector(".overflow-y-auto");
+    expect(scrollContainer).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
+    // Sin fillViewport medido en JS, no debe fijar height/max-height en style.
+    expect(scrollContainer?.getAttribute("style")).toBeFalsy();
+  });
+
+  it("fillViewport tiene prioridad sobre maxHeight si ambos se pasan (no aplica el maxHeight fijo)", () => {
+    const { container } = render(
+      <Table columns={columns} data={testData} rowKey={(r) => r.id} maxHeight="200px" fillViewport />
+    );
+
+    const scrollContainer = container.querySelector(".overflow-y-auto");
+    expect(scrollContainer?.getAttribute("style") ?? "").not.toContain("200px");
+    expect(scrollContainer).toHaveClass("flex-1", "min-h-0");
+  });
+
+  it("sin maxHeight ni fillViewport, el contenedor no tiene scroll vertical forzado", () => {
+    const { container } = render(
+      <Table columns={columns} data={testData} rowKey={(r) => r.id} />
+    );
+
+    expect(container.querySelector(".overflow-y-auto")).not.toBeInTheDocument();
   });
 });

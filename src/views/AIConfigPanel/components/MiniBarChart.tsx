@@ -18,13 +18,14 @@ function TabButton({
   onClick: (mode: ViewMode) => void;
 }) {
   const info = SEMANTIC_COLOR_MAP.info;
+  const activeBorderBottom = info.borderL500.replace("border-l-", "border-b-");
   return (
     <button
       type="button"
       onClick={() => onClick(mode)}
       className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-t-md transition-colors cursor-pointer ${
         active
-          ? `${info.bg100} ${info.text700} border-b-2 border-info-500`
+          ? `${info.bg100} ${info.text700} border-b-2 ${activeBorderBottom}`
           : "text-text-tertiary hover:text-text-secondary"
       }`}
     >

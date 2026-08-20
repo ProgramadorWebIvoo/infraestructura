@@ -137,7 +137,7 @@ export default function AuditLogPanel<T>({
           type="button"
           onClick={() => setIsOpen(false)}
           aria-expanded={isOpen}
-          className="group w-full flex items-center gap-3 p-4 sm:p-5 text-left cursor-pointer hover:bg-slate-50/60 transition-colors shrink-0"
+          className="group w-full flex items-center gap-3 p-6 text-left cursor-pointer hover:bg-slate-50/60 transition-colors shrink-0"
         >
           <motion.div
             animate={freshKey !== null ? { scale: [1, 1.12, 1] } : { scale: 1 }}

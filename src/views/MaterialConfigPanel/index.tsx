@@ -205,9 +205,12 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""}>
-        <div className="space-y-6">
+        <div
+          className={`space-y-6 ${isSuperadmin ? "flex min-h-0 flex-col lg:sticky lg:top-6" : ""}`}
+          style={isSuperadmin ? { height: "calc(100vh - 3rem)" } : undefined}
+        >
           {/* ── Header ── */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="shrink-0">
             <Card hoverable={false} className={`border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400}`}>
               <SectionHeader
                 icon={<Package className="h-5 w-5" />}
@@ -230,8 +233,8 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
           </motion.div>
 
           {/* ── Table card ── */}
-          <motion.div variants={itemVariants}>
-            <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400}`}>
+          <motion.div variants={itemVariants} className={isSuperadmin ? "flex-1 min-h-0 flex flex-col" : ""}>
+            <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400} ${isSuperadmin ? "flex flex-col min-h-0" : ""}`}>
               <TableToolbar
                 searchId="materiales-search"
                 searchValue={search}
@@ -251,7 +254,7 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
                 rowKey={(m) => m.id}
                 isLoading={isLoading}
                 emptyMessage="No se encontraron materiales con ese criterio."
-                maxHeight="35rem"
+                fillViewport
                 pageSize={20}
               />
             </Card>

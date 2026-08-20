@@ -14,8 +14,8 @@ import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 export {
   AI_PROVIDERS,
   PROVIDER_LABELS,
-  PROVIDER_COLORS,
   providerColor,
+  providerRole,
 } from "../constants/aiProviders";
 import type { AIProvider } from "../constants/aiProviders";
 import { PROVIDER_MODELS } from "../constants/aiModels";

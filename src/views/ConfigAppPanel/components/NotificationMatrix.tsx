@@ -17,7 +17,7 @@ import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import InfoBanner from "../../../components/UI/InfoBanner";
 import AlertBanner from "../../../components/UI/AlertBanner";
-import { SkeletonCollapsedRow, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
+import { SkeletonBlock, SkeletonCollapsedRow, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
 import Card from "../../../components/UI/Card";
 import { SearchInput } from "../../../components/UI/FilterBar";
 import { springs } from "../../../animations";
@@ -71,7 +71,7 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
       <SkeletonGroup className="space-y-4">
         {Array.from({ length: 2 }).map((_, g) => (
           <SkeletonGroupItem key={g}>
-            <div className="skeleton-shimmer h-3 w-32 rounded mb-1.5" />
+            <SkeletonBlock className="h-3 w-32 mb-1.5" />
             <Card hoverable={false} className="p-0 px-4">
               {Array.from({ length: 3 }).map((_, r) => (
                 <SkeletonCollapsedRow key={r} className={r < 2 ? "border-b border-border-subtle" : ""} />

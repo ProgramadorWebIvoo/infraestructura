@@ -49,7 +49,7 @@ export default function TableToolbar({
   nounPlural,
 }: TableToolbarProps) {
   return (
-    <div className="flex flex-col gap-4 border-b border-border-subtle bg-surface-sunken/60 p-5 md:flex-row md:items-center md:justify-between">
+    <div className="flex shrink-0 flex-col gap-4 border-b border-border-subtle bg-surface-sunken/60 p-5 md:flex-row md:items-center md:justify-between">
       <SearchInput
         id={searchId}
         value={searchValue}

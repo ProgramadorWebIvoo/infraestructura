@@ -26,13 +26,13 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { containerVariants, itemVariants, springs } from "../../animations";
-import { SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
+import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
 import Button from "../../components/UI/Button";
 import AlertBanner from "../../components/UI/AlertBanner";
 import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
 import { useToast } from "../../components/UI/Toast";
 import { getErrorMessage } from "../../services/logger";
-import { useAppSettings, type AppSettingRecord } from "../../hooks/useAppSettings";
+import { useAppSettings } from "../../hooks/useAppSettings";
 import { useConfigAuditLogs } from "../../hooks/useConfigAuditLogs";
 import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
 import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
@@ -239,7 +239,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="skeleton-shimmer h-3 w-24 rounded mb-1" />
+        <SkeletonBlock className="h-3 w-24 mb-1" />
         <SkeletonGroup className="space-y-6">
           <SkeletonGroupItem><SkeletonCard /></SkeletonGroupItem>
           <SkeletonGroupItem><SkeletonCard /></SkeletonGroupItem>

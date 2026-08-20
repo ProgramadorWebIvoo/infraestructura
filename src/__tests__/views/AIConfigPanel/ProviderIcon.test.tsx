@@ -20,14 +20,14 @@ describe("ProviderIcon", () => {
     expect(screen.getByText("mistral")).toBeInTheDocument();
   });
 
-  it("aplica el badge del proveedor (gemini → azul)", () => {
+  it("aplica el badge del proveedor (gemini → rol info)", () => {
     const { container } = render(<ProviderIcon provider="gemini" />);
-    expect(container.firstChild).toHaveClass("bg-blue-50");
-    expect(container.firstChild).toHaveClass("text-blue-700");
+    expect(container.firstChild).toHaveClass("bg-info-50");
+    expect(container.firstChild).toHaveClass("text-info-700");
   });
 
-  it("usa el fallback de OpenAI para proveedores desconocidos", () => {
+  it("usa el fallback de OpenAI (rol success) para proveedores desconocidos", () => {
     const { container } = render(<ProviderIcon provider="unknown" />);
-    expect(container.firstChild).toHaveClass("bg-emerald-50");
+    expect(container.firstChild).toHaveClass("bg-success-50");
   });
 });

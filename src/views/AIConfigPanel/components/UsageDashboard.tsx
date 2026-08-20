@@ -5,7 +5,7 @@ import { PROVIDER_LABELS, providerColor } from "../../../constants/aiProviders";
 import type { AiUsageByProvider, AiUsageData, AiUsageTotals } from "../../../hooks/useAIConfig";
 import KpiCard from "../../../components/UI/KpiCard";
 import Card from "../../../components/UI/Card";
-import { SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
+import { SkeletonBlock, SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import Select from "../../../components/UI/Select";
 import MiniBarChart from "./MiniBarChart";
@@ -102,6 +102,7 @@ interface ProviderUsage {
 }
 
 function ProviderUsageBar({ provider }: { provider: ProviderUsage }) {
+  const semantic = providerColor(provider.provider.provider);
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
@@ -114,7 +115,7 @@ function ProviderUsageBar({ provider }: { provider: ProviderUsage }) {
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
         <motion.div
-          className={`h-full rounded-full ${providerColor(provider.provider.provider).bar}`}
+          className={`h-full rounded-full bg-linear-to-r ${semantic.gradientFrom} ${semantic.gradientTo}`}
           initial={{ width: 0 }}
           animate={{ width: `${provider.pctOfTotal * 100}%` }}
           transition={springs.gentle}
@@ -195,11 +196,11 @@ export default function UsageDashboard({
             </SkeletonGroup>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <Card hoverable={false} className={`p-4 border-l-4 ${info.borderL400} lg:col-span-2`}>
-                <div className="skeleton-shimmer h-3 w-40 rounded mb-4" />
+                <SkeletonBlock className="h-3 w-40 mb-4" />
                 <SkeletonBarChart rows={6} />
               </Card>
               <Card hoverable={false} className={`p-4 border-l-4 ${info.borderL400}`}>
-                <div className="skeleton-shimmer h-3 w-24 rounded mb-4" />
+                <SkeletonBlock className="h-3 w-24 mb-4" />
                 <SkeletonProviderList items={3} />
               </Card>
             </div>
