@@ -31,9 +31,9 @@ Tokens centralizados en `@theme` (`src/index.css`) — Tailwind v4, sin `tailwin
 - **Feedback/alertas**: [AlertBanner](#alertbanner), [InfoBanner](#infobanner), [Toast](#toast--toastprovider--usetoast), [OfflineBanner](#offlinebanner), [FieldError](#fielderror)
 - **Diálogos/modales**: [Modal](#modal), [ConfirmDialog](#confirmdialog), [SelectModal](#selectmodal)
 - **Tablas/listados**: [Table](#table), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel)
-- **Formularios**: [NumericInput](#numericinput), [Select](#select), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint)
+- **Formularios**: [NumericInput](#numericinput), [Select](#select), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint), [PasswordStrengthMeter](#passwordstrengthmeter)
 - **Badges/estado**: [StatusBadge](#statusbadge), [RoleBadge](#rolebadge)
-- **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [FilterBar](#filterbar-searchinput--selectfilter)
+- **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [FilterBar](#filterbar-searchinput--selectfilter), [TableToolbar](#tabletoolbar)
 - **Navegación/shell**: [SidebarNav](#sidebarnav), [ConfigDropdown](#configdropdown), [MobileTopBar](#mobiletopbar), [SidebarTip](#sidebartip)
 - **Notificaciones internas**: [NotificationBell](#notificationbell), [NotificationList](#notificationlist), [NotificationsProvider](#notificationsprovider--usenotifications)
 - **Tooltips**: [Tooltip](#tooltip), [SidebarTip](#sidebartip) (solo sidebar colapsado)
@@ -200,7 +200,7 @@ Panel de historial/auditoría colapsable genérico, con búsqueda y paginación 
 
 - **Props**: `value: string`, `onChange: (value: string) => void`, `options: SelectOption[]` (`{value,label}`), `id?`, `accent?: SemanticColor` (default `"info"`), `size?: "sm"|"md"` (default `"md"`), `icon?: ReactNode` (ícono inset a la izquierda, ajusta padding automáticamente), `hasError?`, `disabled?`, `required?`, `ariaLabel?`, `title?`, `className?`
 - **Cuándo usarlo**: cualquier `<select>` de la app — reemplaza por completo el patrón de escribir un `<select>` a mano con clases propias.
-- **Convenciones**: consume `SEMANTIC_COLOR_MAP` para el color de foco (`accent`) vía un mapa estático de clases (nunca interpolar `focus:ring-${accent}-200` directamente — Tailwind v4 no puede purgar/generar clases dinámicas construidas en runtime); consume `fieldErrorClasses` de `FieldError.tsx` para el estado `hasError`; `size="sm"` para selects inline en filas de tabla/tarjeta (ej. estado Activo/Inactivo en `UserRow`); `icon` para selects con ícono de contexto (ej. `Shield` en selector de rol).
+- **Convenciones**: consume `SEMANTIC_COLOR_MAP` para el color de foco (`accent`) vía un mapa estático de clases (nunca interpolar `focus:ring-${accent}-200` directamente — Tailwind v4 no puede purgar/generar clases dinámicas construidas en runtime); consume `fieldErrorClasses` de `FieldError.tsx` para el estado `hasError`; `size="sm"` para selects inline en filas de tabla/tarjeta; `icon` para selects con ícono de contexto (ej. `Shield` en selector de rol de `UserFormModal`).
 
 ## FileDropZone
 
@@ -241,6 +241,16 @@ Dos indicadores pequeños para componer junto a labels: `RequiredMark` (indicado
 - **Props**: `RequiredMark`: `filled: boolean` (obligatoria), `placement?: TooltipPlacement`, `className?`. `HelpHint`: `content: string`, `placement?: TooltipPlacement`, `className?`
 - **Cuándo usarlo**: junto a labels de campos de formulario, para marcar obligatoriedad (con feedback en vivo del estado del campo) o dar ayuda contextual.
 - **Convenciones**: ambos son named exports; ambos envuelven `Tooltip`; sin opinión sobre el layout del label (se compone en el call site, ej. `<label className="flex items-center gap-1">Nombre <RequiredMark filled={name.trim().length > 0} /></label>`). `RequiredMark` NO es un asterisco estático: mientras `filled` es `false` muestra un triángulo de alerta rojo con tooltip "Este campo es obligatorio"; apenas `filled` es `true` cruza-desvanece (`AnimatePresence`, spring) a un check verde con tooltip "¡Válido!". El caller decide el criterio de "lleno" (ej. trim().length > 0, o coincidencia de confirmación de contraseña) y debe pasarlo de forma controlada — no hay validación interna.
+
+## PasswordStrengthMeter
+
+**Path**: `src/components/UI/PasswordStrengthMeter.tsx`
+
+Indicador de fuerza de contraseña: barra continua + checklist de requisitos, ambos con feedback en vivo mientras el usuario escribe. Extraído para reusarse en cualquier flujo de alta/cambio de contraseña (hoy: `UserFormModal` en creación de usuario).
+
+- **Props**: `password: string`, `requirements: PasswordRequirement[]` (`{label, met}`, calculados por el caller — el componente no conoce las reglas de negocio de complejidad)
+- **Cuándo usarlo**: debajo de cualquier input de contraseña nueva (alta de usuario, cambio/reset de contraseña) para dar guía proactiva en vez de solo marcar error al fallar.
+- **Convenciones**: no renderiza nada si `password` está vacío. La barra usa `width` animado en `%` (no `scaleX` sobre segmentos `flex-1` — esa primera versión no renderizaba el progreso de forma fiable porque el ancho computado de un hijo `flex-1` no es estable para animar `scaleX`). Nivel de fuerza (`Muy débil→Fuerte`) se deriva de `metCount/requirements.length` y resuelve color vía `SEMANTIC_COLOR_MAP` (`danger→warning→info→success`). El checklist anima cada ítem con check/cruz (`AnimatePresence mode="wait"`, `springs.snappy`) al cumplirse/incumplirse en vivo.
 
 ---
 
@@ -315,6 +325,16 @@ No tiene default export — expone dos controles pequeños: `SearchInput` y `Sel
 - **Props**: `SearchInput`: `id,value,onChange,placeholder,ariaLabel,className?`. `SelectFilter`: `id,value,onChange,ariaLabel,options: SelectOption[],title?,className?`
 - **Cuándo usarlo**: barra de búsqueda + filtros dropdown arriba de tablas (extraído de patrones duplicados de Presidencia).
 - **Convenciones**: named exports (sin default); `SelectFilter` es un wrapper delgado sobre `Select` (ver arriba) — `SelectOption` se define en `Select.tsx` y se re-exporta acá para no duplicar el tipo.
+
+## TableToolbar
+
+**Path**: `src/components/UI/TableToolbar.tsx`
+
+Barra de herramientas para tablas de configuración: `SearchInput` + filtro `SelectFilter` opcional + chip contador animado ("X / Y elementos"). Extraída tras encontrar el mismo bloque duplicado carácter por carácter en `UsuariosPanel`, `ProveedoresConfigPanel` y `MaterialConfigPanel` (cada `index.tsx` lo escribía a mano encima de su `Table`, en vez de encapsularlo una sola vez).
+
+- **Props**: `searchId`, `searchValue`, `onSearchChange`, `searchPlaceholder`, `searchAriaLabel`, `filter?: {id,value,onChange,ariaLabel,options}` (omitido si la vista no necesita un `SelectFilter` adicional), `countIcon: ReactNode`, `filteredCount: number`, `totalCount: number`, `noun: string`, `nounPlural: string`
+- **Cuándo usarlo**: inmediatamente antes de un `Table` en cualquier panel de catálogo/configuración que tenga búsqueda + contador de resultados filtrados/totales. Si la vista necesita más de un filtro adicional, rango de fechas, o botones de exportación en la misma barra (ej. `MasterTableSection`/`AuditLogSection` de Presidencia), esas necesidades no encajan en esta abstracción de props fijas — se deja la barra manual en esos casos en vez de forzar un `extra?: ReactNode` de escape que devaluaría la abstracción.
+- **Convenciones**: compone `SearchInput`/`SelectFilter` de `FilterBar.tsx`; el chip contador usa el mismo patrón `motion.span` con `springs.snappy` (`key={filteredCount}`, scale+fade al cambiar) que ya usaban las 3 vistas por separado; `filteredCount !== totalCount` muestra la fracción (`"3 / 12"`), si coinciden solo el total (`"12"`).
 
 ---
 
@@ -446,9 +466,11 @@ Estos patrones fueron identificados como duplicados y consolidados — si aparec
 - **Clases de estado activo del sidebar** → `sidebarNavClasses.ts`, ya consumido por `SidebarNav`/`ConfigDropdown`.
 - **Mapa de color propio por componente** (`COLOR_MAP`, `ICON_COLORS`, `primaryGradients`/`dangerGradients`, etc.) → [`SEMANTIC_COLOR_MAP`](#colortokensts) (`colorTokens.ts`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button`, `alertStyles.ts`/`Toast`/`AlertBanner`, `StatusBadge` (radio). Un componente nuevo con color propio no debe crear un sexto mapa — consumir este.
 - **`bg-white`/`text-slate-*`/`border-slate-*` escritos a mano** en un componente compartido → tokens de [neutrales](#design-tokens) (`bg-surface`, `text-text-*`, `border-border-*`). Ya migrados: `Card`, `KpiCard`, `SectionHeader`, `Modal`, `Button` (secondary). No escribir `bg-white`/`text-slate-900` etc. en un componente nuevo de `src/components/UI/` — usar el token de rol equivalente.
-- **`<select>` crudo con clases propias** (radio/padding/focus-ring distintos en cada sitio) → [`Select`](#select). Ya migrados: `AIConfigFormModal` (proveedor/modelo), `UsageDashboard` (período), `UserRegistrationForm`/`UserRow` (rol/estado), `ProposalDetailsSection` (unidad de duración), `EvaluacionInteligenteModal/IdleView` (proveedor IA), `FilterBar.SelectFilter`. No escribir un `<select>` a mano en ninguna vista nueva.
+- **`<select>` crudo con clases propias** (radio/padding/focus-ring distintos en cada sitio) → [`Select`](#select). Ya migrados: `AIConfigFormModal` (proveedor/modelo), `UsageDashboard` (período), `UserFormModal` (rol/estado), `ProposalDetailsSection` (unidad de duración), `EvaluacionInteligenteModal/IdleView` (proveedor IA), `FilterBar.SelectFilter`. No escribir un `<select>` a mano en ninguna vista nueva.
 - **Mapa local de badge por enum de vista** (`{label, class}` con clases Tailwind crudas) → mapear a `{label, role: SemanticColor}` y resolver el color en el render vía `SEMANTIC_COLOR_MAP[role]`, no guardar la clase final en el mapa. Patrón usado en `ProveedoresConfigPanel/types.ts` (`SOURCE_BADGE`, `STATUS_BADGE`). No crear un componente compartido para esto salvo que el mismo enum se repita en 2+ vistas — hasta entonces es vocabulario local de la vista, no un componente genérico.
 - **Input numérico con sanitización manual** (bloqueo de notación científica/negativos escrito a mano) → [`NumericInput`](#numericinput). Ya migrados: `MaterialFormModal` (precio), `ContractorFormModal` (rating).
+- **Barra de búsqueda + filtro + chip contador animado** encima de un `Table`, escrita a mano en el `index.tsx` de cada vista → [`TableToolbar`](#tabletoolbar). Encontrado idéntico carácter por carácter en `UsuariosPanel`, `ProveedoresConfigPanel`, `MaterialConfigPanel`. No repetir el bloque `SearchInput` + chip `motion.span` en una vista de catálogo nueva — usar `TableToolbar` salvo que la barra necesite elementos genuinamente distintos (fechas, exportación, 2+ selects), caso en el que la duplicación puntual es aceptable (ver variantes de Presidencia).
+- **Formulario de creación y panel de edición inline como componentes separados** para la misma entidad → un solo modal con `mode: "create"|"edit"` (patrón `ContractorFormModal`/`UserFormModal`). `UsuariosPanel` tenía originalmente un formulario de alta standalone (`UserRegistrationForm`) y una edición expandida inline por fila (`UserRow`) — ambos eliminados y unificados en `UserFormModal`. No crear dos componentes de formulario para alta/edición de la misma entidad si los campos se solapan.
 
 ## Candidatos a revisar (no consolidados aún, fuera de alcance de 1.5)
 

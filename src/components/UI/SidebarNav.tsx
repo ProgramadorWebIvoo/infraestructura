@@ -32,6 +32,7 @@ import SidebarTip from "./SidebarTip";
 import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
 import { navLinkClass, sidebarIconClass, sidebarTextClass } from "./sidebarNavClasses";
+import { getUserInitials } from "../../utils";
 
 interface SidebarNavProps {
   isOpen: boolean;
@@ -43,15 +44,6 @@ interface SidebarNavProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
-
-// ─── User initials helper ────────────────────────────────────────────────────
-const getUserInitials = (name: string) =>
-  name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 
 // ─── Component ───────────────────────────────────────────────────────────────
 function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, isCollapsed, onToggleCollapse }: SidebarNavProps) {

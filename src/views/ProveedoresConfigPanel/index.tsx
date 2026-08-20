@@ -10,16 +10,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Building2, Plus, UserCog } from "lucide-react";
 import { Table } from "../../components/UI/Table";
+import TableToolbar from "../../components/UI/TableToolbar";
 import Button from "../../components/UI/Button";
 import Card from "../../components/UI/Card";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
 import SectionHeader from "../../components/UI/SectionHeader";
-import { SearchInput } from "../../components/UI/FilterBar";
 import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
 import { useToast } from "../../components/UI/Toast";
 import { apiFetch } from "../../services/api";
 import { logError, getErrorMessage } from "../../services/logger";
-import { containerVariants, itemVariants, springs } from "../../animations";
+import { containerVariants, itemVariants } from "../../animations";
 import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
@@ -265,29 +265,18 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
           {/* ── Table card ── */}
           <motion.div variants={itemVariants}>
             <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400}`}>
-              <div className="flex flex-col gap-4 border-b border-border-subtle bg-surface-sunken/60 p-5 md:flex-row md:items-center md:justify-between">
-                <SearchInput
-                  id="proveedores-search"
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Buscar por nombre, código, especialidad, email o teléfono..."
-                  ariaLabel="Buscar proveedor"
-                  className="md:w-96"
-                />
-                <div className="flex items-center gap-1.5 rounded-control border border-border-default bg-surface px-4 py-2.5 text-xs font-bold text-text-secondary">
-                  <Building2 className="h-4 w-4 text-text-muted" />
-                  <motion.span
-                    key={filtered.length}
-                    initial={{ scale: 1.3, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={springs.snappy}
-                    className="text-text-primary"
-                  >
-                    {filtered.length}{filtered.length !== contractors.length ? ` / ${contractors.length}` : ""}
-                  </motion.span>
-                  {filtered.length === 1 ? "proveedor" : "proveedores"}
-                </div>
-              </div>
+              <TableToolbar
+                searchId="proveedores-search"
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar por nombre, código, especialidad, email o teléfono..."
+                searchAriaLabel="Buscar proveedor"
+                countIcon={<Building2 />}
+                filteredCount={filtered.length}
+                totalCount={contractors.length}
+                noun="proveedor"
+                nounPlural="proveedores"
+              />
 
               <Table
                 columns={columns}

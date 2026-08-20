@@ -3,21 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Panel de gestión de usuarios del sistema.
- * CRUD completo: crear, editar (nombre/correo/estado), activar/desactivar,
+ * CRUD completo: crear, editar (nombre/correo/rol/estado), activar/desactivar,
  * y envío de link de restablecimiento de contraseña.
  */
 
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Users } from "lucide-react";
+import { motion } from "motion/react";
+import { Plus, Users } from "lucide-react";
+import { Table } from "../../components/UI/Table";
+import TableToolbar from "../../components/UI/TableToolbar";
 import { useToast } from "../../components/UI/Toast";
 import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
 import { containerVariants, itemVariants } from "../../animations";
 import { ROLE_LABELS, roleLabel } from "../../constants/roles";
-import { SearchInput, SelectFilter } from "../../components/UI/FilterBar";
 import SectionHeader from "../../components/UI/SectionHeader";
-import UserRegistrationForm from "./components/UserRegistrationForm";
-import UserRow from "./components/UserRow";
+import Card from "../../components/UI/Card";
+import Button from "../../components/UI/Button";
+import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
+import UserFormModal from "./components/UserFormModal";
+import { getUserColumns } from "./columns";
+import { EMPTY_FORM, type UserForm } from "./types";
+import { getErrorMessage } from "../../services/logger";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
 
@@ -46,7 +52,13 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     prependLocal: prependAuditLog,
   } = useConfigAuditLogs(authToken, isSuperadmin);
 
-  const [editingId, setEditingId] = useState<number | string | null>(null);
+  // ---- Modal state ----
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState<UserForm>(EMPTY_FORM);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [sendingId, setSendingId] = useState<number | string | null>(null);
 
@@ -62,6 +74,83 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     return matchesSearch && matchesStatus;
   }), [users, searchQuery, statusFilter]);
 
+  // ---- Modal handlers ----
+  const handleOpenCreate = () => {
+    setModalMode("create");
+    setEditingUser(null);
+    setForm({ ...EMPTY_FORM, role: roleOptions[0]?.value ?? EMPTY_FORM.role });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (user: UserRecord) => {
+    setModalMode("edit");
+    setEditingUser(user);
+    setForm({
+      name: user.name,
+      email: user.email,
+      password: "",
+      password_confirmation: "",
+      role: user.role,
+      status: user.status,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    if (isSaving) return;
+    setIsModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.email.trim()) {
+      showToast("Completa todos los campos obligatorios.", "error");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (modalMode === "create") {
+        if (form.password.length < 8) {
+          showToast("La contraseña debe tener al menos 8 caracteres.", "error");
+          return;
+        }
+        if (form.password !== form.password_confirmation) {
+          showToast("Las contraseñas no coinciden.", "error");
+          return;
+        }
+        const created = await handleCreateUser({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          password_confirmation: form.password_confirmation,
+          role: form.role,
+        });
+        if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
+        showToast(`Usuario "${created.name}" registrado correctamente.`, "success");
+      } else if (editingUser) {
+        const updated = await handleUpdateUser(editingUser.id, {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          role: form.role,
+          status: form.status,
+        });
+        // Se inserta en reverso: cada prependAuditLog pone la entrada al
+        // frente, así que iterar en el orden en que el backend las generó
+        // (más vieja primero) dejaría la más reciente abajo — reversa
+        // preserva el orden cronológico visible en el panel.
+        if (updated.auditLogs && isSuperadmin) {
+          for (const log of [...updated.auditLogs].reverse()) prependAuditLog(log);
+        }
+      }
+      handleCloseModal();
+    } catch (err) {
+      showToast(getErrorMessage(err, "Error al guardar el usuario."), "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleToggle = async (user: UserRecord) => {
     setTogglingId(user.id);
     try {
@@ -72,12 +161,6 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     } finally {
       setTogglingId(null);
     }
-  };
-
-  const handleCreateUserWithAudit: typeof handleCreateUser = async (payload) => {
-    const created = await handleCreateUser(payload);
-    if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
-    return created;
   };
 
   const handleSendReset = async (user: UserRecord) => {
@@ -91,6 +174,15 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     }
   };
 
+  const columns = getUserColumns({
+    roleLabel,
+    togglingId,
+    sendingId,
+    onEdit: handleOpenEdit,
+    onToggleStatus: handleToggle,
+    onSendReset: handleSendReset,
+  });
+
   return (
     <motion.div
       className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""}
@@ -100,147 +192,82 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     >
       <div className="space-y-6">
         {/* ── Panel header ────────────────────────────────────────────────── */}
-        <motion.div variants={itemVariants} className="rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs">
-          <SectionHeader
-            icon={<Users className="h-5 w-5" />}
-            title="Gestión de Usuarios"
-            description="Registro y administración de accesos al sistema."
-            color="sky"
-          />
+        <motion.div variants={itemVariants}>
+          <Card hoverable={false} className={`border-l-4 ${SEMANTIC_COLOR_MAP.brand.borderL400}`}>
+            <SectionHeader
+              icon={<Users className="h-5 w-5" />}
+              title="Gestión de Usuarios"
+              description="Registro y administración de accesos al sistema."
+              color="sky"
+              actions={
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="primary"
+                  colorScheme="sky"
+                  size="md"
+                  icon={<Plus className="h-4 w-4" />}
+                >
+                  Nuevo usuario
+                </Button>
+              }
+            />
+          </Card>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-          <UserRegistrationForm roleOptions={roleOptions} onCreateUser={handleCreateUserWithAudit} />
+        {/* ── Users table ───────────────────────────────────────────────── */}
+        <motion.div variants={itemVariants}>
+          <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400}`}>
+            <TableToolbar
+              searchId="usuarios-search"
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="Buscar por nombre o correo..."
+              searchAriaLabel="Buscar usuario"
+              filter={{
+                id: "usuarios-status-filter",
+                value: statusFilter,
+                onChange: (v) => setStatusFilter(v as "all" | "Active" | "Inactive"),
+                ariaLabel: "Filtrar por estado",
+                options: [
+                  { value: "all", label: "Todos" },
+                  { value: "Active", label: "Activos" },
+                  { value: "Inactive", label: "Inactivos" },
+                ],
+              }}
+              countIcon={<Users />}
+              filteredCount={filteredUsers.length}
+              totalCount={users.length}
+              noun="usuario"
+              nounPlural="usuarios"
+            />
 
-          {/* ── Users list ────────────────────────────────────────────────── */}
-          <motion.div
-            variants={itemVariants}
-            className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col border-l-4 border-l-indigo-400"
-          >
-            <div className="px-6 py-4 border-b border-slate-100 shrink-0 bg-gradient-to-r from-indigo-50/30 to-white rounded-tr-2xl space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-950">Usuarios del sistema</h3>
-                <motion.span
-                  key={filteredUsers.length}
-                  initial={{ scale: 1.3, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  className="text-[10px] font-bold font-mono text-indigo-600 bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 px-2.5 py-1 rounded-full shadow-xs"
-                >
-                  {filteredUsers.length}{filteredUsers.length !== users.length ? ` / ${users.length}` : ""} {filteredUsers.length === 1 ? "usuario" : "usuarios"}
-                </motion.span>
-              </div>
+            <Table
+              columns={columns}
+              data={filteredUsers}
+              rowKey={(u) => u.id}
+              isLoading={isLoading}
+              emptyMessage={
+                users.length === 0
+                  ? "No hay usuarios registrados. Crea el primero con el botón «Nuevo usuario»."
+                  : "Ningún usuario coincide con los filtros aplicados."
+              }
+              maxHeight="35rem"
+              pageSize={20}
+            />
+          </Card>
+        </motion.div>
 
-              {/* Search + filter bar */}
-              <div className="flex items-center gap-2">
-                <SearchInput
-                  id="usuarios-search"
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  placeholder="Buscar por nombre o correo..."
-                  ariaLabel="Buscar usuario"
-                />
-                <SelectFilter
-                  id="usuarios-status-filter"
-                  value={statusFilter}
-                  onChange={v => setStatusFilter(v as "all" | "Active" | "Inactive")}
-                  ariaLabel="Filtrar por estado"
-                  options={[
-                    { value: "all", label: "Todos" },
-                    { value: "Active", label: "Activos" },
-                    { value: "Inactive", label: "Inactivos" },
-                  ]}
-                />
-              </div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {isLoading ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-1 items-center justify-center p-10"
-                >
-                  <div className="text-center space-y-3">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                      className="w-8 h-8 border-[3px] border-indigo-200 border-t-indigo-500 rounded-full mx-auto"
-                    />
-                    <p className="text-[11px] text-slate-400 font-medium">Cargando usuarios...</p>
-                  </div>
-                </motion.div>
-              ) : filteredUsers.length === 0 ? (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-1 items-center justify-center p-10 text-center"
-                >
-                  <div className="space-y-3">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 mx-auto shadow-xs"
-                    >
-                      <Users className="h-6 w-6 text-slate-400" />
-                    </motion.div>
-                    <p className="text-sm font-bold text-slate-500">
-                      {users.length === 0 ? "No hay usuarios registrados" : "Sin resultados"}
-                    </p>
-                    <p className="text-[11px] text-slate-400 max-w-[220px]">
-                      {users.length === 0
-                        ? "Crea el primer usuario usando el formulario de la izquierda."
-                        : "Ningún usuario coincide con los filtros aplicados."}
-                    </p>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.ul
-                  key="user-list"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="divide-y divide-slate-100 overflow-y-auto flex-1"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {filteredUsers.map((user) => (
-                      <UserRow
-                        key={user.id}
-                        user={user}
-                        roleOptions={roleOptions}
-                        roleLabel={roleLabel}
-                        isEditing={editingId === user.id}
-                        isToggling={togglingId === user.id}
-                        isSending={sendingId === user.id}
-                        onStartEdit={() => setEditingId(user.id)}
-                        onCancelEdit={() => setEditingId(null)}
-                        onSave={async (id, payload) => {
-                          const updated = await handleUpdateUser(id, payload);
-                          // Se inserta en reverso: cada prependAuditLog pone
-                          // la entrada al frente, así que iterar en el orden
-                          // en que el backend las generó (más vieja primero)
-                          // dejaría la más reciente abajo — reversa preserva
-                          // el orden cronológico visible en el panel.
-                          if (updated.auditLogs && isSuperadmin) {
-                            for (const log of [...updated.auditLogs].reverse()) prependAuditLog(log);
-                          }
-                          setEditingId(null);
-                        }}
-                        onToggleStatus={() => handleToggle(user)}
-                        onSendReset={() => handleSendReset(user)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.ul>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
+        <UserFormModal
+          isOpen={isModalOpen}
+          mode={modalMode}
+          editingName={editingUser?.name ?? null}
+          form={form}
+          onFormChange={setForm}
+          roleOptions={roleOptions}
+          isSaving={isSaving}
+          onClose={handleCloseModal}
+          onSave={handleSave}
+        />
       </div>
 
       {isSuperadmin && (

@@ -51,6 +51,17 @@ export function getRoleColor(role: string): string {
   return ROLE_COLOR_PALETTE[hashRoleName(role) % ROLE_COLOR_PALETTE.length];
 }
 
+/** Iniciales (hasta 2) de un nombre completo, para avatares — misma regla en sidebar y vistas de usuarios. */
+export function getUserInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
+}
+
 // ---------------------------------------------------------------------------
 // Mapa de colores por estado de proyecto (web — clases Tailwind)
 // ---------------------------------------------------------------------------
