@@ -131,4 +131,73 @@ describe("AuditLogPanel", () => {
     expect(screen.getByRole("button", { name: "Página anterior" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Página siguiente" })).not.toBeDisabled();
   });
+
+  describe("búsqueda controlada (server-side)", () => {
+    it("con onSearchChange, no filtra localmente — muestra `entries` tal cual llegan", () => {
+      // Simula que el backend ya filtró: entries solo trae una entrada,
+      // aunque el texto de búsqueda no coincida con su label.
+      renderPanel({
+        defaultOpen: true,
+        entries: [{ id: 2, label: "Retención de notificaciones cambiada" }],
+        searchValue: "algo que no matchea",
+        onSearchChange: vi.fn(),
+      });
+
+      expect(screen.getByText("Retención de notificaciones cambiada")).toBeInTheDocument();
+    });
+
+    it("el input refleja searchValue y dispara onSearchChange en vez de filtrar internamente", () => {
+      const onSearchChange = vi.fn();
+      renderPanel({ defaultOpen: true, searchValue: "anticipo", onSearchChange });
+
+      const input = screen.getByPlaceholderText("Buscar en el historial...") as HTMLInputElement;
+      expect(input.value).toBe("anticipo");
+
+      fireEvent.change(input, { target: { value: "nuevo texto" } });
+      expect(onSearchChange).toHaveBeenCalledWith("nuevo texto");
+    });
+
+    it("muestra 'Sin resultados para esos filtros' cuando hay activeFilterCount y la lista viene vacía", () => {
+      renderPanel({
+        defaultOpen: true,
+        entries: [],
+        onSearchChange: vi.fn(),
+        activeFilterCount: 1,
+        emptyMessage: "Mensaje por defecto",
+      });
+
+      expect(screen.getByText("Sin resultados para esos filtros.")).toBeInTheDocument();
+      expect(screen.queryByText("Mensaje por defecto")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("filtersSlot (filtros avanzados)", () => {
+    it("no muestra el botón de filtros avanzados cuando no se pasa filtersSlot", () => {
+      renderPanel({ defaultOpen: true });
+
+      expect(screen.queryByLabelText("Filtros avanzados")).not.toBeInTheDocument();
+    });
+
+    it("muestra el botón de filtros avanzados y expande el slot al hacer click", () => {
+      renderPanel({
+        defaultOpen: true,
+        filtersSlot: <div>Contenido de filtros</div>,
+      });
+
+      expect(screen.queryByText("Contenido de filtros")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText("Filtros avanzados"));
+      expect(screen.getByText("Contenido de filtros")).toBeInTheDocument();
+    });
+
+    it("muestra el badge de cantidad de filtros activos en el toggle", () => {
+      renderPanel({
+        defaultOpen: true,
+        filtersSlot: <div>Contenido de filtros</div>,
+        activeFilterCount: 3,
+      });
+
+      expect(screen.getByText("3")).toBeInTheDocument();
+    });
+  });
 });

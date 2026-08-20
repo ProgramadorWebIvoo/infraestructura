@@ -21,7 +21,9 @@ const sampleLog: ConfigAuditLogRecord = {
   settingKey: "anticipo_maximo_porcentaje",
   oldValue: "100",
   newValue: "60",
+  userId: 5,
   userName: "Admin Test",
+  userEmail: "admin@ivoo.local",
   changedAt: "2026-08-13 10:00",
 };
 
@@ -116,5 +118,125 @@ describe("useConfigAuditLogs", () => {
 
     expect(result.current.logs[0]).toEqual(newEntry);
     expect(result.current.total).toBe(2);
+  });
+
+  describe("filtros", () => {
+    it("expone filtros vacíos y activeFilterCount en 0 por defecto", async () => {
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
+      const { result } = renderHook(() => useConfigAuditLogs("token", true));
+      await flush();
+
+      expect(result.current.filters).toEqual({
+        q: "", entityType: "", action: "", user: "", dateFrom: "", dateTo: "",
+      });
+      expect(result.current.activeFilterCount).toBe(0);
+    });
+
+    it("updateFilter envía entity_type/action/user/date_from/date_to al backend y resetea a página 1", async () => {
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
+      const { result } = renderHook(() => useConfigAuditLogs("token", true));
+      await flush();
+
+      mockApiFetch.mockResolvedValueOnce(page([], { total: 0 }));
+      act(() => {
+        result.current.updateFilter("entityType", "contractor");
+      });
+      await flush();
+
+      expect(mockApiFetch).toHaveBeenLastCalledWith(
+        "/config-audit-logs?page=1&per_page=20&entity_type=contractor",
+        { token: "token" },
+      );
+      expect(result.current.activeFilterCount).toBe(1);
+    });
+
+    it("debounce en q: el fetch final incluye el término solo tras el delay, no letra por letra", async () => {
+      mockApiFetch.mockResolvedValue(page([sampleLog]));
+      const { result } = renderHook(() => useConfigAuditLogs("token", true));
+      await flush();
+
+      act(() => {
+        result.current.updateFilter("q", "A");
+      });
+      act(() => {
+        result.current.updateFilter("q", "An");
+      });
+      act(() => {
+        result.current.updateFilter("q", "Andes");
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await flush();
+
+      // Ninguna llamada intermedia con "A" o "An" — solo el término final,
+      // tras asentarse el debounce.
+      const queries = mockApiFetch.mock.calls.map((c) => c[0] as string);
+      expect(queries.some((q) => q.includes("q=A&") || q.endsWith("q=A"))).toBe(false);
+      expect(queries.some((q) => q.includes("q=An&") || q.endsWith("q=An"))).toBe(false);
+      expect(mockApiFetch).toHaveBeenLastCalledWith(
+        "/config-audit-logs?page=1&per_page=20&q=Andes",
+        { token: "token" },
+      );
+    });
+
+    it("combina múltiples filtros en la misma query", async () => {
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
+      const { result } = renderHook(() => useConfigAuditLogs("token", true));
+      await flush();
+
+      mockApiFetch.mockResolvedValueOnce(page([]));
+      act(() => {
+        result.current.updateFilter("entityType", "material");
+        result.current.updateFilter("dateFrom", "2026-08-01");
+        result.current.updateFilter("dateTo", "2026-08-20");
+      });
+      await flush();
+
+      const lastCall = mockApiFetch.mock.calls.at(-1)?.[0] as string;
+      expect(lastCall).toContain("entity_type=material");
+      expect(lastCall).toContain("date_from=2026-08-01");
+      expect(lastCall).toContain("date_to=2026-08-20");
+      expect(result.current.activeFilterCount).toBe(3);
+    });
+
+    it("clearFilters vuelve todos los filtros a vacío y recarga sin ellos", async () => {
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
+      const { result } = renderHook(() => useConfigAuditLogs("token", true));
+      await flush();
+
+      mockApiFetch.mockResolvedValueOnce(page([]));
+      act(() => {
+        result.current.updateFilter("action", "Alta de proveedor");
+      });
+      await flush();
+
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog]));
+      act(() => {
+        result.current.clearFilters();
+      });
+      await flush();
+
+      expect(mockApiFetch).toHaveBeenLastCalledWith("/config-audit-logs?page=1&per_page=20", { token: "token" });
+      expect(result.current.activeFilterCount).toBe(0);
+    });
+
+    it("prependLocal no inserta la entrada si hay filtros activos", async () => {
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog], { total: 1 }));
+      const { result } = renderHook(() => useConfigAuditLogs("token", true));
+      await flush();
+
+      mockApiFetch.mockResolvedValueOnce(page([sampleLog], { total: 1 }));
+      act(() => {
+        result.current.updateFilter("entityType", "material");
+      });
+      await flush();
+
+      const totalBefore = result.current.total;
+      act(() => {
+        result.current.prependLocal({ ...sampleLog, id: 99 });
+      });
+
+      expect(result.current.total).toBe(totalBefore);
+    });
   });
 });

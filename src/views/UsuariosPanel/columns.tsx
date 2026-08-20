@@ -43,7 +43,10 @@ export function getUserColumns({
           </div>
           <div className="min-w-0">
             <p className="text-sm font-bold text-text-primary truncate">{user.name}</p>
-            <p className="text-[11px] text-text-muted font-medium font-mono truncate">{user.email}</p>
+            <p className="text-[11px] text-text-muted font-medium font-mono truncate">
+              {user.email}
+              <span className="text-text-muted/60"> · #{user.id}</span>
+            </p>
           </div>
         </div>
       ),

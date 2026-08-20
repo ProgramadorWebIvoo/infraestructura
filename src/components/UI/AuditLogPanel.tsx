@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, History, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, History, Search, SlidersHorizontal } from "lucide-react";
 import { SkeletonAuditList } from "../SkeletonLoader";
 import EmptyState from "./EmptyState";
 
@@ -26,7 +26,7 @@ export interface AuditLogPanelProps<T> {
   title?: string;
   entries: T[];
   isLoading?: boolean;
-  /** Texto a buscar cuando el usuario escribe en el filtro (case-insensitive). */
+  /** Texto a buscar cuando el usuario escribe en el filtro (case-insensitive). Ignorado si `onSearchChange` está controlado desde afuera. */
   searchableText: (entry: T) => string;
   /** Renderiza una entrada individual. */
   renderEntry: (entry: T) => ReactNode;
@@ -53,6 +53,25 @@ export interface AuditLogPanelProps<T> {
     total: number;
     onPageChange: (page: number) => void;
   };
+  /**
+   * Búsqueda controlada desde afuera (server-side) en vez del filtrado
+   * client-side por `searchableText`. Cuando se pasa, el panel deja de
+   * filtrar `entries` localmente (asume que ya vienen filtradas del backend)
+   * y el input refleja/dispara este valor en vez de su propio estado
+   * interno — necesario cuando `entries` es solo la página actual y hay
+   * registros que "buscar" pueden estar en otras páginas.
+   */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  /**
+   * Slot de filtros adicionales (selects, rango de fechas, etc.), renderizado
+   * debajo del buscador dentro de un acordeón colapsable ("Filtros avanzados")
+   * para no saturar el panel angosto por defecto. El conteo de filtros activos
+   * (para el badge del toggle) lo calcula el consumidor y lo pasa aparte.
+   */
+  filtersSlot?: ReactNode;
+  /** Cantidad de filtros avanzados activos — se muestra como badge en el toggle "Filtros avanzados". */
+  activeFilterCount?: number;
 }
 
 export default function AuditLogPanel<T>({
@@ -70,15 +89,28 @@ export default function AuditLogPanel<T>({
   fillViewport = false,
   className = "",
   pagination,
+  searchValue,
+  onSearchChange,
+  filtersSlot,
+  activeFilterCount = 0,
 }: AuditLogPanelProps<T>) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const isSearchControlled = onSearchChange !== undefined;
+  const [localSearch, setLocalSearch] = useState("");
+  const search = isSearchControlled ? (searchValue ?? "") : localSearch;
+  const setSearch = isSearchControlled ? onSearchChange : setLocalSearch;
 
+  // Con búsqueda controlada (server-side), `entries` ya viene filtrada del
+  // backend — filtrar de nuevo acá duplicaría el criterio y podría excluir
+  // resultados válidos si `searchableText` no cubre los mismos campos que el
+  // filtro del servidor (ej. rango de fechas, entityType).
   const filtered = useMemo(() => {
+    if (isSearchControlled) return entries;
     const q = search.trim().toLowerCase();
     if (!q) return entries;
     return entries.filter(e => searchableText(e).toLowerCase().includes(q));
-  }, [entries, search, searchableText]);
+  }, [entries, search, searchableText, isSearchControlled]);
 
   // Detecta cuándo la entrada en el tope de la lista cambió por la llegada de
   // un registro nuevo (prependLocal), para resaltarla brevemente — vs. carga
@@ -199,22 +231,68 @@ export default function AuditLogPanel<T>({
             className={`overflow-hidden border-t border-slate-100 flex flex-col min-h-0 ${fillViewport ? "flex-1" : ""}`}
           >
             <div className="p-4 sm:p-5 space-y-3 flex flex-col min-h-0 h-full">
-              <div className="relative shrink-0">
-                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  aria-label={searchPlaceholder}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-medium text-slate-700"
-                />
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    aria-label={searchPlaceholder}
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 font-medium text-slate-700"
+                  />
+                </div>
+                {filtersSlot && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFilters(v => !v)}
+                    aria-expanded={showFilters}
+                    aria-label="Filtros avanzados"
+                    className={`relative shrink-0 p-2 rounded-xl border transition-colors cursor-pointer ${
+                      showFilters || activeFilterCount > 0
+                        ? "border-sky-200 bg-sky-50 text-sky-600"
+                        : "border-slate-200 bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 text-[9px] font-bold text-white leading-none">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
+
+              {filtersSlot && (
+                <AnimatePresence initial={false}>
+                  {showFilters && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="overflow-hidden shrink-0"
+                    >
+                      <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                        {filtersSlot}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
 
               {isLoading ? (
                 <SkeletonAuditList items={4} />
               ) : filtered.length === 0 ? (
-                <EmptyState message={entries.length === 0 ? emptyMessage : "Sin resultados para esa búsqueda."} />
+                <EmptyState
+                  message={
+                    search.trim() || activeFilterCount > 0
+                      ? "Sin resultados para esos filtros."
+                      : emptyMessage
+                  }
+                />
               ) : (
                 <div className={`space-y-2 pr-1 ${fillViewport ? "overflow-y-auto min-h-0" : "max-h-[420px] overflow-y-auto"}`}>
                   {filtered.map(entry => {

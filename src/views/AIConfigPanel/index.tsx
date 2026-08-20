@@ -49,6 +49,10 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
     total: auditLogTotal,
     goToPage: goToAuditLogPage,
     prependLocal: prependAuditLog,
+    filters: auditLogFilters,
+    updateFilter: updateAuditLogFilter,
+    clearFilters: clearAuditLogFilters,
+    activeFilterCount: auditLogActiveFilterCount,
   } = useConfigAuditLogs(authToken, isSuperadmin);
 
   const [usageDays, setUsageDays] = useState(30);
@@ -238,6 +242,10 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
           logs={auditLogs}
           isLoading={isLoadingAuditLogs}
           pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
+          filters={auditLogFilters}
+          onFilterChange={updateAuditLogFilter}
+          onClearFilters={clearAuditLogFilters}
+          activeFilterCount={auditLogActiveFilterCount}
         />
       )}
     </motion.div>

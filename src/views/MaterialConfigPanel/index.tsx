@@ -43,6 +43,10 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
     total: auditLogTotal,
     goToPage: goToAuditLogPage,
     prependLocal: prependAuditLog,
+    filters: auditLogFilters,
+    updateFilter: updateAuditLogFilter,
+    clearFilters: clearAuditLogFilters,
+    activeFilterCount: auditLogActiveFilterCount,
   } = useConfigAuditLogs(authToken, isSuperadmin);
 
   // ---- Data state ----
@@ -291,6 +295,10 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
             logs={auditLogs}
             isLoading={isLoadingAuditLogs}
             pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
+            filters={auditLogFilters}
+            onFilterChange={updateAuditLogFilter}
+            onClearFilters={clearAuditLogFilters}
+            activeFilterCount={auditLogActiveFilterCount}
           />
         )}
       </div>

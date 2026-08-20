@@ -30,7 +30,7 @@ Tokens centralizados en `@theme` (`src/index.css`) — Tailwind v4, sin `tailwin
 - **Botones/acciones**: [Button](#button), [IconActionButton](#iconactionbutton)
 - **Feedback/alertas**: [AlertBanner](#alertbanner), [InfoBanner](#infobanner), [Toast](#toast--toastprovider--usetoast), [OfflineBanner](#offlinebanner), [FieldError](#fielderror)
 - **Diálogos/modales**: [Modal](#modal), [ConfirmDialog](#confirmdialog), [SelectModal](#selectmodal)
-- **Tablas/listados**: [Table](#table), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel)
+- **Tablas/listados**: [Table](#table), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel), [ConfigAuditLogPanel](#configauditlogpanel)
 - **Formularios**: [NumericInput](#numericinput), [Select](#select), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint), [PasswordStrengthMeter](#passwordstrengthmeter)
 - **Badges/estado**: [StatusBadge](#statusbadge), [RoleBadge](#rolebadge)
 - **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [FilterBar](#filterbar-searchinput--selectfilter), [TableToolbar](#tabletoolbar)
@@ -182,9 +182,23 @@ Placeholder con borde punteado para listas/tablas vacías.
 
 Panel de historial/auditoría colapsable genérico, con búsqueda y paginación opcional del servidor.
 
-- **Props**: `entries: T[]`, `searchableText: (e:T)=>string`, `renderEntry: (e:T)=>ReactNode`, `keyOf`, `isLoading?`, `defaultOpen?`, `sticky?: boolean`, `stickyOffset?: string`, `fillViewport?: boolean`, `pagination?: {page,lastPage,total,onPageChange}`
-- **Cuándo usarlo**: sidebar de "quién cambió qué y cuándo" en vistas de configuración (proveedores, materiales, IA, CONFIG APP).
+- **Props**: `entries: T[]`, `searchableText: (e:T)=>string`, `renderEntry: (e:T)=>ReactNode`, `keyOf`, `isLoading?`, `defaultOpen?`, `sticky?: boolean`, `stickyOffset?: string`, `fillViewport?: boolean`, `pagination?: {page,lastPage,total,onPageChange}`, `searchValue?: string`, `onSearchChange?: (v)=>void`, `filtersSlot?: ReactNode`, `activeFilterCount?: number`
+- **Cuándo usarlo**: sidebar de "quién cambió qué y cuándo" en vistas de configuración (proveedores, materiales, IA, CONFIG APP, usuarios).
 - **Convenciones**: genérico sobre `T`; `sticky` + `fillViewport` reproducen un panel fijo/scroll-contenido; usa `Spinner`/`EmptyState`.
+- **Búsqueda client-side vs. server-side**: por defecto (`searchValue`/`onSearchChange` no pasados) filtra `entries` localmente con `searchableText` — solo ve lo que ya está cargado. Pasar ambas props activa **búsqueda controlada**: el panel deja de filtrar internamente (asume que `entries` ya viene filtrada del backend) y el input refleja/dispara ese valor externo — necesario cuando `entries` es solo una página y hay registros que buscar en otras. Único consumidor hoy de este modo: `ConfigAuditLogPanel`.
+- **Filtros avanzados (`filtersSlot`)**: slot de contenido libre (selects, inputs de fecha, etc.) que el panel renderiza dentro de un acordeón colapsable ("Filtros avanzados", ícono `SlidersHorizontal`) debajo del buscador, con un badge del número de filtros activos (`activeFilterCount`) en el botón de toggle. El panel no sabe qué filtros son — solo los muestra/oculta; la lógica de cada filtro y su combinación con el buscador vive en el consumidor (`ConfigAuditLogPanel`).
+
+## ConfigAuditLogPanel
+
+**Path**: `src/components/UI/ConfigAuditLogPanel.tsx`
+
+Especialización de `AuditLogPanel` para `ConfigAuditLogRecord` (`useConfigAuditLogs`) — resuelve el título de cada entrada (label legible de setting, o `action` para el resto de entidades administrativas) y arma el `renderEntry`/`searchableText` para que ninguna vista consumidora los reimplemente.
+
+- **Props**: `title?`, `logs: ConfigAuditLogRecord[]`, `isLoading`, `settingLabelByKey?` (solo aplica a `entityType: "setting"`), `searchPlaceholder?`, `emptyMessage?`, `pagination?`, `filters?: ConfigAuditLogFilters`, `onFilterChange?`, `onClearFilters?`, `activeFilterCount?`.
+- **Cuándo usarlo**: panel lateral de auditoría en cualquier vista de configuración — `UsuariosPanel`, `ProveedoresConfigPanel`, `MaterialConfigPanel`, `AIConfigPanel`, `ConfigAppPanel` (las 5 lo usan hoy, todas con `useConfigAuditLogs`).
+- **Filtros server-side reales**: antes la búsqueda era enteramente client-side sobre la página cargada (20 registros) — un cambio de hace una semana era invisible salvo que estuviera justo en esa página, lo que hacía inútil "auditar" con cualquier volumen de historial. `filters`/`onFilterChange`/`onClearFilters`/`activeFilterCount` (expuestos por `useConfigAuditLogs`) conectan el panel a filtros reales contra el backend: `q` (texto libre sobre setting_key/old_value/new_value/user_name_snapshot/action, con debounce de 350ms), `entityType` (select con catálogo fijo — proveedores/materiales/usuarios/IA/monedas/notificaciones/configuración), `action` (select cuyas opciones se derivan de las acciones ya vistas en los `logs` cargados en esta sesión, no de un catálogo separado — sigue creciendo mientras el usuario navega), `user` (texto libre sobre el nombre del usuario que hizo el cambio, debounced), `dateFrom`/`dateTo` (rango inclusivo). Todos combinables con AND. Sin pasar estas 4 props (`filters`/`onFilterChange`/etc.), el componente cae al comportamiento heredado 100% compatible (búsqueda client-side sobre la página actual, sin acordeón de filtros) — opt-in, no rompe consumidores que aún no los pasen.
+- **Backend**: `GET /config-audit-logs` acepta `q`, `entity_type`, `action`, `user`, `date_from`, `date_to` además de `page`/`per_page` — ver `ConfigAuditLogController::index()`. Índices agregados en `config_audit_logs` sobre `(entity_type, changed_at)`, `action`, `changed_at`, `user_name_snapshot` para que el filtrado no haga table scan con el historial creciendo indefinidamente.
+- **Badge de tipo de entidad**: cada tarjeta de entrada muestra un badge con el tipo (ej. "Proveedores") cuando `entityType !== "setting"` — antes esta información solo era implícita en el texto de `action`, ahora es visualmente identificable de un vistazo al escanear la lista mezclada.
 
 ---
 

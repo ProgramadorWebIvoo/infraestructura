@@ -109,6 +109,13 @@ describe("UsuariosPanel (integración)", () => {
     await waitFor(() => expect(screen.getByText("Maria Rodriguez")).toBeInTheDocument());
   });
 
+  it("muestra el ID del usuario junto al correo (identificador inmutable, útil para correlacionar con el historial de auditoría)", async () => {
+    render(<UsuariosPanel authToken="token" activeRole="ADMIN" />);
+    await waitFor(() => expect(screen.getByText("Maria Rodriguez")).toBeInTheDocument());
+
+    expect(screen.getByText((_, el) => el?.textContent === "maria@ivoo.local · #1")).toBeInTheDocument();
+  });
+
   it("filtra por nombre o correo", async () => {
     render(<UsuariosPanel authToken="token" activeRole="ADMIN" />);
     await waitFor(() => expect(screen.getByText("Maria Rodriguez")).toBeInTheDocument());
