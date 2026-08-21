@@ -25,6 +25,9 @@ export interface PipelineStage {
   active: string;
 }
 
+// Excepción intencional a la migración a SEMANTIC_COLOR_MAP: son 6 etapas
+// secuenciales sin rol de estado (éxito/error/etc), no hay 6 roles semánticos
+// que mapeen 1:1 sin perder la distinción visual entre etapas.
 export const PIPELINE_STAGES: readonly PipelineStage[] = [
   {
     key: "creadas",

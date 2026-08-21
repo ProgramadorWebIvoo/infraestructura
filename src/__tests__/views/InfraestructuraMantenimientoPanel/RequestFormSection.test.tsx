@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Pruebas unitarias para RequestFormSection — verifica la accesibilidad de
- * labels (htmlFor/id), los errores inline con foco al primer campo inválido,
- * el toggle de tipo como radiogroup y el envío del formulario.
+ * Pruebas unitarias para RequestFormSection — paso 1 del wizard (contenido
+ * puro de campos, sin Card/form/submit propios, esos viven en
+ * RequestWizardCard). Verifica accesibilidad de labels (htmlFor/id), errores
+ * inline con foco al primer campo inválido y el toggle de tipo como radiogroup.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -21,7 +22,6 @@ describe("RequestFormSection", () => {
     onTypeChange: vi.fn(),
     description: "",
     onDescriptionChange: vi.fn(),
-    onSubmit: vi.fn(),
   };
 
   it("asocia los labels con los campos mediante htmlFor/id", () => {
@@ -57,13 +57,5 @@ describe("RequestFormSection", () => {
     expect(screen.getByRole("radiogroup", { name: "Tipo de requerimiento" })).toBeInTheDocument();
     fireEvent.click(mantRadio);
     expect(onTypeChange).toHaveBeenCalledWith("MANTENIMIENTO");
-  });
-
-  it("envía el formulario al pulsar el botón principal", () => {
-    const onSubmit = vi.fn();
-    render(<RequestFormSection {...baseProps} onSubmit={onSubmit} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Enviar Petición a Cierre de Obra" }));
-    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });

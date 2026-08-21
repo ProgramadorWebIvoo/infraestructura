@@ -21,6 +21,10 @@ vi.mock("motion/react", () => ({
       const { initial, animate, exit, variants, transition, ...rest } = props;
       return <div {...rest}>{children}</div>;
     },
+    span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+      const { initial, animate, exit, variants, transition, ...rest } = props;
+      return <span {...rest}>{children}</span>;
+    },
     tbody: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
       const { initial, animate, exit, variants, transition, ...rest } = props;
       return <tbody {...rest}>{children}</tbody>;
@@ -43,7 +47,7 @@ const makeProject = (over: Partial<Project> & { id: string }): Project => ({
   location: "Tienda Chacao",
   createdDate: "2026-07-01",
   status: ProjectStatus.CREADO,
-  materials: [{ id: "m1", name: "Cemento", quantity: 2, unit: "Saco", estimatedUnitPrice: 10 }],
+  materials: [{ id: "m1", name: "Cemento", quantity: 2, unit: "Saco", estimatedUnitPrice: 10, condition: "NUEVO" }],
   estimatedTotal: 500,
   ...over,
 });
@@ -70,7 +74,6 @@ describe("RequestsTableSection", () => {
       />,
     );
 
-    expect(screen.getByText("Peticiones del Departamento")).toBeInTheDocument();
     expect(screen.getByText("Creado")).toBeInTheDocument();
     expect(screen.getByText("En Ejecución")).toBeInTheDocument();
     expect(screen.getByText("$1,200.00")).toBeInTheDocument();

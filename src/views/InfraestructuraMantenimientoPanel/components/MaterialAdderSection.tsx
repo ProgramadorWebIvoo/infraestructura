@@ -2,56 +2,34 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Sección 2 de Infraestructura/Mantenimiento: configuración dinámica de
- * materiales/servicios — extraída de InfraestructuraMantenimientoPanel.
+ * Paso 2 del wizard de alta de petición: elección de materiales (catálogo
+ * en lote o personalizado) y la lista de agregados. Sin Card/SectionHeader
+ * propios — contenido puro de paso, montado dentro de RequestWizardCard.
+ * Es el único "writer" de `addedMaterials` — los hijos (CatalogPicker,
+ * CustomMaterialForm, AddedMaterialsTable) solo emiten intención.
  */
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Package, Plus, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { AlertCircle, Info, Package } from "lucide-react";
 import type { MaterialItem } from "../../../types";
-import Card from "../../../components/UI/Card";
-import NumericInput from "../../../components/UI/NumericInput";
-import { Table } from "../../../components/UI/Table";
-import SelectModal from "../../../components/UI/SelectModal";
+import SegmentedControl from "../../../components/UI/SegmentedControl";
 import AlertBanner from "../../../components/UI/AlertBanner";
 import { useToast } from "../../../components/UI/Toast";
-import { formatCurrency } from "../../../utils";
-import type { Column } from "../../../components/UI/Table";
-import type { SelectModalOption } from "../../../components/UI/SelectModal";
-
-type CatalogOption = SelectModalOption<{ name: string; unit: string; estimatedUnitPrice: number; index: number }>;
-
-// Columnas explícitas: el default de SelectModal muestra una columna "Valor"
-// con `opt.value` crudo (el índice del array usado para selección interna),
-// no un precio. Acá mostramos Nombre / Unidad / Precio real del catálogo.
-const catalogColumns: Column<CatalogOption>[] = [
-  {
-    key: "label",
-    label: "Nombre",
-    sortable: true,
-    render: (opt) => <span className="font-bold text-slate-800">{opt.label}</span>,
-  },
-  {
-    key: "unit",
-    label: "Unidad",
-    align: "center",
-    render: (opt) => <span className="text-[11px] font-semibold text-slate-500">{opt.raw.unit}</span>,
-  },
-  {
-    key: "estimatedUnitPrice",
-    label: "Precio Unit. (Est)",
-    align: "right",
-    render: (opt) => (
-      <span className="font-mono font-semibold text-slate-600">{formatCurrency(opt.raw.estimatedUnitPrice)}</span>
-    ),
-  },
-];
+import { bannerVariants, springs } from "../../../animations";
+import CatalogPicker from "./CatalogPicker";
+import CustomMaterialForm from "./CustomMaterialForm";
+import AddedMaterialsTable from "./AddedMaterialsTable";
+import MaterialCharacteristicsEditModal from "./MaterialCharacteristicsEditModal";
 
 interface MaterialAdderSectionProps {
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
   addedMaterials: Omit<MaterialItem, "id">[];
   onAddedMaterialsChange: (materials: Omit<MaterialItem, "id">[]) => void;
-  /** Error de validación del formulario padre (submit sin materiales). */
+  reviewedMaterialIndexes: Set<number>;
+  onMaterialReviewed: (index: number) => void;
+  materialsSubtotal: number;
+  /** Error de validación del paso (avanzar sin materiales). */
   materialsError?: string;
 }
 
@@ -59,275 +37,133 @@ export default function MaterialAdderSection({
   materialsCatalog,
   addedMaterials,
   onAddedMaterialsChange,
+  reviewedMaterialIndexes,
+  onMaterialReviewed,
+  materialsSubtotal,
   materialsError,
 }: MaterialAdderSectionProps) {
-  const [selectedCatalogIndex, setSelectedCatalogIndex] = useState(0);
-  const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
-  const [materialQty, setMaterialQty] = useState<number | "">(1);
-  const [customMaterialName, setCustomMaterialName] = useState("");
-  const [customMaterialUnit, setCustomMaterialUnit] = useState("Unidad");
-  const [customMaterialPrice, setCustomMaterialPrice] = useState<number | "">(1.0);
-  const [isCustomMaterial, setIsCustomMaterial] = useState(false);
-  const [adderError, setAdderError] = useState("");
+  const [activeTab, setActiveTab] = useState<"catalog" | "custom">(
+    materialsCatalog.length === 0 ? "custom" : "catalog",
+  );
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const { showToast } = useToast();
 
   // Si el catálogo está vacío, el agregado personalizado es la única vía útil.
   useEffect(() => {
-    if (materialsCatalog.length === 0 && !isCustomMaterial) setIsCustomMaterial(true);
-  }, [materialsCatalog.length, isCustomMaterial]);
+    if (materialsCatalog.length === 0 && activeTab !== "custom") setActiveTab("custom");
+  }, [materialsCatalog.length, activeTab]);
 
-  const handleAddMaterial = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAdderError("");
-    const qtyNum = materialQty === "" ? 1 : materialQty;
+  const handleChecklistConfirm = (items: { catalogIndex: number; quantity: number }[]) => {
+    const newMaterials: Omit<MaterialItem, "id">[] = items.map(({ catalogIndex, quantity }) => {
+      const cat = materialsCatalog[catalogIndex];
+      // Condición default "NUEVO": el checklist del catálogo no tiene
+      // selector propio — se ajusta luego desde "Editar detalles".
+      return { name: cat.name, quantity, unit: cat.unit, estimatedUnitPrice: cat.estimatedUnitPrice, condition: "NUEVO" as const };
+    });
+    onAddedMaterialsChange([...addedMaterials, ...newMaterials]);
+    showToast(
+      `${items.length} material${items.length > 1 ? "es" : ""} agregado${items.length > 1 ? "s" : ""} al requerimiento.`,
+      "success",
+    );
+  };
 
-    if (isCustomMaterial) {
-      const name = customMaterialName.trim();
-      if (!name) {
-        setAdderError("Por favor, introduce el nombre del material personalizado.");
-        document.getElementById("custom-mat-name")?.focus();
-        return;
-      }
-      const priceNum = customMaterialPrice === "" ? 0 : customMaterialPrice;
-      onAddedMaterialsChange([
-        ...addedMaterials,
-        { name, quantity: qtyNum, unit: customMaterialUnit, estimatedUnitPrice: priceNum },
-      ]);
-      setCustomMaterialName("");
-      showToast(`${name} agregado al requerimiento.`, "success");
-    } else {
-      const selectedItem = materialsCatalog[selectedCatalogIndex];
-      if (!selectedItem) return;
-      onAddedMaterialsChange([
-        ...addedMaterials,
-        { name: selectedItem.name, quantity: qtyNum, unit: selectedItem.unit, estimatedUnitPrice: selectedItem.estimatedUnitPrice },
-      ]);
-      showToast(`${selectedItem.name} agregado al requerimiento.`, "success");
-    }
+  const handleAddCustomMaterial = (material: Omit<MaterialItem, "id">) => {
+    onAddedMaterialsChange([...addedMaterials, material]);
   };
 
   const handleRemoveMaterial = (index: number) => {
     onAddedMaterialsChange(addedMaterials.filter((_, i) => i !== index));
   };
 
-  const materialsSubtotal = addedMaterials.reduce((sum, m) => sum + m.quantity * m.estimatedUnitPrice, 0);
+  const handleSaveCharacteristics = (index: number, characteristics: Partial<MaterialItem>) => {
+    onAddedMaterialsChange(
+      addedMaterials.map((m, i) => (i === index ? { ...m, ...characteristics } : m)),
+    );
+    onMaterialReviewed(index);
+    setEditingIndex(null);
+  };
+
+  const unreviewedCount = addedMaterials.filter((_, i) => !reviewedMaterialIndexes.has(i)).length;
 
   return (
-    <Card className="border-l-4 border-l-emerald-400 h-full flex flex-col">
-      <div className="flex items-start gap-3 border-b border-slate-100 pb-4 mb-5">
-        <div className="p-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl">
-          <Package className="h-4 w-4" />
-        </div>
-        <div className="min-w-0">
-          <h4 className="font-bold text-slate-900 text-sm">Configurar Requerimientos de Material / Servicios</h4>
-          <p className="text-[11px] text-slate-500 font-medium">Seleccione del catálogo o agregue un material personalizado</p>
-        </div>
-        <div className="ml-auto shrink-0 text-right">
-          <span className="block text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">Insumos agregados</span>
-          <span className="flex items-baseline justify-end gap-1.5 mt-0.5">
-            <span className="font-mono font-black text-slate-900 text-sm">{addedMaterials.length}</span>
-            <span className="text-[9px] font-bold text-slate-400">·</span>
-            <span className="font-mono font-black text-emerald-700 text-sm">{formatCurrency(materialsSubtotal)}</span>
-          </span>
-        </div>
-      </div>
-
-      {materialsError && (
-        <AlertBanner
-          type="error"
-          message={materialsError}
-          icon={<AlertCircle className="h-4 w-4 shrink-0" />}
-          className="mb-4"
-        />
-      )}
-
-      {adderError && (
-        <AlertBanner
-          type="error"
-          message={adderError}
-          icon={<AlertCircle className="h-4 w-4 shrink-0" />}
-          className="mb-4"
-        />
-      )}
-
-      {materialsCatalog.length === 0 && (
-        <AlertBanner
-          type="info"
-          message="El catálogo IVOO está vacío. Usa la pestaña Personalizado para cargar el material o servicio."
-          icon={<Package className="h-4 w-4 shrink-0" />}
-          className="mb-4"
-        />
-      )}
-
-      {/* Toggle catalog / custom */}
-      <div className="flex gap-1 mb-5 p-1 bg-slate-100/60 rounded-xl text-xs font-bold w-fit">
-        <button
-          id="tab-catalog"
-          type="button"
-          onClick={() => setIsCustomMaterial(false)}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-            !isCustomMaterial
-              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/80 font-black"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Catálogo IVOO
-        </button>
-        <button
-          id="tab-custom"
-          type="button"
-          onClick={() => setIsCustomMaterial(true)}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-            isCustomMaterial
-              ? "bg-white text-emerald-700 shadow-xs border border-slate-200/80 font-black"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Personalizado
-        </button>
-      </div>
-
-      <form onSubmit={handleAddMaterial} className="grid grid-cols-1 md:grid-cols-4 gap-3.5 items-end bg-gradient-to-br from-emerald-50/30 to-white p-5 rounded-xl border border-emerald-100/60">
-        {!isCustomMaterial ? (
-          <div className="md:col-span-2">
-            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Seleccionar Material</label>
-            <SelectModal
-              isOpen={isMaterialModalOpen}
-              onClose={() => setIsMaterialModalOpen(false)}
-              onOpen={() => setIsMaterialModalOpen(true)}
-              onSelect={(opt) => {
-                setSelectedCatalogIndex(opt.raw.index);
-                setIsMaterialModalOpen(false);
-              }}
-              options={materialsCatalog.map((mat, i) => ({
-                value: i,
-                label: mat.name,
-                description: `${mat.estimatedUnitPrice} / ${mat.unit}`,
-                raw: { ...mat, index: i },
-              }))}
-              columns={catalogColumns}
-              selectedValue={selectedCatalogIndex}
-              allowDeselect={false}
-              disabled={materialsCatalog.length === 0}
-              triggerLabel="Seleccionar material del catálogo..."
-              title="Seleccionar Material del Catálogo"
-              infoLine={`${materialsCatalog.length} materiales disponibles`}
-              icon={<Package className="h-5 w-5" />}
-              iconColor="emerald"
-              searchPlaceholder="Buscar por nombre, unidad o precio..."
-              maxWidth="max-w-2xl"
-              emptyMessage="No hay materiales en el catálogo aún."
-            />
-          </div>
-        ) : (
-          <>
-            <div className="md:col-span-2">
-              <label htmlFor="custom-mat-name" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                Nombre del Material / Servicio
-              </label>
-              <input
-                id="custom-mat-name"
-                type="text"
-                placeholder="Ej. Mano de obra soldadura de vigas"
-                value={customMaterialName}
-                onChange={(e) => {
-                  setCustomMaterialName(e.target.value);
-                  setAdderError("");
-                }}
-                className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-800"
-              />
-            </div>
-            <div>
-              <label htmlFor="custom-mat-unit" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                Unidad
-              </label>
-              <input
-                id="custom-mat-unit"
-                type="text"
-                placeholder="Ej. Unidad, m³, Kg, Rollo"
-                value={customMaterialUnit}
-                onChange={(e) => setCustomMaterialUnit(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-700"
-              />
-            </div>
-            <div>
-              <label htmlFor="custom-mat-price" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                Costo Estimado ($)
-              </label>
-              <NumericInput
-                id="custom-mat-price"
-                value={customMaterialPrice}
-                onChange={setCustomMaterialPrice}
-                placeholder="0.00"
-                step="0.01"
-                className="rounded-lg"
-              />
-            </div>
-          </>
+    <div>
+      <AnimatePresence>
+        {materialsError && (
+          <motion.div variants={bannerVariants} initial="hidden" animate="visible" exit="exit">
+            <AlertBanner type="error" message={materialsError} icon={<AlertCircle className="h-4 w-4 shrink-0" />} />
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        <div>
-          <label htmlFor="mat-qty" className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-            Cantidad
-          </label>
-          <NumericInput
-            id="mat-qty"
-            value={materialQty}
-            onChange={setMaterialQty}
-            placeholder="0"
-            step="1"
-            className="rounded-lg"
-          />
-        </div>
+      <AnimatePresence>
+        {materialsCatalog.length === 0 && (
+          <motion.div variants={bannerVariants} initial="hidden" animate="visible" exit="exit">
+            <AlertBanner
+              type="info"
+              message="El catálogo IVOO está vacío. Usa la pestaña Personalizado para cargar el material o servicio."
+              icon={<Package className="h-4 w-4 shrink-0" />}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <div className="md:col-span-1">
-          <button
-            id="btn-add-material"
-            type="submit"
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 rounded-lg transition-all duration-200 cursor-pointer hover:shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Agregar
-          </button>
-        </div>
-      </form>
-
-      <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
-        <Table
-          columns={[
-            { key: "name", label: "Material / Servicio", render: (m) => <span className="text-slate-800 font-bold">{m.name}</span> },
-            { key: "quantity", label: "Cantidad", align: "center", render: (m) => <span className="text-slate-600 font-medium">{m.quantity} {m.unit}</span> },
-            { key: "estimatedUnitPrice", label: "Precio Unit. (Est)", align: "right", render: (m) => <span className="font-mono text-slate-500 font-semibold">{formatCurrency(m.estimatedUnitPrice)}</span> },
-            { key: "total", label: "Total (Est)", align: "right", render: (m) => <span className="font-mono font-bold text-slate-900">{formatCurrency(m.quantity * m.estimatedUnitPrice)}</span> },
-            {
-              key: "actions",
-              label: "Remover",
-              align: "center",
-              render: (_m, index) => (
-                <button
-                  id={`btn-remove-mat-${index}`}
-                  type="button"
-                  onClick={() => handleRemoveMaterial(index)}
-                  className="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              ),
-            },
+      <div className="mb-5">
+        <SegmentedControl
+          variant="pill"
+          accent="success"
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: "catalog", label: "Catálogo IVOO" },
+            { value: "custom", label: "Personalizado" },
           ]}
-          data={addedMaterials}
-          rowKey={(_m, index) => index}
-          emptyMessage="No se han agregado materiales. Agregue elementos arriba."
-          pageSize={5}
-          footer={addedMaterials.length > 0 ? (
-            <tr>
-              <td colSpan={3} className="py-3.5 px-4 text-right text-slate-500 uppercase tracking-wider text-[9px] font-bold">Costo Estimado Materiales:</td>
-              <td className="py-3.5 px-4 text-right font-mono text-emerald-700 text-sm font-black">{formatCurrency(materialsSubtotal)}</td>
-              <td />
-            </tr>
-          ) : undefined}
         />
       </div>
-    </Card>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={springs.snappy}
+        >
+          {activeTab === "catalog" ? (
+            <CatalogPicker materialsCatalog={materialsCatalog} onConfirm={handleChecklistConfirm} />
+          ) : (
+            <CustomMaterialForm onAdd={handleAddCustomMaterial} />
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <AddedMaterialsTable
+        materials={addedMaterials}
+        onRemove={handleRemoveMaterial}
+        onEditRequest={setEditingIndex}
+        reviewedIndexes={reviewedMaterialIndexes}
+        subtotal={materialsSubtotal}
+      />
+
+      <AnimatePresence>
+        {unreviewedCount > 0 && (
+          <motion.div variants={bannerVariants} initial="hidden" animate="visible" exit="exit" className="mt-3">
+            <AlertBanner
+              type="info"
+              message={`${unreviewedCount} material${unreviewedCount > 1 ? "es" : ""} sin revisar sus características (condición, garantía, etc.). Es opcional, pero recomendado antes de enviar.`}
+              icon={<Info className="h-4 w-4 shrink-0" />}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {editingIndex !== null && (
+        <MaterialCharacteristicsEditModal
+          isOpen
+          material={addedMaterials[editingIndex]}
+          onClose={() => setEditingIndex(null)}
+          onSave={(characteristics) => handleSaveCharacteristics(editingIndex, characteristics)}
+        />
+      )}
+    </div>
   );
 }

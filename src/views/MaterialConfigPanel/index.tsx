@@ -238,7 +238,7 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
 
           {/* ── Table card ── */}
           <motion.div variants={itemVariants} className={isSuperadmin ? "flex-1 min-h-0 flex flex-col" : ""}>
-            <Card hoverable={false} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400} ${isSuperadmin ? "flex flex-col min-h-0" : ""}`}>
+            <Card hoverable={false} fillHeight={isSuperadmin} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400}`}>
               <TableToolbar
                 searchId="materiales-search"
                 searchValue={search}

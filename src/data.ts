@@ -67,9 +67,9 @@ export const INITIAL_PROJECTS: Project[] = [
     createdDate: "2026-06-20",
     status: ProjectStatus.CREADO,
     materials: [
-      { id: "m1", name: "Tubo de PVC de Agua 3 pulgadas", quantity: 24, unit: "Tubo (6m)", estimatedUnitPrice: 22.0 },
-      { id: "m2", name: "Piedra Picada para Mezcla", quantity: 5, unit: "m³", estimatedUnitPrice: 40.0 },
-      { id: "m3", name: "Cemento Portland (Saco 42.5kg)", quantity: 15, unit: "Saco", estimatedUnitPrice: 12.5 }
+      { id: "m1", name: "Tubo de PVC de Agua 3 pulgadas", quantity: 24, unit: "Tubo (6m)", estimatedUnitPrice: 22.0, condition: "NUEVO" },
+      { id: "m2", name: "Piedra Picada para Mezcla", quantity: 5, unit: "m³", estimatedUnitPrice: 40.0, condition: "NUEVO" },
+      { id: "m3", name: "Cemento Portland (Saco 42.5kg)", quantity: 15, unit: "Saco", estimatedUnitPrice: 12.5, condition: "NUEVO" }
     ],
     estimatedTotal: 915.5 // sum of materials + base budget
   },
@@ -82,9 +82,9 @@ export const INITIAL_PROJECTS: Project[] = [
     createdDate: "2026-06-15",
     status: ProjectStatus.COMPARATIVA_ENVIADA,
     materials: [
-      { id: "m4", name: "Pintura de Caucho Profesional (Cuñete)", quantity: 12, unit: "Cuñete", estimatedUnitPrice: 85.0 },
-      { id: "m5", name: "Cemento Portland (Saco 42.5kg)", quantity: 8, unit: "Saco", estimatedUnitPrice: 12.5 },
-      { id: "m6", name: "Arena Lavada para Concreto", quantity: 3, unit: "m³", estimatedUnitPrice: 35.0 }
+      { id: "m4", name: "Pintura de Caucho Profesional (Cuñete)", quantity: 12, unit: "Cuñete", estimatedUnitPrice: 85.0, condition: "NUEVO" },
+      { id: "m5", name: "Cemento Portland (Saco 42.5kg)", quantity: 8, unit: "Saco", estimatedUnitPrice: 12.5, condition: "NUEVO" },
+      { id: "m6", name: "Arena Lavada para Concreto", quantity: 3, unit: "m³", estimatedUnitPrice: 35.0, condition: "NUEVO" }
     ],
     estimatedTotal: 1225.0,
     cierreObraNotes: "Se validaron los cálculos de área de fachada (1200 m²). Requiere andamios de seguridad y equipo de arnés.",
@@ -128,10 +128,10 @@ export const INITIAL_PROJECTS: Project[] = [
     createdDate: "2026-05-10",
     status: ProjectStatus.COMPLETADO_PAGADO,
     materials: [
-      { id: "m7", name: "Cemento Portland (Saco 42.5kg)", quantity: 120, unit: "Saco", estimatedUnitPrice: 12.5 },
-      { id: "m8", name: "Acero de Refuerzo 1/2 pulgada", quantity: 80, unit: "Cabilla", estimatedUnitPrice: 18.0 },
-      { id: "m9", name: "Arena Lavada para Concreto", quantity: 15, unit: "m³", estimatedUnitPrice: 35.0 },
-      { id: "m10", name: "Bloque de Arcilla de 15cm", quantity: 2, unit: "Millar", estimatedUnitPrice: 450.0 }
+      { id: "m7", name: "Cemento Portland (Saco 42.5kg)", quantity: 120, unit: "Saco", estimatedUnitPrice: 12.5, condition: "NUEVO" },
+      { id: "m8", name: "Acero de Refuerzo 1/2 pulgada", quantity: 80, unit: "Cabilla", estimatedUnitPrice: 18.0, condition: "NUEVO" },
+      { id: "m9", name: "Arena Lavada para Concreto", quantity: 15, unit: "m³", estimatedUnitPrice: 35.0, condition: "NUEVO" },
+      { id: "m10", name: "Bloque de Arcilla de 15cm", quantity: 2, unit: "Millar", estimatedUnitPrice: 450.0, condition: "NUEVO" }
     ],
     estimatedTotal: 4365.0,
     cierreObraNotes: "Planos estructurales aprobados por ingeniería municipal. Cálculos de resistencia de suelo verificados.",

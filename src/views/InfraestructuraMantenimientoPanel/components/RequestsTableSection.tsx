@@ -9,17 +9,18 @@
  */
 
 import { useMemo, useState } from "react";
-import { Eye, FilePlus2, SearchX } from "lucide-react";
+import { Eye, ListChecks, SearchX } from "lucide-react";
 import type { Project } from "../../../types";
 import Card from "../../../components/UI/Card";
 import InspectRequestModal from "../../../components/Modals/InspectRequestModal";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import EmptyState from "../../../components/UI/EmptyState";
-import { SearchInput } from "../../../components/UI/FilterBar";
+import TableToolbar from "../../../components/UI/TableToolbar";
 import { Table, type Column } from "../../../components/UI/Table";
 import { formatCurrency } from "../../../utils";
 import { filterByStage } from "../pipeline";
 import PipelineOverview from "./PipelineOverview";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 
 interface RequestsTableSectionProps {
   projects: Project[];
@@ -28,10 +29,9 @@ interface RequestsTableSectionProps {
 }
 
 function TypeBadge({ type }: { type: Project["type"] }) {
+  const c = SEMANTIC_COLOR_MAP[type === "INFRAESTRUCTURA" ? "brand" : "neutral"];
   return (
-    <span className={`text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap ${
-      type === "INFRAESTRUCTURA" ? "bg-sky-50 text-sky-700 border-sky-100" : "bg-slate-100 text-slate-700 border-slate-200"
-    }`}>
+    <span className={`text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap ${c.bg50} ${c.text700} ${c.border100}`}>
       {type === "INFRAESTRUCTURA" ? "INFRA" : "MANT"}
     </span>
   );
@@ -127,41 +127,41 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
   ];
 
   return (
-    <Card className="border-l-4 border-l-slate-400">
-      <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-4 mb-4">
-        <div className="p-2 bg-slate-100 rounded-xl">
-          <FilePlus2 className="h-4 w-4 text-slate-500" />
-        </div>
-        <div>
-          <h4 className="font-bold text-slate-800 text-sm">Peticiones del Departamento</h4>
-          <p className="text-[10px] text-slate-400 font-medium">{visibleProjects.length} de {projects.length} registradas</p>
-        </div>
-        <div className="ml-auto w-full sm:w-64">
-          <SearchInput
-            id="req-search"
-            value={query}
-            onChange={setQuery}
-            placeholder="Buscar por título, ID o ubicación..."
-            ariaLabel="Buscar peticiones"
-          />
-        </div>
+    <Card hoverable={false} accent="neutral" fillHeight className="p-0 overflow-hidden">
+      <TableToolbar
+        searchId="req-search"
+        searchValue={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="Buscar por título, ID o ubicación..."
+        searchAriaLabel="Buscar peticiones"
+        countIcon={<ListChecks />}
+        filteredCount={visibleProjects.length}
+        totalCount={projects.length}
+        noun="petición"
+        nounPlural="peticiones"
+      />
+
+      <div className="px-6 shrink-0">
+        <PipelineOverview projects={projects} stageKey={stageKey} onStageKeyChange={onStageKeyChange} />
       </div>
 
-      <PipelineOverview projects={projects} stageKey={stageKey} onStageKeyChange={onStageKeyChange} />
-
-      <Table
-        columns={columns}
-        data={visibleProjects}
-        rowKey={(p) => p.id}
-        pageSize={6}
-        onRowClick={(p) => setInspectedRequest(p)}
-        emptyState={
-          <EmptyState
-            message={projects.length === 0 ? "No hay peticiones registradas aún." : "No hay peticiones que coincidan con la búsqueda o el filtro."}
-            icon={<SearchX className="h-8 w-8" />}
-          />
-        }
-      />
+      <div className="flex-1 min-h-0">
+        <Table
+          columns={columns}
+          data={visibleProjects}
+          rowKey={(p) => p.id}
+          pageSize={6}
+          fillViewport
+          onRowClick={(p) => setInspectedRequest(p)}
+          containerClassName="px-6 pb-6"
+          emptyState={
+            <EmptyState
+              message={projects.length === 0 ? "No hay peticiones registradas aún." : "No hay peticiones que coincidan con la búsqueda o el filtro."}
+              icon={<SearchX className="h-8 w-8" />}
+            />
+          }
+        />
+      </div>
 
       <InspectRequestModal
         isOpen={!!inspectedRequest}

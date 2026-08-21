@@ -43,6 +43,16 @@ export interface SemanticColorClasses {
   shadowHover500: string;
 }
 
+/** Clases de foco (borde+ring) por rol — fuente única para NumericInput/TextField, evita copias divergentes. */
+export const FOCUS_RING_CLASSES: Record<SemanticColor, string> = {
+  brand: "focus:border-brand-400 focus:ring-brand-100",
+  success: "focus:border-success-400 focus:ring-success-100",
+  danger: "focus:border-danger-400 focus:ring-danger-100",
+  warning: "focus:border-warning-400 focus:ring-warning-100",
+  info: "focus:border-info-400 focus:ring-info-100",
+  neutral: "focus:border-neutral-400 focus:ring-neutral-100",
+};
+
 export const SEMANTIC_COLOR_MAP: Record<SemanticColor, SemanticColorClasses> = {
   brand: {
     bg50: "bg-brand-50",

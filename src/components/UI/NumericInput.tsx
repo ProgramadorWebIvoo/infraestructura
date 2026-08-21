@@ -8,7 +8,7 @@
  */
 
 import { useCallback } from "react";
-import type { SemanticColor } from "./colorTokens";
+import { FOCUS_RING_CLASSES, type SemanticColor } from "./colorTokens";
 
 interface NumericInputProps {
   value: number | "";
@@ -27,15 +27,6 @@ interface NumericInputProps {
   accent?: SemanticColor;
   id?: string;
 }
-
-const FOCUS_RING_CLASSES: Record<SemanticColor, string> = {
-  brand: "focus:border-brand-400 focus:ring-brand-100",
-  success: "focus:border-success-400 focus:ring-success-100",
-  danger: "focus:border-danger-400 focus:ring-danger-100",
-  warning: "focus:border-warning-400 focus:ring-warning-100",
-  info: "focus:border-info-400 focus:ring-info-100",
-  neutral: "focus:border-neutral-400 focus:ring-neutral-100",
-};
 
 export default function NumericInput({
   value,
