@@ -42,7 +42,7 @@ interface FileDropZoneProps {
   /** Texto de ayuda con las extensiones */
   extensionsLabel: string;
   /** Color theme: sky | indigo | purple | etc. */
-  color?: "sky" | "indigo" | "purple" | "emerald";
+  color?: "sky" | "indigo" | "purple" | "emerald" | "rose";
   /** Icono decorativo (ReactNode) */
   icon?: React.ReactNode;
   /** Icono para cada archivo en la lista */
@@ -107,6 +107,18 @@ const COLOR_THEMES: Record<string, { border: string; bg: string; text: string; h
     fileBorder: "border-emerald-100",
     fileText: "text-emerald-800",
     countText: "text-emerald-600",
+  },
+  rose: {
+    border: "border-rose-200",
+    bg: "bg-rose-50",
+    text: "text-rose-500",
+    hover: "hover:border-rose-400 hover:bg-rose-50/30",
+    dragBorder: "border-rose-400",
+    dragBg: "bg-rose-50",
+    fileBg: "bg-rose-50",
+    fileBorder: "border-rose-100",
+    fileText: "text-rose-800",
+    countText: "text-rose-600",
   },
 };
 

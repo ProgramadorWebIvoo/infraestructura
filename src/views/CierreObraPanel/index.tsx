@@ -22,12 +22,17 @@ interface CierreObraPanelProps {
   projects: Project[];
   authToken: string;
   onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
-  onRejectProject: (projectId: string, reason: string) => void;
+  onRejectProject: (
+    projectId: string,
+    reason: string,
+    observations?: string,
+    correctionFiles?: File[],
+  ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onVerifyCompletion: (projectId: string) => void;
   onUploadDocumentVersion: (
     projectId: string,
     documentId: number,
-    documentType: "PLANO" | "CALC" | "FOTO",
+    documentType: "PLANO" | "CALC" | "FOTO" | "CORRECCION",
     file: File,
   ) => void;
   isLoading?: boolean;

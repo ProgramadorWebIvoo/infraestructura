@@ -151,22 +151,53 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   );
 
   /** Rechaza la petición inicial (antes de revisión de planos) — distinto de
-   * handleRejectProposals (Procura, rechaza el cuadro comparativo). */
+   * handleRejectProposals (Procura, rechaza el cuadro comparativo). Mismo
+   * shape de dos fases que handleAddProject/handleResubmitProject cuando hay
+   * correcciones que adjuntar (JSON de rechazo + upload multipart opcional
+   * + refetch), para que sync() traiga los documentos CORRECCION nuevos. */
   const handleRejectProject = useCallback(
-    async (projectId: string, reason: string) => {
+    async (
+      projectId: string,
+      reason: string,
+      observations?: string,
+      correctionFiles: File[] = [],
+    ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/reject-project`, {
           method: "POST",
           token,
-          body: JSON.stringify({ reason }),
+          body: JSON.stringify({ reason, observations: observations || undefined }),
         });
         sync(project);
       } catch (error) {
         logError("handleRejectProject", error);
         show("No se pudo rechazar la petición.", "error");
+        return { ok: false, partial: false, failedGroups: [] };
+      }
+
+      if (correctionFiles.length === 0) {
+        show("Petición rechazada correctamente.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
+      }
+
+      try {
+        const form = new FormData();
+        form.append("document_type", "CORRECCION");
+        correctionFiles.forEach(f => form.append("files[]", f));
+        await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+
+        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(refreshed);
+        show("Petición rechazada y correcciones adjuntadas correctamente.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
+      } catch (error) {
+        logError("handleRejectProject:uploadCorrections", error);
+        show("Petición rechazada, pero no se pudieron adjuntar las correcciones.", "warning");
+        return { ok: true, partial: true, failedGroups: ["correcciones"] };
       }
     },
     [],
@@ -243,7 +274,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
 
   /** Sube una corrección de un documento existente (V2, V3, ...) sin reemplazarlo físicamente. */
   const handleUploadDocumentVersion = useCallback(
-    async (projectId: string, documentId: number, documentType: "PLANO" | "CALC" | "FOTO", file: File) => {
+    async (projectId: string, documentId: number, documentType: "PLANO" | "CALC" | "FOTO" | "CORRECCION", file: File) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;

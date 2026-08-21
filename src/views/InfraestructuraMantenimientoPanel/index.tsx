@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { CheckCircle2, Clock, FilePlus2, HardHat, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, FilePlus2, HardHat } from "lucide-react";
 import type { AuditLog, Project } from "../../types";
 import { ProjectStatus } from "../../types";
 import { containerVariants, itemVariants } from "../../animations";
@@ -16,6 +16,7 @@ import KpiCard from "../../components/UI/KpiCard";
 import RequestWizardCard from "./components/RequestWizardCard";
 import RequestsTableSection from "./components/RequestsTableSection";
 import RejectedPetitionsSection from "./components/RejectedPetitionsSection";
+import RejectedWarningLabel from "./components/RejectedWarningLabel";
 import { useRequestForm } from "../../hooks/useRequestForm";
 
 export type { FieldKey, FieldErrors } from "../../hooks/useRequestForm";
@@ -32,6 +33,7 @@ interface InfraestructuraMantenimientoPanelProps {
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   projects: Project[];
   auditLogs: AuditLog[];
+  authToken: string;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
   isLoading?: boolean;
 }
@@ -41,6 +43,7 @@ export default function InfraestructuraMantenimientoPanel({
   onResubmitProject,
   projects,
   auditLogs,
+  authToken,
   materialsCatalog,
   isLoading = false,
 }: InfraestructuraMantenimientoPanelProps) {
@@ -75,7 +78,7 @@ export default function InfraestructuraMantenimientoPanel({
         {/* KPIs del departamento (operativos, sin exposición financiera agregada).
             Excepción intencional a SEMANTIC_COLOR_MAP: 4 categorías con "cyan"
             (en ejecución) sin equivalente entre los 6 roles semánticos disponibles. */}
-        <motion.div variants={itemVariants} className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <motion.div variants={itemVariants} className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard icon={<FilePlus2 className="h-5 w-5" />} label="Peticiones" accent="text-sky-600" borderAccent="border-l-sky-400">
             <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{kpis.total}</span>
             <p className="text-[10px] text-slate-400 mt-1 font-medium">Registradas por el departamento</p>
@@ -95,12 +98,9 @@ export default function InfraestructuraMantenimientoPanel({
             <span className="text-2xl font-black font-mono bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">{kpis.completed}</span>
             <p className="text-[10px] text-slate-400 mt-1 font-medium">Pagadas y cerradas</p>
           </KpiCard>
-
-          <KpiCard icon={<XCircle className="h-5 w-5" />} label="Rechazadas" accent="text-rose-600" borderAccent="border-l-rose-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-rose-700 to-rose-500 bg-clip-text text-transparent">{kpis.rejected}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Requieren corrección y reenvío</p>
-          </KpiCard>
         </motion.div>
+
+        <RejectedWarningLabel count={kpis.rejected} />
 
         {/* Wizard de alta + tabla de peticiones, lado a lado — comparten el
             alto restante de la columna, y la tabla usa fillViewport para
@@ -122,6 +122,7 @@ export default function InfraestructuraMantenimientoPanel({
       <RejectedPetitionsSection
         projects={projects}
         auditLogs={auditLogs}
+        authToken={authToken}
         materialsCatalog={materialsCatalog}
         onResubmitProject={onResubmitProject}
       />
@@ -140,8 +141,8 @@ function InfraestructuraSkeleton() {
           <SkeletonBlock className="h-3 w-80" />
         </div>
       </SkeletonGroupItem>
-      <SkeletonGroupItem className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <SkeletonGroupItem className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <SkeletonStats key={i} />
         ))}
       </SkeletonGroupItem>

@@ -26,7 +26,12 @@ import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
 interface TechnicalReviewSectionProps {
   projects: Project[];
   onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
-  onRejectProject: (projectId: string, reason: string) => void;
+  onRejectProject: (
+    projectId: string,
+    reason: string,
+    observations?: string,
+    correctionFiles?: File[],
+  ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
 }
 
 const WIZARD_STEPS = [
@@ -57,6 +62,8 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectObservations, setRejectObservations] = useState("");
+  const [rejectCorrectionFiles, setRejectCorrectionFiles] = useState<File[]>([]);
   const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
 
   const pendingReview = useMemo(
@@ -84,6 +91,8 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
 
   const openRejectModal = () => {
     setRejectReason("");
+    setRejectObservations("");
+    setRejectCorrectionFiles([]);
     setShowRejectModal(true);
   };
 
@@ -91,15 +100,19 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
     if (isSubmittingRejection) return;
     setShowRejectModal(false);
     setRejectReason("");
+    setRejectObservations("");
+    setRejectCorrectionFiles([]);
   };
 
   const handleConfirmReject = async () => {
     if (!activeProject || !rejectReason.trim() || isSubmittingRejection) return;
     setIsSubmittingRejection(true);
     try {
-      await onRejectProject(activeProject.id, rejectReason.trim());
+      await onRejectProject(activeProject.id, rejectReason.trim(), rejectObservations.trim(), rejectCorrectionFiles);
       setShowRejectModal(false);
       setRejectReason("");
+      setRejectObservations("");
+      setRejectCorrectionFiles([]);
       closeReview();
     } finally {
       setIsSubmittingRejection(false);
@@ -470,6 +483,36 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
             />
             <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{rejectReason.length}/500</span>
           </div>
+
+          <div>
+            <label htmlFor="reject-project-observations" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Observaciones (opcional)
+            </label>
+            <textarea
+              id="reject-project-observations"
+              value={rejectObservations}
+              onChange={(e) => setRejectObservations(e.target.value)}
+              rows={2}
+              maxLength={1000}
+              placeholder="Detalles adicionales para Infraestructura, aparte del motivo principal."
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100 resize-none"
+            />
+            <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{rejectObservations.length}/1000</span>
+          </div>
+
+          <FileDropZone
+            files={rejectCorrectionFiles}
+            onFilesChange={setRejectCorrectionFiles}
+            label="Correcciones (opcional)"
+            accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg,.xlsx,.xls,.csv"
+            extensionsLabel=".pdf · .dwg · .dxf · .png · .jpg · .xlsx · .csv"
+            color="rose"
+            icon={<AlertTriangle className="h-6 w-6 text-slate-400" />}
+            fileIcon={<AlertTriangle className="h-3.5 w-3.5" />}
+            id="reject-project-corrections-upload"
+            maxSizeBytes={maxFileSizeBytes}
+            onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
+          />
         </div>
       </Modal>
     </Card>

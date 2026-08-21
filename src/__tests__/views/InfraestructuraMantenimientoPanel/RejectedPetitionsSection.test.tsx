@@ -46,6 +46,11 @@ vi.mock("@/hooks/useAppGroupSettings", () => ({
   useAppGroupSettings: () => ({ maxFileSizeBytes: 10 * 1024 * 1024 }),
 }));
 
+vi.mock("@/services/api", () => ({
+  apiFetch: vi.fn(),
+  apiDownload: vi.fn(),
+}));
+
 afterEach(() => vi.restoreAllMocks());
 
 const materialsCatalog = [{ name: "Cemento", unit: "Saco", estimatedUnitPrice: 12.5 }];
@@ -86,6 +91,7 @@ describe("RejectedPetitionsSection", () => {
         projects={[]}
         auditLogs={[]}
         materialsCatalog={materialsCatalog}
+        authToken="test-token"
         onResubmitProject={vi.fn()}
       />,
     );
@@ -98,6 +104,7 @@ describe("RejectedPetitionsSection", () => {
         projects={[makeRejectedProject()]}
         auditLogs={[rejectionLog]}
         materialsCatalog={materialsCatalog}
+        authToken="test-token"
         onResubmitProject={vi.fn()}
       />,
     );
@@ -114,6 +121,7 @@ describe("RejectedPetitionsSection", () => {
         projects={[makeRejectedProject({ id: "PRJ-011", status: ProjectStatus.CREADO })]}
         auditLogs={[]}
         materialsCatalog={materialsCatalog}
+        authToken="test-token"
         onResubmitProject={vi.fn()}
       />,
     );
@@ -127,6 +135,7 @@ describe("RejectedPetitionsSection", () => {
           projects={[makeRejectedProject()]}
           auditLogs={[rejectionLog]}
           materialsCatalog={materialsCatalog}
+          authToken="test-token"
           onResubmitProject={vi.fn()}
         />
       </ToastProvider>,
@@ -147,6 +156,7 @@ describe("RejectedPetitionsSection", () => {
           projects={[makeRejectedProject()]}
           auditLogs={[rejectionLog]}
           materialsCatalog={materialsCatalog}
+          authToken="test-token"
           onResubmitProject={onResubmitProject}
         />
       </ToastProvider>,
@@ -164,5 +174,37 @@ describe("RejectedPetitionsSection", () => {
       expect.objectContaining({ title: "Remodelación depósito", location: "CD Central" }),
       { photos: [], documents: [], plans: [] },
     );
+  });
+
+  it("abre el modal de detalle con motivo, observaciones y correcciones al hacer click en Ver petición", () => {
+    const logWithObservations: AuditLog = {
+      ...rejectionLog,
+      observations: "Revisar también la cubicación de concreto.",
+    };
+    render(
+      <ToastProvider>
+        <RejectedPetitionsSection
+          projects={[
+            makeRejectedProject({
+              documents: [
+                { id: 1, documentType: "FOTO", originalName: "foto1.png", documentGroupId: 1, versionNumber: 1 },
+                { id: 2, documentType: "CORRECCION", originalName: "correccion.pdf", documentGroupId: 2, versionNumber: 1 },
+              ],
+            }),
+          ]}
+          auditLogs={[logWithObservations]}
+          materialsCatalog={materialsCatalog}
+          authToken="test-token"
+          onResubmitProject={vi.fn()}
+        />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByText("Ver petición"));
+
+    expect(screen.getByText("Detalle de Petición Rechazada")).toBeInTheDocument();
+    expect(screen.getAllByText("La descripción no detalla el alcance del trabajo.").length).toBeGreaterThan(0);
+    expect(screen.getByText("Revisar también la cubicación de concreto.")).toBeInTheDocument();
+    expect(screen.getByText("correccion.pdf")).toBeInTheDocument();
   });
 });

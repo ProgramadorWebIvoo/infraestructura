@@ -57,7 +57,7 @@ export interface Proposal {
 
 export interface ProjectDocument {
   id: number;
-  documentType: "CALC" | "PLANO" | "FOTO";
+  documentType: "CALC" | "PLANO" | "FOTO" | "CORRECCION";
   originalName: string;
   mimeType?: string;
   sizeBytes?: number;
@@ -123,6 +123,7 @@ export interface AuditLog {
   action: string;
   timestamp: string;
   details?: string;
+  observations?: string;
 }
 
 // ---------------------------------------------------------------------------

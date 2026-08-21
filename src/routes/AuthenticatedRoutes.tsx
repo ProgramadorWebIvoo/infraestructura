@@ -58,7 +58,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.INFRAESTRUCTURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
-              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} projects={projects} auditLogs={auditLogs} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
+              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

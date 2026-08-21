@@ -10,7 +10,7 @@
  */
 
 import { useState } from "react";
-import { Download, Eye, FileSpreadsheet, History, Image as ImageIcon, Map } from "lucide-react";
+import { AlertTriangle, Download, Eye, FileSpreadsheet, History, Image as ImageIcon, Map } from "lucide-react";
 import { apiFetch } from "../../services/api";
 import type { Project, ProjectDocument } from "../../types";
 
@@ -27,12 +27,14 @@ const ACCENT_CLASSES = {
   indigo: { border: "border-indigo-100", bg: "bg-indigo-50/40", icon: "text-indigo-500", label: "text-indigo-700" },
   sky: { border: "border-sky-100", bg: "bg-sky-50/40", icon: "text-sky-500", label: "text-sky-700" },
   purple: { border: "border-purple-100", bg: "bg-purple-50/40", icon: "text-purple-500", label: "text-purple-700" },
+  rose: { border: "border-rose-100", bg: "bg-rose-50/40", icon: "text-rose-500", label: "text-rose-700" },
 } as const;
 
 const GROUPS: { type: ProjectDocument["documentType"]; label: string; icon: typeof Map; accent: keyof typeof ACCENT_CLASSES }[] = [
   { type: "PLANO", label: "Planos de Ingeniería", icon: Map, accent: "indigo" },
   { type: "CALC", label: "Hojas de Cálculo", icon: FileSpreadsheet, accent: "sky" },
   { type: "FOTO", label: "Fotos del Sitio", icon: ImageIcon, accent: "purple" },
+  { type: "CORRECCION", label: "Correcciones de Cierre de Obra", icon: AlertTriangle, accent: "rose" },
 ];
 
 function DocumentRow({

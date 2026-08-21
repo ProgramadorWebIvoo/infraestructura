@@ -45,7 +45,7 @@ const pendingProject: Project = {
   estimatedTotal: 10,
 };
 
-function renderSection(onRejectProject = vi.fn()) {
+function renderSection(onRejectProject = vi.fn().mockResolvedValue({ ok: true, partial: false, failedGroups: [] })) {
   render(
     <ToastProvider>
       <TechnicalReviewSection
@@ -88,6 +88,28 @@ describe("TechnicalReviewSection — rechazo de petición", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /Confirmar rechazo/ }));
 
-    expect(onRejectProject).toHaveBeenCalledWith("PRJ-020", "Descripción insuficiente.");
+    expect(onRejectProject).toHaveBeenCalledWith("PRJ-020", "Descripción insuficiente.", "", []);
+  });
+
+  it("permite escribir observaciones opcionales y las envía junto con el motivo", async () => {
+    const { onRejectProject } = renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+    fireEvent.click(screen.getByRole("button", { name: /Rechazar/ }));
+
+    fireEvent.change(screen.getByLabelText("Motivo del rechazo *"), {
+      target: { value: "Descripción insuficiente." },
+    });
+    fireEvent.change(screen.getByLabelText("Observaciones (opcional)"), {
+      target: { value: "Revisar también la cubicación de concreto." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar rechazo/ }));
+
+    expect(onRejectProject).toHaveBeenCalledWith(
+      "PRJ-020",
+      "Descripción insuficiente.",
+      "Revisar también la cubicación de concreto.",
+      [],
+    );
   });
 });

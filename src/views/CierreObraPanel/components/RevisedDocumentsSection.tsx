@@ -29,7 +29,7 @@ interface RevisedDocumentsSectionProps {
   onUploadDocumentVersion: (
     projectId: string,
     documentId: number,
-    documentType: "PLANO" | "CALC" | "FOTO",
+    documentType: "PLANO" | "CALC" | "FOTO" | "CORRECCION",
     file: File,
   ) => void;
 }
