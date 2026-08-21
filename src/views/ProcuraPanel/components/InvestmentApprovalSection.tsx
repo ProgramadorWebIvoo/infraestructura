@@ -10,7 +10,7 @@
  */
 
 import { Fragment, useMemo, useState } from "react";
-import { ArrowRight, Calculator, CheckSquare, Download, FileSpreadsheet, Map, MapPin, TrendingUp } from "lucide-react";
+import { ArrowRight, Calculator, CheckSquare, MapPin, TrendingUp } from "lucide-react";
 import Button from "../../../components/UI/Button";
 import { useToast } from "../../../components/UI/Toast";
 import { apiDownload } from "../../../services/api";
@@ -19,6 +19,8 @@ import SectionHeader from "../../../components/UI/SectionHeader";
 import NumericInput from "../../../components/UI/NumericInput";
 import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
+import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
+import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import { formatNumber } from "../../../utils";
 import { ProjectStatus } from "../../../types";
 import type { Project, ProjectDocument } from "../../../types";
@@ -27,73 +29,6 @@ const WIZARD_STEPS = [
   { key: 1, label: "Revisar", icon: Calculator },
   { key: 2, label: "Autorizar", icon: CheckSquare },
 ] as const;
-
-/** Renderiza documentos adjuntos (planos + hojas de cálculo) de un proyecto */
-function ProjectDocuments({ project, onDownload }: { project: Project; onDownload: (project: Project, doc: ProjectDocument) => void }) {
-  const docs = project.documents ?? [];
-  const planos = docs.filter(d => d.documentType === "PLANO");
-  const calcs = docs.filter(d => d.documentType === "CALC");
-  if (docs.length === 0) return null;
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Map className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-          <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">
-            Planos de Ingeniería ({planos.length})
-          </span>
-        </div>
-        {planos.length === 0 ? (
-          <p className="text-[10px] text-slate-400 italic font-medium">Sin planos adjuntos.</p>
-        ) : (
-          <ul className="space-y-1">
-            {planos.map(doc => (
-              <li key={doc.id} className="flex items-center justify-between gap-2 bg-white border border-indigo-100 rounded-lg px-2.5 py-1.5">
-                <span className="text-[11px] font-bold text-indigo-800 truncate" title={doc.originalName}>{doc.originalName}</span>
-                <button
-                  type="button"
-                  onClick={() => onDownload(project, doc)}
-                  className="shrink-0 text-indigo-400 hover:text-indigo-700 transition-colors cursor-pointer"
-                  title="Descargar"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <div className="rounded-xl border border-sky-100 bg-sky-50/40 p-3 space-y-2">
-        <div className="flex items-center gap-1.5">
-          <FileSpreadsheet className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-          <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider">
-            Hojas de Cálculo ({calcs.length})
-          </span>
-        </div>
-        {calcs.length === 0 ? (
-          <p className="text-[10px] text-slate-400 italic font-medium">Sin hojas de cálculo adjuntas.</p>
-        ) : (
-          <ul className="space-y-1">
-            {calcs.map(doc => (
-              <li key={doc.id} className="flex items-center justify-between gap-2 bg-white border border-sky-100 rounded-lg px-2.5 py-1.5">
-                <span className="text-[11px] font-bold text-sky-800 truncate" title={doc.originalName}>{doc.originalName}</span>
-                <button
-                  type="button"
-                  onClick={() => onDownload(project, doc)}
-                  className="shrink-0 text-sky-400 hover:text-sky-700 transition-colors cursor-pointer"
-                  title="Descargar"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
 
 interface InvestmentApprovalSectionProps {
   projects: Project[];
@@ -107,6 +42,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   const [step, setStep] = useState(1);
   const [procuraNotes, setProcuraNotes] = useState("");
   const [approvedAmount, setApprovedAmount] = useState<number | "">("");
+  const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
 
   const pendingInvestmentApproval = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE),
@@ -114,9 +50,10 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   );
   const activeReviewProject = pendingInvestmentApproval.find(p => p.id === selectedReviewId);
 
-  const handleDownload = async (project: Project, doc: ProjectDocument) => {
+  const handleDownload = async (doc: ProjectDocument) => {
+    if (!activeReviewProject) return;
     try {
-      const blob = await apiDownload(`/projects/${project.id}/documents/${doc.id}/download`, { token: authToken });
+      const blob = await apiDownload(`/projects/${activeReviewProject.id}/documents/${doc.id}/download`, { token: authToken });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -314,7 +251,12 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                   </div>
                 </div>
 
-                <ProjectDocuments project={activeReviewProject} onDownload={handleDownload} />
+                <ProjectDocumentsList
+                  project={activeReviewProject}
+                  authToken={authToken}
+                  onDownload={handleDownload}
+                  onPreview={setPreviewDoc}
+                />
               </div>
             )}
 
@@ -363,6 +305,17 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
           </div>
         )}
       </Modal>
+
+      {activeReviewProject && (
+        <DocumentPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          projectId={activeReviewProject.id}
+          document={previewDoc}
+          authToken={authToken}
+          onDownload={handleDownload}
+        />
+      )}
     </Card>
   );
 }
