@@ -54,10 +54,11 @@ describe("useProjectsWorkflows", () => {
   });
 
   // ── All handlers are exposed ────────────────────────────────────────────────
-  it("exposes all 12 handlers", () => {
+  it("exposes all 13 handlers", () => {
     const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
     expect(result.current.handleAddProject).toBeDefined();
     expect(result.current.handleReviewProject).toBeDefined();
+    expect(result.current.handleUploadDocumentVersion).toBeDefined();
     expect(result.current.handleApproveInvestment).toBeDefined();
     expect(result.current.handleAddProposal).toBeDefined();
     expect(result.current.handleRemoveProposal).toBeDefined();
@@ -76,16 +77,22 @@ describe("useProjectsWorkflows", () => {
       const newProject = createMockProject();
       mockApiFetch.mockResolvedValue(newProject);
 
+      // Sin archivos: POST /projects, luego GET de refresco (mismo proyecto en este caso)
+      mockApiFetch.mockResolvedValueOnce(newProject).mockResolvedValueOnce(newProject);
+
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleAddProject({
-        title: "New Project",
-        type: "INFRAESTRUCTURA",
-        description: "desc",
-        location: "loc",
-        materials: [],
-        estimatedTotal: 500,
-      });
+      const outcome = await result.current.handleAddProject(
+        {
+          title: "New Project",
+          type: "INFRAESTRUCTURA",
+          description: "desc",
+          location: "loc",
+          materials: [],
+          estimatedTotal: 500,
+        },
+        { photos: [], documents: [], plans: [] },
+      );
 
       expect(mockApiFetch).toHaveBeenCalledWith("/projects", {
         method: "POST",
@@ -93,26 +100,120 @@ describe("useProjectsWorkflows", () => {
         body: expect.any(String),
       });
       expect(syncProject).toHaveBeenCalledWith(newProject);
+      expect(outcome).toEqual({ ok: true, partial: false, failedGroups: [] });
     });
 
-    it("shows error toast on failure", async () => {
+    it("shows error toast on failure and does not attempt file uploads", async () => {
       mockApiFetch.mockRejectedValue(new Error("API error"));
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleAddProject({
-        title: "New Project",
-        type: "INFRAESTRUCTURA",
-        description: "desc",
-        location: "loc",
-        materials: [],
-        estimatedTotal: 500,
-      });
+      const outcome = await result.current.handleAddProject(
+        {
+          title: "New Project",
+          type: "INFRAESTRUCTURA",
+          description: "desc",
+          location: "loc",
+          materials: [],
+          estimatedTotal: 500,
+        },
+        { photos: [new File(["x"], "foto.jpg")], documents: [], plans: [] },
+      );
 
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo registrar"),
         "error",
       );
+      expect(mockApiFetch).toHaveBeenCalledTimes(1);
+      expect(outcome).toEqual({ ok: false, partial: false, failedGroups: [] });
+    });
+
+    it("uploads each non-empty file group after creating the project, then refreshes", async () => {
+      const newProject = createMockProject();
+      const refreshedProject = createMockProject({ estimatedTotal: 999 });
+      mockApiFetch
+        .mockResolvedValueOnce(newProject) // POST /projects
+        .mockResolvedValueOnce({ data: [] }) // POST documents FOTO
+        .mockResolvedValueOnce({ data: [] }) // POST documents CALC
+        .mockResolvedValueOnce({ data: [] }) // POST documents PLANO
+        .mockResolvedValueOnce(refreshedProject); // GET refresh
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const outcome = await result.current.handleAddProject(
+        {
+          title: "New Project",
+          type: "INFRAESTRUCTURA",
+          description: "desc",
+          location: "loc",
+          materials: [],
+          estimatedTotal: 500,
+        },
+        {
+          photos: [new File(["a"], "foto.jpg")],
+          documents: [new File(["b"], "doc.pdf")],
+          plans: [new File(["c"], "plano.pdf")],
+        },
+      );
+
+      expect(mockApiFetch).toHaveBeenCalledTimes(5);
+      const documentTypesSent = mockApiFetch.mock.calls
+        .filter((call) => (call[0] as string).endsWith("/documents"))
+        .map((call) => (call[1] as { body: FormData }).body.get("document_type"));
+      expect(documentTypesSent.sort()).toEqual(["CALC", "FOTO", "PLANO"]);
+      expect(syncProject).toHaveBeenCalledWith(refreshedProject);
+      expect(outcome).toEqual({ ok: true, partial: false, failedGroups: [] });
+    });
+
+    it("reports partial success when a file group fails after the project was created", async () => {
+      const newProject = createMockProject();
+      const refreshedProject = createMockProject();
+      mockApiFetch
+        .mockResolvedValueOnce(newProject) // POST /projects
+        .mockRejectedValueOnce(new Error("upload failed")) // POST documents FOTO fails
+        .mockResolvedValueOnce(refreshedProject); // GET refresh
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const outcome = await result.current.handleAddProject(
+        {
+          title: "New Project",
+          type: "INFRAESTRUCTURA",
+          description: "desc",
+          location: "loc",
+          materials: [],
+          estimatedTotal: 500,
+        },
+        { photos: [new File(["a"], "foto.jpg")], documents: [], plans: [] },
+      );
+
+      expect(outcome).toEqual({ ok: true, partial: true, failedGroups: ["fotos"] });
+      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("fotos"), "warning");
+      // El proyecto ya se creó y sincronizó, aunque falle la subida
+      expect(syncProject).toHaveBeenCalledWith(newProject);
+    });
+
+    it("skips upload calls (but still refreshes) when no files are provided", async () => {
+      const newProject = createMockProject();
+      mockApiFetch.mockResolvedValueOnce(newProject).mockResolvedValueOnce(newProject);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handleAddProject(
+        {
+          title: "New Project",
+          type: "INFRAESTRUCTURA",
+          description: "desc",
+          location: "loc",
+          materials: [],
+          estimatedTotal: 500,
+        },
+        { photos: [], documents: [], plans: [] },
+      );
+
+      // POST /projects + GET de refresco — sin llamadas a /documents, ya que no hay archivos
+      expect(mockApiFetch).toHaveBeenCalledTimes(2);
+      expect(mockApiFetch.mock.calls.some((call) => (call[0] as string).endsWith("/documents"))).toBe(false);
     });
   });
 
@@ -169,6 +270,39 @@ describe("useProjectsWorkflows", () => {
         expect.stringContaining("No se pudo guardar"),
         "error",
       );
+    });
+  });
+
+  describe("handleUploadDocumentVersion", () => {
+    it("POSTs new_version_of + files[] as FormData, then refreshes", async () => {
+      const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
+      mockApiFetch
+        .mockResolvedValueOnce(undefined) // POST /documents
+        .mockResolvedValueOnce(project);  // GET refresh
+
+      const file = new File(["v2"], "plano-v2.pdf", { type: "application/pdf" });
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handleUploadDocumentVersion("PRJ-001", 42, "PLANO", file);
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
+        method: "POST",
+        body: expect.any(FormData),
+      }));
+      const formData = mockApiFetch.mock.calls[0][1].body as FormData;
+      expect(formData.get("new_version_of")).toBe("42");
+      expect(formData.get("document_type")).toBe("PLANO");
+      expect(syncProject).toHaveBeenCalledWith(project);
+      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("Nueva versión"), "success");
+    });
+
+    it("shows error toast on failure", async () => {
+      mockApiFetch.mockRejectedValue(new Error("fail"));
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handleUploadDocumentVersion("PRJ-001", 42, "PLANO", new File(["v2"], "v2.pdf"));
+
+      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("No se pudo cargar"), "error");
     });
   });
 
@@ -582,14 +716,17 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleAddProject({
-        title: "Test",
-        type: "INFRAESTRUCTURA",
-        description: "desc",
-        location: "loc",
-        materials: [],
-        estimatedTotal: 100,
-      });
+      await result.current.handleAddProject(
+        {
+          title: "Test",
+          type: "INFRAESTRUCTURA",
+          description: "desc",
+          location: "loc",
+          materials: [],
+          estimatedTotal: 100,
+        },
+        { photos: [], documents: [], plans: [] },
+      );
 
       // Verify showToast was called with the mocked function
       expect(showToast).toHaveBeenCalled();

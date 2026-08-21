@@ -45,13 +45,26 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   getProjectRef.current = options.getProject;
 
   // ── Infraestructura / Mantenimiento ───────────────────────────────
+  /**
+   * Orquesta 2 fases desde la perspectiva de la UX (un solo submit): (1)
+   * crea el proyecto con datos+materiales vía JSON, (2) sube los grupos de
+   * archivos no vacíos vía multipart reutilizando el endpoint de documentos
+   * ya existente, (3) refresca el proyecto completo. El proyecto ya existe
+   * tras (1) — no hay rollback si falla algún grupo de archivos; se reporta
+   * como éxito parcial (warning), no como error total.
+   */
   const handleAddProject = useCallback(
-    async (newProj: Omit<Project, "id" | "createdDate" | "status">) => {
+    async (
+      newProj: Omit<Project, "id" | "createdDate" | "status">,
+      files: { photos: File[]; documents: File[]; plans: File[] },
+    ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+
+      let project: Project;
       try {
-        const project = await apiFetch<Project>("/projects", {
+        project = await apiFetch<Project>("/projects", {
           method: "POST",
           token,
           body: JSON.stringify(newProj),
@@ -60,7 +73,47 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       } catch (error) {
         logError("handleAddProject", error);
         show("No se pudo registrar la obra en Laravel.", "error");
+        return { ok: false, partial: false, failedGroups: [] };
       }
+
+      const uploadGroup = async (list: File[], type: "FOTO" | "CALC" | "PLANO", groupLabel: string) => {
+        if (list.length === 0) return null;
+        const form = new FormData();
+        form.append("document_type", type);
+        list.forEach(f => form.append("files[]", f));
+        try {
+          await apiFetch(`/projects/${project.id}/documents`, { method: "POST", token, body: form });
+          return null;
+        } catch (error) {
+          logError(`handleAddProject:upload:${type}`, error);
+          return groupLabel;
+        }
+      };
+
+      const results = await Promise.all([
+        uploadGroup(files.photos, "FOTO", "fotos"),
+        uploadGroup(files.documents, "CALC", "documentos"),
+        uploadGroup(files.plans, "PLANO", "planos"),
+      ]);
+      const failedGroups = results.filter((r): r is string => r !== null);
+
+      try {
+        const refreshed = await apiFetch<Project>(`/projects/${project.id}`, { token });
+        sync(refreshed);
+      } catch (error) {
+        logError("handleAddProject:refresh", error);
+      }
+
+      if (failedGroups.length === 0) {
+        show("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
+      }
+
+      show(
+        `Petición registrada, pero no se pudieron adjuntar: ${failedGroups.join(", ")}.`,
+        "warning",
+      );
+      return { ok: true, partial: true, failedGroups };
     },
     [], // sin dependencias — todo vía refs
   );
@@ -92,6 +145,121 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       } catch (error) {
         logError("handleReviewProject", error);
         show("No se pudo guardar la revisión técnica.", "error");
+      }
+    },
+    [],
+  );
+
+  /** Rechaza la petición inicial (antes de revisión de planos) — distinto de
+   * handleRejectProposals (Procura, rechaza el cuadro comparativo). */
+  const handleRejectProject = useCallback(
+    async (projectId: string, reason: string) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        const project = await apiFetch<Project>(`/projects/${projectId}/reject-project`, {
+          method: "POST",
+          token,
+          body: JSON.stringify({ reason }),
+        });
+        sync(project);
+      } catch (error) {
+        logError("handleRejectProject", error);
+        show("No se pudo rechazar la petición.", "error");
+      }
+    },
+    [],
+  );
+
+  /** Reenvía una petición previamente rechazada (mismo Project.id) con los campos
+   * corregidos — mismo shape de dos fases que handleAddProject (JSON + upload de
+   * adjuntos nuevos + refetch), pero contra /resubmit en vez de crear un proyecto. */
+  const handleResubmitProject = useCallback(
+    async (
+      projectId: string,
+      updated: Omit<Project, "id" | "createdDate" | "status" | "type">,
+      files: { photos: File[]; documents: File[]; plans: File[] },
+    ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+
+      let project: Project;
+      try {
+        project = await apiFetch<Project>(`/projects/${projectId}/resubmit`, {
+          method: "POST",
+          token,
+          body: JSON.stringify(updated),
+        });
+        sync(project);
+      } catch (error) {
+        logError("handleResubmitProject", error);
+        show("No se pudo reenviar la petición corregida.", "error");
+        return { ok: false, partial: false, failedGroups: [] };
+      }
+
+      const uploadGroup = async (list: File[], type: "FOTO" | "CALC" | "PLANO", groupLabel: string) => {
+        if (list.length === 0) return null;
+        const form = new FormData();
+        form.append("document_type", type);
+        list.forEach(f => form.append("files[]", f));
+        try {
+          await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+          return null;
+        } catch (error) {
+          logError(`handleResubmitProject:upload:${type}`, error);
+          return groupLabel;
+        }
+      };
+
+      const results = await Promise.all([
+        uploadGroup(files.photos, "FOTO", "fotos"),
+        uploadGroup(files.documents, "CALC", "documentos"),
+        uploadGroup(files.plans, "PLANO", "planos"),
+      ]);
+      const failedGroups = results.filter((r): r is string => r !== null);
+
+      try {
+        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(refreshed);
+      } catch (error) {
+        logError("handleResubmitProject:refresh", error);
+      }
+
+      if (failedGroups.length === 0) {
+        show("Petición corregida y reenviada a Cierre de Obra.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
+      }
+
+      show(
+        `Petición reenviada, pero no se pudieron adjuntar: ${failedGroups.join(", ")}.`,
+        "warning",
+      );
+      return { ok: true, partial: true, failedGroups };
+    },
+    [],
+  );
+
+  /** Sube una corrección de un documento existente (V2, V3, ...) sin reemplazarlo físicamente. */
+  const handleUploadDocumentVersion = useCallback(
+    async (projectId: string, documentId: number, documentType: "PLANO" | "CALC" | "FOTO", file: File) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        const form = new FormData();
+        form.append("document_type", documentType);
+        form.append("new_version_of", String(documentId));
+        form.append("files[]", file);
+        await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+
+        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(refreshed);
+        show("Nueva versión del documento cargada correctamente.", "success");
+      } catch (error) {
+        logError("handleUploadDocumentVersion", error);
+        show("No se pudo cargar la nueva versión del documento.", "error");
       }
     },
     [],
@@ -314,6 +482,9 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   return {
     handleAddProject,
     handleReviewProject,
+    handleRejectProject,
+    handleResubmitProject,
+    handleUploadDocumentVersion,
     handleApproveInvestment,
     handleAddProposal,
     handleRemoveProposal,
