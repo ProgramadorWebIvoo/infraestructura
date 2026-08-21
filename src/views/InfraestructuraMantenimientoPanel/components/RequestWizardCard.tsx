@@ -30,10 +30,20 @@ const STEP_DEFINITIONS: StepDefinition[] = [
 interface RequestWizardCardProps {
   form: UseRequestFormReturn;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  /**
+   * "standalone" (default): se muestra suelto en la página, con su propio
+   * Card/SectionHeader/borde de acento (uso normal en InfraestructuraMantenimientoPanel).
+   * "embedded": sin Card/SectionHeader propios — para montarse dentro de un
+   * Modal que ya aporta su propio header/borde/padding (uso en
+   * RejectedPetitionsSection). Evita el card-dentro-de-card con dos headers
+   * apilados que resultaba de reusar el wizard tal cual dentro de un modal.
+   */
+  variant?: "standalone" | "embedded";
 }
 
-export default function RequestWizardCard({ form, materialsCatalog }: RequestWizardCardProps) {
+export default function RequestWizardCard({ form, materialsCatalog, variant = "standalone" }: RequestWizardCardProps) {
   const wizard = useRequestWizard({ form });
+  const isEmbedded = variant === "embedded";
 
   const handleSubmit = async () => {
     // form.handleSubmit ya valida todo (incluyendo adjuntos) y setea
@@ -45,30 +55,34 @@ export default function RequestWizardCard({ form, materialsCatalog }: RequestWiz
     wizard.reset();
   };
 
-  return (
-    <Card accent="brand" hoverable={false} fillHeight>
-      <div className="shrink-0">
-        <SectionHeader
-          icon={<FilePlus2 className="h-5 w-5" />}
-          title={form.isEditMode ? "Corregir y Reenviar Petición" : "Crear Nueva Petición de Obra / Trabajo"}
-          description={
-            form.isEditMode
-              ? "Corrija lo indicado por Cierre de Obra y reenvíe la petición para una nueva evaluación."
-              : "Formule su requerimiento y defina los materiales necesarios para iniciar el flujo de aprobación."
-          }
-          color="sky"
-        />
+  const stepper = (
+    <Stepper
+      steps={STEP_DEFINITIONS}
+      currentIndex={wizard.currentIndex}
+      furthestVisitedIndex={wizard.furthestVisitedIndex}
+      onStepClick={wizard.goToStep}
+      ariaLabel="Pasos de la petición"
+    />
+  );
 
-        <div className="mt-2 mb-6">
-          <Stepper
-            steps={STEP_DEFINITIONS}
-            currentIndex={wizard.currentIndex}
-            furthestVisitedIndex={wizard.furthestVisitedIndex}
-            onStepClick={wizard.goToStep}
-            ariaLabel="Pasos de la petición"
+  const content = (
+    <>
+      {!isEmbedded && (
+        <div className="shrink-0">
+          <SectionHeader
+            icon={<FilePlus2 className="h-5 w-5" />}
+            title={form.isEditMode ? "Corregir y Reenviar Petición" : "Crear Nueva Petición de Obra / Trabajo"}
+            description={
+              form.isEditMode
+                ? "Corrija lo indicado por Cierre de Obra y reenvíe la petición para una nueva evaluación."
+                : "Formule su requerimiento y defina los materiales necesarios para iniciar el flujo de aprobación."
+            }
+            color="sky"
           />
+          <div className="mt-2 mb-6">{stepper}</div>
         </div>
-      </div>
+      )}
+      {isEmbedded && <div className="shrink-0 mb-6">{stepper}</div>}
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -160,6 +174,16 @@ export default function RequestWizardCard({ form, materialsCatalog }: RequestWiz
           </Button>
         )}
       </div>
+    </>
+  );
+
+  if (isEmbedded) {
+    return <div className="h-full min-h-0 flex flex-col">{content}</div>;
+  }
+
+  return (
+    <Card accent="brand" hoverable={false} fillHeight>
+      {content}
     </Card>
   );
 }

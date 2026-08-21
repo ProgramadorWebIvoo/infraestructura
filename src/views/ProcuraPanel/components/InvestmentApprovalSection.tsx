@@ -69,7 +69,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
     setSelectedReviewId(p.id);
     setStep(1);
     setApprovedAmount(p.estimatedTotal);
-    setProcuraNotes(`Presupuesto aprobado de $${p.estimatedTotal} para licitación directa. Cierre de Obra validó planos correspondientes.`);
+    setProcuraNotes("");
   };
 
   const closeReview = () => {
@@ -84,6 +84,10 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
     const amountNum = approvedAmount === "" ? 0 : approvedAmount;
     if (amountNum <= 0) {
       showToast("Introduce un monto de inversión autorizado válido.", "warning");
+      return;
+    }
+    if (!procuraNotes.trim()) {
+      showToast("Introduce una nota de autorización.", "warning");
       return;
     }
     onApproveInvestment(activeReviewProject.id, procuraNotes, amountNum);

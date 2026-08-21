@@ -67,9 +67,18 @@ function EditAndResubmitModal({
   });
 
   return (
-    <Modal isOpen onClose={onClose} maxWidth="max-w-4xl" title={`Editar ${project.id}`}>
-      <div className="h-[75vh]">
-        <RequestWizardCard form={form} materialsCatalog={materialsCatalog} />
+    <Modal
+      isOpen
+      onClose={onClose}
+      maxWidth="max-w-4xl"
+      icon={<Pencil className="h-5 w-5" />}
+      iconColor="sky"
+      badge="Corregir y Reenviar Petición"
+      title={project.id}
+      infoLine={project.title}
+    >
+      <div className="h-[70vh] -m-6 p-6 pt-5">
+        <RequestWizardCard form={form} materialsCatalog={materialsCatalog} variant="embedded" />
       </div>
     </Modal>
   );
