@@ -16,18 +16,30 @@ import KpiCard from "../../components/UI/KpiCard";
 import TechnicalReviewSection from "./components/TechnicalReviewSection";
 import CompletionAuditSection from "./components/CompletionAuditSection";
 import ReturnsFlowStrip from "./components/ReturnsFlowStrip";
+import RevisedDocumentsSection from "./components/RevisedDocumentsSection";
 
 interface CierreObraPanelProps {
   projects: Project[];
+  authToken: string;
   onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
+  onRejectProject: (projectId: string, reason: string) => void;
   onVerifyCompletion: (projectId: string) => void;
+  onUploadDocumentVersion: (
+    projectId: string,
+    documentId: number,
+    documentType: "PLANO" | "CALC" | "FOTO",
+    file: File,
+  ) => void;
   isLoading?: boolean;
 }
 
 export default function CierreObraPanel({
   projects,
+  authToken,
   onReviewProject,
+  onRejectProject,
   onVerifyCompletion,
+  onUploadDocumentVersion,
   isLoading = false,
 }: CierreObraPanelProps) {
   if (isLoading) return <CierreObraSkeleton />;
@@ -86,13 +98,22 @@ export default function CierreObraPanel({
       {/* SECTION 1: Pending Technical Reviews */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 space-y-6">
-          <TechnicalReviewSection projects={projects} onReviewProject={onReviewProject} />
+          <TechnicalReviewSection projects={projects} onReviewProject={onReviewProject} onRejectProject={onRejectProject} />
         </div>
 
         {/* SECTION 2: Work Completion & Quality Verification */}
         <div className="lg:col-span-5 space-y-6">
           <CompletionAuditSection projects={projects} onVerifyCompletion={onVerifyCompletion} />
         </div>
+      </motion.div>
+
+      {/* SECTION 3: Revised documents (versioning + preview) */}
+      <motion.div variants={itemVariants}>
+        <RevisedDocumentsSection
+          projects={projects}
+          authToken={authToken}
+          onUploadDocumentVersion={onUploadDocumentVersion}
+        />
       </motion.div>
     </motion.div>
   );

@@ -26,7 +26,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     projects, auditLogs, isLoadingApi, inspectedProject, onCloseInspectedProject, onSelectProject,
     onLogout, contractors, onUpdateContractorRating, onContractorMutated,
     materialsCatalog,
-    onAddProject, onReviewProject, onApproveInvestment, onAddProposal,
+    onAddProject, onResubmitProject, onRejectProject, onReviewProject, onUploadDocumentVersion, onApproveInvestment, onAddProposal,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
@@ -58,7 +58,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.INFRAESTRUCTURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
-              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} projects={projects} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
+              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} projects={projects} auditLogs={auditLogs} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />
@@ -66,7 +66,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CIERRE_OBRA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CIERRE_OBRA)} redirectTo={fallbackRoute}>
-              <CierreObraPanel projects={projects} onReviewProject={onReviewProject} onVerifyCompletion={onVerifyCompletion} isLoading={isLoadingApi} />
+              <CierreObraPanel projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onVerifyCompletion={onVerifyCompletion} onUploadDocumentVersion={onUploadDocumentVersion} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

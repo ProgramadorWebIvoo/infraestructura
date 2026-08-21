@@ -10,7 +10,7 @@
  */
 
 import { Fragment, useMemo, useState } from "react";
-import { ArrowRight, Calculator, CheckCircle2, FileSpreadsheet, Map, MapPin, Send, Upload } from "lucide-react";
+import { AlertTriangle, ArrowRight, Calculator, CheckCircle2, FileSpreadsheet, Map, MapPin, Send, Upload, XCircle } from "lucide-react";
 import type { Project } from "../../../types";
 import { ProjectStatus } from "../../../types";
 import { useToast } from "../../../components/UI/Toast";
@@ -26,6 +26,7 @@ import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
 interface TechnicalReviewSectionProps {
   projects: Project[];
   onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
+  onRejectProject: (projectId: string, reason: string) => void;
 }
 
 const WIZARD_STEPS = [
@@ -44,7 +45,7 @@ function ProjectTypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export default function TechnicalReviewSection({ projects, onReviewProject }: TechnicalReviewSectionProps) {
+export default function TechnicalReviewSection({ projects, onReviewProject, onRejectProject }: TechnicalReviewSectionProps) {
   const { showToast } = useToast();
   const { maxFileSizeBytes } = useAppGroupSettings();
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -53,6 +54,10 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
   const [calcFiles, setCalcFiles] = useState<File[]>([]);
   const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
 
   const pendingReview = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.CREADO),
@@ -75,6 +80,30 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
     setCalcFiles([]);
     setPlanFiles([]);
     setCierreNotes("");
+  };
+
+  const openRejectModal = () => {
+    setRejectReason("");
+    setShowRejectModal(true);
+  };
+
+  const closeRejectModal = () => {
+    if (isSubmittingRejection) return;
+    setShowRejectModal(false);
+    setRejectReason("");
+  };
+
+  const handleConfirmReject = async () => {
+    if (!activeProject || !rejectReason.trim() || isSubmittingRejection) return;
+    setIsSubmittingRejection(true);
+    try {
+      await onRejectProject(activeProject.id, rejectReason.trim());
+      setShowRejectModal(false);
+      setRejectReason("");
+      closeReview();
+    } finally {
+      setIsSubmittingRejection(false);
+    }
   };
 
   const handleNextStep = () => {
@@ -195,6 +224,18 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
                     : "Revisa el detalle de la inversión"}
               </span>
               <div className="flex items-center gap-2">
+                {step === 1 && (
+                  <Button
+                    id="btn-cierre-reject-project"
+                    variant="secondary"
+                    colorScheme="rose"
+                    disabled={isSubmitting}
+                    onClick={openRejectModal}
+                    icon={<XCircle className="h-4 w-4" />}
+                  >
+                    Rechazar
+                  </Button>
+                )}
                 {step > 1 && (
                   <Button variant="secondary" disabled={isSubmitting} onClick={() => setStep(s => s - 1)}>
                     Atrás
@@ -379,6 +420,57 @@ export default function TechnicalReviewSection({ projects, onReviewProject }: Te
             )}
           </div>
         )}
+      </Modal>
+
+      {/* ── Modal de rechazo de la petición ── */}
+      <Modal
+        isOpen={showRejectModal}
+        onClose={closeRejectModal}
+        maxWidth="max-w-md"
+        icon={<AlertTriangle className="h-5 w-5" />}
+        iconColor="rose"
+        badge="Rechazo de petición"
+        title={activeProject ? `Rechazar ${activeProject.id}` : ""}
+        infoLine={activeProject ? activeProject.title : ""}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="secondary" onClick={closeRejectModal} disabled={isSubmittingRejection}>
+              Cancelar
+            </Button>
+            <Button
+              id="btn-confirm-reject-project"
+              variant="primary"
+              colorScheme="rose"
+              onClick={handleConfirmReject}
+              disabled={isSubmittingRejection || !rejectReason.trim()}
+              isLoading={isSubmittingRejection}
+              icon={<XCircle className="h-3.5 w-3.5" />}
+            >
+              {isSubmittingRejection ? "Rechazando..." : "Confirmar rechazo"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-rose-600/80 font-medium leading-relaxed">
+            La petición volverá a Infraestructura para que corrija lo indicado y la reenvíe. No se crea una petición nueva.
+          </p>
+          <div>
+            <label htmlFor="reject-project-reason" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-rose-600">
+              Motivo del rechazo *
+            </label>
+            <textarea
+              id="reject-project-reason"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="Ej. La descripción no detalla el alcance del trabajo. Los materiales cargados no corresponden al tipo de obra."
+              className="w-full rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-hidden focus:border-rose-400 focus:ring-2 focus:ring-rose-100 resize-none"
+            />
+            <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{rejectReason.length}/500</span>
+          </div>
+        </div>
       </Modal>
     </Card>
   );

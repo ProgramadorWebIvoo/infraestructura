@@ -153,7 +153,10 @@ function AppRoutes() {
     inspectedProject,
     setInspectedProject,
     handleAddProject,
+    handleResubmitProject,
     handleReviewProject,
+    handleRejectProject,
+    handleUploadDocumentVersion,
     handleApproveInvestment,
     handleAddProposal,
     handleRemoveProposal,
@@ -237,7 +240,10 @@ function AppRoutes() {
       onContractorMutated={() => loadContractors()}
       materialsCatalog={materialsCatalog}
       onAddProject={handleAddProject}
+      onResubmitProject={handleResubmitProject}
       onReviewProject={handleReviewProject}
+      onRejectProject={handleRejectProject}
+      onUploadDocumentVersion={handleUploadDocumentVersion}
       onApproveInvestment={handleApproveInvestment}
       onAddProposal={handleAddProposal}
       onRemoveProposal={handleRemoveProposal}

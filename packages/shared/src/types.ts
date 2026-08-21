@@ -13,6 +13,7 @@
 export const ProjectStatus = {
   CREADO: "CREADO",
   REVISADO_CIERRE: "REVISADO_CIERRE",
+  RECHAZADO_CIERRE: "RECHAZADO_CIERRE",
   CONFIRMADO_PROCURA: "CONFIRMADO_PROCURA",
   COMPARATIVA_ENVIADA: "COMPARATIVA_ENVIADA",
   CONTRATADO: "CONTRATADO",
@@ -30,6 +31,15 @@ export interface MaterialItem {
   quantity: number;
   unit: string;
   estimatedUnitPrice: number;
+  /** Requerido: la condición del material siempre debe declararse. */
+  condition: "NUEVO" | "USADO" | "AMBAS";
+  /** Ambos o ninguno — sin garantía es warrantyValue/warrantyUnit undefined. */
+  warrantyValue?: number;
+  warrantyUnit?: "DIAS" | "MESES" | "ANOS";
+  brand?: string;
+  model?: string;
+  specifications?: string;
+  observations?: string;
 }
 
 export interface Proposal {
@@ -47,11 +57,14 @@ export interface Proposal {
 
 export interface ProjectDocument {
   id: number;
-  documentType: "CALC" | "PLANO";
+  documentType: "CALC" | "PLANO" | "FOTO";
   originalName: string;
   mimeType?: string;
   sizeBytes?: number;
+  uploadedBy?: number;
   uploadedAt?: string;
+  documentGroupId: number;
+  versionNumber: number;
 }
 
 export interface Project {
