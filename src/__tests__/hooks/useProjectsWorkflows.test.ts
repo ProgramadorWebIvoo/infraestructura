@@ -54,11 +54,10 @@ describe("useProjectsWorkflows", () => {
   });
 
   // ── All handlers are exposed ────────────────────────────────────────────────
-  it("exposes all 13 handlers", () => {
+  it("exposes all 12 handlers", () => {
     const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
     expect(result.current.handleAddProject).toBeDefined();
     expect(result.current.handleReviewProject).toBeDefined();
-    expect(result.current.handleUploadDocumentVersion).toBeDefined();
     expect(result.current.handleApproveInvestment).toBeDefined();
     expect(result.current.handleAddProposal).toBeDefined();
     expect(result.current.handleRemoveProposal).toBeDefined();
@@ -217,6 +216,145 @@ describe("useProjectsWorkflows", () => {
     });
   });
 
+  describe("handleResubmitProject", () => {
+    const baseUpdate = {
+      title: "Fixed title",
+      description: "desc",
+      location: "loc",
+      materials: [],
+      estimatedTotal: 500,
+    };
+
+    it("links the new file as a version of the sole existing document of the same type", async () => {
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const refreshed = createMockProject({ status: ProjectStatus.CREADO });
+      mockApiFetch
+        .mockResolvedValueOnce(project) // POST /resubmit
+        .mockResolvedValueOnce(undefined) // POST /documents (PLANO)
+        .mockResolvedValueOnce(refreshed); // GET refresh
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const existingDocuments = [
+        { id: 42, documentType: "PLANO" as const, originalName: "plano-viejo.pdf", documentGroupId: 42, versionNumber: 1 },
+      ];
+
+      await result.current.handleResubmitProject(
+        "PRJ-001",
+        baseUpdate,
+        { photos: [], documents: [], plans: [new File(["v2"], "plano-nuevo.pdf")] },
+        existingDocuments,
+      );
+
+      const uploadCall = mockApiFetch.mock.calls.find((call) => (call[0] as string).endsWith("/documents"));
+      expect(uploadCall).toBeDefined();
+      const form = uploadCall![1] as { body: FormData };
+      expect(form.body.get("document_type")).toBe("PLANO");
+      expect(form.body.get("new_version_of")).toBe("42");
+    });
+
+    it("does not link when there is no existing document of that type", async () => {
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const refreshed = createMockProject({ status: ProjectStatus.CREADO });
+      mockApiFetch
+        .mockResolvedValueOnce(project)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(refreshed);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handleResubmitProject(
+        "PRJ-001",
+        baseUpdate,
+        { photos: [], documents: [], plans: [new File(["v1"], "plano.pdf")] },
+        [],
+      );
+
+      const uploadCall = mockApiFetch.mock.calls.find((call) => (call[0] as string).endsWith("/documents"));
+      const form = uploadCall![1] as { body: FormData };
+      expect(form.body.get("new_version_of")).toBeNull();
+    });
+
+    it("does not link when there are multiple existing documents of that type (ambiguous)", async () => {
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const refreshed = createMockProject({ status: ProjectStatus.CREADO });
+      mockApiFetch
+        .mockResolvedValueOnce(project)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(refreshed);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const existingDocuments = [
+        { id: 1, documentType: "PLANO" as const, originalName: "a.pdf", documentGroupId: 1, versionNumber: 1 },
+        { id: 2, documentType: "PLANO" as const, originalName: "b.pdf", documentGroupId: 2, versionNumber: 1 },
+      ];
+
+      await result.current.handleResubmitProject(
+        "PRJ-001",
+        baseUpdate,
+        { photos: [], documents: [], plans: [new File(["v1"], "plano.pdf")] },
+        existingDocuments,
+      );
+
+      const uploadCall = mockApiFetch.mock.calls.find((call) => (call[0] as string).endsWith("/documents"));
+      const form = uploadCall![1] as { body: FormData };
+      expect(form.body.get("new_version_of")).toBeNull();
+    });
+
+    it("does not link when uploading multiple new files of that type (ambiguous)", async () => {
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const refreshed = createMockProject({ status: ProjectStatus.CREADO });
+      mockApiFetch
+        .mockResolvedValueOnce(project)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(refreshed);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const existingDocuments = [
+        { id: 42, documentType: "PLANO" as const, originalName: "plano-viejo.pdf", documentGroupId: 42, versionNumber: 1 },
+      ];
+
+      await result.current.handleResubmitProject(
+        "PRJ-001",
+        baseUpdate,
+        { photos: [], documents: [], plans: [new File(["v1"], "a.pdf"), new File(["v2"], "b.pdf")] },
+        existingDocuments,
+      );
+
+      const uploadCall = mockApiFetch.mock.calls.find((call) => (call[0] as string).endsWith("/documents"));
+      const form = uploadCall![1] as { body: FormData };
+      expect(form.body.get("new_version_of")).toBeNull();
+    });
+
+    it("does not link across different document types", async () => {
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const refreshed = createMockProject({ status: ProjectStatus.CREADO });
+      mockApiFetch
+        .mockResolvedValueOnce(project)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(refreshed);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const existingDocuments = [
+        { id: 7, documentType: "FOTO" as const, originalName: "foto.png", documentGroupId: 7, versionNumber: 1 },
+      ];
+
+      await result.current.handleResubmitProject(
+        "PRJ-001",
+        baseUpdate,
+        { photos: [], documents: [], plans: [new File(["v1"], "plano.pdf")] },
+        existingDocuments,
+      );
+
+      const uploadCall = mockApiFetch.mock.calls.find((call) => (call[0] as string).endsWith("/documents"));
+      const form = uploadCall![1] as { body: FormData };
+      expect(form.body.get("new_version_of")).toBeNull();
+    });
+  });
+
   describe("handleReviewProject", () => {
     it("POSTs review with notes — Cierre de Obra ya no sube documentos, solo audita", async () => {
       const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
@@ -258,39 +396,6 @@ describe("useProjectsWorkflows", () => {
         expect.stringContaining("No se pudo guardar"),
         "error",
       );
-    });
-  });
-
-  describe("handleUploadDocumentVersion", () => {
-    it("POSTs new_version_of + files[] as FormData, then refreshes", async () => {
-      const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
-      mockApiFetch
-        .mockResolvedValueOnce(undefined) // POST /documents
-        .mockResolvedValueOnce(project);  // GET refresh
-
-      const file = new File(["v2"], "plano-v2.pdf", { type: "application/pdf" });
-      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
-
-      await result.current.handleUploadDocumentVersion("PRJ-001", 42, "PLANO", file);
-
-      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
-        method: "POST",
-        body: expect.any(FormData),
-      }));
-      const formData = mockApiFetch.mock.calls[0][1].body as FormData;
-      expect(formData.get("new_version_of")).toBe("42");
-      expect(formData.get("document_type")).toBe("PLANO");
-      expect(syncProject).toHaveBeenCalledWith(project);
-      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("Nueva versión"), "success");
-    });
-
-    it("shows error toast on failure", async () => {
-      mockApiFetch.mockRejectedValue(new Error("fail"));
-      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
-
-      await result.current.handleUploadDocumentVersion("PRJ-001", 42, "PLANO", new File(["v2"], "v2.pdf"));
-
-      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("No se pudo cargar"), "error");
     });
   });
 

@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from "react";
-import type { MaterialItem, Project } from "../types";
+import type { MaterialItem, Project, ProjectDocument } from "../types";
 
 /** Alias legible en los call sites de useRequestForm — ver UseRequestFormParams::existingProject. */
 type RequestFormExistingProject = Pick<
@@ -80,6 +80,7 @@ interface UseRequestFormParams {
     projectId: string,
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
+    existingDocuments: ProjectDocument[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   /** Requerido cuando existingProject está presente y el usuario marca adjuntos
    * existentes para eliminar (ver markDocumentForDeletion) — handleSubmit lo
@@ -175,7 +176,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
       const files = { photos: photoFiles, documents: documentFiles, plans: planFiles };
 
       const result = existingProject
-        ? await onResubmitProject!(existingProject.id, { title, description, location, materials, estimatedTotal: materialsSubtotal }, files)
+        ? await onResubmitProject!(existingProject.id, { title, description, location, materials, estimatedTotal: materialsSubtotal }, files, existingDocuments)
         : await onAddProject({ title, type, description, location, materials, estimatedTotal: materialsSubtotal }, files);
 
       if (result.ok) {

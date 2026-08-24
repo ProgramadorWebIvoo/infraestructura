@@ -16,7 +16,7 @@
  */
 
 import { Eye, Pencil, SearchX, XCircle } from "lucide-react";
-import type { AuditLog, Project } from "../../../types";
+import type { AuditLog, Project, ProjectDocument } from "../../../types";
 import { ProjectStatus } from "../../../types";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
@@ -40,6 +40,7 @@ interface RejectedPetitionsSectionProps {
     projectId: string,
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
+    existingDocuments: ProjectDocument[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onDeleteDocument: (projectId: string, documentId: number) => Promise<void>;
 }

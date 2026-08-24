@@ -33,12 +33,6 @@ interface CierreObraPanelProps {
     correctionFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onVerifyCompletion: (projectId: string) => void;
-  onUploadDocumentVersion: (
-    projectId: string,
-    documentId: number,
-    documentType: "PLANO" | "CALC" | "FOTO" | "CORRECCION",
-    file: File,
-  ) => void;
   isLoading?: boolean;
 }
 
@@ -48,7 +42,6 @@ export default function CierreObraPanel({
   onReviewProject,
   onRejectProject,
   onVerifyCompletion,
-  onUploadDocumentVersion,
   isLoading = false,
 }: CierreObraPanelProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("revision");
@@ -121,7 +114,6 @@ export default function CierreObraPanel({
                 <RevisedDocumentsSection
                   projects={projects}
                   authToken={authToken}
-                  onUploadDocumentVersion={onUploadDocumentVersion}
                 />
               </div>
             )}

@@ -3,19 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Sección 3 de Cierre de Obra: documentos de proyectos ya revisados (más
- * allá de CREADO), donde se puede consultar el historial y subir una nueva
- * versión de un plano/cálculo/foto sin reemplazarlo físicamente (V1→V2→V3).
- * Cierre de Obra es el dueño natural de la documentación técnica.
+ * allá de CREADO) — consulta de solo lectura (preview + descarga). No
+ * permite subir nuevas versiones: el versionado (V1→V2) existe únicamente
+ * como trazabilidad del ciclo rechazo→corrección→reenvío de Infraestructura
+ * (ver useProjectsWorkflows::handleResubmitProject), no como una acción
+ * libre sobre cualquier documento ya revisado.
  */
 
 import { useState } from "react";
-import { FileStack, MapPin, Upload } from "lucide-react";
+import { FileStack, MapPin } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import FileDropZone from "../../../components/UI/FileDropZone";
 import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import StatusBadge from "../../../components/UI/StatusBadge";
@@ -30,23 +30,15 @@ import type { Project, ProjectDocument } from "../../../types";
 interface RevisedDocumentsSectionProps {
   projects: Project[];
   authToken: string;
-  onUploadDocumentVersion: (
-    projectId: string,
-    documentId: number,
-    documentType: "PLANO" | "CALC" | "FOTO" | "CORRECCION",
-    file: File,
-  ) => void;
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
 
-export default function RevisedDocumentsSection({ projects, authToken, onUploadDocumentVersion }: RevisedDocumentsSectionProps) {
+export default function RevisedDocumentsSection({ projects, authToken }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
   const { containerRef } = useContainerRows({ paginated: false });
   const [selectedId, setSelectedId] = useState("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
-  const [versionTarget, setVersionTarget] = useState<ProjectDocument | null>(null);
-  const [versionFiles, setVersionFiles] = useState<File[]>([]);
 
   const revisedProjects = projects.filter((p) => p.status !== ProjectStatus.CREADO);
   const selectedProject = revisedProjects.find((p) => p.id === selectedId);
@@ -104,23 +96,12 @@ export default function RevisedDocumentsSection({ projects, authToken, onUploadD
     }
   };
 
-  const closeVersionModal = () => {
-    setVersionTarget(null);
-    setVersionFiles([]);
-  };
-
-  const handleSubmitVersion = () => {
-    if (!selectedProject || !versionTarget || versionFiles.length === 0) return;
-    onUploadDocumentVersion(selectedProject.id, versionTarget.id, versionTarget.documentType, versionFiles[0]);
-    closeVersionModal();
-  };
-
   return (
     <Card accent="success" className="min-h-0 flex-1" fillHeight>
       <SectionHeader
         icon={<FileStack className="h-5 w-5" />}
         title="Documentos Ya Revisados"
-        description="Consulta el historial y sube correcciones de planos/cálculos sin perder las versiones anteriores."
+        description="Consulta los adjuntos de proyectos que ya pasaron por revisión técnica."
         color="emerald"
       />
 
@@ -156,7 +137,6 @@ export default function RevisedDocumentsSection({ projects, authToken, onUploadD
             authToken={authToken}
             onDownload={handleDownload}
             onPreview={setPreviewDoc}
-            onUploadNewVersion={setVersionTarget}
           />
         )}
       </Modal>
@@ -171,44 +151,6 @@ export default function RevisedDocumentsSection({ projects, authToken, onUploadD
           onDownload={handleDownload}
         />
       )}
-
-      <Modal
-        isOpen={!!versionTarget}
-        onClose={closeVersionModal}
-        title="Subir Nueva Versión"
-        infoLine={versionTarget?.originalName}
-        icon={<Upload className="h-5 w-5" />}
-        iconColor="emerald"
-        maxWidth="max-w-md"
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={closeVersionModal}>
-              Cancelar
-            </Button>
-            <Button
-              variant="primary"
-              colorScheme="emerald"
-              onClick={handleSubmitVersion}
-              disabled={versionFiles.length === 0}
-              icon={<Upload className="h-3.5 w-3.5" />}
-            >
-              Subir versión
-            </Button>
-          </div>
-        }
-      >
-        {versionTarget && (
-          <FileDropZone
-            files={versionFiles}
-            onFilesChange={(files) => setVersionFiles(files.slice(-1))}
-            label="Archivo de la nueva versión"
-            accept={versionTarget.documentType === "FOTO" ? ".png,.jpg,.jpeg,.webp" : ".pdf,.png,.jpg,.jpeg,.svg,.tiff,.tif,.dwg,.dxf"}
-            extensionsLabel={versionTarget.documentType === "FOTO" ? "PNG, JPG, JPEG, WEBP" : "PDF, PNG, JPG, SVG, TIFF, DWG, DXF"}
-            color="emerald"
-            onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
-          />
-        )}
-      </Modal>
     </Card>
   );
 }

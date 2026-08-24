@@ -90,25 +90,4 @@ describe("ProjectDocumentsList", () => {
     fireEvent.click(screen.getByLabelText("Descargar"));
     expect(onDownload).toHaveBeenCalledWith(doc);
   });
-
-  it("solo muestra 'Nueva versión' cuando se pasa onUploadNewVersion", () => {
-    const doc = makeDoc();
-    const { rerender } = render(
-      <ProjectDocumentsList project={makeProject([doc])} authToken="t" onDownload={vi.fn()} onPreview={vi.fn()} />,
-    );
-    expect(screen.queryByText("Nueva versión")).not.toBeInTheDocument();
-
-    const onUploadNewVersion = vi.fn();
-    rerender(
-      <ProjectDocumentsList
-        project={makeProject([doc])}
-        authToken="t"
-        onDownload={vi.fn()}
-        onPreview={vi.fn()}
-        onUploadNewVersion={onUploadNewVersion}
-      />,
-    );
-    fireEvent.click(screen.getByText("Nueva versión"));
-    expect(onUploadNewVersion).toHaveBeenCalledWith(doc);
-  });
 });

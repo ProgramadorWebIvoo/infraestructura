@@ -156,7 +156,6 @@ function AppRoutes() {
     handleResubmitProject,
     handleReviewProject,
     handleRejectProject,
-    handleUploadDocumentVersion,
     handleDeleteDocument,
     handleApproveInvestment,
     handleAddProposal,
@@ -244,7 +243,6 @@ function AppRoutes() {
       onResubmitProject={handleResubmitProject}
       onReviewProject={handleReviewProject}
       onRejectProject={handleRejectProject}
-      onUploadDocumentVersion={handleUploadDocumentVersion}
       onDeleteDocument={handleDeleteDocument}
       onApproveInvestment={handleApproveInvestment}
       onAddProposal={handleAddProposal}

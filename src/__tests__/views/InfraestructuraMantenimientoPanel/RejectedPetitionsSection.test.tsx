@@ -178,6 +178,7 @@ describe("RejectedPetitionsSection", () => {
       "PRJ-010",
       expect.objectContaining({ title: "Remodelación depósito", location: "CD Central" }),
       { photos: [], documents: [], plans: [] },
+      [{ id: 1, documentType: "FOTO", originalName: "foto1.png", documentGroupId: 1, versionNumber: 1 }],
     );
   });
 

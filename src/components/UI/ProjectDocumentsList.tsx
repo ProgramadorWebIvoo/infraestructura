@@ -18,8 +18,6 @@ interface ProjectDocumentsListProps {
   authToken: string;
   onDownload: (doc: ProjectDocument) => void;
   onPreview: (doc: ProjectDocument) => void;
-  /** Solo se pasa desde Cierre de Obra — Procura no sube nuevas versiones. */
-  onUploadNewVersion?: (doc: ProjectDocument) => void;
   /** Marca/desmarca un documento para eliminar — el consumidor decide si es
    * inmediato o reversible (ver useRequestForm::markDocumentForDeletion, que
    * lo aplica recién al confirmar el reenvío). Cuando se provee, cada fila
@@ -47,14 +45,12 @@ function DocumentRow({
   doc,
   onDownload,
   onPreview,
-  onUploadNewVersion,
   onDelete,
   isMarkedForDeletion,
 }: {
   doc: ProjectDocument;
   onDownload: (doc: ProjectDocument) => void;
   onPreview: (doc: ProjectDocument) => void;
-  onUploadNewVersion?: (doc: ProjectDocument) => void;
   onDelete?: (doc: ProjectDocument) => void;
   isMarkedForDeletion?: boolean;
 }) {
@@ -91,15 +87,6 @@ function DocumentRow({
                   <Download className="h-4 w-4" />
                 </button>
               </Tooltip>
-              {onUploadNewVersion && (
-                <button
-                  type="button"
-                  onClick={() => onUploadNewVersion(doc)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  Nueva versión
-                </button>
-              )}
               {onDelete && (
                 <Tooltip content="Eliminar">
                   <button type="button" onClick={() => onDelete(doc)} aria-label="Eliminar" className="p-2 rounded-lg text-slate-400 hover:text-danger-600 hover:bg-danger-50 transition-colors cursor-pointer">
@@ -115,7 +102,7 @@ function DocumentRow({
   );
 }
 
-export default function ProjectDocumentsList({ project, authToken: _authToken, onDownload, onPreview, onUploadNewVersion, onDelete, markedForDeletion }: ProjectDocumentsListProps) {
+export default function ProjectDocumentsList({ project, authToken: _authToken, onDownload, onPreview, onDelete, markedForDeletion }: ProjectDocumentsListProps) {
   const docs = project.documents ?? [];
   if (docs.length === 0) return null;
 
@@ -142,7 +129,6 @@ export default function ProjectDocumentsList({ project, authToken: _authToken, o
                     doc={doc}
                     onDownload={onDownload}
                     onPreview={onPreview}
-                    onUploadNewVersion={onUploadNewVersion}
                     onDelete={onDelete}
                     isMarkedForDeletion={markedForDeletion?.has(doc.id)}
                   />
