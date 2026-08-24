@@ -45,6 +45,7 @@ import { Table, type Column } from "../../../components/UI/Table";
 import Stepper, { type StepDefinition } from "../../../components/UI/Stepper";
 import { RequiredMark, HelpHint } from "../../../components/UI/HintSignals";
 import AlertBanner from "../../../components/UI/AlertBanner";
+import DossierEvaluationPanel from "./DossierEvaluationPanel";
 import { formatNumber } from "../../../utils";
 import { apiDownload } from "../../../services/api";
 import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
@@ -61,6 +62,7 @@ interface TechnicalReviewSectionProps {
     observations?: string,
     correctionFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
+  onSyncProject: (project: Project) => void;
 }
 
 const WIZARD_STEPS: StepDefinition[] = [
@@ -155,7 +157,7 @@ function AttachmentsSummary({ documents }: { documents: ProjectDocument[] }) {
   );
 }
 
-export default function TechnicalReviewSection({ projects, authToken, onReviewProject, onRejectProject }: TechnicalReviewSectionProps) {
+export default function TechnicalReviewSection({ projects, authToken, onReviewProject, onRejectProject, onSyncProject }: TechnicalReviewSectionProps) {
   const { showToast } = useToast();
   const { maxFileSizeBytes } = useAppGroupSettings();
   const { containerRef } = useContainerRows({ paginated: false });
@@ -413,6 +415,12 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
       >
         {activeProject && (
           <div className="space-y-6">
+            <DossierEvaluationPanel
+              project={activeProject}
+              authToken={authToken}
+              onEvaluated={onSyncProject}
+            />
+
             <Stepper
               steps={WIZARD_STEPS}
               currentIndex={stepIndex}

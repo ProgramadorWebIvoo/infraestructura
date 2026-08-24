@@ -26,7 +26,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     projects, auditLogs, isLoadingApi, inspectedProject, onCloseInspectedProject, onSelectProject,
     onLogout, contractors, onUpdateContractorRating, onContractorMutated,
     materialsCatalog,
-    onAddProject, onResubmitProject, onRejectProject, onReviewProject, onDeleteDocument, onApproveInvestment, onAddProposal,
+    onAddProject, onResubmitProject, onRejectProject, onReviewProject, onDeleteDocument, onSyncProject, onApproveInvestment, onAddProposal,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
@@ -66,7 +66,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CIERRE_OBRA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CIERRE_OBRA)} redirectTo={fallbackRoute}>
-              <CierreObraPanel projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onVerifyCompletion={onVerifyCompletion} isLoading={isLoadingApi} />
+              <CierreObraPanel projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onVerifyCompletion={onVerifyCompletion} onSyncProject={onSyncProject} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

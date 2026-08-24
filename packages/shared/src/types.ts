@@ -82,6 +82,18 @@ export interface Project {
   cierreObraNotes?: string;
   calculationsAdded?: boolean;
   blueprintsCount?: number;
+  dossierAiScore?: number;
+  dossierAiSummary?: string;
+  dossierAiAlerts?: string[];
+  dossierAiRecommendation?: string;
+  dossierAiSuggestedAmount?: number;
+  dossierAiCompletenessFactors?: {
+    documentation: number;
+    budgetConsistency: number;
+    rejectionRisk: number;
+  };
+  dossierAiProvider?: string;
+  dossierAiEvaluatedAt?: string;
   documents?: ProjectDocument[];
   procuraReviewNotes?: string;
   approvedInvestmentAmount?: number;

@@ -50,6 +50,13 @@ vi.mock("@/services/api", () => ({
   apiDownload: vi.fn(),
 }));
 
+// DossierEvaluationPanel dispara evaluateDossier() automáticamente al montar
+// el paso 1 — se mockea para que rechace y el panel caiga al estado "sin
+// evaluación" en vez de intentar red real / romper por undefined.
+vi.mock("@/services/aiEvaluationService", () => ({
+  evaluateDossier: vi.fn().mockRejectedValue(new Error("not configured in this test")),
+}));
+
 afterEach(() => vi.restoreAllMocks());
 
 const pendingProject: Project = {
@@ -76,6 +83,7 @@ function renderSection(
         authToken="test-token"
         onReviewProject={onReviewProject}
         onRejectProject={onRejectProject}
+        onSyncProject={vi.fn()}
       />
     </ToastProvider>,
   );

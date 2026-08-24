@@ -249,6 +249,12 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                     <MapPin className="h-3.5 w-3.5 text-slate-400" />
                     {activeReviewProject.location}
                   </div>
+                  {activeReviewProject.dossierAiSuggestedAmount != null && (
+                    <div className="flex justify-between items-center text-slate-400">
+                      <span>Estimación IA (referencial):</span>
+                      <span className="font-mono">${formatNumber(activeReviewProject.dossierAiSuggestedAmount)}</span>
+                    </div>
+                  )}
                   <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-purple-100/60">
                     <span className="font-bold not-italic text-slate-600">Nota Cierre de Obra: </span>
                     {activeReviewProject.cierreObraNotes}

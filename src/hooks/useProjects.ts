@@ -70,6 +70,7 @@ export function useProjects(authToken: string, showToast: ShowToast) {
     setInspectedProject,
     refreshAuditLogs,
     loadApiData: loadProjects,
+    syncProject,
 
     // Workflows
     ...workflows,

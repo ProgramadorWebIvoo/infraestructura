@@ -157,6 +157,7 @@ function AppRoutes() {
     handleReviewProject,
     handleRejectProject,
     handleDeleteDocument,
+    syncProject,
     handleApproveInvestment,
     handleAddProposal,
     handleRemoveProposal,
@@ -244,6 +245,7 @@ function AppRoutes() {
       onReviewProject={handleReviewProject}
       onRejectProject={handleRejectProject}
       onDeleteDocument={handleDeleteDocument}
+      onSyncProject={syncProject}
       onApproveInvestment={handleApproveInvestment}
       onAddProposal={handleAddProposal}
       onRemoveProposal={handleRemoveProposal}

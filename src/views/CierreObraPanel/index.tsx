@@ -33,6 +33,7 @@ interface CierreObraPanelProps {
     correctionFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onVerifyCompletion: (projectId: string) => void;
+  onSyncProject: (project: Project) => void;
   isLoading?: boolean;
 }
 
@@ -42,6 +43,7 @@ export default function CierreObraPanel({
   onReviewProject,
   onRejectProject,
   onVerifyCompletion,
+  onSyncProject,
   isLoading = false,
 }: CierreObraPanelProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("revision");
@@ -100,7 +102,7 @@ export default function CierreObraPanel({
                   </ol>
                 </InfoBanner>
                 <div className="min-h-0 flex-1 flex flex-col">
-                  <TechnicalReviewSection projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} />
+                  <TechnicalReviewSection projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onSyncProject={onSyncProject} />
                 </div>
               </div>
             )}

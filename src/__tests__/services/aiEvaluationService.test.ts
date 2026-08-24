@@ -5,7 +5,7 @@ vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-import { evaluateProposals, type AIEvaluationResult } from "@/services/aiEvaluationService";
+import { evaluateProposals, evaluateDossier, type AIEvaluationResult } from "@/services/aiEvaluationService";
 import type { Project, Proposal } from "@/types";
 
 function createMockProject(overrides: Partial<Project> = {}): Project {
@@ -124,5 +124,37 @@ describe("evaluateProposals", () => {
     await expect(
       evaluateProposals(createMockProject(), [createMockProposal()], "token"),
     ).rejects.toThrow("Todos los proveedores fallaron.");
+  });
+});
+
+describe("evaluateDossier", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+  });
+
+  it("llama a POST /projects/{id}/evaluate-dossier con el token de auth", async () => {
+    const project = createMockProject();
+    mockApiFetch.mockResolvedValueOnce(project);
+
+    await evaluateDossier("PRJ-001", "auth-token-123");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/projects/PRJ-001/evaluate-dossier",
+      { method: "POST", token: "auth-token-123" },
+    );
+  });
+
+  it("retorna el Project actualizado", async () => {
+    const project = createMockProject({ dossierAiScore: 82 } as Partial<Project>);
+    mockApiFetch.mockResolvedValueOnce(project);
+
+    const result = await evaluateDossier("PRJ-001", "token");
+    expect(result).toEqual(project);
+  });
+
+  it("propaga el error si apiFetch falla", async () => {
+    mockApiFetch.mockRejectedValueOnce(new Error("La evaluación no está disponible."));
+
+    await expect(evaluateDossier("PRJ-001", "token")).rejects.toThrow("La evaluación no está disponible.");
   });
 });
