@@ -15,7 +15,6 @@ import Tooltip from "./Tooltip";
 
 interface ProjectDocumentsListProps {
   project: Project;
-  authToken: string;
   onDownload: (doc: ProjectDocument) => void;
   onPreview: (doc: ProjectDocument) => void;
   /** Marca/desmarca un documento para eliminar — el consumidor decide si es
@@ -102,7 +101,7 @@ function DocumentRow({
   );
 }
 
-export default function ProjectDocumentsList({ project, authToken: _authToken, onDownload, onPreview, onDelete, markedForDeletion }: ProjectDocumentsListProps) {
+export default function ProjectDocumentsList({ project, onDownload, onPreview, onDelete, markedForDeletion }: ProjectDocumentsListProps) {
   const docs = project.documents ?? [];
   if (docs.length === 0) return null;
 

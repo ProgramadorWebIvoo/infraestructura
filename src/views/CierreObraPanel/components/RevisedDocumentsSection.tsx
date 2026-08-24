@@ -22,7 +22,7 @@ import StatusBadge from "../../../components/UI/StatusBadge";
 import { Table, type Column } from "../../../components/UI/Table";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { useContainerRows } from "../../../hooks/useContainerRows";
-import { apiDownload } from "../../../services/api";
+import { downloadProjectDocument } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { ProjectStatus } from "../../../types";
 import type { Project, ProjectDocument } from "../../../types";
@@ -84,13 +84,7 @@ export default function RevisedDocumentsSection({ projects, authToken }: Revised
   const handleDownload = async (doc: ProjectDocument) => {
     if (!selectedProject) return;
     try {
-      const blob = await apiDownload(`/projects/${selectedProject.id}/documents/${doc.id}/download`, { token: authToken });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.originalName;
-      a.click();
-      URL.revokeObjectURL(url);
+      await downloadProjectDocument(selectedProject.id, doc, authToken);
     } catch {
       showToast("No se pudo descargar el archivo.", "error");
     }
@@ -134,7 +128,6 @@ export default function RevisedDocumentsSection({ projects, authToken }: Revised
         {selectedProject && (
           <ProjectDocumentsList
             project={selectedProject}
-            authToken={authToken}
             onDownload={handleDownload}
             onPreview={setPreviewDoc}
           />

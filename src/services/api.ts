@@ -25,6 +25,7 @@ import {
   apiDownload as sharedApiDownload,
 } from "@ivoo/shared";
 import type { ApiFetchOptions } from "@ivoo/shared";
+import type { ProjectDocument } from "../types";
 export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
@@ -107,4 +108,19 @@ export async function apiDownload(
 ): Promise<Blob> {
   const { token: _webIgnoresBearer, ...rest } = options;
   return sharedApiDownload(path, { ...rest, credentials: "include" });
+}
+
+/** Descarga un documento de proyecto y dispara el guardado en el navegador. Lanza si la descarga falla — el caller decide cómo mostrarlo (toast, etc). */
+export async function downloadProjectDocument(
+  projectId: string,
+  doc: ProjectDocument,
+  authToken: string,
+): Promise<void> {
+  const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = doc.originalName;
+  a.click();
+  URL.revokeObjectURL(url);
 }

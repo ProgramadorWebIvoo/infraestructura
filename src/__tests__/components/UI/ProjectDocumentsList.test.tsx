@@ -39,7 +39,7 @@ function makeProject(documents: ProjectDocument[]): Project {
 describe("ProjectDocumentsList", () => {
   it("no renderiza nada si el proyecto no tiene documentos", () => {
     const { container } = render(
-      <ProjectDocumentsList project={makeProject([])} authToken="t" onDownload={vi.fn()} onPreview={vi.fn()} />,
+      <ProjectDocumentsList project={makeProject([])} onDownload={vi.fn()} onPreview={vi.fn()} />,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -48,7 +48,6 @@ describe("ProjectDocumentsList", () => {
     render(
       <ProjectDocumentsList
         project={makeProject([makeDoc({ id: 1, documentType: "PLANO" }), makeDoc({ id: 2, documentType: "CALC" })])}
-        authToken="t"
         onDownload={vi.fn()}
         onPreview={vi.fn()}
       />,
@@ -66,7 +65,6 @@ describe("ProjectDocumentsList", () => {
           makeDoc({ id: 1, originalName: "v1.pdf", versionNumber: 1 }),
           makeDoc({ id: 2, originalName: "v2.pdf", versionNumber: 2 }),
         ])}
-        authToken="t"
         onDownload={vi.fn()}
         onPreview={vi.fn()}
       />,
@@ -81,7 +79,7 @@ describe("ProjectDocumentsList", () => {
     const onDownload = vi.fn();
     const doc = makeDoc();
     render(
-      <ProjectDocumentsList project={makeProject([doc])} authToken="t" onDownload={onDownload} onPreview={onPreview} />,
+      <ProjectDocumentsList project={makeProject([doc])} onDownload={onDownload} onPreview={onPreview} />,
     );
 
     fireEvent.click(screen.getByLabelText("Ver"));

@@ -114,7 +114,7 @@ export default function DossierEvaluationPanel({ project, authToken, onEvaluated
   const alerts = project.dossierAiAlerts ?? [];
 
   return (
-    <div className={`rounded-2xl border-2 ${c.border} ${c.bg} shadow-sm overflow-hidden`}>
+    <div className={`rounded-2xl ${c.bg} shadow-sm overflow-hidden`}>
       <div className="p-4 flex items-start gap-4">
         {/* Score dominante, primer elemento visual del panel */}
         <div className={`shrink-0 flex flex-col items-center justify-center h-16 w-16 rounded-full bg-white ring-4 ${c.ring} shadow-sm`}>

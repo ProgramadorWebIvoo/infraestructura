@@ -27,7 +27,7 @@ import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
 import { useToast } from "../../../components/UI/Toast";
-import { apiDownload } from "../../../services/api";
+import { downloadProjectDocument } from "../../../services/api";
 import { bannerVariants } from "../../../animations";
 import type { Project, ProjectDocument } from "../../../types";
 
@@ -70,13 +70,7 @@ export default function AttachmentsSection({
   const handleDownload = async (doc: ProjectDocument) => {
     if (!existingProjectId || !authToken) return;
     try {
-      const blob = await apiDownload(`/projects/${existingProjectId}/documents/${doc.id}/download`, { token: authToken });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.originalName;
-      a.click();
-      URL.revokeObjectURL(url);
+      await downloadProjectDocument(existingProjectId, doc, authToken);
     } catch {
       showToast("No se pudo descargar el archivo.", "error");
     }
@@ -107,7 +101,6 @@ export default function AttachmentsSection({
           </h5>
           <ProjectDocumentsList
             project={{ id: existingProjectId, documents: ownDocuments } as Project}
-            authToken={authToken ?? ""}
             onDownload={handleDownload}
             onPreview={setPreviewDoc}
             onDelete={(doc) => onToggleDeletion?.(doc.id)}

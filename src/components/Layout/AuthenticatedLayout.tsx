@@ -166,10 +166,10 @@ export default function AuthenticatedLayout({
           </Suspense>
 
           {/* Footer */}
-          <footer className="mt-12 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/60">
+          {/* <footer className="mt-12 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/60">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
-                {/* Brand */}
+
                 <div className="inline-flex items-center gap-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-xs">
                     <Database className="h-3.5 w-3.5" />
@@ -179,7 +179,6 @@ export default function AuthenticatedLayout({
                   <span>Gestión de Infraestructura</span>
                 </div>
 
-                {/* Links */}
                 <div className="flex items-center gap-4">
                   <span>&copy; {new Date().getFullYear()}</span>
                   <span className="text-slate-300 hidden sm:inline">&bull;</span>
@@ -190,7 +189,7 @@ export default function AuthenticatedLayout({
               </div>
             </div>
           </footer>
-
+ */}
         </div>
       </div>
     </ErrorBoundary>

@@ -13,7 +13,7 @@ import { Fragment, useMemo, useState } from "react";
 import { ArrowRight, Calculator, CheckSquare, MapPin, TrendingUp } from "lucide-react";
 import Button from "../../../components/UI/Button";
 import { useToast } from "../../../components/UI/Toast";
-import { apiDownload } from "../../../services/api";
+import { downloadProjectDocument } from "../../../services/api";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import NumericInput from "../../../components/UI/NumericInput";
@@ -53,13 +53,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   const handleDownload = async (doc: ProjectDocument) => {
     if (!activeReviewProject) return;
     try {
-      const blob = await apiDownload(`/projects/${activeReviewProject.id}/documents/${doc.id}/download`, { token: authToken });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.originalName;
-      a.click();
-      URL.revokeObjectURL(url);
+      await downloadProjectDocument(activeReviewProject.id, doc, authToken);
     } catch {
       showToast("No se pudo descargar el archivo.", "error");
     }
@@ -263,7 +257,6 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
 
                 <ProjectDocumentsList
                   project={activeReviewProject}
-                  authToken={authToken}
                   onDownload={handleDownload}
                   onPreview={setPreviewDoc}
                 />
