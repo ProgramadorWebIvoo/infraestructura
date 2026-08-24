@@ -81,9 +81,13 @@ interface UseRequestFormParams {
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
+  /** Requerido cuando existingProject está presente y el usuario marca adjuntos
+   * existentes para eliminar (ver markDocumentForDeletion) — handleSubmit lo
+   * llama recién después de que onResubmitProject resuelva OK, uno por uno. */
+  onDeleteDocument?: (projectId: string, documentId: number) => Promise<void>;
 }
 
-export function useRequestForm({ onAddProject, existingProject, onResubmitProject }: UseRequestFormParams) {
+export function useRequestForm({ onAddProject, existingProject, onResubmitProject, onDeleteDocument }: UseRequestFormParams) {
   const [title, setTitle] = useState(existingProject?.title ?? "");
   const [type, setType] = useState<"INFRAESTRUCTURA" | "MANTENIMIENTO">(existingProject?.type ?? "INFRAESTRUCTURA");
   const [description, setDescription] = useState(existingProject?.description ?? "");
@@ -102,6 +106,21 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [planFiles, setPlanFiles] = useState<File[]>([]);
+
+  // Modo edición: adjuntos ya persistidos que el usuario marcó para eliminar
+  // al reenviar — reversible hasta el submit (ver AttachmentsSection). El
+  // borrado real (DELETE al backend) recién ocurre dentro de handleSubmit,
+  // uno por uno, después de que onResubmitProject resuelva OK.
+  const [deletedDocumentIds, setDeletedDocumentIds] = useState<Set<number>>(new Set());
+  const existingDocuments = (existingProject?.documents ?? []).filter((d) => !deletedDocumentIds.has(d.id));
+  const markDocumentForDeletion = (documentId: number) =>
+    setDeletedDocumentIds((prev) => new Set(prev).add(documentId));
+  const unmarkDocumentForDeletion = (documentId: number) =>
+    setDeletedDocumentIds((prev) => {
+      const next = new Set(prev);
+      next.delete(documentId);
+      return next;
+    });
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,7 +154,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
   const handleDocumentFilesChange = (files: File[]) => { setDocumentFiles(files); clearError("attachments"); };
   const handlePlanFilesChange = (files: File[]) => { setPlanFiles(files); clearError("attachments"); };
 
-  const hasExistingAttachments = !!existingProject?.documents?.length;
+  const hasExistingAttachments = existingDocuments.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,10 +179,20 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
         : await onAddProject({ title, type, description, location, materials, estimatedTotal: materialsSubtotal }, files);
 
       if (result.ok) {
+        // Adjuntos marcados para eliminar: recién se borran de verdad acá,
+        // después de confirmar que el reenvío en sí tuvo éxito — hasta este
+        // punto la marca era solo local/reversible (ver markDocumentForDeletion).
+        if (existingProject && deletedDocumentIds.size > 0 && onDeleteDocument) {
+          await Promise.all(
+            Array.from(deletedDocumentIds).map((id) => onDeleteDocument(existingProject.id, id)),
+          );
+        }
+
         setTitle(""); setDescription(""); setLocation("");
         setAddedMaterials([]);
         setReviewedMaterialIndexes(new Set());
         setPhotoFiles([]); setDocumentFiles([]); setPlanFiles([]);
+        setDeletedDocumentIds(new Set());
         // el toast de éxito/advertencia ya lo emite onAddProject/onResubmitProject (solo ahí se conoce el resultado real de los uploads)
       }
     } finally {
@@ -183,6 +212,8 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
     documentFiles, setDocumentFiles: handleDocumentFilesChange,
     planFiles, setPlanFiles: handlePlanFilesChange,
     hasExistingAttachments,
+    existingDocuments, markDocumentForDeletion, unmarkDocumentForDeletion, deletedDocumentIds,
+    existingProjectId: existingProject?.id,
     fieldErrors,
     isSubmitting,
     handleSubmit,

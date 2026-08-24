@@ -118,8 +118,10 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     [], // sin dependencias — todo vía refs
   );
 
+  /** Cierre de Obra audita la petición — no sube documentación propia, solo
+   * confirma lo ya adjuntado por Infraestructura (ver TechnicalReviewSection). */
   const handleReviewProject = useCallback(
-    async (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => {
+    async (projectId: string, notes: string) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
@@ -127,21 +129,9 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
           method: "POST",
           token,
-          body: JSON.stringify({ notes, blueprintsCount: planFiles.length, calculationsAdded: calcFiles.length > 0 }),
+          body: JSON.stringify({ notes: notes.trim() || undefined }),
         });
         sync(project);
-
-        const uploadGroup = async (files: File[], type: "PLANO" | "CALC") => {
-          if (files.length === 0) return;
-          const form = new FormData();
-          form.append("document_type", type);
-          files.forEach(f => form.append("files[]", f));
-          await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-        };
-
-        await Promise.all([uploadGroup(planFiles, "PLANO"), uploadGroup(calcFiles, "CALC")]);
-        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
-        sync(refreshed);
       } catch (error) {
         logError("handleReviewProject", error);
         show("No se pudo guardar la revisión técnica.", "error");
@@ -291,6 +281,27 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       } catch (error) {
         logError("handleUploadDocumentVersion", error);
         show("No se pudo cargar la nueva versión del documento.", "error");
+      }
+    },
+    [],
+  );
+
+  /** Elimina un documento (todas sus versiones) — usado por Cierre de Obra
+   * (cualquier momento) e Infraestructura (solo mientras RECHAZADO_CIERRE,
+   * al editar/reenviar una petición rechazada, ver AttachmentsSection). */
+  const handleDeleteDocument = useCallback(
+    async (projectId: string, documentId: number) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        await apiFetch(`/projects/${projectId}/documents/${documentId}`, { method: "DELETE", token });
+        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(refreshed);
+        show("Adjunto eliminado correctamente.", "success");
+      } catch (error) {
+        logError("handleDeleteDocument", error);
+        show("No se pudo eliminar el adjunto.", "error");
       }
     },
     [],
@@ -516,6 +527,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     handleRejectProject,
     handleResubmitProject,
     handleUploadDocumentVersion,
+    handleDeleteDocument,
     handleApproveInvestment,
     handleAddProposal,
     handleRemoveProposal,

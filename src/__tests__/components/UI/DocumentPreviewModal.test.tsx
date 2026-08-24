@@ -100,6 +100,38 @@ describe("DocumentPreviewModal", () => {
     });
   });
 
+  it("renderiza un CSV como tabla", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:csv-url");
+    URL.revokeObjectURL = vi.fn();
+    mockApiDownload.mockResolvedValueOnce(new Blob(["a,b\n1,2"], { type: "text/csv" }));
+
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockResolvedValue({ text: () => Promise.resolve("Nombre,Cantidad\nCemento,10\nArena,5") });
+
+    try {
+      render(
+        <ToastProvider>
+          <DocumentPreviewModal
+            isOpen
+            onClose={vi.fn()}
+            projectId="PRJ-001"
+            document={makeDoc({ id: 4, mimeType: "text/csv", originalName: "cubicaciones.csv" })}
+            authToken="t"
+            onDownload={vi.fn()}
+          />
+        </ToastProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Nombre")).toBeInTheDocument();
+        expect(screen.getByText("Cemento")).toBeInTheDocument();
+        expect(screen.getByText("Arena")).toBeInTheDocument();
+      });
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it("muestra mensaje de formato no soportado para DWG/DXF", async () => {
     URL.createObjectURL = vi.fn(() => "blob:dwg-url");
     URL.revokeObjectURL = vi.fn();

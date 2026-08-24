@@ -85,17 +85,19 @@ const rejectionLog: AuditLog = {
 };
 
 describe("RejectedPetitionsSection", () => {
-  it("no renderiza nada si no hay peticiones rechazadas", () => {
-    const { container } = render(
+  it("muestra un estado vacío (no se autoculta) si no hay peticiones rechazadas", () => {
+    render(
       <RejectedPetitionsSection
         projects={[]}
         auditLogs={[]}
         materialsCatalog={materialsCatalog}
         authToken="test-token"
         onResubmitProject={vi.fn()}
+        onDeleteDocument={vi.fn()}
       />,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByText("Peticiones Rechazadas")).toBeInTheDocument();
+    expect(screen.getByText("No hay peticiones rechazadas.")).toBeInTheDocument();
   });
 
   it("muestra la petición rechazada con su motivo desde AuditLog", () => {
@@ -106,6 +108,7 @@ describe("RejectedPetitionsSection", () => {
         materialsCatalog={materialsCatalog}
         authToken="test-token"
         onResubmitProject={vi.fn()}
+        onDeleteDocument={vi.fn()}
       />,
     );
 
@@ -122,6 +125,7 @@ describe("RejectedPetitionsSection", () => {
         materialsCatalog={materialsCatalog}
         authToken="test-token"
         onResubmitProject={vi.fn()}
+        onDeleteDocument={vi.fn()}
       />,
     );
     expect(screen.queryByText("PRJ-011")).not.toBeInTheDocument();
@@ -136,6 +140,7 @@ describe("RejectedPetitionsSection", () => {
           materialsCatalog={materialsCatalog}
           authToken="test-token"
           onResubmitProject={vi.fn()}
+          onDeleteDocument={vi.fn()}
         />
       </ToastProvider>,
     );
@@ -157,6 +162,7 @@ describe("RejectedPetitionsSection", () => {
           materialsCatalog={materialsCatalog}
           authToken="test-token"
           onResubmitProject={onResubmitProject}
+          onDeleteDocument={vi.fn()}
         />
       </ToastProvider>,
     );
@@ -195,6 +201,7 @@ describe("RejectedPetitionsSection", () => {
           materialsCatalog={materialsCatalog}
           authToken="test-token"
           onResubmitProject={vi.fn()}
+          onDeleteDocument={vi.fn()}
         />
       </ToastProvider>,
     );

@@ -41,9 +41,9 @@ describe("AttachmentsSection", () => {
   it("renderiza las 3 zonas de carga (fotos, documentos, planos)", () => {
     renderSection();
 
-    expect(screen.getByText("Fotos del sitio")).toBeInTheDocument();
-    expect(screen.getByText("Documentos / cubicaciones")).toBeInTheDocument();
-    expect(screen.getByText("Planos de ingeniería")).toBeInTheDocument();
+    expect(screen.getByText("Fotos del Sitio")).toBeInTheDocument();
+    expect(screen.getByText("Hojas de Cálculo")).toBeInTheDocument();
+    expect(screen.getByText("Planos de Ingeniería")).toBeInTheDocument();
   });
 
   it("no muestra el banner de error cuando no se pasa error", () => {

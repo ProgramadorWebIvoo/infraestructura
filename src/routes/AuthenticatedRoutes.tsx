@@ -26,7 +26,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     projects, auditLogs, isLoadingApi, inspectedProject, onCloseInspectedProject, onSelectProject,
     onLogout, contractors, onUpdateContractorRating, onContractorMutated,
     materialsCatalog,
-    onAddProject, onResubmitProject, onRejectProject, onReviewProject, onUploadDocumentVersion, onApproveInvestment, onAddProposal,
+    onAddProject, onResubmitProject, onRejectProject, onReviewProject, onUploadDocumentVersion, onDeleteDocument, onApproveInvestment, onAddProposal,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
@@ -58,7 +58,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.INFRAESTRUCTURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
-              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
+              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} onDeleteDocument={onDeleteDocument} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

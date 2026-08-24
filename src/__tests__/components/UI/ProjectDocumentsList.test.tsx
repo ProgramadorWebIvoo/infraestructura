@@ -1,16 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ProjectDocumentsList from "@/components/UI/ProjectDocumentsList";
 import type { Project, ProjectDocument } from "@/types";
 
-const mockApiFetch = vi.fn();
-vi.mock("@/services/api", () => ({
-  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
-}));
-
 afterEach(() => {
   vi.restoreAllMocks();
-  mockApiFetch.mockReset();
 });
 
 function makeDoc(overrides: Partial<ProjectDocument> = {}): ProjectDocument {
@@ -116,27 +110,5 @@ describe("ProjectDocumentsList", () => {
     );
     fireEvent.click(screen.getByText("Nueva versión"));
     expect(onUploadNewVersion).toHaveBeenCalledWith(doc);
-  });
-
-  it("expandir historial hace fetch lazy y muestra las versiones", async () => {
-    mockApiFetch.mockResolvedValueOnce({
-      data: [makeDoc({ id: 1, versionNumber: 1, originalName: "v1.pdf" }), makeDoc({ id: 2, versionNumber: 2, originalName: "v2.pdf" })],
-    });
-
-    render(
-      <ProjectDocumentsList
-        project={makeProject([makeDoc({ id: 2, versionNumber: 2, originalName: "v2.pdf" })])}
-        authToken="t"
-        onDownload={vi.fn()}
-        onPreview={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByTitle("Historial"));
-
-    await waitFor(() => {
-      expect(screen.getByText(/V1.*v1\.pdf/)).toBeInTheDocument();
-    });
-    expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents/2/history");
   });
 });

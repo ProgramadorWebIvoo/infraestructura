@@ -96,7 +96,7 @@ describe("RequestWizardCard", () => {
     fireEvent.click(screen.getByText("Agregar 1 material"));
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/ }));
 
-    expect(screen.getByText("Fotos del sitio")).toBeInTheDocument();
+    expect(screen.getByText("Fotos del Sitio")).toBeInTheDocument();
   });
 
   it("permite retroceder al paso anterior sin perder los datos ya ingresados", () => {

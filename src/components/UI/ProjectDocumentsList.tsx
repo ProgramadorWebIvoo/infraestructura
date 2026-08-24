@@ -9,9 +9,7 @@
  * previsualizar, e historial expandible (Procura solo usaba descarga).
  */
 
-import { useState } from "react";
-import { AlertTriangle, Download, Eye, FileSpreadsheet, History, Image as ImageIcon, Map } from "lucide-react";
-import { apiFetch } from "../../services/api";
+import { AlertTriangle, Download, Eye, FileSpreadsheet, Image as ImageIcon, Map, Undo2, X } from "lucide-react";
 import type { Project, ProjectDocument } from "../../types";
 
 interface ProjectDocumentsListProps {
@@ -21,6 +19,13 @@ interface ProjectDocumentsListProps {
   onPreview: (doc: ProjectDocument) => void;
   /** Solo se pasa desde Cierre de Obra — Procura no sube nuevas versiones. */
   onUploadNewVersion?: (doc: ProjectDocument) => void;
+  /** Marca/desmarca un documento para eliminar — el consumidor decide si es
+   * inmediato o reversible (ver useRequestForm::markDocumentForDeletion, que
+   * lo aplica recién al confirmar el reenvío). Cuando se provee, cada fila
+   * muestra un botón de eliminar/deshacer en vez de nada. */
+  onDelete?: (doc: ProjectDocument) => void;
+  /** IDs marcados para eliminar — esas filas se muestran tachadas con opción de deshacer. */
+  markedForDeletion?: Set<number>;
 }
 
 const ACCENT_CLASSES = {
@@ -39,92 +44,71 @@ const GROUPS: { type: ProjectDocument["documentType"]; label: string; icon: type
 
 function DocumentRow({
   doc,
-  projectId,
   onDownload,
   onPreview,
   onUploadNewVersion,
+  onDelete,
+  isMarkedForDeletion,
 }: {
   doc: ProjectDocument;
-  projectId: string;
   onDownload: (doc: ProjectDocument) => void;
   onPreview: (doc: ProjectDocument) => void;
   onUploadNewVersion?: (doc: ProjectDocument) => void;
+  onDelete?: (doc: ProjectDocument) => void;
+  isMarkedForDeletion?: boolean;
 }) {
-  const [history, setHistory] = useState<ProjectDocument[] | null>(null);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-
-  const toggleHistory = async () => {
-    if (history !== null) {
-      setHistory(null);
-      return;
-    }
-    setIsLoadingHistory(true);
-    try {
-      const res = await apiFetch<{ data: ProjectDocument[] }>(
-        `/projects/${projectId}/documents/${doc.id}/history`,
-      );
-      setHistory(res.data);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  };
-
   return (
-    <li className="bg-white border border-slate-100 rounded-lg px-2.5 py-1.5">
+    <li className={`border rounded-xl px-3 py-2.5 ${isMarkedForDeletion ? "bg-danger-50/60 border-danger-100" : "bg-white border-slate-100"}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-800 truncate" title={doc.originalName}>
+          <span className={`text-xs font-bold truncate ${isMarkedForDeletion ? "text-slate-400 line-through" : "text-slate-800"}`} title={doc.originalName}>
             {doc.originalName}
           </span>
           {doc.versionNumber > 1 && (
-            <span className="shrink-0 text-[9px] font-mono font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+            <span className="shrink-0 text-[10px] font-mono font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
               V{doc.versionNumber}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button type="button" onClick={() => onPreview(doc)} className="text-slate-400 hover:text-sky-600 transition-colors cursor-pointer" title="Ver">
-            <Eye className="h-3.5 w-3.5" />
-          </button>
-          <button type="button" onClick={() => onDownload(doc)} className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer" title="Descargar">
-            <Download className="h-3.5 w-3.5" />
-          </button>
-          <button type="button" onClick={toggleHistory} className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer" title="Historial">
-            <History className="h-3.5 w-3.5" />
-          </button>
-          {onUploadNewVersion && (
-            <button
-              type="button"
-              onClick={() => onUploadNewVersion(doc)}
-              className="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Nueva versión
-            </button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {isMarkedForDeletion ? (
+            onDelete && (
+              <button type="button" onClick={() => onDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-600 hover:text-sky-800 hover:bg-sky-50 transition-colors cursor-pointer whitespace-nowrap" title="Deshacer">
+                <Undo2 className="h-4 w-4" />
+                Deshacer
+              </button>
+            )
+          ) : (
+            <>
+              <button type="button" onClick={() => onPreview(doc)} className="p-2 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors cursor-pointer" title="Ver">
+                <Eye className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={() => onDownload(doc)} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" title="Descargar">
+                <Download className="h-4 w-4" />
+              </button>
+              {onUploadNewVersion && (
+                <button
+                  type="button"
+                  onClick={() => onUploadNewVersion(doc)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  Nueva versión
+                </button>
+              )}
+              {onDelete && (
+                <button type="button" onClick={() => onDelete(doc)} className="p-2 rounded-lg text-slate-400 hover:text-danger-600 hover:bg-danger-50 transition-colors cursor-pointer" title="Eliminar">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
-
-      {isLoadingHistory && <p className="text-[10px] text-slate-400 mt-1 italic">Cargando historial...</p>}
-
-      {history && (
-        <ul className="mt-1.5 pl-2 border-l-2 border-slate-100 space-y-1">
-          {history.map((v) => (
-            <li key={v.id} className="flex items-center justify-between gap-2 text-[10px]">
-              <span className="font-mono font-bold text-slate-500">
-                V{v.versionNumber} · {v.originalName}
-              </span>
-              <button type="button" onClick={() => onDownload(v)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
-                <Download className="h-3 w-3" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
     </li>
   );
 }
 
-export default function ProjectDocumentsList({ project, authToken: _authToken, onDownload, onPreview, onUploadNewVersion }: ProjectDocumentsListProps) {
+export default function ProjectDocumentsList({ project, authToken: _authToken, onDownload, onPreview, onUploadNewVersion, onDelete, markedForDeletion }: ProjectDocumentsListProps) {
   const docs = project.documents ?? [];
   if (docs.length === 0) return null;
 
@@ -149,10 +133,11 @@ export default function ProjectDocumentsList({ project, authToken: _authToken, o
                   <DocumentRow
                     key={doc.id}
                     doc={doc}
-                    projectId={project.id}
                     onDownload={onDownload}
                     onPreview={onPreview}
                     onUploadNewVersion={onUploadNewVersion}
+                    onDelete={onDelete}
+                    isMarkedForDeletion={markedForDeletion?.has(doc.id)}
                   />
                 ))}
               </ul>

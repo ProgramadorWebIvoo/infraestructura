@@ -30,6 +30,8 @@ const STEP_DEFINITIONS: StepDefinition[] = [
 interface RequestWizardCardProps {
   form: UseRequestFormReturn;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  /** Requerido en modo edición para preview/descarga de adjuntos existentes. */
+  authToken?: string;
   /**
    * "standalone" (default): se muestra suelto en la página, con su propio
    * Card/SectionHeader/borde de acento (uso normal en InfraestructuraMantenimientoPanel).
@@ -41,7 +43,7 @@ interface RequestWizardCardProps {
   variant?: "standalone" | "embedded";
 }
 
-export default function RequestWizardCard({ form, materialsCatalog, variant = "standalone" }: RequestWizardCardProps) {
+export default function RequestWizardCard({ form, materialsCatalog, authToken, variant = "standalone" }: RequestWizardCardProps) {
   const wizard = useRequestWizard({ form });
   const isEmbedded = variant === "embedded";
 
@@ -129,6 +131,13 @@ export default function RequestWizardCard({ form, materialsCatalog, variant = "s
               planFiles={form.planFiles}
               onPlanFilesChange={form.setPlanFiles}
               error={wizard.stepErrors.attachments ?? form.fieldErrors.attachments}
+              existingProjectId={form.existingProjectId}
+              existingDocuments={form.existingDocuments}
+              markedForDeletion={form.deletedDocumentIds}
+              onToggleDeletion={(id) =>
+                form.deletedDocumentIds.has(id) ? form.unmarkDocumentForDeletion(id) : form.markDocumentForDeletion(id)
+              }
+              authToken={authToken}
             />
           )}
         </motion.div>

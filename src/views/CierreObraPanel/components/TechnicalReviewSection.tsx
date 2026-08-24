@@ -7,11 +7,32 @@
  *
  * La revisión se realiza en un modal tipo wizard (Revisar → Documentación →
  * Confirmar) para no expandir el layout de la página al abrir el formulario.
+ *
+ * Es auditoría, no origen de documentos: el auditor revisa (preview +
+ * descarga) lo que Infraestructura ya adjuntó, nunca sube archivos propios
+ * en este flujo — ver ProjectDocumentsList/DocumentPreviewModal, mismo
+ * patrón que RevisedDocumentsSection.tsx (mismo panel) usa para proyectos
+ * ya revisados.
  */
 
 import { Fragment, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Calculator, CheckCircle2, FileSpreadsheet, Map, MapPin, Send, Upload, XCircle } from "lucide-react";
-import type { Project } from "../../../types";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Award,
+  Calculator,
+  Calendar,
+  CheckCircle2,
+  FileSpreadsheet,
+  MapPin,
+  Package,
+  Paperclip,
+  Send,
+  ShieldCheck,
+  Upload,
+  XCircle,
+} from "lucide-react";
+import type { MaterialItem, Project, ProjectDocument } from "../../../types";
 import { ProjectStatus } from "../../../types";
 import { useToast } from "../../../components/UI/Toast";
 import Card from "../../../components/UI/Card";
@@ -20,12 +41,17 @@ import FileDropZone from "../../../components/UI/FileDropZone";
 import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
+import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
+import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import { formatNumber } from "../../../utils";
+import { apiDownload } from "../../../services/api";
 import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 
 interface TechnicalReviewSectionProps {
   projects: Project[];
-  onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
+  authToken: string;
+  onReviewProject: (projectId: string, notes: string) => void;
   onRejectProject: (
     projectId: string,
     reason: string,
@@ -40,6 +66,18 @@ const WIZARD_STEPS = [
   { key: 3, label: "Confirmar", icon: Send },
 ] as const;
 
+const CONDITION_LABEL: Record<MaterialItem["condition"], string> = {
+  NUEVO: "Nuevo",
+  USADO: "Usado",
+  AMBAS: "Nuevo o usado",
+};
+
+const WARRANTY_UNIT_LABEL: Record<NonNullable<MaterialItem["warrantyUnit"]>, string> = {
+  DIAS: "días",
+  MESES: "meses",
+  ANOS: "años",
+};
+
 function ProjectTypeBadge({ type }: { type: Project["type"] }) {
   return (
     <span className={`text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap ${
@@ -50,14 +88,77 @@ function ProjectTypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export default function TechnicalReviewSection({ projects, onReviewProject, onRejectProject }: TechnicalReviewSectionProps) {
+function ConditionBadge({ condition }: { condition: MaterialItem["condition"] }) {
+  const c = SEMANTIC_COLOR_MAP[condition === "NUEVO" ? "success" : condition === "USADO" ? "warning" : "info"];
+  return (
+    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${c.bg50} ${c.text700} shrink-0`}>
+      {CONDITION_LABEL[condition]}
+    </span>
+  );
+}
+
+function MaterialDetailRow({ material }: { material: MaterialItem }) {
+  const hasExtras = material.brand || material.model || material.warrantyValue || material.specifications || material.observations;
+
+  return (
+    <li className="py-2.5 first:pt-0 last:pb-0 border-b border-sky-100/60 last:border-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+          <span className="font-bold text-slate-700">{material.name}</span>
+          <ConditionBadge condition={material.condition} />
+        </div>
+        <span className="font-mono font-bold text-slate-700 shrink-0">{material.quantity} {material.unit}</span>
+      </div>
+      {hasExtras && (
+        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
+          {(material.brand || material.model) && (
+            <span>
+              {material.brand}
+              {material.brand && material.model ? " · " : ""}
+              {material.model}
+            </span>
+          )}
+          {material.warrantyValue != null && material.warrantyUnit && (
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3 text-emerald-500" />
+              Garantía: {material.warrantyValue} {WARRANTY_UNIT_LABEL[material.warrantyUnit]}
+            </span>
+          )}
+          {material.specifications && <span className="italic">{material.specifications}</span>}
+          {material.observations && <span className="italic">{material.observations}</span>}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function AttachmentsSummary({ documents }: { documents: ProjectDocument[] }) {
+  const counts = {
+    FOTO: documents.filter(d => d.documentType === "FOTO").length,
+    CALC: documents.filter(d => d.documentType === "CALC").length,
+    PLANO: documents.filter(d => d.documentType === "PLANO").length,
+  };
+  const parts = [
+    counts.FOTO > 0 && `${counts.FOTO} foto${counts.FOTO !== 1 ? "s" : ""}`,
+    counts.CALC > 0 && `${counts.CALC} cálculo${counts.CALC !== 1 ? "s" : ""}`,
+    counts.PLANO > 0 && `${counts.PLANO} plano${counts.PLANO !== 1 ? "s" : ""}`,
+  ].filter(Boolean);
+
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+      <Paperclip className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+      {parts.length > 0 ? parts.join(" · ") : "Sin adjuntos"}
+    </div>
+  );
+}
+
+export default function TechnicalReviewSection({ projects, authToken, onReviewProject, onRejectProject }: TechnicalReviewSectionProps) {
   const { showToast } = useToast();
   const { maxFileSizeBytes } = useAppGroupSettings();
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [step, setStep] = useState(1);
   const [cierreNotes, setCierreNotes] = useState("");
-  const [calcFiles, setCalcFiles] = useState<File[]>([]);
-  const [planFiles, setPlanFiles] = useState<File[]>([]);
+  const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -71,21 +172,18 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
     [projects],
   );
   const activeProject = pendingReview.find(p => p.id === selectedProjectId);
+  const activeDocuments = activeProject?.documents ?? [];
 
   const openReview = (p: Project) => {
     setSelectedProjectId(p.id);
     setStep(1);
-    setCalcFiles([]);
-    setPlanFiles([]);
-    setCierreNotes(`Cálculos de materiales verificados. Las cantidades indicadas para ${p.materials.length} insumos son correctas y corresponden a las necesidades técnicas de la obra en ${p.location}.`);
+    setCierreNotes("");
   };
 
   const closeReview = () => {
     if (isSubmitting) return;
     setSelectedProjectId("");
     setStep(1);
-    setCalcFiles([]);
-    setPlanFiles([]);
     setCierreNotes("");
   };
 
@@ -119,36 +217,33 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
     }
   };
 
-  const handleNextStep = () => {
-    if (step === 2) {
-      if (calcFiles.length === 0) {
-        showToast("Debe adjuntar al menos una hoja de cálculo o archivo de cubicaciones.", "warning");
-        return;
-      }
-      if (planFiles.length === 0) {
-        showToast("Debe adjuntar al menos un plano de ingeniería.", "warning");
-        return;
-      }
+  const handleDownload = async (doc: ProjectDocument) => {
+    if (!activeProject) return;
+    try {
+      const blob = await apiDownload(`/projects/${activeProject.id}/documents/${doc.id}/download`, { token: authToken });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.originalName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast("No se pudo descargar el archivo.", "error");
     }
-    setStep(s => s + 1);
   };
 
   const handleSubmitReview = async () => {
     if (!activeProject || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onReviewProject(activeProject.id, cierreNotes, planFiles, calcFiles);
+      await onReviewProject(activeProject.id, cierreNotes);
       setSelectedProjectId("");
       setStep(1);
-      setCalcFiles([]);
-      setPlanFiles([]);
       setCierreNotes("");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const isComplete = calcFiles.length > 0 && planFiles.length > 0 && cierreNotes.trim().length > 0;
 
   return (
     <Card className="border-l-4 border-l-sky-400">
@@ -218,7 +313,7 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
       <Modal
         isOpen={!!activeProject}
         onClose={closeReview}
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-3xl"
         icon={<Calculator className="h-5 w-5" />}
         iconColor="sky"
         badge="Revisión Técnica"
@@ -229,26 +324,21 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
                 {step === 3
-                  ? isComplete
-                    ? "Expediente listo para enviar a Procura"
-                    : "Faltan requisitos para enviar"
+                  ? "Expediente listo para enviar a Procura"
                   : step === 2
-                    ? "Adjunta al menos un archivo por tipo"
+                    ? "Revise los adjuntos de la petición"
                     : "Revisa el detalle de la inversión"}
               </span>
               <div className="flex items-center gap-2">
-                {step === 1 && (
-                  <Button
-                    id="btn-cierre-reject-project"
-                    variant="secondary"
-                    colorScheme="rose"
-                    disabled={isSubmitting}
-                    onClick={openRejectModal}
-                    icon={<XCircle className="h-4 w-4" />}
-                  >
-                    Rechazar
-                  </Button>
-                )}
+                <Button
+                  id="btn-cierre-reject-project"
+                  variant="danger"
+                  disabled={isSubmitting}
+                  onClick={openRejectModal}
+                  icon={<XCircle className="h-4 w-4" />}
+                >
+                  Rechazar
+                </Button>
                 {step > 1 && (
                   <Button variant="secondary" disabled={isSubmitting} onClick={() => setStep(s => s - 1)}>
                     Atrás
@@ -258,7 +348,7 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
                   <Button
                     variant="primary"
                     colorScheme="sky"
-                    onClick={handleNextStep}
+                    onClick={() => setStep(s => s + 1)}
                     icon={<ArrowRight className="h-4 w-4" />}
                   >
                     Continuar
@@ -268,7 +358,6 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
                     id="btn-cierre-submit-review"
                     variant="primary"
                     colorScheme="sky"
-                    disabled={!isComplete}
                     isLoading={isSubmitting}
                     onClick={handleSubmitReview}
                     icon={<Upload className="h-4 w-4" />}
@@ -316,7 +405,23 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
             {/* Paso 1: Revisar expediente */}
             {step === 1 && (
               <div className="space-y-5">
-                <div className="p-4 bg-gradient-to-br from-sky-50/40 to-white rounded-xl border border-sky-100/60 space-y-2.5 text-xs">
+                <div className="p-4 bg-gradient-to-br from-sky-50/40 to-white rounded-xl border border-sky-100/60 space-y-3 text-xs">
+                  {/* Metadatos del expediente */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pb-3 border-b border-sky-100">
+                    <ProjectTypeBadge type={activeProject.type} />
+                    <span className="flex items-center gap-1 text-slate-500 font-medium">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                      {activeProject.location}
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-500 font-medium">
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                      {activeProject.createdDate}
+                    </span>
+                    <span className="ml-auto">
+                      <AttachmentsSummary documents={activeDocuments} />
+                    </span>
+                  </div>
+
                   <h5 className="font-bold text-slate-700 flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5">
                       <Calculator className="h-3.5 w-3.5 text-sky-500" />
@@ -325,23 +430,23 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
                     <span className="font-mono text-sky-600 font-black">${formatNumber(activeProject.estimatedTotal)}</span>
                   </h5>
                   <p className="text-slate-600 leading-relaxed italic border-l-2 border-sky-200 pl-3">&quot;{activeProject.description}&quot;</p>
+
                   <div className="pt-3 border-t border-sky-100">
-                    <span className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Materiales Solicitados:</span>
-                    <ul className="mt-1.5 space-y-1 text-slate-600 font-medium">
+                    <span className="font-bold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5 mb-1">
+                      <Package className="h-3 w-3" />
+                      Materiales Solicitados
+                    </span>
+                    <ul>
                       {activeProject.materials.map((m) => (
-                        <li key={m.id} className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
-                          <span>{m.name}</span>
-                          <span className="font-mono font-bold text-slate-700 ml-auto">{m.quantity} {m.unit}</span>
-                        </li>
+                        <MaterialDetailRow key={m.id ?? m.name} material={m} />
                       ))}
                     </ul>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Notas de Revisión y Corrección
+                  <label htmlFor="cierre-notes" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Notas de Revisión y Corrección (opcional)
                   </label>
                   <textarea
                     id="cierre-notes"
@@ -357,39 +462,23 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
               </div>
             )}
 
-            {/* Paso 2: Adjuntar documentación */}
+            {/* Paso 2: Revisar documentación adjunta (sin subida — Cierre de
+                Obra audita lo que Infraestructura ya cargó) */}
             {step === 2 && (
-              <div className="space-y-5">
-                <FileDropZone
-                  files={calcFiles}
-                  onFilesChange={setCalcFiles}
-                  label="Hoja de Cálculo / Cubicaciones"
-                  accept=".xlsx,.xls,.csv,.pdf,.ods"
-                  extensionsLabel=".xlsx · .xls · .csv · .pdf · .ods"
-                  color="sky"
-                  icon={<FileSpreadsheet className="h-6 w-6 text-slate-400" />}
-                  fileIcon={<FileSpreadsheet className="h-3.5 w-3.5" />}
-                  id="cierre-calc-upload"
-                  required
-                  maxSizeBytes={maxFileSizeBytes}
-                  onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
-                />
-
-                <FileDropZone
-                  files={planFiles}
-                  onFilesChange={setPlanFiles}
-                  label="Planos de Ingeniería"
-                  accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg,.svg,.tif,.tiff"
-                  extensionsLabel=".pdf · .dwg · .dxf · .png · .jpg · .svg"
-                  color="indigo"
-                  icon={<Map className="h-6 w-6 text-slate-400" />}
-                  fileIcon={<Map className="h-3.5 w-3.5" />}
-                  maxSizeBytes={maxFileSizeBytes}
-                  id="cierre-plan-upload"
-                  required
-                  countLabel="plano adjunto"
-                  onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
-                />
+              <div className="space-y-4">
+                {activeDocuments.length === 0 ? (
+                  <EmptyState
+                    message="Esta petición no trae fotos, cálculos ni planos adjuntos. Puede continuar con la revisión o rechazarla si considera que falta documentación."
+                    icon={<Paperclip className="h-8 w-8" />}
+                  />
+                ) : (
+                  <ProjectDocumentsList
+                    project={activeProject}
+                    authToken={authToken}
+                    onDownload={handleDownload}
+                    onPreview={setPreviewDoc}
+                  />
+                )}
               </div>
             )}
 
@@ -406,34 +495,35 @@ export default function TechnicalReviewSection({ projects, onReviewProject, onRe
                     <span className="font-mono font-black text-sky-600">${formatNumber(activeProject.estimatedTotal)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Hoja de Cálculo</span>
-                    <span className="font-medium text-slate-600 truncate">{calcFiles.map(f => f.name).join(", ") || "—"}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Planos</span>
-                    <span className="font-medium text-slate-600 truncate">{planFiles.map(f => f.name).join(", ") || "—"}</span>
+                    <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Adjuntos revisados</span>
+                    <AttachmentsSummary documents={activeDocuments} />
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px] shrink-0">Notas</span>
-                    <span className="font-medium text-slate-600 text-right leading-snug">{cierreNotes}</span>
+                    <span className="font-medium text-slate-600 text-right leading-snug">{cierreNotes || "—"}</span>
                   </div>
                 </div>
 
-                <div className={`p-3.5 rounded-xl border flex items-center gap-2.5 text-[11px] font-bold ${
-                  isComplete
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-700"
-                    : "bg-amber-50 border-amber-100 text-amber-700"
-                }`}>
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  {isComplete
-                    ? "Todos los requisitos están completos. Al enviar, el expediente pasará a Procura para la aprobación de inversión."
-                    : "Faltan requisitos para enviar: revisa la documentación adjunta."}
+                <div className="p-3.5 rounded-xl border flex items-center gap-2.5 text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
+                  <Award className="h-4 w-4 shrink-0" />
+                  Al enviar, el expediente pasará a Procura para la aprobación de inversión.
                 </div>
               </div>
             )}
           </div>
         )}
       </Modal>
+
+      {activeProject && (
+        <DocumentPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          projectId={activeProject.id}
+          document={previewDoc}
+          authToken={authToken}
+          onDownload={handleDownload}
+        />
+      )}
 
       {/* ── Modal de rechazo de la petición ── */}
       <Modal

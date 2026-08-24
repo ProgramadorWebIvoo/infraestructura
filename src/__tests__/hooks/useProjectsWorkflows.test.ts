@@ -218,45 +218,33 @@ describe("useProjectsWorkflows", () => {
   });
 
   describe("handleReviewProject", () => {
-    it("POSTs review and uploads documents", async () => {
+    it("POSTs review with notes — Cierre de Obra ya no sube documentos, solo audita", async () => {
       const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
-      mockApiFetch
-        .mockResolvedValueOnce(project)           // /projects/{id}/review
-        .mockResolvedValueOnce(undefined)          // /projects/{id}/documents (x2)
-        .mockResolvedValueOnce(undefined)
-        .mockResolvedValueOnce(project);           // /projects/{id} refreshed
-
-      const planFile = new File(["plan"], "plan.pdf", { type: "application/pdf" });
-      const calcFile = new File(["calc"], "calc.pdf", { type: "application/pdf" });
+      mockApiFetch.mockResolvedValueOnce(project);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleReviewProject("PRJ-001", "review notes", [planFile], [calcFile]);
+      await result.current.handleReviewProject("PRJ-001", "review notes");
 
+      expect(mockApiFetch).toHaveBeenCalledTimes(1);
       expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/review", {
         method: "POST",
         token: "valid-token",
         body: expect.stringContaining("review notes"),
       });
-      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
-        method: "POST",
-        body: expect.any(FormData),
-      }));
       expect(syncProject).toHaveBeenCalledWith(project);
     });
 
-    it("handles review without files", async () => {
+    it("handles review without notes", async () => {
       const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
-      mockApiFetch
-        .mockResolvedValueOnce(project)
-        .mockResolvedValueOnce(project);
+      mockApiFetch.mockResolvedValueOnce(project);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleReviewProject("PRJ-001", "notes only", [], []);
+      await result.current.handleReviewProject("PRJ-001", "");
 
-      expect(mockApiFetch).toHaveBeenCalledTimes(2); // review + refresh
-      expect(syncProject).toHaveBeenCalledTimes(2);
+      expect(mockApiFetch).toHaveBeenCalledTimes(1);
+      expect(syncProject).toHaveBeenCalledTimes(1);
     });
 
     it("shows error toast on failure", async () => {
@@ -264,7 +252,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleReviewProject("PRJ-001", "notes", [], []);
+      await result.current.handleReviewProject("PRJ-001", "notes");
 
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo guardar"),

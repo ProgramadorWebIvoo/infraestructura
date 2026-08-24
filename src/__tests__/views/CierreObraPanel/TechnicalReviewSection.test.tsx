@@ -31,6 +31,11 @@ vi.mock("@/hooks/useAppGroupSettings", () => ({
   useAppGroupSettings: () => ({ maxFileSizeBytes: 10 * 1024 * 1024 }),
 }));
 
+vi.mock("@/services/api", () => ({
+  apiFetch: vi.fn(),
+  apiDownload: vi.fn(),
+}));
+
 afterEach(() => vi.restoreAllMocks());
 
 const pendingProject: Project = {
@@ -45,17 +50,22 @@ const pendingProject: Project = {
   estimatedTotal: 10,
 };
 
-function renderSection(onRejectProject = vi.fn().mockResolvedValue({ ok: true, partial: false, failedGroups: [] })) {
+function renderSection(
+  onRejectProject = vi.fn().mockResolvedValue({ ok: true, partial: false, failedGroups: [] }),
+  onReviewProject = vi.fn(),
+  projects: Project[] = [pendingProject],
+) {
   render(
     <ToastProvider>
       <TechnicalReviewSection
-        projects={[pendingProject]}
-        onReviewProject={vi.fn()}
+        projects={projects}
+        authToken="test-token"
+        onReviewProject={onReviewProject}
         onRejectProject={onRejectProject}
       />
     </ToastProvider>,
   );
-  return { onRejectProject };
+  return { onRejectProject, onReviewProject };
 }
 
 describe("TechnicalReviewSection — rechazo de petición", () => {
@@ -111,5 +121,73 @@ describe("TechnicalReviewSection — rechazo de petición", () => {
       "Revisar también la cubicación de concreto.",
       [],
     );
+  });
+});
+
+describe("TechnicalReviewSection — revisión (auditoría, sin subida de archivos)", () => {
+  it("el paso 1 no precarga texto en Notas de Revisión — placeholder vacío", () => {
+    renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+
+    expect(screen.getByLabelText("Notas de Revisión y Corrección (opcional)")).toHaveValue("");
+  });
+
+  it("permite confirmar la revisión sin escribir notas ni requerir archivos adjuntos", async () => {
+    const { onReviewProject } = renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ })); // paso 2
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ })); // paso 3
+    fireEvent.click(screen.getByRole("button", { name: /Guardar y Enviar a Procura/ }));
+
+    expect(onReviewProject).toHaveBeenCalledWith("PRJ-020", "");
+  });
+
+  it("el paso 2 no ofrece subir archivos — es de solo revisión", () => {
+    renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
+
+    expect(screen.queryByText("Hoja de Cálculo / Cubicaciones")).not.toBeInTheDocument();
+    expect(screen.queryByText("Planos de Ingeniería")).not.toBeInTheDocument();
+  });
+
+  it("el paso 2 muestra un estado vacío cuando la petición no trae adjuntos", () => {
+    renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
+
+    expect(screen.getByText(/no trae fotos, cálculos ni planos adjuntos/)).toBeInTheDocument();
+  });
+
+  it("muestra el detalle de cada material: condición, marca y garantía", () => {
+    renderSection(undefined, undefined, [
+      {
+        ...pendingProject,
+        materials: [
+          {
+            id: "m1",
+            name: "Bomba de agua",
+            quantity: 2,
+            unit: "unidad",
+            estimatedUnitPrice: 100,
+            condition: "USADO",
+            brand: "Pedrollo",
+            warrantyValue: 6,
+            warrantyUnit: "MESES",
+          },
+        ],
+      },
+    ]);
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+
+    expect(screen.getByText("Bomba de agua")).toBeInTheDocument();
+    expect(screen.getByText("Usado")).toBeInTheDocument();
+    expect(screen.getByText("Pedrollo")).toBeInTheDocument();
+    expect(screen.getByText(/Garantía: 6 meses/)).toBeInTheDocument();
   });
 });

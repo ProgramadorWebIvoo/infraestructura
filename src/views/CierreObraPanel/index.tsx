@@ -21,7 +21,7 @@ import RevisedDocumentsSection from "./components/RevisedDocumentsSection";
 interface CierreObraPanelProps {
   projects: Project[];
   authToken: string;
-  onReviewProject: (projectId: string, notes: string, planFiles: File[], calcFiles: File[]) => void;
+  onReviewProject: (projectId: string, notes: string) => void;
   onRejectProject: (
     projectId: string,
     reason: string,
@@ -103,7 +103,7 @@ export default function CierreObraPanel({
       {/* SECTION 1: Pending Technical Reviews */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 space-y-6">
-          <TechnicalReviewSection projects={projects} onReviewProject={onReviewProject} onRejectProject={onRejectProject} />
+          <TechnicalReviewSection projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} />
         </div>
 
         {/* SECTION 2: Work Completion & Quality Verification */}

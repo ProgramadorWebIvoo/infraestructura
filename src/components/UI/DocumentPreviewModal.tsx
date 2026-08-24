@@ -25,18 +25,127 @@ interface DocumentPreviewModalProps {
   onDownload: (doc: ProjectDocument) => void;
 }
 
-type PreviewKind = "pdf" | "image" | "unsupported";
+type PreviewKind = "pdf" | "image" | "csv" | "unsupported";
 
 function kindFor(doc: ProjectDocument): PreviewKind {
   const mime = doc.mimeType ?? "";
   if (mime === "application/pdf") return "pdf";
   if (mime.startsWith("image/")) return "image";
-  // finfo a veces detecta DWG/DXF como application/octet-stream — usar la
-  // extensión como fallback antes de rendirse.
+  if (mime === "text/csv") return "csv";
+  // finfo a veces detecta DWG/DXF (o CSV como text/plain) como tipos
+  // genéricos — usar la extensión como fallback antes de rendirse.
   const ext = doc.originalName.split(".").pop()?.toLowerCase();
   if (ext === "pdf") return "pdf";
   if (ext && ["png", "jpg", "jpeg", "webp", "svg", "tiff", "tif"].includes(ext)) return "image";
+  if (ext === "csv") return "csv";
   return "unsupported";
+}
+
+/** Parser CSV mínimo: coma como separador, comillas dobles con escape ""
+ * dentro de campo — cubre el caso común sin traer una librería para esto. */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"' && text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        field += char;
+      }
+    } else if (char === '"') {
+      inQuotes = true;
+    } else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\n" || char === "\r") {
+      if (char === "\r" && text[i + 1] === "\n") i++;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+}
+
+function CsvViewer({ blobUrl }: { blobUrl: string }) {
+  const [rows, setRows] = useState<string[][] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(blobUrl);
+        const text = await res.text();
+        if (!cancelled) setRows(parseCsv(text));
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [blobUrl]);
+
+  if (error) {
+    return <p className="text-xs text-danger-600 font-semibold text-center py-8">No se pudo leer el archivo CSV.</p>;
+  }
+  if (!rows) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-slate-400">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-xs font-semibold">Leyendo CSV...</span>
+      </div>
+    );
+  }
+  if (rows.length === 0) {
+    return <p className="text-xs text-slate-400 font-semibold text-center py-8">El archivo está vacío.</p>;
+  }
+
+  const [header, ...body] = rows;
+
+  return (
+    <div className="max-h-[60vh] overflow-auto border border-slate-200 rounded-xl">
+      <table className="w-full text-xs border-collapse">
+        <thead className="sticky top-0 bg-slate-50">
+          <tr className="text-slate-500 font-bold border-b border-slate-200">
+            {header.map((cell, i) => (
+              <th key={i} className="py-2 px-3 text-left whitespace-nowrap">
+                {cell}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {body.map((r, i) => (
+            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/40"}>
+              {r.map((cell, j) => (
+                <td key={j} className="py-2 px-3 whitespace-nowrap text-slate-700">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function PdfViewer({ blobUrl }: { blobUrl: string }) {
@@ -207,6 +316,8 @@ export default function DocumentPreviewModal({
       {!isLoading && !loadError && blobUrl && kind === "image" && (
         <img src={blobUrl} alt={doc.originalName} className="max-w-full max-h-[65vh] object-contain mx-auto rounded-lg" />
       )}
+
+      {!isLoading && !loadError && blobUrl && kind === "csv" && <CsvViewer blobUrl={blobUrl} />}
 
       {!isLoading && kind === "unsupported" && (
         <div className="flex flex-col items-center gap-2 py-12 text-center">

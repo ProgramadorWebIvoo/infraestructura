@@ -6,7 +6,9 @@
  * rechazó (motivo desde AuditLog, sin columna propia — mismo criterio que
  * RejectionService::buildDetails) y permite editar y reenviar la misma
  * petición (mismo Project.id) para una nueva evaluación, sin crear una
- * petición nueva. Se autoculta si no hay ninguna rechazada.
+ * petición nueva. Es contenido de una tab explícita (InfraestructuraMantenimientoPanel/index.tsx)
+ * — cuando no hay rechazadas, muestra el emptyState de Table en vez de
+ * autocultarse (antes vivía fuera de un sistema de tabs y sí se ocultaba).
  *
  * Usa el sistema de tabla compartido (Table/Column), igual que
  * RequestsTableSection — antes era una lista de cards apiladas, inconsistente
@@ -25,7 +27,6 @@ import RequestWizardCard from "./RequestWizardCard";
 import RejectedPetitionDetailModal from "./RejectedPetitionDetailModal";
 import { useRequestForm } from "../../../hooks/useRequestForm";
 import { useContainerRows } from "../../../hooks/useContainerRows";
-import { useToast } from "../../../components/UI/Toast";
 import { useState } from "react";
 
 const REJECT_ACTION = "Rechazo de petición de obra";
@@ -40,6 +41,7 @@ interface RejectedPetitionsSectionProps {
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
+  onDeleteDocument: (projectId: string, documentId: number) => Promise<void>;
 }
 
 function latestRejectionLog(auditLogs: AuditLog[], projectId: string): AuditLog | undefined {
@@ -51,26 +53,32 @@ function latestRejectionLog(auditLogs: AuditLog[], projectId: string): AuditLog 
 function EditAndResubmitModal({
   project,
   materialsCatalog,
+  authToken,
   onResubmitProject,
+  onDeleteDocument,
   onClose,
 }: {
   project: Project;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  authToken: string;
   onResubmitProject: RejectedPetitionsSectionProps["onResubmitProject"];
+  onDeleteDocument: RejectedPetitionsSectionProps["onDeleteDocument"];
   onClose: () => void;
 }) {
-  const { showToast } = useToast();
   const form = useRequestForm({
     onAddProject: async () => ({ ok: false, partial: false, failedGroups: [] }),
     existingProject: project,
     onResubmitProject: async (...args) => {
+      // El toast de éxito/advertencia ya lo emite handleResubmitProject en
+      // useProjectsWorkflows.ts (única fuente de verdad, conoce el resultado
+      // real de los uploads) — duplicarlo acá mostraba 2 toasts idénticos.
       const result = await onResubmitProject(...args);
       if (result.ok) {
-        showToast("Petición corregida y reenviada a Cierre de Obra.", "success");
         onClose();
       }
       return result;
     },
+    onDeleteDocument,
   });
 
   return (
@@ -85,7 +93,7 @@ function EditAndResubmitModal({
       infoLine={project.title}
     >
       <div className="h-[70vh] -m-6 p-6 pt-5">
-        <RequestWizardCard form={form} materialsCatalog={materialsCatalog} variant="embedded" />
+        <RequestWizardCard form={form} materialsCatalog={materialsCatalog} authToken={authToken} variant="embedded" />
       </div>
     </Modal>
   );
@@ -97,6 +105,7 @@ export default function RejectedPetitionsSection({
   authToken,
   materialsCatalog,
   onResubmitProject,
+  onDeleteDocument,
 }: RejectedPetitionsSectionProps) {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
@@ -106,8 +115,6 @@ export default function RejectedPetitionsSection({
     .filter((p) => p.status === ProjectStatus.RECHAZADO_CIERRE)
     .map((p) => ({ project: p, log: latestRejectionLog(auditLogs, p.id) }))
     .sort((a, b) => (b.log?.timestamp ?? "").localeCompare(a.log?.timestamp ?? ""));
-
-  if (rejected.length === 0) return null;
 
   const columns: Column<(typeof rejected)[number]>[] = [
     {
@@ -216,7 +223,9 @@ export default function RejectedPetitionsSection({
         <EditAndResubmitModal
           project={editingProject}
           materialsCatalog={materialsCatalog}
+          authToken={authToken}
           onResubmitProject={onResubmitProject}
+          onDeleteDocument={onDeleteDocument}
           onClose={() => setEditingProject(null)}
         />
       )}

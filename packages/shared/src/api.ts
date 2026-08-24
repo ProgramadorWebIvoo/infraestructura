@@ -185,14 +185,23 @@ export async function apiDownload(
 ): Promise<Blob> {
   const { token, ...fetchOptions } = options;
 
-  const headers: Record<string, string> = {};
+  // Sin Accept: application/json, Sanctum/Laravel puede tratar la request
+  // como "de navegador" y redirigir (302) a la ruta de login en vez de
+  // devolver 401 JSON cuando la sesión no es válida — fetch sigue el
+  // redirect automáticamente, `response.ok` da true, y `.blob()` termina
+  // devolviendo el HTML de esa página en vez del archivo real. apiFetch ya
+  // manda este header; apiDownload no lo hacía, rompiendo el preview de
+  // PDF/imagen en silencio mientras la descarga (que usa el mismo wrapper,
+  // pero cuyo error es más visible por el nombre de archivo esperado)
+  // parecía funcionar por casualidad en sesiones con cookie aún fresca.
+  const headers: Record<string, string> = { Accept: "application/json" };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
   const response = await fetch(`${_baseUrl}${path}`, {
     ...fetchOptions,
-    headers,
+    headers: { ...headers, ...(fetchOptions.headers as Record<string, string>) },
   });
 
   if (!response.ok) {
@@ -205,6 +214,11 @@ export async function apiDownload(
       message = `Error al descargar (${response.status})`;
     }
     throw new Error(message);
+  }
+
+  const refreshedToken = response.headers.get("X-Refresh-Token");
+  if (refreshedToken && _onTokenRefreshed) {
+    _onTokenRefreshed(refreshedToken);
   }
 
   return response.blob();

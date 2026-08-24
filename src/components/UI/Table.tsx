@@ -276,7 +276,7 @@ export function Table<T>({
   return (
     <div className={`${fillViewport ? "flex h-full flex-col min-h-0" : ""} ${containerClassName}`}>
       <div
-        className={`overflow-x-auto ${
+        className={`overflow-x-hidden ${
           fillViewport ? "flex-1 min-h-0 overflow-y-auto" : maxHeight ? "overflow-y-auto" : ""
         }`}
         style={!fillViewport && maxHeight ? { maxHeight } : undefined}

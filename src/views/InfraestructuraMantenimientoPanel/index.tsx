@@ -35,6 +35,7 @@ interface InfraestructuraMantenimientoPanelProps {
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
+  onDeleteDocument: (projectId: string, documentId: number) => Promise<void>;
   projects: Project[];
   auditLogs: AuditLog[];
   authToken: string;
@@ -45,6 +46,7 @@ interface InfraestructuraMantenimientoPanelProps {
 export default function InfraestructuraMantenimientoPanel({
   onAddProject,
   onResubmitProject,
+  onDeleteDocument,
   projects,
   auditLogs,
   authToken,
@@ -133,6 +135,7 @@ export default function InfraestructuraMantenimientoPanel({
                 authToken={authToken}
                 materialsCatalog={materialsCatalog}
                 onResubmitProject={onResubmitProject}
+                onDeleteDocument={onDeleteDocument}
               />
             )}
           </TabPanel>
