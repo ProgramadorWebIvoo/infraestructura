@@ -12,7 +12,7 @@ import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Database } from "lucide-react";
 
-import { SkeletonCard } from "../SkeletonLoader";
+import { SkeletonBlock } from "../SkeletonLoader";
 import SidebarNav from "../UI/SidebarNav";
 import MobileTopBar from "../UI/MobileTopBar";
 import OfflineBanner from "../UI/OfflineBanner";
@@ -42,16 +42,27 @@ interface SidebarNavProps {
 // Suspense fallback para el contenido de rutas
 // ---------------------------------------------------------------------------
 // Skeleton, no spinner: es el único mecanismo de loading visible en la app.
-// Esta etapa cubre la descarga del chunk JS de la vista lazy-loaded (típico
-// milisegundos) — la vista real, una vez montada, muestra su propio
-// skeleton específico (forma real de sus datos) sin salto de lenguaje
-// visual entre una etapa y la otra.
-
+// Esta etapa cubre la descarga del chunk JS de la vista lazy-loaded (en hard
+// refresh, sin caché de chunks, puede tardar cientos de ms — suficiente para
+// notarse) — la vista real, una vez montada, muestra su propio skeleton
+// específico (forma real de sus datos: KPIs, tabla, tabs, lo que sea).
+//
+// A propósito genérico y sin forma de "contenido" (nada de cards con header
+// simulado ni layout específico): cada vista tiene su propio skeleton en
+// isLoading, con una forma distinta según sus datos (ver
+// InfraestructuraMantenimientoPanel/index.tsx para un ejemplo con tabs).
+// Si este fallback imitara la forma de alguna vista en particular, cada vez
+// que esa vista cambiara su skeleton habría que volver a sincronizar este
+// archivo compartido por 12+ rutas lazy distintas — y aun sincronizado,
+// las otras 11 rutas seguirían viendo un "salto" de forma al pasar de este
+// fallback al suyo propio. Manteniéndolo neutral (solo barras shimmer,
+// mismo lenguaje visual que SkeletonBlock/SkeletonCard/etc en toda la app)
+// nunca compite ni desentona con ninguna forma específica.
 function PageFallback() {
   return (
-    <div className="py-2">
-      <div className="skeleton-shimmer h-3 w-32 rounded mb-4" />
-      <SkeletonCard />
+    <div className="py-2 space-y-3">
+      <SkeletonBlock className="h-3 w-32" />
+      <SkeletonBlock className="h-24 w-full" />
     </div>
   );
 }

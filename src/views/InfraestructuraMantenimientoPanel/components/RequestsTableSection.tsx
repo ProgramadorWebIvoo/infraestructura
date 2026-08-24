@@ -21,6 +21,7 @@ import { formatCurrency } from "../../../utils";
 import { filterByStage } from "../pipeline";
 import PipelineOverview from "./PipelineOverview";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import { useContainerRows } from "../../../hooks/useContainerRows";
 
 interface RequestsTableSectionProps {
   projects: Project[];
@@ -40,6 +41,7 @@ function TypeBadge({ type }: { type: Project["type"] }) {
 export default function RequestsTableSection({ projects, stageKey, onStageKeyChange }: RequestsTableSectionProps) {
   const [query, setQuery] = useState("");
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
+  const { containerRef, rows: pageSize } = useContainerRows();
 
   const visibleProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -145,12 +147,12 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
         <PipelineOverview projects={projects} stageKey={stageKey} onStageKeyChange={onStageKeyChange} />
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div ref={containerRef} className="flex-1 min-h-0">
         <Table
           columns={columns}
           data={visibleProjects}
           rowKey={(p) => p.id}
-          pageSize={6}
+          pageSize={pageSize}
           fillViewport
           onRowClick={(p) => setInspectedRequest(p)}
           containerClassName="px-6 pb-6"

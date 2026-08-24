@@ -7,21 +7,26 @@
  * RejectionService::buildDetails) y permite editar y reenviar la misma
  * petición (mismo Project.id) para una nueva evaluación, sin crear una
  * petición nueva. Se autoculta si no hay ninguna rechazada.
+ *
+ * Usa el sistema de tabla compartido (Table/Column), igual que
+ * RequestsTableSection — antes era una lista de cards apiladas, inconsistente
+ * con el resto de la app, que sí usa tablas para listados de peticiones.
  */
 
-import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, Clock, Eye, Pencil, User, XCircle } from "lucide-react";
+import { Eye, Pencil, SearchX, XCircle } from "lucide-react";
 import type { AuditLog, Project } from "../../../types";
 import { ProjectStatus } from "../../../types";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import Modal from "../../../components/UI/Modal";
+import EmptyState from "../../../components/UI/EmptyState";
+import { Table, type Column } from "../../../components/UI/Table";
 import RequestWizardCard from "./RequestWizardCard";
 import RejectedPetitionDetailModal from "./RejectedPetitionDetailModal";
 import { useRequestForm } from "../../../hooks/useRequestForm";
+import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useToast } from "../../../components/UI/Toast";
 import { useState } from "react";
-import { bannerVariants, containerVariants, itemVariants } from "../../../animations";
 
 const REJECT_ACTION = "Rechazo de petición de obra";
 
@@ -95,6 +100,7 @@ export default function RejectedPetitionsSection({
 }: RejectedPetitionsSectionProps) {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
+  const { containerRef, rows: pageSize } = useContainerRows();
 
   const rejected = projects
     .filter((p) => p.status === ProjectStatus.RECHAZADO_CIERRE)
@@ -103,104 +109,107 @@ export default function RejectedPetitionsSection({
 
   if (rejected.length === 0) return null;
 
+  const columns: Column<(typeof rejected)[number]>[] = [
+    {
+      key: "id",
+      label: "ID",
+      width: "6.5rem",
+      sortable: true,
+      render: ({ project: p }) => <span className="font-mono font-bold text-[10px] text-danger-600 whitespace-nowrap">{p.id}</span>,
+    },
+    {
+      key: "title",
+      label: "Título / Ubicación",
+      width: "16rem",
+      sortable: true,
+      render: ({ project: p }) => (
+        <div className="min-w-0">
+          <div className="font-bold text-slate-800 truncate">{p.title}</div>
+          <div className="text-[10px] text-slate-400 font-medium truncate">{p.location}</div>
+        </div>
+      ),
+    },
+    {
+      key: "reason",
+      label: "Motivo del rechazo",
+      render: ({ log }) =>
+        log ? (
+          <p className="text-xs text-slate-600 leading-snug line-clamp-2">{log.details}</p>
+        ) : (
+          <span className="text-[11px] text-slate-400 italic">Motivo no disponible.</span>
+        ),
+    },
+    {
+      key: "timestamp",
+      label: "Fecha",
+      width: "9rem",
+      sortable: true,
+      render: ({ log }) => (
+        <span className="font-mono text-[10px] text-slate-500 whitespace-nowrap">{log?.timestamp ?? "—"}</span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "",
+      width: "9.5rem",
+      align: "right",
+      sortable: false,
+      render: ({ project: p }) => (
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            id={`btn-view-${p.id}`}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewingProject(p);
+            }}
+            aria-label={`Ver petición ${p.title}`}
+            title="Ver petición"
+            className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          <button
+            id={`btn-resubmit-${p.id}`}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingProject(p);
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-danger-700 bg-white border border-danger-200 hover:bg-danger-500 hover:text-white hover:border-danger-500 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Editar y reenviar
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <motion.div variants={bannerVariants} initial="hidden" animate="visible">
-      <Card accent="danger" hoverable={false} className="relative overflow-hidden">
-        {/* Resplandor sutil de fondo — refuerza "requiere atención" sin ser
-            un elemento animado explícito que distraiga del contenido. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-danger-200/30 blur-3xl"
-        />
+    <div className="h-full flex flex-col">
+      <Card hoverable={false} accent="danger" fillHeight className="p-0 overflow-hidden flex flex-col">
+        <div className="px-6 pt-6 shrink-0">
+          <SectionHeader
+            icon={<XCircle className="h-5 w-5" />}
+            title="Peticiones Rechazadas"
+            description="Corrija lo indicado por Cierre de Obra y reenvíe para una nueva evaluación."
+            color="rose"
+          />
+        </div>
 
-        <SectionHeader
-          icon={<XCircle className="h-5 w-5" />}
-          title="Peticiones Rechazadas"
-          description="Corrija lo indicado por Cierre de Obra y reenvíe para una nueva evaluación."
-          color="rose"
-          actions={
-            <motion.span
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black font-mono bg-danger-100 text-danger-700 border border-danger-200"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-danger-500" />
-              </span>
-              {rejected.length} {rejected.length === 1 ? "pendiente" : "pendientes"}
-            </motion.span>
-          }
-        />
-
-        <motion.div
-          className="mt-4 space-y-3 relative"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <AnimatePresence>
-            {rejected.map(({ project: p, log }) => (
-              <motion.div
-                key={p.id}
-                layout
-                variants={itemVariants}
-                exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.15 } }}
-                whileHover={{ y: -2 }}
-                className="group p-4 rounded-xl border border-danger-100 bg-gradient-to-br from-danger-50/60 to-white shadow-xs hover:shadow-md hover:border-danger-200 transition-shadow"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] font-bold text-danger-600">{p.id}</span>
-                      <span className="font-bold text-slate-800 text-sm truncate">{p.title}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1 font-medium">{p.location}</div>
-
-                    {log ? (
-                      <div className="mt-2.5 flex items-start gap-1.5 text-xs text-danger-700 bg-white/70 rounded-lg border border-danger-100 px-3 py-2">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                          <p className="font-medium leading-snug">{log.details}</p>
-                          <p className="mt-1 flex items-center gap-1 text-[10px] text-slate-400 font-mono">
-                            <User className="h-3 w-3" />
-                            {log.userName ?? "Cierre de Obra"}
-                            <span className="text-slate-300">·</span>
-                            <Clock className="h-3 w-3" />
-                            {log.timestamp}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-2.5 text-[11px] text-slate-400 italic">Motivo no disponible.</p>
-                    )}
-                  </div>
-
-                  <div className="shrink-0 flex items-center gap-2">
-                    <button
-                      id={`btn-view-${p.id}`}
-                      type="button"
-                      onClick={() => setViewingProject(p)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Ver petición
-                    </button>
-                    <button
-                      id={`btn-resubmit-${p.id}`}
-                      type="button"
-                      onClick={() => setEditingProject(p)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-danger-700 bg-white border border-danger-200 hover:bg-danger-500 hover:text-white hover:border-danger-500 transition-colors cursor-pointer"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Editar y reenviar
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <div ref={containerRef} className="flex-1 min-h-0">
+          <Table
+            columns={columns}
+            data={rejected}
+            rowKey={({ project: p }) => p.id}
+            pageSize={pageSize}
+            fillViewport
+            onRowClick={({ project: p }) => setViewingProject(p)}
+            containerClassName="px-6 pb-6"
+            emptyState={<EmptyState message="No hay peticiones rechazadas." icon={<SearchX className="h-8 w-8" />} />}
+          />
+        </div>
       </Card>
 
       {editingProject && (
@@ -220,6 +229,6 @@ export default function RejectedPetitionsSection({
           onClose={() => setViewingProject(null)}
         />
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -112,7 +112,6 @@ describe("RejectedPetitionsSection", () => {
     expect(screen.getByText("PRJ-010")).toBeInTheDocument();
     expect(screen.getByText("Remodelación depósito")).toBeInTheDocument();
     expect(screen.getByText("La descripción no detalla el alcance del trabajo.")).toBeInTheDocument();
-    expect(screen.getByText(/Ana Cierre/)).toBeInTheDocument();
   });
 
   it("no muestra proyectos que no están rechazados", () => {
@@ -141,7 +140,7 @@ describe("RejectedPetitionsSection", () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByText("Editar y reenviar"));
+    fireEvent.click(screen.getByRole("button", { name: /Editar y reenviar/ }));
 
     expect(screen.getByLabelText("Título de la Obra")).toHaveValue("Remodelación depósito");
     expect(screen.getByLabelText("Ubicación / Tienda / CD")).toHaveValue("CD Central");
@@ -162,7 +161,7 @@ describe("RejectedPetitionsSection", () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByText("Editar y reenviar"));
+    fireEvent.click(screen.getByRole("button", { name: /Editar y reenviar/ }));
     // Datos y materiales ya vienen precargados del proyecto rechazado — solo
     // hace falta avanzar los 2 pasos restantes hasta Adjuntos.
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/ }));
@@ -200,7 +199,7 @@ describe("RejectedPetitionsSection", () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByText("Ver petición"));
+    fireEvent.click(screen.getByRole("button", { name: /Ver petición/ }));
 
     expect(screen.getByText("Detalle de Petición Rechazada")).toBeInTheDocument();
     expect(screen.getAllByText("La descripción no detalla el alcance del trabajo.").length).toBeGreaterThan(0);
