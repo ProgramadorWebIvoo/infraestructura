@@ -18,6 +18,10 @@ import Button from "../../../components/UI/Button";
 import FileDropZone from "../../../components/UI/FileDropZone";
 import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
+import StatusBadge from "../../../components/UI/StatusBadge";
+import { Table, type Column } from "../../../components/UI/Table";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import { useContainerRows } from "../../../hooks/useContainerRows";
 import { apiDownload } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { ProjectStatus } from "../../../types";
@@ -34,8 +38,11 @@ interface RevisedDocumentsSectionProps {
   ) => void;
 }
 
+const success = SEMANTIC_COLOR_MAP.success;
+
 export default function RevisedDocumentsSection({ projects, authToken, onUploadDocumentVersion }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
+  const { containerRef } = useContainerRows({ paginated: false });
   const [selectedId, setSelectedId] = useState("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [versionTarget, setVersionTarget] = useState<ProjectDocument | null>(null);
@@ -43,6 +50,44 @@ export default function RevisedDocumentsSection({ projects, authToken, onUploadD
 
   const revisedProjects = projects.filter((p) => p.status !== ProjectStatus.CREADO);
   const selectedProject = revisedProjects.find((p) => p.id === selectedId);
+
+  const columns: Column<Project>[] = [
+    {
+      key: "id",
+      label: "ID",
+      width: "6.5rem",
+      sortable: true,
+      render: (p) => <span className={`font-mono font-bold text-[10px] ${success.text600} whitespace-nowrap`}>{p.id}</span>,
+    },
+    {
+      key: "title",
+      label: "Título / Ubicación",
+      sortable: true,
+      render: (p) => (
+        <div className="min-w-0">
+          <div className="font-bold text-slate-800 truncate">{p.title}</div>
+          <div className="text-[10px] text-slate-400 font-medium truncate flex items-center gap-1">
+            <MapPin className="h-3 w-3 shrink-0" />
+            {p.location}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      label: "Estado",
+      width: "9rem",
+      sortable: true,
+      render: (p) => <StatusBadge code={p.status} />,
+    },
+    {
+      key: "documents",
+      label: "Adjuntos",
+      width: "6rem",
+      align: "right",
+      render: (p) => <span className="font-mono text-[11px] font-bold text-slate-600">{p.documents?.length ?? 0}</span>,
+    },
+  ];
 
   const handleDownload = async (doc: ProjectDocument) => {
     if (!selectedProject) return;
@@ -71,7 +116,7 @@ export default function RevisedDocumentsSection({ projects, authToken, onUploadD
   };
 
   return (
-    <Card className="border-l-4 border-l-emerald-400">
+    <Card accent="success" className="min-h-0 flex-1" fillHeight>
       <SectionHeader
         icon={<FileStack className="h-5 w-5" />}
         title="Documentos Ya Revisados"
@@ -82,44 +127,39 @@ export default function RevisedDocumentsSection({ projects, authToken, onUploadD
       {revisedProjects.length === 0 ? (
         <EmptyState message="No hay proyectos con documentación ya revisada." />
       ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2 -mr-2">
-            {revisedProjects.map((p) => {
-              const isSelected = selectedId === p.id;
-              return (
-                <button
-                  id={`revised-doc-select-${p.id}`}
-                  key={p.id}
-                  type="button"
-                  onClick={() => setSelectedId(isSelected ? "" : p.id)}
-                  className={`p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
-                    isSelected
-                      ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-white text-emerald-950 ring-2 ring-emerald-100 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-emerald-400 hover:bg-slate-50/50 hover:shadow-sm"
-                  }`}
-                >
-                  <span className="font-mono text-[9px] font-bold text-emerald-600">{p.id}</span>
-                  <div className="text-xs font-bold text-slate-800 line-clamp-1 mt-1">{p.title}</div>
-                  <div className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {p.location}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedProject && (
-            <ProjectDocumentsList
-              project={selectedProject}
-              authToken={authToken}
-              onDownload={handleDownload}
-              onPreview={setPreviewDoc}
-              onUploadNewVersion={setVersionTarget}
-            />
-          )}
+        <div ref={containerRef} className="flex-1 min-h-0">
+          <Table
+            columns={columns}
+            data={revisedProjects}
+            rowKey={(p) => p.id}
+            fillViewport
+            onRowClick={(p) => setSelectedId(p.id)}
+            selectedRowKey={selectedId}
+          />
         </div>
       )}
+
+      {/* ── Modal de documentos del expediente seleccionado ── */}
+      <Modal
+        isOpen={!!selectedProject}
+        onClose={() => setSelectedId("")}
+        maxWidth="max-w-3xl"
+        icon={<FileStack className="h-5 w-5" />}
+        iconColor="emerald"
+        badge="Documentos Ya Revisados"
+        title={selectedProject ? `Expediente ${selectedProject.id}` : ""}
+        infoLine={selectedProject ? `${selectedProject.title} · ${selectedProject.location}` : ""}
+      >
+        {selectedProject && (
+          <ProjectDocumentsList
+            project={selectedProject}
+            authToken={authToken}
+            onDownload={handleDownload}
+            onPreview={setPreviewDoc}
+            onUploadNewVersion={setVersionTarget}
+          />
+        )}
+      </Modal>
 
       {selectedProject && (
         <DocumentPreviewModal

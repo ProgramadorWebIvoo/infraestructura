@@ -14,16 +14,30 @@ import { ToastProvider } from "@/components/UI/Toast";
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
 
-vi.mock("motion/react", () => ({
-  useReducedMotion: () => false,
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, exit, variants, transition, ...rest } = props;
-      return <div {...rest}>{children}</div>;
+vi.mock("motion/react", () => {
+  const stripMotionProps = (props: Record<string, unknown>) => {
+    const { initial, animate, exit, variants, transition, layout, ...rest } = props;
+    return rest;
+  };
+  return {
+    useReducedMotion: () => false,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    motion: {
+      div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+        <div {...stripMotionProps(props)}>{children}</div>
+      ),
+      tbody: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+        <tbody {...stripMotionProps(props)}>{children}</tbody>
+      ),
+      tr: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+        <tr {...stripMotionProps(props)}>{children}</tr>
+      ),
+      span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+        <span {...stripMotionProps(props)}>{children}</span>
+      ),
     },
-  },
-}));
+  };
+});
 
 vi.mock("react-dom", () => ({ createPortal: (content: React.ReactNode) => content }));
 
@@ -75,7 +89,7 @@ describe("TechnicalReviewSection — rechazo de petición", () => {
     fireEvent.click(screen.getByText(pendingProject.title));
     fireEvent.click(screen.getByRole("button", { name: /Rechazar/ }));
 
-    expect(screen.getByText("Motivo del rechazo *")).toBeInTheDocument();
+    expect(screen.getByText("Motivo del rechazo")).toBeInTheDocument();
   });
 
   it("no permite confirmar el rechazo sin motivo", () => {
@@ -93,7 +107,7 @@ describe("TechnicalReviewSection — rechazo de petición", () => {
     fireEvent.click(screen.getByText(pendingProject.title));
     fireEvent.click(screen.getByRole("button", { name: /Rechazar/ }));
 
-    fireEvent.change(screen.getByLabelText("Motivo del rechazo *"), {
+    fireEvent.change(screen.getByLabelText("Motivo del rechazo"), {
       target: { value: "Descripción insuficiente." },
     });
     fireEvent.click(screen.getByRole("button", { name: /Confirmar rechazo/ }));
@@ -107,7 +121,7 @@ describe("TechnicalReviewSection — rechazo de petición", () => {
     fireEvent.click(screen.getByText(pendingProject.title));
     fireEvent.click(screen.getByRole("button", { name: /Rechazar/ }));
 
-    fireEvent.change(screen.getByLabelText("Motivo del rechazo *"), {
+    fireEvent.change(screen.getByLabelText("Motivo del rechazo"), {
       target: { value: "Descripción insuficiente." },
     });
     fireEvent.change(screen.getByLabelText("Observaciones (opcional)"), {

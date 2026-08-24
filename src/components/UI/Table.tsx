@@ -2,7 +2,7 @@
 // Encapsulates: header styling, loading skeleton, empty state, row hover/alternating,
 // footer, scroll containers, sorting, pagination
 
-import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { SkeletonBlock } from "../SkeletonLoader";
@@ -101,12 +101,12 @@ export function Table<T>({
   containerClassName = "",
   className = "",
   stickyHeader = false,
-  rowHoverClass = "hover:bg-slate-50/50",
+  rowHoverClass = "hover:bg-sky-50/70",
   alternating = true,
   onRowClick,
   onRowDoubleClick,
   selectedRowKey,
-  selectedRowClass = "bg-sky-50 ring-1 ring-sky-200",
+  selectedRowClass = "bg-sky-50 ring-1 ring-inset ring-sky-300",
 }: TableProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -312,6 +312,11 @@ export function Table<T>({
                   </span>
                 </th>
               ))}
+              {onRowClick && (
+                <th className="py-3 px-3 w-9" aria-hidden="true">
+                  <span className="sr-only">Ver detalle</span>
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -334,6 +339,7 @@ export function Table<T>({
                         />
                       </td>
                     ))}
+                    {onRowClick && <td className="py-3.5 px-3 w-9" />}
                   </tr>
                 ))}
               </motion.tbody>
@@ -347,7 +353,7 @@ export function Table<T>({
                 className="divide-y divide-slate-100"
               >
                 <tr>
-                  <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-medium italic">
+                  <td colSpan={columns.length + (onRowClick ? 1 : 0)} className="py-12 text-center text-slate-400 font-medium italic">
                     {emptyState ?? emptyMessage}
                   </td>
                 </tr>
@@ -383,9 +389,20 @@ export function Table<T>({
                         variants={itemVariants}
                         exit={{ opacity: 0, transition: { duration: 0.12 } }}
                         transition={{ layout: { type: "spring", stiffness: 380, damping: 32 } }}
-                        className={`${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${rowHoverClass} ${onRowClick ? "cursor-pointer" : ""} ${isSelected ? selectedRowClass : ""}`}
+                        className={`group ${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${onRowClick ? `cursor-pointer ${rowHoverClass}` : ""} ${isSelected ? selectedRowClass : ""} transition-colors duration-100`}
                         onClick={() => onRowClick?.(row, index)}
                         onDoubleClick={() => onRowDoubleClick?.(row, index)}
+                        tabIndex={onRowClick ? 0 : undefined}
+                        onKeyDown={
+                          onRowClick
+                            ? (e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  onRowClick(row, index);
+                                }
+                              }
+                            : undefined
+                        }
                       >
                         {columns.map((col) => (
                           <td
@@ -400,6 +417,19 @@ export function Table<T>({
                             )}
                           </td>
                         ))}
+                        {onRowClick && (
+                          <td className="py-3.5 px-3 w-9 text-center">
+                            <motion.span
+                              className="inline-flex"
+                              initial={false}
+                              animate={isSelected ? { opacity: 1, x: 0 } : { opacity: 0, x: -3 }}
+                              whileHover={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.12 }}
+                            >
+                              <Eye className={`h-3.5 w-3.5 ${isSelected ? "text-sky-600" : "text-sky-500"}`} aria-hidden="true" />
+                            </motion.span>
+                          </td>
+                        )}
                       </motion.tr>
                     );
                   })}

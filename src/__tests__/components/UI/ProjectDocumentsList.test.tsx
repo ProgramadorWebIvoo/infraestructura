@@ -84,10 +84,10 @@ describe("ProjectDocumentsList", () => {
       <ProjectDocumentsList project={makeProject([doc])} authToken="t" onDownload={onDownload} onPreview={onPreview} />,
     );
 
-    fireEvent.click(screen.getByTitle("Ver"));
+    fireEvent.click(screen.getByLabelText("Ver"));
     expect(onPreview).toHaveBeenCalledWith(doc);
 
-    fireEvent.click(screen.getByTitle("Descargar"));
+    fireEvent.click(screen.getByLabelText("Descargar"));
     expect(onDownload).toHaveBeenCalledWith(doc);
   });
 

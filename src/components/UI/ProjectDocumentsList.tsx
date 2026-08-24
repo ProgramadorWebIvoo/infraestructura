@@ -11,6 +11,7 @@
 
 import { AlertTriangle, Download, Eye, FileSpreadsheet, Image as ImageIcon, Map, Undo2, X } from "lucide-react";
 import type { Project, ProjectDocument } from "../../types";
+import Tooltip from "./Tooltip";
 
 interface ProjectDocumentsListProps {
   project: Project;
@@ -73,19 +74,23 @@ function DocumentRow({
         <div className="flex items-center gap-0.5 shrink-0">
           {isMarkedForDeletion ? (
             onDelete && (
-              <button type="button" onClick={() => onDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-600 hover:text-sky-800 hover:bg-sky-50 transition-colors cursor-pointer whitespace-nowrap" title="Deshacer">
+              <button type="button" onClick={() => onDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-600 hover:text-sky-800 hover:bg-sky-50 transition-colors cursor-pointer whitespace-nowrap">
                 <Undo2 className="h-4 w-4" />
                 Deshacer
               </button>
             )
           ) : (
             <>
-              <button type="button" onClick={() => onPreview(doc)} className="p-2 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors cursor-pointer" title="Ver">
-                <Eye className="h-4 w-4" />
-              </button>
-              <button type="button" onClick={() => onDownload(doc)} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" title="Descargar">
-                <Download className="h-4 w-4" />
-              </button>
+              <Tooltip content="Ver">
+                <button type="button" onClick={() => onPreview(doc)} aria-label="Ver" className="p-2 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors cursor-pointer">
+                  <Eye className="h-4 w-4" />
+                </button>
+              </Tooltip>
+              <Tooltip content="Descargar">
+                <button type="button" onClick={() => onDownload(doc)} aria-label="Descargar" className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
+                  <Download className="h-4 w-4" />
+                </button>
+              </Tooltip>
               {onUploadNewVersion && (
                 <button
                   type="button"
@@ -96,9 +101,11 @@ function DocumentRow({
                 </button>
               )}
               {onDelete && (
-                <button type="button" onClick={() => onDelete(doc)} className="p-2 rounded-lg text-slate-400 hover:text-danger-600 hover:bg-danger-50 transition-colors cursor-pointer" title="Eliminar">
-                  <X className="h-4 w-4" />
-                </button>
+                <Tooltip content="Eliminar">
+                  <button type="button" onClick={() => onDelete(doc)} aria-label="Eliminar" className="p-2 rounded-lg text-slate-400 hover:text-danger-600 hover:bg-danger-50 transition-colors cursor-pointer">
+                    <X className="h-4 w-4" />
+                  </button>
+                </Tooltip>
               )}
             </>
           )}

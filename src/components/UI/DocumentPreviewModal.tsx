@@ -9,9 +9,10 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Download, Eye, Loader2, Minus, Plus, ZoomIn } from "lucide-react";
+import { Download, Eye, Minus, Plus, ZoomIn } from "lucide-react";
 import Modal from "./Modal";
 import Button from "./Button";
+import Spinner from "./Spinner";
 import { apiDownload } from "../../services/api";
 import { useToast } from "./Toast";
 import type { ProjectDocument } from "../../types";
@@ -109,7 +110,7 @@ function CsvViewer({ blobUrl }: { blobUrl: string }) {
   if (!rows) {
     return (
       <div className="flex items-center justify-center gap-2 py-12 text-slate-400">
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Spinner size="lg" />
         <span className="text-xs font-semibold">Leyendo CSV...</span>
       </div>
     );
@@ -306,7 +307,7 @@ export default function DocumentPreviewModal({
     >
       {isLoading && (
         <div className="flex items-center justify-center gap-2 py-12 text-slate-400">
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Spinner size="lg" />
           <span className="text-xs font-semibold">Cargando vista previa...</span>
         </div>
       )}
