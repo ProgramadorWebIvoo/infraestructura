@@ -7,6 +7,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, Banknote, CalendarDays, HardHat, HelpCircle, MapPin } from "lucide-react";
 import { ProjectStatus } from "../../../types";
 import type { Project } from "../../../types";
@@ -17,31 +18,48 @@ import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
 import ConfirmDialog from "../../../components/UI/ConfirmDialog";
 import StatusBadge from "../../../components/UI/StatusBadge";
+import TableToolbar from "../../../components/UI/TableToolbar";
 import { Table, type Column } from "../../../components/UI/Table";
+import GridView from "../../../components/UI/GridView/GridView";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { formatCurrency } from "../../../utils";
+import { viewSwitchVariants } from "../../../animations";
 import { useContainerRows } from "../../../hooks/useContainerRows";
+import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
+import { renderAuditCard } from "./AuditGridCard";
 
 interface CompletionAuditSectionProps {
   projects: Project[];
   onVerifyCompletion: (projectId: string) => void;
+  /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el consumidor. */
+  defaultViewMode?: TableViewMode;
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
 const warning = SEMANTIC_COLOR_MAP.warning;
 
-export default function CompletionAuditSection({ projects, onVerifyCompletion }: CompletionAuditSectionProps) {
-  const { containerRef } = useContainerRows({ paginated: false });
+export default function CompletionAuditSection({ projects, onVerifyCompletion, defaultViewMode = "grid" }: CompletionAuditSectionProps) {
+  const { containerRef, rows: pageSize } = useContainerRows();
   const [detailProjectId, setDetailProjectId] = useState("");
   const [confirmVerifyProject, setConfirmVerifyProject] = useState<Project | null>(null);
+  const [query, setQuery] = useState("");
+  const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
 
-  const pendingCompletionVerify = useMemo(
+  const allPendingCompletionVerify = useMemo(
     () => projects.filter(
       p => p.status === ProjectStatus.EN_EJECUCION || p.status === ProjectStatus.VERIFICANDO_FINALIZACION
     ),
     [projects],
   );
+
+  const pendingCompletionVerify = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allPendingCompletionVerify;
+    return allPendingCompletionVerify.filter(
+      (p) => p.title.toLowerCase().includes(q) || p.id.toLowerCase().includes(q) || p.location.toLowerCase().includes(q),
+    );
+  }, [allPendingCompletionVerify, query]);
 
   const detailProject = pendingCompletionVerify.find((p) => p.id === detailProjectId) ?? null;
   const detailIsUnderAudit = detailProject?.status === ProjectStatus.VERIFICANDO_FINALIZACION;
@@ -102,34 +120,63 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion }:
 
   return (
     <>
-      <Card accent="success" className="min-h-0 flex-1" fillHeight>
-        <SectionHeader
-          icon={<BadgeCheck className="h-5 w-5" />}
-          title="Auditoría de Fin de Obra"
-          description="Certifique la calidad de la entrega técnica y libere el finiquito de obra."
-          color="emerald"
-          actions={
-            pendingCompletionVerify.length > 0 ? (
-              <span className={`text-[10px] font-mono font-bold ${success.text600} ${success.bg50} border ${success.border100} px-2 py-0.5 rounded-lg`}>
-                {pendingCompletionVerify.length} en seguimiento
-              </span>
-            ) : undefined
-          }
+      <Card accent="success" className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col" fillHeight>
+        <div className="px-6 pt-6 shrink-0">
+          <SectionHeader
+            icon={<BadgeCheck className="h-5 w-5" />}
+            title="Auditoría de Fin de Obra"
+            description="Certifique la calidad de la entrega técnica y libere el finiquito de obra."
+            color="emerald"
+          />
+        </div>
+
+        <TableToolbar
+          searchId="completion-audit-search"
+          searchValue={query}
+          onSearchChange={setQuery}
+          searchPlaceholder="Buscar por título, ID o ubicación..."
+          searchAriaLabel="Buscar obras en seguimiento"
+          countIcon={<BadgeCheck />}
+          filteredCount={pendingCompletionVerify.length}
+          totalCount={allPendingCompletionVerify.length}
+          noun="obra en seguimiento"
+          nounPlural="obras en seguimiento"
+          viewToggle={{ ...viewToggle, accent: "success" }}
         />
 
-        {pendingCompletionVerify.length === 0 ? (
-          <EmptyState message="No hay obras en ejecución o pendientes de entrega técnica en este momento." />
-        ) : (
-          <div ref={containerRef} className="flex-1 min-h-0">
-            <Table
-              columns={columns}
-              data={pendingCompletionVerify}
-              rowKey={(p) => p.id}
-              fillViewport
-              onRowClick={(p) => setDetailProjectId(p.id)}
-              selectedRowKey={detailProjectId}
-            />
+        {allPendingCompletionVerify.length === 0 ? (
+          <div className="px-6 pb-6">
+            <EmptyState message="No hay obras en ejecución o pendientes de entrega técnica en este momento." />
           </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            {viewMode === "table" ? (
+              <motion.div key="table" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+                <Table
+                  columns={columns}
+                  data={pendingCompletionVerify}
+                  rowKey={(p) => p.id}
+                  pageSize={pageSize}
+                  fillViewport
+                  stickyHeader
+                  onRowClick={(p) => setDetailProjectId(p.id)}
+                  selectedRowKey={detailProjectId}
+                  emptyState={<EmptyState message="No hay obras que coincidan con la búsqueda." />}
+                />
+              </motion.div>
+            ) : (
+              <motion.div key="grid" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0 px-6 pb-6 pt-4">
+                <GridView
+                  items={pendingCompletionVerify}
+                  rowKey={(p) => p.id}
+                  renderCard={renderAuditCard}
+                  onSelect={(p) => setDetailProjectId(p.id)}
+                  selectedKey={detailProjectId}
+                  emptyState={<EmptyState message="No hay obras que coincidan con la búsqueda." />}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
       </Card>
 

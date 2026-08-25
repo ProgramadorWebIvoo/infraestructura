@@ -39,14 +39,14 @@ function GridCardImpl({ children, accent = "neutral", isSelected, onClick }: Gri
     <motion.div
       variants={itemVariants}
       layout
-      whileHover={{ scale: 1.01, y: -2 }}
+      whileHover={{ scale: 1.015 }}
       whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-      className={`rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden ${
+      className={`rounded-xl border bg-white shadow-sm hover:shadow-lg transition-shadow cursor-pointer overflow-hidden ${
         isSelected ? `${c.border100} ring-2 ring-offset-1 ${RING_CLASSES[accent]}` : c.border100
       }`}
     >

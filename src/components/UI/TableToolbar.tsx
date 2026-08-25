@@ -9,7 +9,9 @@
 
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
+import { Table as TableIcon, LayoutGrid } from "lucide-react";
 import { SearchInput, SelectFilter, type SelectOption } from "./FilterBar";
+import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 import { springs } from "../../animations";
 
 interface TableToolbarProps {
@@ -33,6 +35,18 @@ interface TableToolbarProps {
   /** Sustantivo en singular/plural (ej. "usuario"/"usuarios"). */
   noun: string;
   nounPlural: string;
+  /**
+   * Toggle Tabla/Grid opcional — omitido, el toolbar se ve exactamente igual
+   * que antes (UsuariosPanel/MaterialConfigPanel/ProveedoresConfigPanel no
+   * lo pasan). Cuando se pasa, renderiza los 2 botones de alternar vista,
+   * mismo componente que antes cada vista con GridView reimplementaba a
+   * mano — ver useTableViewMode (src/hooks/) para el estado ya resuelto.
+   */
+  viewToggle?: {
+    value: "table" | "grid";
+    onChange: (mode: "table" | "grid") => void;
+    accent?: SemanticColor;
+  };
 }
 
 export default function TableToolbar({
@@ -47,7 +61,10 @@ export default function TableToolbar({
   totalCount,
   noun,
   nounPlural,
+  viewToggle,
 }: TableToolbarProps) {
+  const toggleAccent = SEMANTIC_COLOR_MAP[viewToggle?.accent ?? "brand"];
+
   return (
     <div className="flex shrink-0 flex-col gap-4 border-b border-border-subtle bg-surface-sunken/60 p-5 md:flex-row md:items-center md:justify-between">
       <SearchInput
@@ -81,6 +98,32 @@ export default function TableToolbar({
           </motion.span>
           {filteredCount === 1 ? noun : nounPlural}
         </div>
+        {viewToggle && (
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/60 shrink-0">
+            <button
+              type="button"
+              onClick={() => viewToggle.onChange("table")}
+              aria-label="Vista de tabla"
+              aria-pressed={viewToggle.value === "table"}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewToggle.value === "table" ? `bg-white ${toggleAccent.text700} shadow-sm` : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <TableIcon className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => viewToggle.onChange("grid")}
+              aria-label="Vista de grid"
+              aria-pressed={viewToggle.value === "grid"}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewToggle.value === "grid" ? `bg-white ${toggleAccent.text700} shadow-sm` : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,8 @@
  * con el resto de la app, que sí usa tablas para listados de peticiones.
  */
 
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Eye, Pencil, SearchX, XCircle } from "lucide-react";
 import type { AuditLog, Project, ProjectDocument } from "../../../types";
 import { ProjectStatus } from "../../../types";
@@ -22,12 +24,16 @@ import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import Modal from "../../../components/UI/Modal";
 import EmptyState from "../../../components/UI/EmptyState";
+import TableToolbar from "../../../components/UI/TableToolbar";
 import { Table, type Column } from "../../../components/UI/Table";
+import GridView from "../../../components/UI/GridView/GridView";
 import RequestWizardCard from "./RequestWizardCard";
 import RejectedPetitionDetailModal from "./RejectedPetitionDetailModal";
+import { renderRejectedPetitionCard } from "./RejectedPetitionGridCard";
 import { useRequestForm } from "../../../hooks/useRequestForm";
 import { useContainerRows } from "../../../hooks/useContainerRows";
-import { useState } from "react";
+import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
+import { viewSwitchVariants } from "../../../animations";
 
 const REJECT_ACTION = "Rechazo de petición de obra";
 
@@ -43,6 +49,8 @@ interface RejectedPetitionsSectionProps {
     existingDocuments: ProjectDocument[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onDeleteDocument: (projectId: string, documentId: number) => Promise<void>;
+  /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el consumidor. */
+  defaultViewMode?: TableViewMode;
 }
 
 function latestRejectionLog(auditLogs: AuditLog[], projectId: string): AuditLog | undefined {
@@ -107,15 +115,31 @@ export default function RejectedPetitionsSection({
   materialsCatalog,
   onResubmitProject,
   onDeleteDocument,
+  defaultViewMode = "grid",
 }: RejectedPetitionsSectionProps) {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
+  const [query, setQuery] = useState("");
+  const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
   const { containerRef, rows: pageSize } = useContainerRows();
 
-  const rejected = projects
-    .filter((p) => p.status === ProjectStatus.RECHAZADO_CIERRE)
-    .map((p) => ({ project: p, log: latestRejectionLog(auditLogs, p.id) }))
-    .sort((a, b) => (b.log?.timestamp ?? "").localeCompare(a.log?.timestamp ?? ""));
+  const allRejected = useMemo(
+    () =>
+      projects
+        .filter((p) => p.status === ProjectStatus.RECHAZADO_CIERRE)
+        .map((p) => ({ project: p, log: latestRejectionLog(auditLogs, p.id) }))
+        .sort((a, b) => (b.log?.timestamp ?? "").localeCompare(a.log?.timestamp ?? "")),
+    [projects, auditLogs],
+  );
+
+  const rejected = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allRejected;
+    return allRejected.filter(
+      ({ project: p }) =>
+        p.title.toLowerCase().includes(q) || p.id.toLowerCase().includes(q) || p.location.toLowerCase().includes(q),
+    );
+  }, [allRejected, query]);
 
   const columns: Column<(typeof rejected)[number]>[] = [
     {
@@ -206,18 +230,57 @@ export default function RejectedPetitionsSection({
           />
         </div>
 
-        <div ref={containerRef} className="flex-1 min-h-0">
-          <Table
-            columns={columns}
-            data={rejected}
-            rowKey={({ project: p }) => p.id}
-            pageSize={pageSize}
-            fillViewport
-            onRowClick={({ project: p }) => setViewingProject(p)}
-            containerClassName="px-6 pb-6"
-            emptyState={<EmptyState message="No hay peticiones rechazadas." icon={<SearchX className="h-8 w-8" />} />}
-          />
-        </div>
+        <TableToolbar
+          searchId="rejected-petitions-search"
+          searchValue={query}
+          onSearchChange={setQuery}
+          searchPlaceholder="Buscar por título, ID o ubicación..."
+          searchAriaLabel="Buscar peticiones rechazadas"
+          countIcon={<XCircle />}
+          filteredCount={rejected.length}
+          totalCount={allRejected.length}
+          noun="petición"
+          nounPlural="peticiones"
+          viewToggle={{ ...viewToggle, accent: "danger" }}
+        />
+
+        <AnimatePresence mode="wait">
+          {viewMode === "table" ? (
+            <motion.div key="table" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+              <Table
+                columns={columns}
+                data={rejected}
+                rowKey={({ project: p }) => p.id}
+                pageSize={pageSize}
+                fillViewport
+                stickyHeader
+                onRowClick={({ project: p }) => setViewingProject(p)}
+                emptyState={
+                  <EmptyState
+                    message={allRejected.length === 0 ? "No hay peticiones rechazadas." : "No hay peticiones que coincidan con la búsqueda."}
+                    icon={<SearchX className="h-8 w-8" />}
+                  />
+                }
+              />
+            </motion.div>
+          ) : (
+            <motion.div key="grid" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0 px-6 pb-6 pt-4">
+              <GridView
+                items={rejected}
+                rowKey={({ project: p }) => p.id}
+                renderCard={(row) => renderRejectedPetitionCard(row, setViewingProject, setEditingProject)}
+                cardAccent={() => "danger"}
+                onSelect={({ project: p }) => setViewingProject(p)}
+                emptyState={
+                  <EmptyState
+                    message={allRejected.length === 0 ? "No hay peticiones rechazadas." : "No hay peticiones que coincidan con la búsqueda."}
+                    icon={<SearchX className="h-8 w-8" />}
+                  />
+                }
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
 
       {editingProject && (

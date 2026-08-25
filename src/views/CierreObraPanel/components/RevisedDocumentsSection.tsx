@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, FileStack, LayoutGrid, MapPin, Table as TableIcon } from "lucide-react";
+import { AlertTriangle, FileStack, MapPin } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import EmptyState from "../../../components/UI/EmptyState";
@@ -24,10 +24,11 @@ import Tabs from "../../../components/UI/Tabs";
 import TabPanel from "../../../components/UI/TabPanel";
 import { Table, type Column } from "../../../components/UI/Table";
 import GridView from "../../../components/UI/GridView/GridView";
-import { SelectFilter } from "../../../components/UI/FilterBar";
+import TableToolbar from "../../../components/UI/TableToolbar";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { itemVariants } from "../../../animations";
+import { viewSwitchVariants } from "../../../animations";
 import { useContainerRows } from "../../../hooks/useContainerRows";
+import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
 import { downloadProjectDocument } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { ProjectStatus } from "../../../types";
@@ -38,7 +39,6 @@ import { renderExpedienteCard } from "./ExpedienteGridCard";
 import { rejectionCountOf } from "./rejectionAudit";
 
 type ModalTabKey = "detalle" | "historial" | "archivos";
-type ViewMode = "table" | "grid";
 
 interface RevisedDocumentsSectionProps {
   projects: Project[];
@@ -46,7 +46,7 @@ interface RevisedDocumentsSectionProps {
   authToken: string;
   /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el
    * consumidor, no recordada automáticamente entre sesiones. */
-  defaultViewMode?: ViewMode;
+  defaultViewMode?: TableViewMode;
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
@@ -59,14 +59,15 @@ const STATUS_FILTER_OPTIONS = [
 
 export default function RevisedDocumentsSection({ projects, auditLogs, authToken, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
-  const { containerRef } = useContainerRows({ paginated: false });
+  const { containerRef, rows: pageSize } = useContainerRows();
   const [selectedId, setSelectedId] = useState("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
+  const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [modalTab, setModalTab] = useState<ModalTabKey>("historial");
-  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
+  const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
 
   // La tab activa por defecto es HISTORIAL — se reinicia a esa vista cada
   // vez que se abre un expediente distinto, en vez de arrastrar la tab que
@@ -75,15 +76,19 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
     if (selectedId) setModalTab("historial");
   }, [selectedId]);
 
-  const revisedProjects = useMemo(() => projects.filter((p) => {
-    if (p.status === ProjectStatus.CREADO) return false;
-    if (statusFilter === "REJECTED" && p.status !== ProjectStatus.RECHAZADO_CIERRE) return false;
-    if (statusFilter === "APPROVED" && p.status === ProjectStatus.RECHAZADO_CIERRE) return false;
-    const projectDate = p.createdDate?.slice(0, 10);
-    if (dateFrom && (!projectDate || projectDate < dateFrom)) return false;
-    if (dateTo && (!projectDate || projectDate > dateTo)) return false;
-    return true;
-  }), [projects, statusFilter, dateFrom, dateTo]);
+  const revisedProjects = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return projects.filter((p) => {
+      if (p.status === ProjectStatus.CREADO) return false;
+      if (statusFilter === "REJECTED" && p.status !== ProjectStatus.RECHAZADO_CIERRE) return false;
+      if (statusFilter === "APPROVED" && p.status === ProjectStatus.RECHAZADO_CIERRE) return false;
+      const projectDate = p.createdDate?.slice(0, 10);
+      if (dateFrom && (!projectDate || projectDate < dateFrom)) return false;
+      if (dateTo && (!projectDate || projectDate > dateTo)) return false;
+      if (q && !p.title.toLowerCase().includes(q) && !p.id.toLowerCase().includes(q) && !p.location.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [projects, statusFilter, dateFrom, dateTo, query]);
   const selectedProject = revisedProjects.find((p) => p.id === selectedId);
 
   const columns: Column<Project>[] = [
@@ -153,22 +158,40 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
   };
 
   return (
-    <Card accent="success" className="min-h-0 flex-1" fillHeight>
-      <SectionHeader
-        icon={<FileStack className="h-5 w-5" />}
-        title="Historial de Expedientes"
-        description="Consulta el historial completo de expedientes procesados, incluidas correcciones y rechazos."
-        color="emerald"
+    <Card accent="success" className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col" fillHeight>
+      <div className="px-6 pt-6 shrink-0">
+        <SectionHeader
+          icon={<FileStack className="h-5 w-5" />}
+          title="Historial de Expedientes"
+          description="Consulta el historial completo de expedientes procesados, incluidas correcciones y rechazos."
+          color="emerald"
+        />
+      </div>
+
+      <TableToolbar
+        searchId="revised-docs-search"
+        searchValue={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="Buscar por ID, título o ubicación..."
+        searchAriaLabel="Buscar expedientes"
+        filter={{
+          id: "revised-docs-filter-status",
+          value: statusFilter,
+          onChange: setStatusFilter,
+          ariaLabel: "Filtrar por estado",
+          options: STATUS_FILTER_OPTIONS,
+        }}
+        countIcon={<FileStack />}
+        filteredCount={revisedProjects.length}
+        totalCount={projects.filter((p) => p.status !== ProjectStatus.CREADO).length}
+        noun="expediente"
+        nounPlural="expedientes"
+        viewToggle={{ ...viewToggle, accent: "success" }}
       />
 
-      <div className="shrink-0 flex flex-wrap items-center gap-2.5 mb-3">
-        <SelectFilter
-          id="revised-docs-filter-status"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          ariaLabel="Filtrar por estado"
-          options={STATUS_FILTER_OPTIONS}
-        />
+      {/* Rango de fechas: no encaja en las props fijas de TableToolbar (un
+          único `filter` select) — se queda como control adicional aparte. */}
+      <div className="shrink-0 flex flex-wrap items-center gap-2.5 px-5 py-3 border-b border-slate-100 bg-slate-50/30">
         <input
           id="revised-docs-date-from"
           type="date"
@@ -187,47 +210,29 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
           className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
           title="Fecha hasta"
         />
-
-        <div className="ml-auto flex items-center gap-1 p-1 rounded-xl bg-slate-100/60">
-          <button
-            type="button"
-            onClick={() => setViewMode("table")}
-            aria-label="Vista de tabla"
-            aria-pressed={viewMode === "table"}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === "table" ? "bg-white text-success-700 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
-          >
-            <TableIcon className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            aria-label="Vista de grid"
-            aria-pressed={viewMode === "grid"}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === "grid" ? "bg-white text-success-700 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
       {revisedProjects.length === 0 ? (
-        <EmptyState message="No hay proyectos con documentación ya revisada." />
+        <div className="px-6 pb-6">
+          <EmptyState message="No hay proyectos con documentación ya revisada." />
+        </div>
       ) : (
         <AnimatePresence mode="wait">
           {viewMode === "table" ? (
             <motion.div
               key="table"
-              variants={itemVariants}
+              variants={viewSwitchVariants}
               initial="hidden"
               animate="visible"
               exit="hidden"
               ref={containerRef}
-              className="flex-1 min-h-0"
+              className="flex-1 min-h-0 px-6 pb-6 pt-4"
             >
               <Table
                 columns={columns}
                 data={revisedProjects}
                 rowKey={(p) => p.id}
+                pageSize={pageSize}
                 fillViewport
                 stickyHeader
                 onRowClick={(p) => setSelectedId(p.id)}
@@ -235,7 +240,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
               />
             </motion.div>
           ) : (
-            <motion.div key="grid" variants={itemVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0">
+            <motion.div key="grid" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0 px-6 pb-6 pt-4">
               <GridView
                 items={revisedProjects}
                 rowKey={(p) => p.id}

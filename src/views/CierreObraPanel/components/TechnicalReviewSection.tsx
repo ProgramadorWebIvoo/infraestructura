@@ -40,7 +40,7 @@ interface TechnicalReviewSectionProps {
 }
 
 export default function TechnicalReviewSection({ projects, authToken, onReviewProject, onRejectProject, onSyncProject }: TechnicalReviewSectionProps) {
-  const { containerRef } = useContainerRows({ paginated: false });
+  const { containerRef, rows: pageSize } = useContainerRows();
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
 
@@ -135,6 +135,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
               columns={columns}
               data={pendingReview}
               rowKey={(p) => p.id}
+              pageSize={pageSize}
               fillViewport
               onRowClick={(p) => setSelectedProjectId(p.id)}
               selectedRowKey={selectedProjectId}

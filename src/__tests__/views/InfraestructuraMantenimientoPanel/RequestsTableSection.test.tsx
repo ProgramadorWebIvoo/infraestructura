@@ -71,6 +71,7 @@ describe("RequestsTableSection", () => {
         projects={projects}
         stageKey="todas"
         onStageKeyChange={vi.fn()}
+        defaultViewMode="table"
       />,
     );
 
@@ -91,6 +92,7 @@ describe("RequestsTableSection", () => {
         projects={projects}
         stageKey="todas"
         onStageKeyChange={vi.fn()}
+        defaultViewMode="table"
       />,
     );
     fireEvent.change(screen.getByLabelText("Buscar peticiones"), { target: { value: "luminarias" } });
@@ -110,6 +112,7 @@ describe("RequestsTableSection", () => {
         projects={projects}
         stageKey="ejecucion"
         onStageKeyChange={vi.fn()}
+        defaultViewMode="table"
       />,
     );
 
@@ -129,6 +132,7 @@ describe("RequestsTableSection", () => {
         projects={projects}
         stageKey="todas"
         onStageKeyChange={onStageKeyChange}
+        defaultViewMode="table"
       />,
     );
 
@@ -142,8 +146,92 @@ describe("RequestsTableSection", () => {
         projects={[]}
         stageKey="todas"
         onStageKeyChange={vi.fn()}
+        defaultViewMode="table"
       />,
     );
     expect(screen.getByText("No hay peticiones registradas aún.")).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Vista Grid — es la que arranca por defecto (defaultViewMode="grid").
+// GridView usa @tanstack/react-virtual, que mide el scroll element vía
+// offsetWidth/offsetHeight (no clientWidth/clientHeight ni getBoundingClientRect)
+// — el ResizeObserver global de test/setup.ts es un no-op, así que hace
+// falta un stub síncrono local (mismo patrón que GridView.test.tsx).
+// ---------------------------------------------------------------------------
+
+function stubSyncResizeObserver() {
+  const OriginalRO = window.ResizeObserver;
+  class SyncResizeObserver {
+    private callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      this.callback([{ target } as ResizeObserverEntry], this as unknown as ResizeObserver);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = SyncResizeObserver as unknown as typeof ResizeObserver;
+  return () => {
+    window.ResizeObserver = OriginalRO;
+  };
+}
+
+function stubContainerSize(width: number, height: number) {
+  const proto = HTMLDivElement.prototype;
+  Object.defineProperty(proto, "clientWidth", { value: width, configurable: true });
+  Object.defineProperty(proto, "clientHeight", { value: height, configurable: true });
+  Object.defineProperty(proto, "offsetWidth", { value: width, configurable: true });
+  Object.defineProperty(proto, "offsetHeight", { value: height, configurable: true });
+  return () => {
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.clientWidth;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.clientHeight;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.offsetWidth;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.offsetHeight;
+  };
+}
+
+describe("RequestsTableSection — vista Grid (default)", () => {
+  it("arranca en vista Grid por defecto y muestra las tarjetas de las peticiones", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const projects = [
+        makeProject({ id: "P1", title: "Remodelación de oficinas" }),
+        makeProject({ id: "P2", title: "Cambio de luminarias" }),
+      ];
+      render(<RequestsTableSection projects={projects} stageKey="todas" onStageKeyChange={vi.fn()} />);
+
+      expect(screen.getByText("Remodelación de oficinas")).toBeInTheDocument();
+      expect(screen.getByText("Cambio de luminarias")).toBeInTheDocument();
+      expect(screen.getByLabelText("Vista de grid")).toHaveAttribute("aria-pressed", "true");
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("permite volver a la vista de tabla con el toggle", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const projects = [makeProject({ id: "P1", status: ProjectStatus.CREADO })];
+      render(<RequestsTableSection projects={projects} stageKey="todas" onStageKeyChange={vi.fn()} />);
+
+      fireEvent.click(screen.getByLabelText("Vista de tabla"));
+
+      expect(screen.getByLabelText("Vista de tabla")).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByText("Creado")).toBeInTheDocument();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
   });
 });

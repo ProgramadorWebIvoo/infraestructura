@@ -3,7 +3,7 @@
 // footer, scroll containers, sorting, pagination
 
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { SkeletonBlock } from "../SkeletonLoader";
 import { itemVariants } from "../../animations";
@@ -145,7 +145,24 @@ export function Table<T>({
 
   const totalPages = paginationEnabled ? Math.max(1, Math.ceil(sortedData.length / limit)) : 1;
 
-  // Sync currentPage when totalPages shrinks (e.g. after filtering)
+  // Reset síncrono a la página 1 cuando cambia el dataset de origen (ej. un
+  // filtro externo como el pipeline de etapas) — hacerlo solo en un
+  // useEffect (efecto, corre DESPUÉS del render) deja un frame intermedio
+  // donde paginatedData ya se calculó con el currentPage viejo contra el
+  // data nuevo, mostrando "sin resultados" incluso cuando sí los hay. Con
+  // AnimatePresence mode="wait" ese frame vacío monta la rama "empty" y la
+  // corrección posterior del efecto puede quedar atascada esperando a que
+  // termine esa transición de salida — visible como "no se muestra nada
+  // hasta recargar la vista". Comparar `data` por referencia y resetear en
+  // el mismo render evita ese frame intermedio.
+  const dataRef = useRef(data);
+  if (dataRef.current !== data) {
+    dataRef.current = data;
+    if (currentPage !== 1) setCurrentPage(1);
+  }
+
+  // Aun así, cubrir el caso en que solo cambia `pageSize`/ordenamiento
+  // reduce totalPages sin que `data` cambie de referencia.
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -283,14 +300,21 @@ export function Table<T>({
   // ── Main render ──
 
   return (
-    <div className={`${fillViewport ? "flex h-full flex-col min-h-0" : ""} ${containerClassName}`}>
+    <div className={`rounded-control overflow-hidden ${fillViewport ? "flex h-full flex-col min-h-0" : ""} ${containerClassName}`}>
       <div
         className={`overflow-x-hidden ${
           fillViewport ? "flex-1 min-h-0 overflow-y-auto" : maxHeight ? "overflow-y-auto" : ""
         }`}
         style={!fillViewport && maxHeight ? { maxHeight } : undefined}
       >
-        <table className={`w-full text-left text-xs border-collapse ${className}`}>
+        {/* table-layout: fixed — sin esto, border-collapse + columnas con
+            width fijo (ej. "6.5rem") deja que el navegador calcule el ancho
+            de la tabla por contenido en vez de por w-full, y el <thead>
+            termina midiendo menos que el contenedor real (visible como un
+            corte a la derecha del header). Con fixed, el ancho del
+            contenedor se reparte estrictamente entre columnas fijas +
+            columnas sin width (que se dividen el resto en partes iguales). */}
+        <table className={`w-full text-left text-xs border-collapse table-fixed ${className}`}>
           <thead>
             <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
               {columns.map((col) => (

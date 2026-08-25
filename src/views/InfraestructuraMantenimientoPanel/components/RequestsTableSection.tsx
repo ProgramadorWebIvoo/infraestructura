@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Eye, ListChecks, SearchX } from "lucide-react";
 import type { Project } from "../../../types";
 import Card from "../../../components/UI/Card";
@@ -17,16 +18,22 @@ import StatusBadge from "../../../components/UI/StatusBadge";
 import EmptyState from "../../../components/UI/EmptyState";
 import TableToolbar from "../../../components/UI/TableToolbar";
 import { Table, type Column } from "../../../components/UI/Table";
+import GridView from "../../../components/UI/GridView/GridView";
 import { formatCurrency } from "../../../utils";
+import { viewSwitchVariants } from "../../../animations";
 import { filterByStage } from "../pipeline";
 import PipelineOverview from "./PipelineOverview";
+import { renderRequestCard } from "./RequestGridCard";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { useContainerRows } from "../../../hooks/useContainerRows";
+import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
 
 interface RequestsTableSectionProps {
   projects: Project[];
   stageKey: string;
   onStageKeyChange: (key: string) => void;
+  /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el consumidor. */
+  defaultViewMode?: TableViewMode;
 }
 
 function TypeBadge({ type }: { type: Project["type"] }) {
@@ -38,9 +45,10 @@ function TypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export default function RequestsTableSection({ projects, stageKey, onStageKeyChange }: RequestsTableSectionProps) {
+export default function RequestsTableSection({ projects, stageKey, onStageKeyChange, defaultViewMode = "grid" }: RequestsTableSectionProps) {
   const [query, setQuery] = useState("");
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
+  const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
   const { containerRef, rows: pageSize } = useContainerRows();
 
   const visibleProjects = useMemo(() => {
@@ -141,29 +149,49 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
         totalCount={projects.length}
         noun="petición"
         nounPlural="peticiones"
+        viewToggle={viewToggle}
       />
 
-      <div className="px-6 shrink-0">
+      <div className="px-6 pt-4 shrink-0">
         <PipelineOverview projects={projects} stageKey={stageKey} onStageKeyChange={onStageKeyChange} />
       </div>
 
-      <div ref={containerRef} className="flex-1 min-h-0">
-        <Table
-          columns={columns}
-          data={visibleProjects}
-          rowKey={(p) => p.id}
-          pageSize={pageSize}
-          fillViewport
-          onRowClick={(p) => setInspectedRequest(p)}
-          containerClassName="px-6 pb-6"
-          emptyState={
-            <EmptyState
-              message={projects.length === 0 ? "No hay peticiones registradas aún." : "No hay peticiones que coincidan con la búsqueda o el filtro."}
-              icon={<SearchX className="h-8 w-8" />}
+      <AnimatePresence mode="wait">
+        {viewMode === "table" ? (
+          <motion.div key="table" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <Table
+              columns={columns}
+              data={visibleProjects}
+              rowKey={(p) => p.id}
+              pageSize={pageSize}
+              fillViewport
+              stickyHeader
+              onRowClick={(p) => setInspectedRequest(p)}
+              emptyState={
+                <EmptyState
+                  message={projects.length === 0 ? "No hay peticiones registradas aún." : "No hay peticiones que coincidan con la búsqueda o el filtro."}
+                  icon={<SearchX className="h-8 w-8" />}
+                />
+              }
             />
-          }
-        />
-      </div>
+          </motion.div>
+        ) : (
+          <motion.div key="grid" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <GridView
+              items={visibleProjects}
+              rowKey={(p) => p.id}
+              renderCard={(p) => renderRequestCard(p, setInspectedRequest)}
+              onSelect={(p) => setInspectedRequest(p)}
+              emptyState={
+                <EmptyState
+                  message={projects.length === 0 ? "No hay peticiones registradas aún." : "No hay peticiones que coincidan con la búsqueda o el filtro."}
+                  icon={<SearchX className="h-8 w-8" />}
+                />
+              }
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <InspectRequestModal
         isOpen={!!inspectedRequest}

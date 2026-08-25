@@ -15,7 +15,7 @@
  * de la librería para grids — evita virtualización 2D hecha a mano.
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "motion/react";
 import { containerVariants } from "../../../animations";
@@ -49,6 +49,21 @@ export default function GridView<T>({
     overscan: 3,
   });
 
+  // Si el usuario ya scrolleó y luego el filtro reduce el dataset, el
+  // scrollOffset viejo puede quedar más allá del nuevo totalSize — el
+  // virtualizador entonces calcula un rango de filas vacío (getVirtualItems
+  // devuelve []) porque no hay ninguna fila en ese offset, dando la
+  // impresión de que "los registros desaparecieron" aunque items.length > 0.
+  // Resetear el scroll cuando cambia la identidad del dataset filtrado evita
+  // quedar posicionado más allá del contenido nuevo.
+  const rowCountRef = useRef(rowCount);
+  useEffect(() => {
+    if (rowCountRef.current !== rowCount) {
+      rowCountRef.current = rowCount;
+      rowVirtualizer.scrollToOffset(0);
+    }
+  }, [rowCount, rowVirtualizer]);
+
   const virtualRows = rowVirtualizer.getVirtualItems();
 
   const rowsData = useMemo(() => {
@@ -59,13 +74,25 @@ export default function GridView<T>({
     return rows;
   }, [items, rowCount, columnsPerRow]);
 
-  if (items.length === 0) {
-    return emptyState ? <>{emptyState}</> : null;
-  }
-
   return (
-    <div ref={containerRef} className={`h-full overflow-y-auto ${className}`}>
-      {width > 0 && height > 0 && (
+    // p-1: aire alrededor del grid para que whileHover (scale) de GridCard
+    // no se recorte contra este contenedor — sin esto, las tarjetas de la
+    // fila superior/inferior o de los bordes laterales se ven "cortadas" al
+    // hacer hover cuando un ancestro (ej. Card con overflow-hidden) no deja
+    // margen extra.
+    //
+    // El contenedor con containerRef SIEMPRE se monta, incluso con 0 items:
+    // desmontarlo (return temprano fuera de este div) destruye la referencia
+    // que usa useFullViewport, y con ella todo el estado de @tanstack/
+    // react-virtual (width/height vuelven a 0, el virtualizador se recrea
+    // desde cero). Al volver a un dataset con resultados, el remount
+    // completo dejaba una condición de carrera donde el grid quedaba en
+    // blanco hasta refrescar la vista — con el contenedor siempre presente,
+    // solo cambia qué se pinta adentro.
+    <div ref={containerRef} className={`h-full overflow-y-auto p-1 ${className}`}>
+      {items.length === 0 ? (
+        emptyState ?? null
+      ) : width > 0 && height > 0 && (
         <motion.div
           variants={containerVariants}
           initial="hidden"

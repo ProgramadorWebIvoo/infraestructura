@@ -94,6 +94,7 @@ describe("RejectedPetitionsSection", () => {
         authToken="test-token"
         onResubmitProject={vi.fn()}
         onDeleteDocument={vi.fn()}
+        defaultViewMode="table"
       />,
     );
     expect(screen.getByText("Peticiones Rechazadas")).toBeInTheDocument();
@@ -109,6 +110,7 @@ describe("RejectedPetitionsSection", () => {
         authToken="test-token"
         onResubmitProject={vi.fn()}
         onDeleteDocument={vi.fn()}
+        defaultViewMode="table"
       />,
     );
 
@@ -126,6 +128,7 @@ describe("RejectedPetitionsSection", () => {
         authToken="test-token"
         onResubmitProject={vi.fn()}
         onDeleteDocument={vi.fn()}
+        defaultViewMode="table"
       />,
     );
     expect(screen.queryByText("PRJ-011")).not.toBeInTheDocument();
@@ -141,6 +144,7 @@ describe("RejectedPetitionsSection", () => {
           authToken="test-token"
           onResubmitProject={vi.fn()}
           onDeleteDocument={vi.fn()}
+          defaultViewMode="table"
         />
       </ToastProvider>,
     );
@@ -163,6 +167,7 @@ describe("RejectedPetitionsSection", () => {
           authToken="test-token"
           onResubmitProject={onResubmitProject}
           onDeleteDocument={vi.fn()}
+          defaultViewMode="table"
         />
       </ToastProvider>,
     );
@@ -203,6 +208,7 @@ describe("RejectedPetitionsSection", () => {
           authToken="test-token"
           onResubmitProject={vi.fn()}
           onDeleteDocument={vi.fn()}
+          defaultViewMode="table"
         />
       </ToastProvider>,
     );
@@ -213,5 +219,100 @@ describe("RejectedPetitionsSection", () => {
     expect(screen.getAllByText("La descripción no detalla el alcance del trabajo.").length).toBeGreaterThan(0);
     expect(screen.getByText("Revisar también la cubicación de concreto.")).toBeInTheDocument();
     expect(screen.getByText("correccion.pdf")).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Vista Grid — es la que arranca por defecto (defaultViewMode="grid").
+// Mismo stub que RequestsTableSection.test.tsx/GridView.test.tsx: el
+// ResizeObserver global de test/setup.ts es un no-op y @tanstack/react-virtual
+// mide el scroll element vía offsetWidth/offsetHeight.
+// ---------------------------------------------------------------------------
+
+function stubSyncResizeObserver() {
+  const OriginalRO = window.ResizeObserver;
+  class SyncResizeObserver {
+    private callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      this.callback([{ target } as ResizeObserverEntry], this as unknown as ResizeObserver);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = SyncResizeObserver as unknown as typeof ResizeObserver;
+  return () => {
+    window.ResizeObserver = OriginalRO;
+  };
+}
+
+function stubContainerSize(width: number, height: number) {
+  const proto = HTMLDivElement.prototype;
+  Object.defineProperty(proto, "clientWidth", { value: width, configurable: true });
+  Object.defineProperty(proto, "clientHeight", { value: height, configurable: true });
+  Object.defineProperty(proto, "offsetWidth", { value: width, configurable: true });
+  Object.defineProperty(proto, "offsetHeight", { value: height, configurable: true });
+  return () => {
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.clientWidth;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.clientHeight;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.offsetWidth;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.offsetHeight;
+  };
+}
+
+describe("RejectedPetitionsSection — vista Grid (default)", () => {
+  it("arranca en vista Grid por defecto y muestra la tarjeta de la petición rechazada", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      render(
+        <RejectedPetitionsSection
+          projects={[makeRejectedProject()]}
+          auditLogs={[rejectionLog]}
+          materialsCatalog={materialsCatalog}
+          authToken="test-token"
+          onResubmitProject={vi.fn()}
+          onDeleteDocument={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText("Remodelación depósito")).toBeInTheDocument();
+      expect(screen.getByText("La descripción no detalla el alcance del trabajo.")).toBeInTheDocument();
+      expect(screen.getByLabelText("Vista de grid")).toHaveAttribute("aria-pressed", "true");
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("permite volver a la vista de tabla con el toggle", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      render(
+        <RejectedPetitionsSection
+          projects={[makeRejectedProject()]}
+          auditLogs={[rejectionLog]}
+          materialsCatalog={materialsCatalog}
+          authToken="test-token"
+          onResubmitProject={vi.fn()}
+          onDeleteDocument={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByLabelText("Vista de tabla"));
+
+      expect(screen.getByLabelText("Vista de tabla")).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByText("PRJ-010")).toBeInTheDocument();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
   });
 });

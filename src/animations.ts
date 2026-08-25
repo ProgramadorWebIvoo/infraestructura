@@ -38,6 +38,20 @@ export const itemVariants: Variants = {
   },
 };
 
+/**
+ * Fade simple, sin `y`/`scale` — para alternar entre dos vistas de
+ * contenido grande con su propio scroll interno (ej. Table ↔ GridView).
+ * `itemVariants` no sirve acá: su `scale: 0.98` hace que el contenedor
+ * (con su scrollbar) cambie de tamaño visualmente durante la transición,
+ * lo que se percibe como "la animación mueve hasta la scrollbar". Sin
+ * `y` tampoco, porque desplazar un bloque con scroll propio se siente
+ * más como un salto que como una transición suave.
+ */
+export const viewSwitchVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.18, ease: "easeOut" } },
+};
+
 export const bannerVariants: Variants = {
   hidden: { opacity: 0, height: 0, marginBottom: 0 },
   visible: {
