@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import TechnicalReviewSection from "@/views/CierreObraPanel/components/TechnicalReviewSection";
 import { ToastProvider } from "@/components/UI/Toast";
@@ -54,6 +54,49 @@ vi.mock("@/services/aiEvaluationService", () => ({
 
 afterEach(() => vi.restoreAllMocks());
 
+// GridView (vista por defecto de TechnicalReviewSection) usa
+// @tanstack/react-virtual, que mide el scroll element vía
+// offsetWidth/offsetHeight (no clientWidth/clientHeight ni
+// getBoundingClientRect) — el ResizeObserver global de test/setup.ts es un
+// no-op, así que hace falta un stub síncrono local (mismo patrón que
+// GridView.test.tsx / RequestsTableSection.test.tsx).
+function stubSyncResizeObserver() {
+  const OriginalRO = window.ResizeObserver;
+  class SyncResizeObserver {
+    private callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      this.callback([{ target } as ResizeObserverEntry], this as unknown as ResizeObserver);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = SyncResizeObserver as unknown as typeof ResizeObserver;
+  return () => {
+    window.ResizeObserver = OriginalRO;
+  };
+}
+
+function stubContainerSize(width: number, height: number) {
+  const proto = HTMLDivElement.prototype;
+  Object.defineProperty(proto, "clientWidth", { value: width, configurable: true });
+  Object.defineProperty(proto, "clientHeight", { value: height, configurable: true });
+  Object.defineProperty(proto, "offsetWidth", { value: width, configurable: true });
+  Object.defineProperty(proto, "offsetHeight", { value: height, configurable: true });
+  return () => {
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.clientWidth;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.clientHeight;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.offsetWidth;
+    // @ts-expect-error restaurar el descriptor original de jsdom
+    delete proto.offsetHeight;
+  };
+}
+
 const pendingProject: Project = {
   id: "PRJ-020",
   title: "Petición pendiente",
@@ -65,6 +108,19 @@ const pendingProject: Project = {
   materials: [{ id: "m1", name: "Cemento", quantity: 1, unit: "Saco", estimatedUnitPrice: 10, condition: "NUEVO" }],
   estimatedTotal: 10,
 };
+
+let restoreRO: () => void;
+let restoreSize: () => void;
+
+beforeEach(() => {
+  restoreRO = stubSyncResizeObserver();
+  restoreSize = stubContainerSize(900, 600);
+});
+
+afterEach(() => {
+  restoreSize();
+  restoreRO();
+});
 
 function renderSection(
   onRejectProject = vi.fn().mockResolvedValue({ ok: true, partial: false, failedGroups: [] }),
@@ -138,6 +194,44 @@ describe("TechnicalReviewSection — rechazo de petición", () => {
       "Revisar también la cubicación de concreto.",
       [],
     );
+  });
+});
+
+describe("TechnicalReviewSection — Tabla/Grid (TableToolbar + GridView)", () => {
+  it("arranca en vista Grid y muestra las tarjetas vía GridView", () => {
+    renderSection();
+
+    expect(screen.getByText(pendingProject.title)).toBeInTheDocument();
+    expect(screen.getByLabelText("Vista de grid")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("permite alternar a la vista de tabla con el toggle", () => {
+    renderSection();
+
+    fireEvent.click(screen.getByLabelText("Vista de tabla"));
+
+    expect(screen.getByLabelText("Vista de tabla")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(pendingProject.title)).toBeInTheDocument();
+  });
+
+  it("filtra por búsqueda de título/ID/ubicación", () => {
+    const other: Project = { ...pendingProject, id: "PRJ-021", title: "Cambio de luminarias" };
+    renderSection(undefined, undefined, [pendingProject, other]);
+
+    fireEvent.change(screen.getByLabelText("Buscar expedientes pendientes de revisión"), {
+      target: { value: "luminarias" },
+    });
+
+    expect(screen.getByText("Cambio de luminarias")).toBeInTheDocument();
+    expect(screen.queryByText(pendingProject.title)).not.toBeInTheDocument();
+  });
+
+  it("abre el wizard de revisión al seleccionar una tarjeta del Grid", () => {
+    renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+
+    expect(screen.getByRole("button", { name: /Rechazar/ })).toBeInTheDocument();
   });
 });
 

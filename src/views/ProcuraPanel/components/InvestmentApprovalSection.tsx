@@ -9,8 +9,9 @@
  * para no expandir el layout de la página al abrir el formulario.
  */
 
-import { Fragment, useMemo, useState } from "react";
-import { ArrowRight, Calculator, CheckSquare, MapPin, TrendingUp } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowRight, CheckSquare, MapPin, SearchX, TrendingUp } from "lucide-react";
 import Button from "../../../components/UI/Button";
 import { useToast } from "../../../components/UI/Toast";
 import { downloadProjectDocument } from "../../../services/api";
@@ -21,14 +22,24 @@ import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
 import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
+import DossierEvaluationSummary from "../../../components/DossierEvaluationSummary";
+import TableToolbar from "../../../components/UI/TableToolbar";
+import { Table, type Column } from "../../../components/UI/Table";
+import GridView from "../../../components/UI/GridView/GridView";
+import Stepper, { type StepDefinition } from "../../../components/UI/Stepper";
+import { RequiredMark, HelpHint } from "../../../components/UI/HintSignals";
+import { renderInvestmentApprovalCard } from "./InvestmentApprovalGridCard";
+import { useContainerRows } from "../../../hooks/useContainerRows";
+import { useTableViewMode } from "../../../hooks/useTableViewMode";
+import { viewSwitchVariants, springs } from "../../../animations";
 import { formatNumber } from "../../../utils";
 import { ProjectStatus } from "../../../types";
 import type { Project, ProjectDocument } from "../../../types";
 
-const WIZARD_STEPS = [
-  { key: 1, label: "Revisar", icon: Calculator },
-  { key: 2, label: "Autorizar", icon: CheckSquare },
-] as const;
+const WIZARD_STEPS: StepDefinition[] = [
+  { id: "revisar", label: "Revisar", description: "Expediente y evaluación IA" },
+  { id: "autorizar", label: "Autorizar", description: "Tope presupuestario" },
+];
 
 interface InvestmentApprovalSectionProps {
   projects: Project[];
@@ -39,15 +50,77 @@ interface InvestmentApprovalSectionProps {
 export default function InvestmentApprovalSection({ projects, authToken, onApproveInvestment }: InvestmentApprovalSectionProps) {
   const { showToast } = useToast();
   const [selectedReviewId, setSelectedReviewId] = useState("");
-  const [step, setStep] = useState(1);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [furthestStepIndex, setFurthestStepIndex] = useState(0);
   const [procuraNotes, setProcuraNotes] = useState("");
   const [approvedAmount, setApprovedAmount] = useState<number | "">("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
+  const [query, setQuery] = useState("");
+  const { viewMode, viewToggle } = useTableViewMode("grid");
+  const { containerRef, rows: pageSize } = useContainerRows();
 
   const pendingInvestmentApproval = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE),
     [projects],
   );
+
+  const visibleProjects = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return pendingInvestmentApproval.filter(
+      (p) =>
+        !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        p.location.toLowerCase().includes(q),
+    );
+  }, [pendingInvestmentApproval, query]);
+
+  const columns: Column<Project>[] = [
+    {
+      key: "id",
+      label: "ID",
+      width: "6.5rem",
+      sortable: true,
+      render: (p) => <span className="font-mono font-bold text-[10px] text-brand-600 whitespace-nowrap">{p.id}</span>,
+    },
+    {
+      key: "title",
+      label: "Título / Ubicación",
+      sortable: true,
+      render: (p) => (
+        <div className="min-w-0">
+          <div className="font-bold text-slate-800 truncate">{p.title}</div>
+          <div className="text-[10px] text-slate-400 font-medium truncate">{p.location}</div>
+        </div>
+      ),
+    },
+    {
+      key: "type",
+      label: "Tipo",
+      width: "5.5rem",
+      sortable: true,
+      render: (p) => (
+        <span className="text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200">
+          {p.type === "INFRAESTRUCTURA" ? "INFRA" : "MANT"}
+        </span>
+      ),
+    },
+    {
+      key: "createdDate",
+      label: "Fecha",
+      width: "7rem",
+      sortable: true,
+      render: (p) => <span className="font-mono text-[10px] text-slate-500 whitespace-nowrap">{p.createdDate}</span>,
+    },
+    {
+      key: "estimatedTotal",
+      label: "Total (Est)",
+      width: "8rem",
+      align: "right",
+      sortable: true,
+      render: (p) => <span className="font-mono font-bold text-slate-800 whitespace-nowrap">${formatNumber(p.estimatedTotal)}</span>,
+    },
+  ];
   const activeReviewProject = pendingInvestmentApproval.find(p => p.id === selectedReviewId);
 
   const handleDownload = async (doc: ProjectDocument) => {
@@ -61,14 +134,16 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
 
   const openReview = (p: Project) => {
     setSelectedReviewId(p.id);
-    setStep(1);
+    setStepIndex(0);
+    setFurthestStepIndex(0);
     setApprovedAmount(p.estimatedTotal);
     setProcuraNotes("");
   };
 
   const closeReview = () => {
     setSelectedReviewId("");
-    setStep(1);
+    setStepIndex(0);
+    setFurthestStepIndex(0);
     setProcuraNotes("");
     setApprovedAmount("");
   };
@@ -86,71 +161,70 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
     }
     onApproveInvestment(activeReviewProject.id, procuraNotes, amountNum);
     setSelectedReviewId("");
-    setStep(1);
+    setStepIndex(0);
+    setFurthestStepIndex(0);
     setProcuraNotes("");
     setApprovedAmount("");
   };
 
+  const emptyMessage = pendingInvestmentApproval.length === 0
+    ? "No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario."
+    : "No hay peticiones que coincidan con la búsqueda.";
+
   return (
-    <Card accent="brand" fillHeight className="min-h-0 flex-1">
-      <SectionHeader
-        icon={<TrendingUp className="h-5 w-5" />}
-        title="Autorización de Inversión Inicial"
-        description="Autorice el envío de expedientes de obra para la ronda de licitación. Fije los límites presupuestarios según las cubicaciones corregidas."
-        color="sky"
+    <Card accent="brand" fillHeight className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col">
+      <div className="px-6 pt-6 shrink-0">
+        <SectionHeader
+          icon={<TrendingUp className="h-5 w-5" />}
+          title="Autorización de Inversión Inicial"
+          description="Autorice el envío de expedientes de obra para la ronda de licitación. Fije los límites presupuestarios según las cubicaciones corregidas."
+          color="sky"
+        />
+      </div>
+
+      <TableToolbar
+        searchId="procura-investment-search"
+        searchValue={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="Buscar por título, ID o ubicación..."
+        searchAriaLabel="Buscar peticiones listas para Procura"
+        countIcon={<TrendingUp />}
+        filteredCount={visibleProjects.length}
+        totalCount={pendingInvestmentApproval.length}
+        noun="pendiente"
+        nounPlural="pendientes"
+        viewToggle={viewToggle}
       />
 
-      {pendingInvestmentApproval.length === 0 ? (
-        <EmptyState message="No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario." />
-      ) : (
-        <div className="min-h-0 flex-1 flex flex-col space-y-2.5">
-          <div className="flex items-center justify-between gap-2 shrink-0">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Peticiones Listas para Procura:
-            </label>
-            <span className="text-[10px] font-mono font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-lg">
-              {pendingInvestmentApproval.length} pendiente{pendingInvestmentApproval.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          <div
-            className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 auto-rows-min gap-3 overflow-y-auto pr-2 -mr-2 pb-2 scroll-smooth scroll-pb-2"
-          >
-            {pendingInvestmentApproval.map((p) => {
-              const isSelected = selectedReviewId === p.id;
-              return (
-                <button
-                  id={`procura-review-select-${p.id}`}
-                  key={p.id}
-                  type="button"
-                  onClick={() => openReview(p)}
-                  style={{ contentVisibility: "auto", contain: "layout style paint" }}
-                  className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
-                    isSelected
-                      ? "border-brand-500 bg-gradient-to-br from-brand-50 to-white text-brand-950 ring-2 ring-brand-100 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 hover:shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-mono text-[9px] font-bold text-brand-600">{p.id}</span>
-                    <span className="text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200">
-                      {p.type === "INFRAESTRUCTURA" ? "INFRA" : "MANT"}
-                    </span>
-                  </div>
-                  <div className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</div>
-                  <div className="text-[10px] text-slate-500 mt-1.5 font-medium flex items-center gap-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {p.location}
-                  </div>
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                    <span className="text-[10px] font-mono font-bold text-slate-400">{p.createdDate}</span>
-                    <span className="font-mono font-bold text-brand-700">${formatNumber(p.estimatedTotal)}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {viewMode === "table" ? (
+          <motion.div key="table" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <Table
+              columns={columns}
+              data={visibleProjects}
+              rowKey={(p) => p.id}
+              pageSize={pageSize}
+              fillViewport
+              stickyHeader
+              onRowClick={(p) => openReview(p)}
+              selectedRowKey={selectedReviewId}
+              emptyState={<EmptyState message={emptyMessage} icon={<SearchX className="h-8 w-8" />} />}
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="grid" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <GridView
+              items={visibleProjects}
+              rowKey={(p) => p.id}
+              renderCard={(p) => renderInvestmentApprovalCard(p)}
+              onSelect={(p) => openReview(p)}
+              selectedKey={selectedReviewId}
+              cardAccent={() => "brand"}
+              emptyState={<EmptyState message={emptyMessage} icon={<SearchX className="h-8 w-8" />} />}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Wizard de autorización ── */}
       <Modal
@@ -166,19 +240,22 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
           activeReviewProject ? (
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
-                {step === 1 ? "Revisa el expediente y la documentación de Cierre de Obra" : "Confirma el monto autorizado para licitación"}
+                {stepIndex === 0 ? "Revisa el expediente y la documentación de Cierre de Obra" : "Confirma el monto autorizado para licitación"}
               </span>
               <div className="flex items-center gap-2">
-                {step > 1 && (
-                  <Button variant="secondary" onClick={() => setStep(s => s - 1)}>
+                {stepIndex > 0 && (
+                  <Button variant="secondary" onClick={() => setStepIndex(i => i - 1)}>
                     Atrás
                   </Button>
                 )}
-                {step < 2 ? (
+                {stepIndex < 1 ? (
                   <Button
                     variant="primary"
                     colorScheme="sky"
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      setStepIndex(1);
+                      setFurthestStepIndex(i => Math.max(i, 1));
+                    }}
                     icon={<ArrowRight className="h-4 w-4" />}
                   >
                     Continuar
@@ -201,110 +278,112 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
       >
         {activeReviewProject && (
           <div className="space-y-6">
-            {/* Stepper del wizard */}
-            <div className="flex items-center gap-1.5" role="group" aria-label="Progreso de autorización">
-              {WIZARD_STEPS.map((s, i) => {
-                const Icon = s.icon;
-                const isActive = step === s.key;
-                const isDone = step > s.key;
-                return (
-                  <Fragment key={s.key}>
-                    {i > 0 && (
-                      <div className={`h-0.5 flex-1 rounded-full ${step > i ? "bg-brand-400" : "bg-slate-200"}`} />
+            <Stepper
+              steps={WIZARD_STEPS}
+              currentIndex={stepIndex}
+              furthestVisitedIndex={furthestStepIndex}
+              onStepClick={setStepIndex}
+              ariaLabel="Progreso de autorización"
+            />
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={stepIndex}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={springs.snappy}
+              >
+                {/* Paso 1: Revisar expediente */}
+                {stepIndex === 0 && (
+                  <div className="space-y-5">
+                    <div className="p-4 bg-gradient-to-br from-brand-50/40 to-white rounded-xl text-xs space-y-2 border border-brand-100/60 font-medium">
+                      <div className="flex justify-between items-center">
+                        <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
+                        <span className="font-mono font-bold text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-slate-500">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                        {activeReviewProject.location}
+                      </div>
+                      <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-brand-100/60">
+                        <span className="font-bold not-italic text-slate-600">Nota Cierre de Obra: </span>
+                        {activeReviewProject.cierreObraNotes}
+                      </div>
+                    </div>
+
+                    {/* Evaluación IA del expediente (mismo panel que ve el
+                        auditor en Cierre de Obra), en modo solo-lectura — acá
+                        sí se muestra el monto sugerido (showSuggestedAmount),
+                        a diferencia de Cierre de Obra donde es criterio de
+                        aprobación/rechazo técnico, no de presupuesto. */}
+                    {activeReviewProject.dossierAiEvaluatedAt && (
+                      <DossierEvaluationSummary project={activeReviewProject} showSuggestedAmount />
                     )}
-                    <div
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold whitespace-nowrap transition-all duration-200 ${
-                        isActive
-                          ? "border-brand-500 bg-brand-50 text-brand-700 shadow-sm"
-                          : isDone
-                            ? "border-success-200 bg-success-50 text-success-700"
-                            : "border-slate-200 bg-white text-slate-400"
-                      }`}
-                    >
-                      <span className={isActive ? "text-brand-500" : isDone ? "text-success-500" : "text-slate-300"}>
-                        <Icon className="h-3 w-3" />
-                      </span>
-                      {s.label}
+
+                    <ProjectDocumentsList
+                      project={activeReviewProject}
+                      onDownload={handleDownload}
+                      onPreview={setPreviewDoc}
+                    />
+                  </div>
+                )}
+
+                {/* Paso 2: Autorizar presupuesto */}
+                {stepIndex === 1 && (
+                  <div className="space-y-5">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Expediente</span>
+                        <span className="font-mono font-black text-slate-800">{activeReviewProject.id}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Cierre de Obra</span>
+                        <span className="font-mono font-black text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                      </div>
+                      {activeReviewProject.dossierAiSuggestedAmount != null && (
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1 font-bold text-slate-600 uppercase tracking-wider text-[9px]">
+                            Sugerido por IA (referencial)
+                            <HelpHint content="Monto propuesto por la evaluación IA del expediente en Cierre de Obra. Es solo referencia — nunca autocompleta este formulario." />
+                          </span>
+                          <span className="font-mono font-black text-slate-500">${formatNumber(activeReviewProject.dossierAiSuggestedAmount)}</span>
+                        </div>
+                      )}
                     </div>
-                  </Fragment>
-                );
-              })}
-            </div>
 
-            {/* Paso 1: Revisar expediente */}
-            {step === 1 && (
-              <div className="space-y-5">
-                <div className="p-4 bg-gradient-to-br from-brand-50/40 to-white rounded-xl text-xs space-y-2 border border-brand-100/60 font-medium">
-                  <div className="flex justify-between items-center">
-                    <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
-                    <span className="font-mono font-bold text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-slate-500">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                    {activeReviewProject.location}
-                  </div>
-                  {activeReviewProject.dossierAiSuggestedAmount != null && (
-                    <div className="flex justify-between items-center text-slate-400">
-                      <span>Estimación IA (referencial):</span>
-                      <span className="font-mono">${formatNumber(activeReviewProject.dossierAiSuggestedAmount)}</span>
+                    <div>
+                      <label htmlFor="procura-approved-amount" className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        Inversión Aprobada Autorizada ($)
+                        <RequiredMark filled={approvedAmount !== "" && approvedAmount > 0} />
+                      </label>
+                      <NumericInput
+                        id="procura-approved-amount"
+                        value={approvedAmount}
+                        onChange={setApprovedAmount}
+                        placeholder="0.00"
+                        className="focus:ring-brand-500"
+                      />
                     </div>
-                  )}
-                  <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-brand-100/60">
-                    <span className="font-bold not-italic text-slate-600">Nota Cierre de Obra: </span>
-                    {activeReviewProject.cierreObraNotes}
+
+                    <div>
+                      <label htmlFor="procura-notes" className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        Notas de Aprobación de Presupuesto
+                        <RequiredMark filled={procuraNotes.trim().length > 0} />
+                      </label>
+                      <input
+                        id="procura-notes"
+                        type="text"
+                        placeholder="Ej. Proyecto urgente de climatización, habilitar licitaciones prioritarias."
+                        value={procuraNotes}
+                        onChange={(e) => setProcuraNotes(e.target.value)}
+                        className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-brand-500 bg-white font-medium"
+                      />
+                    </div>
                   </div>
-                </div>
-
-                <ProjectDocumentsList
-                  project={activeReviewProject}
-                  onDownload={handleDownload}
-                  onPreview={setPreviewDoc}
-                />
-              </div>
-            )}
-
-            {/* Paso 2: Autorizar presupuesto */}
-            {step === 2 && (
-              <div className="space-y-5">
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2 text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Expediente</span>
-                    <span className="font-mono font-black text-slate-800">{activeReviewProject.id}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Cierre de Obra</span>
-                    <span className="font-mono font-black text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Inversión Aprobada Autorizada ($)
-                  </label>
-                  <NumericInput
-                    id="procura-approved-amount"
-                    value={approvedAmount}
-                    onChange={setApprovedAmount}
-                    placeholder="0.00"
-                    className="focus:ring-brand-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Notas de Aprobación de Presupuesto
-                  </label>
-                  <input
-                    id="procura-notes"
-                    type="text"
-                    placeholder="Ej. Proyecto urgente de climatización, habilitar licitaciones prioritarias."
-                    value={procuraNotes}
-                    onChange={(e) => setProcuraNotes(e.target.value)}
-                    className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-brand-500 bg-white font-medium"
-                  />
-                </div>
-              </div>
-            )}
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         )}
       </Modal>

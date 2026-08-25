@@ -28,7 +28,9 @@ describe("HireConfirmDialog", () => {
     expect(screen.getByText(/Constructora ABC/)).toBeInTheDocument();
     expect(screen.getByText(/dentro de los parámetros configurados/)).toBeInTheDocument();
     expect(screen.queryByText(/Anticipo por encima del máximo/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Semáforo presupuestario/)).not.toBeInTheDocument();
+    // El gauge de ejecución presupuestaria se muestra siempre (no solo en
+    // riesgo) — ahora es información de contexto, no una alerta condicional.
+    expect(screen.getByText(/Ejecución presupuestaria: Normal/)).toBeInTheDocument();
   });
 
   it("variante anticipo excedido: muestra alerta de anticipo, sin alerta de semáforo", () => {
@@ -46,8 +48,8 @@ describe("HireConfirmDialog", () => {
     );
 
     expect(screen.getByText(/Anticipo por encima del máximo configurado/)).toBeInTheDocument();
-    expect(screen.getByText(/50%/)).toBeInTheDocument();
-    expect(screen.queryByText(/Semáforo presupuestario/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/50%/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Ejecución presupuestaria: Normal/)).toBeInTheDocument();
   });
 
   it("variante semáforo en riesgo: muestra alerta de presupuesto, sin alerta de anticipo", () => {
@@ -65,7 +67,7 @@ describe("HireConfirmDialog", () => {
     );
 
     expect(screen.queryByText(/Anticipo por encima del máximo/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Semáforo presupuestario en sobre-ejecución/)).toBeInTheDocument();
+    expect(screen.getByText(/Ejecución presupuestaria: Sobre-ejecución/)).toBeInTheDocument();
   });
 
   it("variante combinada: muestra ambas alertas cuando anticipo excede y el semáforo está en riesgo", () => {
@@ -83,10 +85,10 @@ describe("HireConfirmDialog", () => {
     );
 
     expect(screen.getByText(/Anticipo por encima del máximo configurado/)).toBeInTheDocument();
-    expect(screen.getByText(/Semáforo presupuestario en al límite/)).toBeInTheDocument();
+    expect(screen.getByText(/Ejecución presupuestaria: Al límite/)).toBeInTheDocument();
   });
 
-  it("naranja también dispara la alerta de semáforo (no solo rojo)", () => {
+  it("naranja colorea el gauge en riesgo (no solo rojo)", () => {
     render(
       <HireConfirmDialog
         isOpen
@@ -100,10 +102,10 @@ describe("HireConfirmDialog", () => {
       />,
     );
 
-    expect(screen.getByText(/Semáforo presupuestario/)).toBeInTheDocument();
+    expect(screen.getByText(/Ejecución presupuestaria: Al límite/)).toBeInTheDocument();
   });
 
-  it("amarillo NO dispara la alerta de semáforo", () => {
+  it("amarillo muestra el gauge en tono normal, sin marcarlo en riesgo", () => {
     render(
       <HireConfirmDialog
         isOpen
@@ -117,7 +119,7 @@ describe("HireConfirmDialog", () => {
       />,
     );
 
-    expect(screen.queryByText(/Semáforo presupuestario/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Ejecución presupuestaria: Atención/)).toBeInTheDocument();
     expect(screen.getByText(/dentro de los parámetros configurados/)).toBeInTheDocument();
   });
 

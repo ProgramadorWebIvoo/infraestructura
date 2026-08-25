@@ -2,16 +2,19 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Confirmación de adjudicación de contratista — 4 variantes según si la
- * oferta seleccionada excede el anticipo máximo configurado y/o el semáforo
- * de ejecución presupuestaria está en naranja/rojo: normal, solo anticipo,
- * solo semáforo, o ambos combinados.
+ * Confirmación de adjudicación de contratista. El gauge circular de
+ * ejecución presupuestaria siempre se muestra (contexto); la alerta de
+ * anticipo excedido es la única condicional — se suma cuando la oferta
+ * pacta un anticipo por encima del máximo configurado en CONFIG APP.
  */
 
 import { AlertTriangle, CheckCircle, Gauge, HandCoins, ShieldCheck } from "lucide-react";
+import { motion } from "motion/react";
 import Modal from "../UI/Modal";
-import Spinner from "../UI/Spinner";
+import Button from "../UI/Button";
+import { SEMANTIC_COLOR_MAP } from "../UI/colorTokens";
 import { SEMAPHORE_COLORS, type SemaphoreLevel } from "../../hooks/useBudgetSemaphore";
+import { containerVariants, itemVariants } from "../../animations";
 
 interface HireConfirmDialogProps {
   isOpen: boolean;
@@ -44,6 +47,8 @@ export default function HireConfirmDialog({
   const iconColor = hasWarning ? "amber" : "sky";
   const badge = hasWarning ? "Confirmación requerida" : "Confirmación";
   const Icon = hasWarning ? AlertTriangle : CheckCircle;
+  const warning = SEMANTIC_COLOR_MAP.warning;
+  const brand = SEMANTIC_COLOR_MAP.brand;
 
   return (
     <Modal
@@ -57,63 +62,86 @@ export default function HireConfirmDialog({
       closeDisabled={isLoading}
       footer={
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="cursor-pointer px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Cancelar
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
+            colorScheme={hasWarning ? "amber" : "sky"}
             onClick={onConfirm}
             disabled={isLoading}
-            className={`cursor-pointer px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center gap-2 ${
-              hasWarning ? "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500" : "bg-sky-600 hover:bg-sky-700 focus:ring-sky-500"
-            }`}
+            isLoading={isLoading}
+            icon={<ShieldCheck className="h-4 w-4" />}
           >
-            {isLoading && <Spinner data-testid="spinner" />}
             {isLoading ? "Procesando..." : "Confirmar adjudicación"}
-          </button>
+          </Button>
         </div>
       }
     >
-      <div className="space-y-4">
-        <p className="text-sm text-slate-600 leading-relaxed">
-          ¿Estás seguro de adjudicar el contrato a <strong>"{contractorName}"</strong>? Esta acción seleccionará a
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
+        <motion.p variants={itemVariants} className="text-sm text-slate-600 leading-relaxed">
+          ¿Estás seguro de adjudicar el contrato a <strong className="text-slate-800">"{contractorName}"</strong>? Esta acción seleccionará a
           este contratista como ganador y enviará el proyecto a Finanzas para liberación del anticipo.
-        </p>
+        </motion.p>
+
+        {/* Semáforo de ejecución presupuestaria — gauge circular en vez de
+            solo texto+color, para que el % de ejecución se lea de un
+            vistazo sin tener que parsear la oración. */}
+        <motion.div variants={itemVariants} className={`flex items-center gap-4 rounded-2xl border p-4 ${budgetAtRisk ? semaphoreColors.bg : `${brand.border100} ${brand.bg50}`}`}>
+          <div className="relative shrink-0 h-14 w-14">
+            <svg viewBox="0 0 40 40" className="h-14 w-14 -rotate-90">
+              <circle cx="20" cy="20" r="16" fill="none" strokeWidth="4" className="stroke-white" />
+              <motion.circle
+                cx="20"
+                cy="20"
+                r="16"
+                fill="none"
+                strokeWidth="4"
+                strokeLinecap="round"
+                className={budgetAtRisk ? semaphoreColors.text : brand.icon500}
+                stroke="currentColor"
+                strokeDasharray={2 * Math.PI * 16}
+                initial={{ strokeDashoffset: 2 * Math.PI * 16 }}
+                animate={{ strokeDashoffset: 2 * Math.PI * 16 * (1 - Math.min(100, executedPct) / 100) }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={`font-mono font-black text-xs ${budgetAtRisk ? semaphoreColors.text : brand.text700}`}>
+                {Math.round(executedPct)}%
+              </span>
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider ${budgetAtRisk ? semaphoreColors.text : "text-slate-500"}`}>
+              <Gauge className="h-3.5 w-3.5 shrink-0" />
+              Ejecución presupuestaria: {semaphoreColors.label}
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
+              Esta oferta representa el <strong className="text-slate-700">{Math.round(executedPct)}%</strong> de la inversión autorizada.
+            </p>
+          </div>
+        </motion.div>
 
         {exceedsAdvance && (
-          <div className="flex gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
-            <HandCoins className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800 leading-relaxed">
+          <motion.div variants={itemVariants} className={`flex gap-2.5 rounded-xl border p-3.5 ${warning.border100} ${warning.bg50}`}>
+            <HandCoins className={`h-4 w-4 shrink-0 mt-0.5 ${warning.icon500}`} />
+            <p className={`text-xs leading-relaxed ${warning.text700}`}>
               <strong>Anticipo por encima del máximo configurado.</strong> Esta oferta pacta un anticipo de{" "}
               <strong>{advancePercent}%</strong>, superando el máximo permitido en CONFIG APP ({maxAdvancePercent}%).
             </p>
-          </div>
-        )}
-
-        {budgetAtRisk && (
-          <div className={`flex gap-2.5 rounded-xl border p-3.5 ${semaphoreColors.bg}`}>
-            <Gauge className={`h-4 w-4 shrink-0 mt-0.5 ${semaphoreColors.text}`} />
-            <p className={`text-xs leading-relaxed ${semaphoreColors.text}`}>
-              <strong>Semáforo presupuestario en {semaphoreColors.label.toLowerCase()}.</strong> Esta oferta
-              representa el <strong>{Math.round(executedPct)}%</strong> de la inversión autorizada.
-            </p>
-          </div>
+          </motion.div>
         )}
 
         {!hasWarning && (
-          <div className="flex gap-2.5 rounded-xl border border-sky-100 bg-sky-50/60 p-3.5">
-            <ShieldCheck className="h-4 w-4 text-sky-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-sky-800 leading-relaxed">
+          <motion.div variants={itemVariants} className={`flex gap-2.5 rounded-xl border p-3.5 ${brand.border100} ${brand.bg50}`}>
+            <ShieldCheck className={`h-4 w-4 shrink-0 mt-0.5 ${brand.icon500}`} />
+            <p className={`text-xs leading-relaxed ${brand.text700}`}>
               Anticipo y presupuesto dentro de los parámetros configurados.
             </p>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </Modal>
   );
 }
