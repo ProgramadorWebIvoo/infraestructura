@@ -3,16 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion } from "motion/react";
 import { ClipboardList, FileSearch, Handshake, Send } from "lucide-react";
 import { ProjectStatus } from "../../types";
 import type { Project, Contractor, Proposal } from "../../types";
 import { containerVariants, itemVariants } from "../../animations";
-import { SkeletonCard, SkeletonList, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
-import KpiCard from "../../components/UI/KpiCard";
-import BidRegistrationSection from "./components/BidRegistrationSection";
-import ComparativeTableSection from "./components/ComparativeTableSection";
+import { SkeletonBlock, SkeletonCard, SkeletonTable } from "../../components/SkeletonLoader";
+import KpiPill from "../../components/UI/KpiPill";
+import AnalistasWorkspace from "./components/AnalistasWorkspace";
 
 interface ImportResult {
   message: string;
@@ -39,13 +38,10 @@ export default function AnalistasPanel({
   onImportSupplierProposals,
   isLoading = false,
 }: AnalistasPanelProps) {
-  const [selectedProjectId, setSelectedProjectId] = useState("");
-
   const pendingLicitacion = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA),
     [projects],
   );
-  const activeProject = pendingLicitacion.find(p => p.id === selectedProjectId);
 
   const kpis = useMemo(
     () => ({
@@ -60,80 +56,27 @@ export default function AnalistasPanel({
   if (isLoading) return <AnalistasSkeleton />;
 
   return (
-    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
       <h1 className="sr-only">Analistas</h1>
 
-      {/* Header del departamento */}
-      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm">
-            <FileSearch className="h-6 w-6 text-emerald-600" />
-          </div>
-          <div>
-            <h1 className="font-brand text-xl font-black tracking-tight text-slate-900">Analistas</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Registre ofertas de contratistas y consolide cuadros comparativos por expediente.
-            </p>
-          </div>
-        </div>
+      {/* KPIs operativos del departamento — contexto secundario compacto,
+          mismo patrón que Procura/Infraestructura/Cierre de Obra. */}
+      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
+        <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="brand" />
+        <KpiPill icon={<FileSearch className="h-3.5 w-3.5" />} label="Con Propuestas" value={kpis.withProposals} accent="info" />
+        <KpiPill icon={<Send className="h-3.5 w-3.5" />} label="Cuadros Enviados" value={kpis.comparativeSent} accent="success" />
+        <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" />
       </motion.div>
 
-      {/* KPIs operativos del departamento — stagger propio (containerVariants
-          en el grid, itemVariants por tarjeta) para que las 4 entren en
-          secuencia en vez de todas a la vez. */}
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<ClipboardList className="h-5 w-5" />} label="En Licitación" accent="text-emerald-600" borderAccent="border-l-emerald-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">{kpis.inBidding}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Expedientes a cotizar</p>
-          </KpiCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<FileSearch className="h-5 w-5" />} label="Con Propuestas" accent="text-sky-600" borderAccent="border-l-sky-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{kpis.withProposals}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Con ofertas registradas</p>
-          </KpiCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<Send className="h-5 w-5" />} label="Cuadros Enviados" accent="text-purple-600" borderAccent="border-l-purple-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-purple-700 to-purple-500 bg-clip-text text-transparent">{kpis.comparativeSent}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">En revisión de Procura</p>
-          </KpiCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<Handshake className="h-5 w-5" />} label="Contratados" accent="text-indigo-600" borderAccent="border-l-indigo-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-indigo-700 to-indigo-500 bg-clip-text text-transparent">{kpis.contracted}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Adjudicaciones cerradas</p>
-          </KpiCard>
-        </motion.div>
-      </motion.div>
-
-      {/* Left panel: Active Licitations and Adder */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 space-y-6">
-          <BidRegistrationSection
-            pendingLicitacion={pendingLicitacion}
-            contractors={contractors}
-            selectedProjectId={selectedProjectId}
-            onSelectProject={setSelectedProjectId}
-            activeProject={activeProject}
-            onAddProposal={onAddProposal}
-          />
-        </div>
-
-        {/* Right panel: Comparative Table Preview & Submission */}
-        <div className="lg:col-span-5 space-y-6">
-          <ComparativeTableSection
-            activeProject={activeProject}
-            onRemoveProposal={onRemoveProposal}
-            onSubmitComparative={onSubmitComparative}
-            onImportSupplierProposals={onImportSupplierProposals}
-            onComparativeSubmitted={() => setSelectedProjectId("")}
-          />
-        </div>
+      <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
+        <AnalistasWorkspace
+          pendingLicitacion={pendingLicitacion}
+          contractors={contractors}
+          onAddProposal={onAddProposal}
+          onRemoveProposal={onRemoveProposal}
+          onSubmitComparative={onSubmitComparative}
+          onImportSupplierProposals={onImportSupplierProposals}
+        />
       </motion.div>
     </motion.div>
   );
@@ -142,34 +85,15 @@ export default function AnalistasPanel({
 /* ─── Skeleton Loader ─── */
 function AnalistasSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3.5">
-        <SkeletonBlock className="h-12 w-12 rounded-2xl bg-slate-200" />
-        <div className="space-y-2">
-          <SkeletonBlock className="h-5 w-56" />
-          <SkeletonBlock className="h-3 w-96" />
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonStats key={i} />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 space-y-6">
-          <SkeletonCard />
-          <SkeletonList items={3} />
-        </div>
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-4 mb-4">
-              <SkeletonBlock className="h-5 w-5 rounded-lg" />
-              <SkeletonBlock className="h-4 w-48" />
-            </div>
-            <SkeletonBlock className="h-32 w-full" />
-          </div>
-        </div>
-      </div>
+      <SkeletonCard />
+      <SkeletonTable rows={4} columns={5} />
     </div>
   );
 }
