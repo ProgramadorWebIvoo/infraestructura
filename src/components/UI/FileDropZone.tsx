@@ -61,6 +61,18 @@ interface FileDropZoneProps {
   onFileRejected?: (fileName: string, reason: string) => void;
 }
 
+/**
+ * Los 5 acentos son un diferenciador de categoría (fotos/planos/hojas de
+ * cálculo/correcciones en la misma pantalla), no un estado success/warning/
+ * danger — no encajan 1:1 en SEMANTIC_COLOR_MAP (6 valores, menos que las 5
+ * categorías + el estado de error propio de esta zona).
+ *
+ * Las clases se listan literales (no interpoladas por color, ej.
+ * `border-${color}-200`) a propósito: el escáner JIT de Tailwind solo
+ * detecta clases que aparecen como texto completo en el código fuente —
+ * una clase armada en runtime por interpolación de string no aparece en el
+ * bundle final aunque el valor de `color` sea siempre uno de los 5 fijos.
+ */
 const COLOR_THEMES: Record<string, { border: string; bg: string; text: string; hover: string; dragBorder: string; dragBg: string; fileBg: string; fileBorder: string; fileText: string; countText: string }> = {
   sky: {
     border: "border-sky-200",

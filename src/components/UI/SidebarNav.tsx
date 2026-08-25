@@ -75,7 +75,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
           Todo el contenido visual usa effectiveCollapsed (isCollapsed && !isOpen)
           por la misma razón — ver definición arriba. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0F172A] text-white border-r border-slate-800/80 transition-[width,transform,translate,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-surface-inverted text-white border-r border-slate-800/80 transition-[width,transform,translate,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] transform-gpu
           w-64 ${isCollapsed ? "lg:w-16" : "lg:w-64"}
           ${isOpen ? "translate-x-0 shadow-2xl shadow-slate-950/50" : "-translate-x-full shadow-none"}
           lg:translate-x-0 lg:shadow-none lg:static lg:h-screen lg:sticky lg:top-0`}
@@ -147,7 +147,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
           aria-expanded={!isCollapsed}
           title={collapseLabel}
           onClick={onToggleCollapse}
-          className={`group absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 hidden lg:flex items-center justify-center w-7 h-7 rounded-full bg-slate-800 border border-slate-700/80 text-slate-400 shadow-lg shadow-slate-950/40 ring-1 ring-black/20 transition-all duration-200 hover:text-white hover:bg-slate-700 hover:border-slate-500 hover:shadow-brand-500/20 hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]`}
+          className={`group absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 hidden lg:flex items-center justify-center w-7 h-7 rounded-full bg-slate-800 border border-slate-700/80 text-slate-400 shadow-lg shadow-slate-950/40 ring-1 ring-black/20 transition-all duration-200 hover:text-white hover:bg-slate-700 hover:border-slate-500 hover:shadow-brand-500/20 hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
         >
           <motion.div
             animate={{ rotate: isCollapsed ? 0 : 180 }}

@@ -39,7 +39,7 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
     variant === "dark"
       ? "text-slate-400 hover:text-white hover:bg-slate-800/50"
       : "text-slate-500 hover:text-slate-800 hover:bg-slate-100";
-  const ringClass = variant === "dark" ? "ring-[#0F172A]" : "ring-white";
+  const ringClass = variant === "dark" ? "ring-surface-inverted" : "ring-white";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

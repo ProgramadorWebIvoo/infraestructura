@@ -10,7 +10,7 @@ interface MobileTopBarProps {
 
 export default function MobileTopBar({ user, activeRole, onMenuClick }: MobileTopBarProps) {
   return (
-    <header className="bg-[#0F172A] text-white border-b border-slate-800/60 shadow-sm relative overflow-hidden lg:hidden">
+    <header className="bg-surface-inverted text-white border-b border-slate-800/60 shadow-sm relative overflow-hidden lg:hidden">
       {/* Atmospheric light — matching sidebar header */}
       <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
       <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent pointer-events-none" />

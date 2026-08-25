@@ -10,7 +10,6 @@
 import { lazy, Suspense, useState, useEffect, useCallback, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Database } from "lucide-react";
 
 import { SkeletonBlock } from "../SkeletonLoader";
 import SidebarNav from "../UI/SidebarNav";
@@ -31,11 +30,6 @@ interface AuthenticatedLayoutProps {
   onCloseInspectedProject: () => void;
   onLogout: () => void;
   children: ReactNode;
-}
-
-interface SidebarNavProps {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,7 +106,7 @@ export default function AuthenticatedLayout({
   return (
     <ErrorBoundary>
       <OfflineBanner />
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex font-sans antialiased">
+      <div className="min-h-screen bg-surface-sunken text-slate-800 flex font-sans antialiased">
 
         <SidebarNav
           isOpen={isMobileSidebarOpen}
@@ -165,31 +159,6 @@ export default function AuthenticatedLayout({
             />
           </Suspense>
 
-          {/* Footer */}
-          {/* <footer className="mt-12 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/60">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
-
-                <div className="inline-flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-xs">
-                    <Database className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="font-bold text-slate-700">IVOO</span>
-                  <span className="text-slate-300">|</span>
-                  <span>Gestión de Infraestructura</span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <span>&copy; {new Date().getFullYear()}</span>
-                  <span className="text-slate-300 hidden sm:inline">&bull;</span>
-                  <span>Organigrama Integrado IVOO</span>
-                  <span className="text-slate-300 hidden sm:inline">&bull;</span>
-                  <span>Todos los derechos reservados.</span>
-                </div>
-              </div>
-            </div>
-          </footer>
- */}
         </div>
       </div>
     </ErrorBoundary>

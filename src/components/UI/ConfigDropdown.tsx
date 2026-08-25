@@ -41,11 +41,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
           }`}
           aria-expanded={isConfigOpen}
         >
-          <Settings
-            className={`h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:rotate-[3deg] ${
-              isConfigActive && !isConfigOpen ? "text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.35)]" : "text-slate-400 group-hover:text-white"
-            }`}
-          />
+          <Settings className={sidebarIconClass(isConfigActive && !isConfigOpen)} />
           <span className={sidebarTextClass(isCollapsed, true)}>Configuración</span>
           {!isCollapsed && (
             <ChevronDown

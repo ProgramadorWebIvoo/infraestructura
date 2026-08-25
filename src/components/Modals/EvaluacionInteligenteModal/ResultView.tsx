@@ -22,7 +22,6 @@ export default function ResultView({
   winnerTotalCost,
   winnerDeliveryWeeks,
   winnerRating,
-  onAccept,
   accepting,
   acceptSuccess,
   acceptError,

@@ -7,7 +7,7 @@
  * Usa Modal genérico + Table genérico.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Search, X, Check, ChevronDown } from "lucide-react";
 import Modal from "./Modal";
 import { Table, type Column } from "./Table";
@@ -59,8 +59,6 @@ interface SelectModalProps<T> {
   disabled?: boolean;
   /** Clase extra para el botón trigger */
   triggerClassName?: string;
-  /** Mostrar badge con contador de seleccionados (para multi-select futuro) */
-  showCount?: boolean;
   /** Texto del botón de cancelar en footer */
   cancelText?: string;
   /** Texto del botón de confirmar en footer */
@@ -91,7 +89,6 @@ export default function SelectModal<T>({
   emptyMessage = DEFAULT_EMPTY_MESSAGE,
   disabled = false,
   triggerClassName = "",
-  showCount = false,
   cancelText = "Cancelar",
   confirmText = "Seleccionar",
   allowDeselect = true,
@@ -157,9 +154,6 @@ export default function SelectModal<T>({
     e.stopPropagation();
     onDeselect?.();
   };
-
-  const isSelected = (opt: SelectModalOption<T>) => opt.value === selectedValue;
-  const isConfirmed = (opt: SelectModalOption<T>) => confirmedSelection?.value === opt.value;
 
   const selectedOption = useMemo(
     () => options.find((o) => o.value === selectedValue),

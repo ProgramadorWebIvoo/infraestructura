@@ -96,11 +96,11 @@ describe("InspectProjectModal", () => {
     });
     renderModal(project);
 
-    expect(screen.getByText("$100,000.00")).toBeInTheDocument(); // estimado
-    expect(screen.getAllByText("$80,000.00").length).toBe(2); // tope aprobado + liberado total
+    expect(screen.getAllByText("$100,000.00").length).toBeGreaterThan(0); // estimado
+    expect(screen.getAllByText("$80,000.00").length).toBe(3); // tope aprobado (snapshot + timeline) + liberado total
     expect(screen.getAllByText("$76,000.00").length).toBeGreaterThan(0); // contrato final (winner) + oferta
-    expect(screen.getByText("$24,000.00")).toBeInTheDocument(); // anticipo
-    expect(screen.getByText("$56,000.00")).toBeInTheDocument(); // liquidación
+    expect(screen.getAllByText("$24,000.00").length).toBeGreaterThan(0); // anticipo (snapshot + timeline)
+    expect(screen.getAllByText("$56,000.00").length).toBeGreaterThan(0); // liquidación (snapshot + timeline)
     expect(screen.getByText("100%")).toBeInTheDocument(); // liberado vs aprobado
     expect(screen.getByText("-24.0% vs estimado")).toBeInTheDocument();
   });

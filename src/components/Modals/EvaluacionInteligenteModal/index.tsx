@@ -52,7 +52,6 @@ export default function EvaluacionInteligenteModal({
   const [result, setResult] = useState<AIEvaluationResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [failoverLog, setFailoverLog] = useState<string[]>([]);
-  const [currentProvider, setCurrentProvider] = useState<AIProviderUsed>("chatgpt");
   const [accepting, setAccepting] = useState(false);
   const [acceptSuccess, setAcceptSuccess] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
@@ -66,7 +65,6 @@ export default function EvaluacionInteligenteModal({
       setResult(null);
       setErrorMsg("");
       setFailoverLog([]);
-      setCurrentProvider("chatgpt");
       setAcceptSuccess(false);
       setAcceptError(null);
     }
@@ -88,13 +86,10 @@ export default function EvaluacionInteligenteModal({
     try {
       const providerParam = selectedProvider === "auto" ? undefined : selectedProvider;
 
-      const displayProvider = selectedProvider === "auto" ? "chatgpt" : selectedProvider;
-      setCurrentProvider(displayProvider);
-
       const startLabel =
         selectedProvider === "auto"
           ? "Automático (Failover: ChatGPT → Gemini → Claude)"
-          : PROVIDER_META[displayProvider].label;
+          : PROVIDER_META[selectedProvider].label;
 
       log(`Iniciando evaluación con ${startLabel}...`);
 
@@ -107,7 +102,6 @@ export default function EvaluacionInteligenteModal({
 
       log(`✅ Evaluación completada por ${PROVIDER_META[data.providerUsed].label}`);
       setResult(data);
-      setCurrentProvider(data.providerUsed);
       setStatus("result");
     } catch (err: unknown) {
       const error = err as Error & { attemptLog?: string[] };
@@ -235,7 +229,6 @@ export default function EvaluacionInteligenteModal({
             proposals.find((p) => p.contractorCode === result.winnerContractorCode)
               ?.contractorRating ?? null
           }
-          onAccept={handleAccept}
           accepting={accepting}
           acceptSuccess={acceptSuccess}
           acceptError={acceptError}

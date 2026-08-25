@@ -19,7 +19,6 @@ export interface ResultViewProps {
   winnerTotalCost: number;
   winnerDeliveryWeeks: number;
   winnerRating: number | null;
-  onAccept: () => Promise<void>;
   accepting: boolean;
   acceptSuccess: boolean;
   acceptError: string | null;

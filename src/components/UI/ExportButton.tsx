@@ -9,6 +9,7 @@
  */
 
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
+import { formatCurrency } from "../../utils";
 
 export type ExportFormat = "csv" | "excel" | "pdf";
 export type ExportRow = (string | number | null | undefined)[];
@@ -96,7 +97,7 @@ const ZEBRA_BG = "#f8fafc";
 const FOOTER_BG = "#f1f5f9";
 
 function moneyFormat(n: number): string {
-  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatCurrency(n);
 }
 
 function pdfCellText(cell: unknown, col?: ExportColumn): string {
