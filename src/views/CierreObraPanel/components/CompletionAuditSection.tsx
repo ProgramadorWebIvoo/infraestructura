@@ -21,20 +21,11 @@ import { Table, type Column } from "../../../components/UI/Table";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { formatCurrency } from "../../../utils";
 import { useContainerRows } from "../../../hooks/useContainerRows";
+import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 
 interface CompletionAuditSectionProps {
   projects: Project[];
   onVerifyCompletion: (projectId: string) => void;
-}
-
-function ProjectTypeBadge({ type }: { type: Project["type"] }) {
-  return (
-    <span className={`text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap ${
-      type === "INFRAESTRUCTURA" ? "bg-sky-50 text-sky-700 border-sky-100" : "bg-slate-100 text-slate-700 border-slate-200"
-    }`}>
-      {type === "INFRAESTRUCTURA" ? "INFRA" : "MANT"}
-    </span>
-  );
 }
 
 const success = SEMANTIC_COLOR_MAP.success;

@@ -30,13 +30,14 @@ Tokens centralizados en `@theme` (`src/index.css`) — Tailwind v4, sin `tailwin
 - **Botones/acciones**: [Button](#button), [IconActionButton](#iconactionbutton)
 - **Feedback/alertas**: [AlertBanner](#alertbanner), [InfoBanner](#infobanner), [Toast](#toast--toastprovider--usetoast), [OfflineBanner](#offlinebanner), [FieldError](#fielderror)
 - **Diálogos/modales**: [Modal](#modal), [ConfirmDialog](#confirmdialog), [SelectModal](#selectmodal)
-- **Tablas/listados**: [Table](#table), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel), [ConfigAuditLogPanel](#configauditlogpanel)
+- **Tablas/listados**: [Table](#table), [GridView](#gridview), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel), [ConfigAuditLogPanel](#configauditlogpanel)
 - **Formularios**: [NumericInput](#numericinput), [Select](#select), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint), [PasswordStrengthMeter](#passwordstrengthmeter)
 - **Badges/estado**: [StatusBadge](#statusbadge), [RoleBadge](#rolebadge)
 - **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [FilterBar](#filterbar-searchinput--selectfilter), [TableToolbar](#tabletoolbar)
 - **Navegación/shell**: [SidebarNav](#sidebarnav), [ConfigDropdown](#configdropdown), [MobileTopBar](#mobiletopbar), [SidebarTip](#sidebartip)
 - **Notificaciones internas**: [NotificationBell](#notificationbell), [NotificationList](#notificationlist), [NotificationsProvider](#notificationsprovider--usenotifications)
 - **Tooltips**: [Tooltip](#tooltip), [SidebarTip](#sidebartip) (solo sidebar colapsado)
+- **Popovers (click, contenido interactivo)**: [VersionHistoryPopover](#versionhistorypopover)
 - **Exportación**: [ExportButton](#exportbutton)
 - **Helpers no-componente**: [alertStyles.ts](#alertstylests), [sidebarNavClasses.ts](#sidebarnavclassests), [colorTokens.ts](#colortokensts)
 - **Design tokens / animación**: ver [sección Design Tokens](#design-tokens) arriba y `springs` en `src/animations.ts`.
@@ -155,7 +156,8 @@ Botón que abre un modal tipo tabla con búsqueda — reemplazo de `<select>` na
 
 Tabla de datos genérica con ordenamiento, paginación, skeleton de carga, empty state, header sticky y click/dblclick/selección de filas. **Exportación nombrada** (`Table`, `Column<T>`), no default.
 
-- **Props**: `columns: Column<T>[]` (`key,label,align?,width?,className?,sortable?,render?`), `data: T[]`, `rowKey`, `isLoading?`, `loadingRows?`, `emptyMessage?`, `emptyState?`, `footer?`, `pageSize?` (activa paginación), `maxHeight?`, `fillViewport?`, `containerClassName?`, `className?`, `stickyHeader?`, `rowHoverClass?`, `alternating?`, `onRowClick?`, `onRowDoubleClick?`, `selectedRowKey?`, `selectedRowClass?`
+- **Props**: `columns: Column<T>[]` (`key,label,align?,width?,className?,sortable?,render?,sortValue?`), `data: T[]`, `rowKey`, `isLoading?`, `loadingRows?`, `emptyMessage?`, `emptyState?`, `footer?`, `pageSize?` (activa paginación), `maxHeight?`, `fillViewport?`, `containerClassName?`, `className?`, `stickyHeader?`, `rowHoverClass?`, `alternating?`, `onRowClick?`, `onRowDoubleClick?`, `selectedRowKey?`, `selectedRowClass?`
+- **Ordenar por un valor calculado**: `sortable: true` por sí solo ordena por `row[column.key]` — si el dato mostrado en la columna no es un campo directo de la fila (ej. un conteo derivado calculado por el consumidor, como "cantidad de rechazos" en `RevisedDocumentsSection.tsx`), agregar `sortValue: (row: T) => string | number` a esa columna. Cuando está presente, `Table` ordena por ese valor en vez de `row[key]` — 100% opt-in y retrocompatible, las columnas existentes sin `sortValue` no cambian de comportamiento.
 - **Cuándo usarlo**: cualquier vista tabular — es el primitivo base (usado también dentro de `SelectModal`).
 - **Convenciones**: sort/paginación client-side. Botones de paginación con radio `rounded-control` (token). Transición skeleton→contenido vía `AnimatePresence mode="wait"` (crossfade, no swap abrupto) — dentro del `tbody` de datos, las filas entran con stagger (`itemVariants`, `staggerChildren: 0.03`); el cambio de página anima solo la entrada (sin `exit` por fila, para no bloquear la interacción en clicks rápidos de paginación).
 - **Alto del contenedor scrolleable — `maxHeight` vs `fillViewport`**: por defecto la tabla no tiene alto máximo (crece con su contenido). Dos formas opt-in de acotarla, mutuamente excluyentes (`fillViewport` gana si ambas se pasan):
@@ -164,7 +166,35 @@ Tabla de datos genérica con ordenamiento, paginación, skeleton de carga, empty
     - **Por qué no bastaba con `h-full` + CSS Grid `stretch`** (intento intermedio, descartado): en teoría un grid con `align-items: stretch` (el default) estira todas las columnas de una fila a la altura de la más alta, así que la columna de la tabla con `h-full` debería heredar la altura de la columna de auditoría. En la práctica esto no funciona en esta app porque **ninguna columna define una altura real** — el layout raíz (`AuthenticatedLayout.tsx`) usa `min-h-screen` en cascada (`min-height`, no `height`), así que no hay ningún ancestro con alto fijo del cual "heredar". El `grid` mide `fit-content` de su fila, que termina siendo la altura *intrínseca* de la columna de la tabla (header+toolbar+filas+paginación, variable según cuántos registros haya) — no la del panel de auditoría, que calcula su altura de forma *absoluta* contra `100vh` sin depender del grid en absoluto. Verificado con medición real en navegador (Playwright): ambas columnas medían alturas distintas y sin relación causal.
     - **Por qué no bastaba con medir `getBoundingClientRect().top` en runtime** (primer intento, también descartado): mismo problema de fondo — sin una altura de referencia fija en el padre, `window.innerHeight - top` da un número que no tiene ninguna garantía de coincidir con el que calcula el panel de auditoría vecino (que usa su propio `top` sticky + su propio `bottom` margin, de forma completamente independiente). Cualquier intento de "medir y calzar" dos elementos que calculan su altura por caminos distintos es frágil por diseño; la solución robusta es que **ambos usen el mismo mecanismo** (`sticky` + `calc(100vh - offset)`), no que uno intente adivinar el resultado del otro.
     - **Alcance**: aplicado en `UsuariosPanel`, `ProveedoresConfigPanel`, `MaterialConfigPanel` (mismo patrón de columna `sticky` en las 3). **No usado** en `AIConfigTable` (dentro de `AIConfigPanel`): ahí la tabla va debajo de `UsageDashboard`, cuyo alto varía con la cantidad de proveedores con actividad, y no vive en un layout de 2 columnas junto a un panel de auditoría que deba calzarle — se dejó con `maxHeight="30rem"` fijo.
-- **Nota histórica**: tuvo un sistema de virtualización (`virtualizeThreshold` + `@tanstack/react-virtual`) que ningún consumidor activaba nunca y sin tests — eliminado como código muerto (auditoría de MaterialConfigPanel). Si una tabla futura necesita virtualización real (miles de filas), reintroducir con un caso de uso concreto, no especulativamente.
+- **Nota histórica**: tuvo un sistema de virtualización (`virtualizeThreshold` + `@tanstack/react-virtual`) que ningún consumidor activaba nunca y sin tests — eliminado como código muerto (auditoría de MaterialConfigPanel). Si una tabla futura necesita virtualización real (miles de filas), reintroducir con un caso de uso concreto, no especulativamente. La virtualización real que sí se necesitó después vive en [`GridView`](#gridview) (variante de tarjetas, no de tabla) — no reintroducir aquí.
+
+## GridView
+
+**Path**: `src/components/UI/GridView/` (`GridView.tsx`, `GridCard.tsx`, `useFullViewport.ts`, `types.ts`)
+
+Variante de visualización alternativa a `Table` — mismos datos, layout de cuadrícula de tarjetas en vez de filas. Genérico sobre `T`, misma filosofía que `Column<T>.render`: el componente no conoce el dominio de los items, el consumidor decide qué pintar dentro de cada tarjeta vía `renderCard`. **No es una extensión/subclase de `Table`** — son dos componentes hermanos e independientes que un mismo consumidor puede alternar sobre el mismo `data`/`items` (ver `RevisedDocumentsSection.tsx`, Cierre de Obra → "Historial de Expedientes", primer y único consumidor hoy).
+
+- **Import**: `import GridView from "src/components/UI/GridView/GridView"` (default export).
+- **Props** (`GridViewProps<T>`, `types.ts`):
+  - `items: T[]` — el dataset, igual rol que `data` en `Table`.
+  - `rowKey: (item: T, index: number) => string | number` — igual que `Table.rowKey`.
+  - `renderCard: (item: T, index: number) => ReactNode` — **obligatorio**, contenido interno de cada tarjeta. `GridView`/`GridCard` no imponen ninguna estructura (header/métricas/acciones) — el consumidor arma su propio JSX libremente, normalmente en un archivo separado de su propia vista (ver `ExpedienteGridCard.tsx` en Cierre de Obra) para no mezclar la lógica de dominio con el mecanismo del grid.
+  - `cardAccent?: (item: T) => SemanticColor | undefined` — color de borde/anillo de selección de la tarjeta, resuelto desde `SEMANTIC_COLOR_MAP` (`colorTokens.ts`). El consumidor decide la condición (ej. `danger` si el item representa algo rechazado); `GridView` no interpreta el dominio, solo aplica el rol indicado. Sin esta prop, o si devuelve `undefined`, usa `neutral`.
+  - `onSelect?: (item: T) => void` — click en la tarjeta.
+  - `selectedKey?: string | number` — resalta la tarjeta cuya `rowKey` coincide (mismo patrón que `Table.selectedRowKey`).
+  - `minCardWidth?: number` (default `280`) — ancho mínimo estimado en px, determina cuántas columnas caben por fila según el ancho medido del contenedor.
+  - `estimateRowHeight?: number` (default `180`) — alto estimado de una fila en px, usado por el virtualizador antes de medir filas reales.
+  - `emptyState?: ReactNode` — igual rol que `Table.emptyState`.
+  - `className?: string`.
+- **Cuándo usarlo**: cuando una tabla de filas no es la forma más legible de escanear el dataset (fotos/miniaturas, tarjetas con varias métricas visuales, catálogos) y se quiere ofrecer esa vista como alternativa (no reemplazo) a `Table` sobre el mismo dato — típicamente detrás de un toggle Tabla/Grid que el consumidor arma con dos botones simples (ver `RevisedDocumentsSection.tsx`).
+- **Inicializar en Tabla o Grid**: `GridView` no lo decide — es una prop del **consumidor**. Patrón usado en `RevisedDocumentsSection.tsx`: `defaultViewMode?: "table" | "grid"` en las props del componente contenedor (default `"table"`), usado como valor inicial de un `useState` local (`viewMode`) que el toggle actualiza. No hay persistencia automática entre sesiones (ej. `localStorage`) — si se necesita recordar la última vista elegida por el usuario, es responsabilidad explícita a agregar en el consumidor, no algo que `GridView` haga por defecto.
+- **Convenciones/mecanismo interno**:
+  - **Virtualización**: usa `@tanstack/react-virtual` (`useVirtualizer`), virtualizando por **filas** (la librería es 1D nativamente) — `columnsPerRow` se deriva del ancho medido (`useFullViewport`) y `minCardWidth`, cada fila virtualizada renderiza sus N tarjetas vía `items.slice()`. Solo las filas visibles (+ overscan de 3) están en el DOM — verificable en DevTools con datasets grandes.
+  - **`useFullViewport`**: hook interno del componente (no vive en `src/hooks/`, es un detalle de implementación de `GridView`) que mide `clientWidth`/`clientHeight` del contenedor vía `ResizeObserver` — mismo patrón que `useContainerRows` (`src/hooks/useContainerRows.ts`), no mide `window` global. El `containerRef` que devuelve se usa internamente como el propio scroll element del grid; el consumidor no necesita pasarle nada, solo darle un padre con altura real (`flex-1 min-h-0`, igual criterio que `Table fillViewport`).
+  - **Animación**: `containerVariants`/`itemVariants` (`src/animations.ts`) para el stagger de montaje de filas; `layout` en cada `GridCard` para reflow orgánico al filtrar; `whileHover`/`whileTap` (leve elevación + escala) en cada tarjeta.
+  - **Memoización**: `GridCard` está envuelto en `React.memo` con comparador superficial (`cardKey`, `children`, `accent`, `isSelected`, `onClick`) — el contenido interno (`renderCard`) es responsabilidad del consumidor memoizar si resulta costoso, `GridCard` no puede saberlo.
+  - **Color**: nunca hex/rgb hardcodeado — borde/fondo/ring de cada tarjeta resuelven desde `SEMANTIC_COLOR_MAP` según `cardAccent`.
+- **Testing en jsdom**: el `ResizeObserver` global de `test/setup.ts` es un no-op (no dispara callback), y `@tanstack/react-virtual` mide el scroll element vía `offsetWidth`/`offsetHeight` (no `getBoundingClientRect` ni solo `clientWidth`/`clientHeight`) — un test que monte `GridView` necesita stubear **ambos** pares de propiedades en `HTMLDivElement.prototype` más un `ResizeObserver` síncrono local (mismo patrón que `useContainerRows.test.tsx`). Ver `src/__tests__/components/UI/GridView.test.tsx` (`stubSyncResizeObserver`/`stubContainerSize`) para el helper ya resuelto — copiar ese patrón en vez de redescubrirlo.
 
 ## EmptyState
 
@@ -441,6 +471,16 @@ Tooltip genérico de propósito general, portal, 4 direcciones, accesible por te
 - **Props**: `content: ReactNode`, `placement?: "top"|"bottom"|"left"|"right"`, `disabled?`, `delay?` (default 150ms), `className?`, `children: ReactElement` (hijo único, clonado)
 - **Cuándo usarlo**: cualquier tooltip de hover/focus fuera del sidebar (botones de acción de tabla, hints de ayuda, etc.) — es la versión general de `SidebarTip`.
 - **Convenciones**: portal a `document.body` (escapa el recorte de `overflow-x-auto` en tablas); setea `aria-describedby` en el trigger; Escape lo cierra; usado por `IconActionButton` y `HelpHint`. **No usar `title="..."` nativo para tooltips nuevos** — usar este componente.
+
+## VersionHistoryPopover
+
+**Path**: `src/components/UI/VersionHistoryPopover.tsx`
+
+Popover flotante controlado por **click** (no hover), con contenido interactivo — a diferencia de `Tooltip`, que es hover-only y `pointer-events-none` (su contenido no se puede clickear). Es el primer Popover genérico del repo; se extrajo el patrón de portal + `getBoundingClientRect()` de `Tooltip.tsx` pero con cierre por click-outside/ESC en vez de mouseleave.
+
+- **Props**: `isOpen: boolean`, `onClose: () => void`, `anchorRef: RefObject<HTMLElement | null>` (elemento contra el que se posiciona), `children: ReactNode`, `placement?: "bottom"|"top"` (default `"bottom"`)
+- **Cuándo usarlo**: contenido flotante que el usuario debe poder interactuar dentro (lista clicable, botones, formulario corto) anclado a un botón — no para texto simple de ayuda (eso es `Tooltip`).
+- **Convenciones**: tema oscuro fijo (`bg-slate-800/95`, `text-slate-100`, mismo look que `Tooltip`); portal a `document.body`; el estado `isOpen` es controlado por el consumidor (no maneja su propio toggle); cierra con click fuera del popover Y del `anchorRef`, o con tecla ESC. Usado hoy en `ProjectDocumentsList.tsx` (`src/components/UI/`) para el historial de versiones (`V1`, `V2`...) de un documento, siempre con `placement="bottom"` (el único valor ejercitado hasta ahora; `"top"` es soportado pero sin consumidor real todavía).
 
 ---
 

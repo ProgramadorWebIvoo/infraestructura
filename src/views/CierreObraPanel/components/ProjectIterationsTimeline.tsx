@@ -13,13 +13,12 @@ import { AlertTriangle } from "lucide-react";
 import type { AuditLog } from "../../../types";
 import { getRoleColor } from "../../../utils";
 import { containerVariants, itemVariants } from "../../../animations";
+import { REJECTION_ACTION } from "./rejectionAudit";
 
 interface ProjectIterationsTimelineProps {
   projectId: string;
   auditLogs: AuditLog[];
 }
-
-const REJECTION_ACTION = "Rechazo de petición de obra";
 
 export default function ProjectIterationsTimeline({ projectId, auditLogs }: ProjectIterationsTimelineProps) {
   const entries = auditLogs

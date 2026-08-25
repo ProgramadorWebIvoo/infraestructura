@@ -19,6 +19,13 @@ export interface Column<T> {
   sortable?: boolean;
   /** Custom render. When omitted, renders `row[key]` as text. */
   render?: (row: T, index: number) => React.ReactNode;
+  /**
+   * Valor a usar al ordenar por esta columna, cuando el dato mostrado no es
+   * un campo directo de `row` (ej. un conteo derivado calculado por el
+   * consumidor). Si se omite, se ordena por `row[key]` como antes —
+   * 100% retrocompatible.
+   */
+  sortValue?: (row: T) => string | number;
 }
 
 export interface TableProps<T> {
@@ -119,9 +126,11 @@ export function Table<T>({
 
   const sortedData = useMemo(() => {
     if (!sortColumn) return data;
+    const activeColumn = columns.find((c) => c.key === sortColumn);
+    const getValue = (row: T) => (activeColumn?.sortValue ? activeColumn.sortValue(row) : row[sortColumn as keyof T]);
     return [...data].sort((a, b) => {
-      const aVal = a[sortColumn as keyof T];
-      const bVal = b[sortColumn as keyof T];
+      const aVal = getValue(a);
+      const bVal = getValue(b);
       if (aVal == null) return 1;
       if (bVal == null) return -1;
       const cmp =
@@ -130,7 +139,7 @@ export function Table<T>({
           : Number(aVal) - Number(bVal);
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [data, sortColumn, sortDir]);
+  }, [data, columns, sortColumn, sortDir]);
 
   // ── Pagination ──
 

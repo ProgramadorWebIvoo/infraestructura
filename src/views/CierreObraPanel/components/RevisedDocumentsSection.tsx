@@ -11,7 +11,8 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, FileStack, MapPin } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { AlertTriangle, FileStack, LayoutGrid, MapPin, Table as TableIcon } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import EmptyState from "../../../components/UI/EmptyState";
@@ -22,8 +23,10 @@ import StatusBadge from "../../../components/UI/StatusBadge";
 import Tabs from "../../../components/UI/Tabs";
 import TabPanel from "../../../components/UI/TabPanel";
 import { Table, type Column } from "../../../components/UI/Table";
+import GridView from "../../../components/UI/GridView/GridView";
 import { SelectFilter } from "../../../components/UI/FilterBar";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import { itemVariants } from "../../../animations";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { downloadProjectDocument } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
@@ -31,13 +34,19 @@ import { ProjectStatus } from "../../../types";
 import type { AuditLog, Project, ProjectDocument } from "../../../types";
 import ProjectIterationsTimeline from "./ProjectIterationsTimeline";
 import ExpedienteDetailTab from "./ExpedienteDetailTab";
+import { renderExpedienteCard } from "./ExpedienteGridCard";
+import { rejectionCountOf } from "./rejectionAudit";
 
 type ModalTabKey = "detalle" | "historial" | "archivos";
+type ViewMode = "table" | "grid";
 
 interface RevisedDocumentsSectionProps {
   projects: Project[];
   auditLogs: AuditLog[];
   authToken: string;
+  /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el
+   * consumidor, no recordada automáticamente entre sesiones. */
+  defaultViewMode?: ViewMode;
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
@@ -48,13 +57,7 @@ const STATUS_FILTER_OPTIONS = [
   { value: "APPROVED", label: "Aprobados" },
 ];
 
-const REJECTION_ACTION = "Rechazo de petición de obra";
-
-function rejectionCountOf(projectId: string, auditLogs: AuditLog[]): number {
-  return auditLogs.filter((l) => l.projectId === projectId && l.action === REJECTION_ACTION).length;
-}
-
-export default function RevisedDocumentsSection({ projects, auditLogs, authToken }: RevisedDocumentsSectionProps) {
+export default function RevisedDocumentsSection({ projects, auditLogs, authToken, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
   const { containerRef } = useContainerRows({ paginated: false });
   const [selectedId, setSelectedId] = useState("");
@@ -63,6 +66,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [modalTab, setModalTab] = useState<ModalTabKey>("historial");
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
 
   // La tab activa por defecto es HISTORIAL — se reinicia a esa vista cada
   // vez que se abre un expediente distinto, en vez de arrastrar la tab que
@@ -123,6 +127,8 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
       label: "Rechazos",
       width: "6rem",
       align: "right",
+      sortable: true,
+      sortValue: (p) => rejectionCountOf(p.id, auditLogs),
       render: (p) => {
         const count = rejectionCountOf(p.id, auditLogs);
         return count > 0 ? (
@@ -155,7 +161,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
         color="emerald"
       />
 
-      <div className="shrink-0 flex flex-wrap gap-2.5 mb-3">
+      <div className="shrink-0 flex flex-wrap items-center gap-2.5 mb-3">
         <SelectFilter
           id="revised-docs-filter-status"
           value={statusFilter}
@@ -181,21 +187,67 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
           className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
           title="Fecha hasta"
         />
+
+        <div className="ml-auto flex items-center gap-1 p-1 rounded-xl bg-slate-100/60">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            aria-label="Vista de tabla"
+            aria-pressed={viewMode === "table"}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === "table" ? "bg-white text-success-700 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+          >
+            <TableIcon className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            aria-label="Vista de grid"
+            aria-pressed={viewMode === "grid"}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === "grid" ? "bg-white text-success-700 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {revisedProjects.length === 0 ? (
         <EmptyState message="No hay proyectos con documentación ya revisada." />
       ) : (
-        <div ref={containerRef} className="flex-1 min-h-0">
-          <Table
-            columns={columns}
-            data={revisedProjects}
-            rowKey={(p) => p.id}
-            fillViewport
-            onRowClick={(p) => setSelectedId(p.id)}
-            selectedRowKey={selectedId}
-          />
-        </div>
+        <AnimatePresence mode="wait">
+          {viewMode === "table" ? (
+            <motion.div
+              key="table"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              ref={containerRef}
+              className="flex-1 min-h-0"
+            >
+              <Table
+                columns={columns}
+                data={revisedProjects}
+                rowKey={(p) => p.id}
+                fillViewport
+                stickyHeader
+                onRowClick={(p) => setSelectedId(p.id)}
+                selectedRowKey={selectedId}
+              />
+            </motion.div>
+          ) : (
+            <motion.div key="grid" variants={itemVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0">
+              <GridView
+                items={revisedProjects}
+                rowKey={(p) => p.id}
+                renderCard={(p) => renderExpedienteCard(p, rejectionCountOf(p.id, auditLogs))}
+                cardAccent={(p) => (rejectionCountOf(p.id, auditLogs) > 0 ? "danger" : undefined)}
+                onSelect={(p) => setSelectedId(p.id)}
+                selectedKey={selectedId}
+                emptyState={<EmptyState message="No hay proyectos que coincidan con los filtros." />}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
 
       {/* ── Modal de documentos del expediente seleccionado ── */}

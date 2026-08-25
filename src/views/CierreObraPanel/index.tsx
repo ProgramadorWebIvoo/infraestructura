@@ -96,7 +96,7 @@ export default function CierreObraPanel({
           <TabPanel activeKey={activeTab}>
             {activeTab === "revision" && (
               <div className="min-h-0 flex flex-col flex-1 gap-6">
-                <InfoBanner title="Flujo de Retornos · De acuerdo con los procedimientos operativos de IVOO" color="sky" className="shrink-0">
+                <InfoBanner defaultOpen = {false} title="Flujo de Retornos · De acuerdo con los procedimientos operativos de IVOO" color="sky" className="shrink-0">
                   <ol className="space-y-1.5 list-none">
                     <li><strong className="text-sky-900">1.</strong> Cierre de Obra realiza la cubicación de materiales y planos de ingeniería iniciales.</li>
                     <li><strong className="text-sky-900">2.</strong> Al finalizar el trabajo, audita físicamente la obra y certifica si cumple con los estándares estipulados.</li>

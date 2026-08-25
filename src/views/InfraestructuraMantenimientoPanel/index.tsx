@@ -21,7 +21,7 @@ import RejectedPetitionsSection from "./components/RejectedPetitionsSection";
 import RejectedWarningLabel from "./components/RejectedWarningLabel";
 import { useRequestForm } from "../../hooks/useRequestForm";
 
-type TabKey = "crear" | "tabla" | "rechazadas";
+type TabKey = "crear" | "expedientes" | "rechazadas";
 
 export type { FieldKey, FieldErrors } from "../../hooks/useRequestForm";
 
@@ -101,7 +101,7 @@ export default function InfraestructuraMantenimientoPanel({
             fullWidth
             tabs={[
               { key: "crear", label: "Crear" },
-              { key: "tabla", label: "Tabla", count: kpis.total },
+              { key: "expedientes", label: "Expedientes", count: kpis.total },
               { key: "rechazadas", label: "Rechazadas", count: kpis.rejected, showDot: kpis.rejected > 0 && activeTab !== "rechazadas" },
             ]}
           />
@@ -126,7 +126,7 @@ export default function InfraestructuraMantenimientoPanel({
         <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
           <TabPanel activeKey={activeTab}>
             {activeTab === "crear" && <RequestWizardCard form={form} materialsCatalog={materialsCatalog} />}
-            {activeTab === "tabla" && (
+            {activeTab === "expedientes" && (
               <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} />
             )}
             {activeTab === "rechazadas" && (
