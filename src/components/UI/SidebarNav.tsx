@@ -11,9 +11,9 @@
  * muestra un tooltip flotante (SidebarTip) al hacer hover/focus.
  */
 
-import { memo } from "react";
+import { memo, useRef } from "react";
 import { NavLink } from "react-router-dom";
-import { MotionConfig, motion } from "motion/react";
+import { MotionConfig } from "motion/react";
 import {
   Building2,
   TrendingUp,
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import ConfigDropdown from "./ConfigDropdown";
 import SidebarTip from "./SidebarTip";
+import SidebarCollapseHint from "./SidebarCollapseHint";
 import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
 import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
@@ -49,6 +50,7 @@ interface SidebarNavProps {
 function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, isCollapsed, onToggleCollapse }: SidebarNavProps) {
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
   const collapseLabel = isCollapsed ? "Expandir barra de navegación" : "Minimizar barra de navegación";
+  const collapseButtonRef = useRef<HTMLButtonElement>(null);
 
   // isCollapsed es una preferencia de desktop (persistida en localStorage) que
   // no debe aplicarse al drawer mobile: cuando isOpen es true, el usuario abrió
@@ -83,7 +85,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
         {/* ── Sidebar Header (Logo/Brand) ─────────────────────────────────── */}
         {/* Sin overflow-hidden: el dropdown de NotificationBell necesita desbordar
             este contenedor para no quedar recortado (antes vivía en el footer). */}
-        <div className={`relative border-b border-slate-800/60 shrink-0 ${effectiveCollapsed ? "py-3" : "p-3"}`}>
+        <div className={`group/header relative border-b border-slate-800/60 shrink-0 ${effectiveCollapsed ? "py-3" : "p-3"}`}>
           {/* Ambient atmospheric light */}
           <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
 
@@ -91,28 +93,62 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
           <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent pointer-events-none" />
 
           <div className={`flex items-center relative ${effectiveCollapsed ? "justify-center" : "justify-between"}`}>
-            <SidebarTip label="IVOO GESTIÓN" disabled={!effectiveCollapsed}>
-              <div className={`flex items-center min-w-0 h-10 ${effectiveCollapsed ? "" : "gap-3"}`}>
-                {/* Collapsed: tile de marca; expandido: logo oficial de la empresa (chip 3:1) */}
-                {effectiveCollapsed ? (
-                  <div className="relative shrink-0">
+            {effectiveCollapsed ? (
+              // Colapsado: el botón de expandir vive superpuesto al tile de
+              // marca — al hacer hover, el ícono de casa se desvanece y el
+              // de flecha aparece en su lugar (patrón Gemini), en vez de un
+              // botón aparte que compita por el espacio angosto del rail.
+              <SidebarTip label={collapseLabel} disabled={!effectiveCollapsed}>
+                <div className="relative shrink-0 h-10 w-10">
+                  <button
+                    ref={collapseButtonRef}
+                    aria-label={collapseLabel}
+                    aria-expanded={!isCollapsed}
+                    onClick={onToggleCollapse}
+                    className={`group/collapse relative hidden lg:flex h-10 w-10 items-center justify-center rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset transition-opacity duration-200 group-hover/collapse:opacity-0" />
+                    <div className="absolute inset-0 bg-slate-700 rounded-xl ring-1 ring-white/12 ring-inset opacity-0 transition-opacity duration-200 group-hover/collapse:opacity-100" />
+                    <House className="relative h-5 w-5 text-white stroke-[2.5] transition-opacity duration-200 group-hover/collapse:opacity-0" />
+                    <ChevronRight className="absolute h-5 w-5 text-white stroke-[2.5] opacity-0 transition-opacity duration-200 group-hover/collapse:opacity-100" />
+                  </button>
+                  {/* Mobile: el tile de marca queda decorativo (el botón de
+                      colapso está oculto por completo con lg:flex arriba). */}
+                  <div className="absolute inset-0 lg:hidden">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset">
                       <House className="h-5 w-5 text-white stroke-[2.5]" />
                     </div>
                   </div>
-                ) : (
+                </div>
+              </SidebarTip>
+            ) : (
+              <SidebarTip label="IVOO GESTIÓN" disabled={!effectiveCollapsed}>
+                <div className="flex items-center min-w-0 h-10 gap-3">
                   <div className="relative shrink-0 overflow-hidden">
                     <img src="/ivoo_logoo.svg" alt="IVOO" className="block h-9 w-auto" />
                   </div>
-                )}
-
-                {!effectiveCollapsed && (
                   <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em] leading-none">
                     Gestión
                   </span>
-                )}
-              </div>
-            </SidebarTip>
+                </div>
+              </SidebarTip>
+            )}
+
+            {!effectiveCollapsed && (
+              // Expandido: el botón de colapso solo aparece al pasar el mouse
+              // por la fila del header (o con teclado, vía focus-within) —
+              // discreto el resto del tiempo, visible cuando el usuario está
+              // mirando esa zona (patrón Gemini/ChatGPT).
+              <button
+                ref={collapseButtonRef}
+                aria-label={collapseLabel}
+                aria-expanded={!isCollapsed}
+                onClick={onToggleCollapse}
+                className={`hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 opacity-0 transition-all duration-200 cursor-pointer hover:text-white hover:bg-slate-800/60 group-hover/header:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
+              >
+                <ChevronRight className="h-4 w-4 rotate-180" strokeWidth={2.5} />
+              </button>
+            )}
 
             <button
               aria-label="Cerrar menú lateral"
@@ -122,6 +158,8 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
               <X className="h-5 w-5" />
             </button>
           </div>
+
+          <SidebarCollapseHint anchorRef={collapseButtonRef} enabled={!isOpen} />
 
           {/* Fila propia para rol activo + notificaciones: en colapsado el rail
               de 64px no tiene espacio para el logo y la campana lado a lado en
@@ -140,22 +178,6 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
             </SidebarTip>
           </div>
         </div>
-
-        {/* ── Sidebar Collapse Button ─────────────────────────────────── */}
-        <button
-          aria-label={collapseLabel}
-          aria-expanded={!isCollapsed}
-          title={collapseLabel}
-          onClick={onToggleCollapse}
-          className={`group absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 hidden lg:flex items-center justify-center w-7 h-7 rounded-full bg-slate-800 border border-slate-700/80 text-slate-400 shadow-lg shadow-slate-950/40 ring-1 ring-black/20 transition-all duration-200 hover:text-white hover:bg-slate-700 hover:border-slate-500 hover:shadow-brand-500/20 hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
-        >
-          <motion.div
-            animate={{ rotate: isCollapsed ? 0 : 180 }}
-            transition={{ type: "spring", stiffness: 300, damping: 22, mass: 0.5 }}
-          >
-            <ChevronRight className="h-4 w-4" strokeWidth={3} />
-          </motion.div>
-        </button>
 
         {/* ── Sidebar Navigation Items ────────────────────────────────────── */}
         <nav aria-label="Menú principal" className={`sidebar-scrollbar flex-1 overflow-y-auto py-6 space-y-1 ${effectiveCollapsed ? "px-2" : "px-4"}`}>

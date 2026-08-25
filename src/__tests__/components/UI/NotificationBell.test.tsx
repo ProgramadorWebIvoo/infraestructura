@@ -5,6 +5,8 @@ import NotificationBell from "@/components/UI/NotificationBell";
 
 const mockMarkRead = vi.fn();
 const mockMarkAllRead = vi.fn();
+const mockDeleteNotification = vi.fn();
+const mockDeleteAllNotifications = vi.fn();
 const mockUseNotifications = vi.fn();
 
 vi.mock("@/components/UI/NotificationsProvider", () => ({
@@ -31,11 +33,15 @@ describe("NotificationBell", () => {
   beforeEach(() => {
     mockMarkRead.mockClear();
     mockMarkAllRead.mockClear();
+    mockDeleteNotification.mockClear();
+    mockDeleteAllNotifications.mockClear();
     mockUseNotifications.mockReturnValue({
       notifications: [],
       unreadCount: 0,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
     document.body.style.overflow = "";
   });
@@ -56,6 +62,8 @@ describe("NotificationBell", () => {
       unreadCount: 4,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -68,6 +76,8 @@ describe("NotificationBell", () => {
       unreadCount: 15,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -83,6 +93,8 @@ describe("NotificationBell", () => {
       unreadCount: 1,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -107,6 +119,8 @@ describe("NotificationBell", () => {
       unreadCount: 1,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -122,6 +136,8 @@ describe("NotificationBell", () => {
       unreadCount: 1,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -137,6 +153,8 @@ describe("NotificationBell", () => {
       unreadCount: 0,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -151,6 +169,8 @@ describe("NotificationBell", () => {
       unreadCount: 1,
       markRead: mockMarkRead,
       markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
     });
 
     render(<NotificationBell />);
@@ -180,5 +200,99 @@ describe("NotificationBell", () => {
     fireEvent.click(screen.getByLabelText(/Notificaciones/));
 
     expect(document.body.style.overflow).not.toBe("hidden");
+  });
+
+  it("llama deleteNotification al hacer click en eliminar una notificación", () => {
+    mockUseNotifications.mockReturnValue({
+      notifications: [makeNotification({ id: 9 })],
+      unreadCount: 1,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
+    });
+
+    render(<NotificationBell />);
+    fireEvent.click(screen.getByLabelText(/Notificaciones/));
+    fireEvent.click(screen.getAllByLabelText("Eliminar notificación")[0]);
+
+    expect(mockDeleteNotification).toHaveBeenCalledWith(9);
+  });
+
+  it("llama deleteAllNotifications al hacer click en 'Vaciar todas'", () => {
+    mockUseNotifications.mockReturnValue({
+      notifications: [makeNotification()],
+      unreadCount: 1,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
+    });
+
+    render(<NotificationBell />);
+    fireEvent.click(screen.getByLabelText(/Notificaciones/));
+    fireEvent.click(screen.getAllByLabelText("Vaciar todas las notificaciones")[0]);
+
+    expect(mockDeleteAllNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it("no muestra 'Vaciar todas' cuando la lista está vacía", () => {
+    render(<NotificationBell />);
+    fireEvent.click(screen.getByLabelText(/Notificaciones/));
+
+    expect(screen.queryByText("Vaciar todas")).not.toBeInTheDocument();
+  });
+
+  // ── Gestos de la campana (bandazo al llegar, asentimiento al vaciar) ──────
+  it("no rompe el render cuando unreadCount sube entre renders (gesto de campana sonando)", () => {
+    mockUseNotifications.mockReturnValue({
+      notifications: [],
+      unreadCount: 0,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
+    });
+    const { rerender } = render(<NotificationBell />);
+
+    mockUseNotifications.mockReturnValue({
+      notifications: [makeNotification()],
+      unreadCount: 1,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
+    });
+    rerender(<NotificationBell />);
+
+    expect(screen.getByText("1")).toBeInTheDocument();
+  });
+
+  it("no rompe el render cuando unreadCount baja a 0 entre renders (gesto de vaciado)", () => {
+    mockUseNotifications.mockReturnValue({
+      notifications: [makeNotification()],
+      unreadCount: 3,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
+    });
+    const { rerender } = render(<NotificationBell />);
+
+    mockUseNotifications.mockReturnValue({
+      notifications: [makeNotification({ read_at: new Date().toISOString() })],
+      unreadCount: 0,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      deleteNotification: mockDeleteNotification,
+      deleteAllNotifications: mockDeleteAllNotifications,
+    });
+    rerender(<NotificationBell />);
+
+    // AnimatePresence mantiene el badge saliente en el DOM durante su
+    // transición de exit (opacity→0) — se verifica el resultado observable
+    // (aria-label ya sin "sin leer") en vez del texto, que sigue presente
+    // mientras anima hacia afuera.
+    expect(screen.getByLabelText("Notificaciones")).toBeInTheDocument();
   });
 });

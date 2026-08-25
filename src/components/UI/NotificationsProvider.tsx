@@ -57,6 +57,8 @@ export interface UseNotificationsResult {
   refresh: () => void;
   markRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
 }
 
 function useNotificationsSource(): UseNotificationsResult {
@@ -135,6 +137,24 @@ function useNotificationsSource(): UseNotificationsResult {
     setUnreadCount(0);
   }, [authToken]);
 
+  const deleteNotification = useCallback(
+    async (id: number) => {
+      if (!authToken) return;
+      const wasUnread = notifications.find(n => n.id === id)?.read_at == null;
+      await apiFetch(`/notifications/${id}`, { method: "DELETE", token: authToken });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+    },
+    [authToken, notifications],
+  );
+
+  const deleteAllNotifications = useCallback(async () => {
+    if (!authToken) return;
+    await apiFetch("/notifications", { method: "DELETE", token: authToken });
+    setNotifications([]);
+    setUnreadCount(0);
+  }, [authToken]);
+
   return {
     notifications,
     unreadCount,
@@ -142,6 +162,8 @@ function useNotificationsSource(): UseNotificationsResult {
     refresh: () => load(),
     markRead,
     markAllRead,
+    deleteNotification,
+    deleteAllNotifications,
   };
 }
 

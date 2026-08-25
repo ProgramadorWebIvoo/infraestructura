@@ -154,6 +154,68 @@ describe("useNotifications", () => {
     expect(result.current.notifications.every(n => n.read_at !== null)).toBe(true);
   });
 
+  it("deleteNotification llama al endpoint DELETE y quita la notificación del estado local", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([makeNotification({ id: 5 })])
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce(undefined); // DELETE response
+
+    const { result } = renderNotifications();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await result.current.deleteNotification(5);
+    });
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/notifications/5", { method: "DELETE", token: "token" });
+    expect(result.current.notifications).toHaveLength(0);
+    expect(result.current.unreadCount).toBe(0);
+  });
+
+  it("deleteNotification de una notificación ya leída no descuenta el contador de no leídas", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([makeNotification({ id: 5, read_at: "2026-08-12T10:05:00.000000Z" })])
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce(undefined); // DELETE response
+
+    const { result } = renderNotifications();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await result.current.deleteNotification(5);
+    });
+
+    expect(result.current.notifications).toHaveLength(0);
+    expect(result.current.unreadCount).toBe(0);
+  });
+
+  it("deleteAllNotifications llama al endpoint DELETE y vacía notificaciones y contador", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([makeNotification(), makeNotification({ id: 2 })])
+      .mockResolvedValueOnce({ count: 2 })
+      .mockResolvedValueOnce(undefined); // DELETE response
+
+    const { result } = renderNotifications();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await result.current.deleteAllNotifications();
+    });
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/notifications", { method: "DELETE", token: "token" });
+    expect(result.current.notifications).toHaveLength(0);
+    expect(result.current.unreadCount).toBe(0);
+  });
+
   it("no dispara toast en la carga inicial (solo en polls posteriores)", async () => {
     mockApiFetch
       .mockResolvedValueOnce([makeNotification({ id: 1 }), makeNotification({ id: 2 })])

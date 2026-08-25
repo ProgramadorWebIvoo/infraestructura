@@ -17,6 +17,32 @@ import { Bell, X } from "lucide-react";
 import { useNotifications } from "./NotificationsProvider";
 import NotificationList from "./NotificationList";
 
+type BellGesture = "ring" | "settle" | null;
+
+/**
+ * Gestos de una sola vez de la campana — implementados como `key`+`animate`
+ * declarativo (no `useAnimationControls`): cada disparo remonta el nodo con
+ * una nueva key, así que Framer siempre corre la animación desde el inicio
+ * hasta el final declarado, sin depender de que un `.start()` imperativo
+ * termine de resolver antes del próximo re-render. Con `useAnimationControls`
+ * un cambio de props a mitad del bandazo podía re-renderizar el componente
+ * mientras el control seguía "en vuelo", dejando la rotación congelada en un
+ * keyframe intermedio en vez de volver a 0.
+ *
+ * "ring": bandazo de campana sonando (llegó algo nuevo) — rotación
+ * alternada con amplitud decreciente, como un péndulo que se frena.
+ * "settle": asentimiento breve (scale down/up) al vaciar todo el contador —
+ * comunica "resuelto", gesto distinto al de "algo nuevo llegó".
+ */
+const GESTURE_ANIMATE: Record<Exclude<BellGesture, null>, Record<string, number[]>> = {
+  ring: { rotate: [0, -16, 12, -8, 5, -2, 0] },
+  settle: { scale: [1, 0.82, 1.08, 1] },
+};
+const GESTURE_TRANSITION: Record<Exclude<BellGesture, null>, object> = {
+  ring: { duration: 0.7, ease: [0.36, 0.07, 0.19, 0.97], times: [0, 0.15, 0.34, 0.53, 0.7, 0.85, 1] },
+  settle: { duration: 0.45, ease: "easeOut" },
+};
+
 interface NotificationBellProps {
   /** "dark" para topbars oscuras (mobile), "light" para superficies claras (desktop). */
   variant?: "dark" | "light";
@@ -31,15 +57,35 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ variant = "dark", align = "right" }: NotificationBellProps) {
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const { notifications, unreadCount, markRead, markAllRead, deleteNotification, deleteAllNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevUnreadCountRef = useRef(unreadCount);
+  // gestureId cambia en cada disparo — es la `key` del nodo animado, así
+  // que dos gestos seguidos (ej. dos rings encimados) siempre reinician la
+  // animación desde el inicio en vez de intentar interpolar sobre un
+  // gesto anterior que quedó a mitad de camino.
+  const [gesture, setGesture] = useState<{ id: number; type: BellGesture }>({ id: 0, type: null });
 
   const buttonClass =
     variant === "dark"
       ? "text-slate-400 hover:text-white hover:bg-slate-800/50"
       : "text-slate-500 hover:text-slate-800 hover:bg-slate-100";
   const ringClass = variant === "dark" ? "ring-surface-inverted" : "ring-white";
+
+  // Dispara el gesto correspondiente según hacia dónde se mueve el contador,
+  // nunca en el montaje inicial (prevUnreadCountRef arranca igual a
+  // unreadCount, así que el primer render no anima nada — evita el bandazo
+  // en cada carga de página aunque ya haya no leídas pendientes).
+  useEffect(() => {
+    const prev = prevUnreadCountRef.current;
+    if (unreadCount > prev) {
+      setGesture(g => ({ id: g.id + 1, type: "ring" }));
+    } else if (unreadCount === 0 && prev > 0) {
+      setGesture(g => ({ id: g.id + 1, type: "settle" }));
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -75,12 +121,40 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
         aria-expanded={isOpen}
         className={`relative p-2 rounded-xl transition-colors duration-200 cursor-pointer ${buttonClass}`}
       >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className={`absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ${ringClass}`}>
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
+        <motion.span
+          key={gesture.type ? gesture.id : "idle"}
+          animate={gesture.type ? GESTURE_ANIMATE[gesture.type] : undefined}
+          transition={gesture.type ? GESTURE_TRANSITION[gesture.type] : undefined}
+          whileHover={{ rotate: [0, -10, 8, -5, 0], transition: { duration: 0.5, ease: "easeInOut" } }}
+          className="block"
+          style={{ transformOrigin: "50% 0%" }}
+        >
+          <Bell className="h-5 w-5" />
+        </motion.span>
+        <AnimatePresence>
+          {unreadCount > 0 && (
+            <motion.span
+              key="unread-badge"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              className={`absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ${ringClass}`}
+            >
+              {/* key=unreadCount: cada cambio de valor remonta el texto y
+                  dispara un pop propio (spring), en vez de que el número
+                  simplemente "salte" al nuevo valor sin transición. */}
+              <motion.span
+                key={unreadCount}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </motion.span>
+            </motion.span>
+          )}
+        </AnimatePresence>
       </button>
 
       {/* ── Desktop: dropdown flotante junto al botón (lg+) ── */}
@@ -101,6 +175,8 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
               unreadCount={unreadCount}
               onMarkRead={markRead}
               onMarkAllRead={markAllRead}
+              onDelete={deleteNotification}
+              onDeleteAll={deleteAllNotifications}
             />
           </motion.div>
         )}
@@ -147,7 +223,9 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
                 unreadCount={unreadCount}
                 onMarkRead={markRead}
                 onMarkAllRead={markAllRead}
-                listClassName="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+                onDelete={deleteNotification}
+                onDeleteAll={deleteAllNotifications}
+                listClassName="flex-1 overflow-y-auto [scrollbar-gutter:stable] pb-[env(safe-area-inset-bottom)]"
               />
             </motion.div>
           </motion.div>
