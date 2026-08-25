@@ -26,7 +26,7 @@ export default function RoleBadge({ role, variant = "light", compact = false, cl
     <div
       className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-3 py-1.5 rounded-full border shadow-xs ${styles} ${className}`}
     >
-      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-xs shadow-emerald-500/40 shrink-0" />
+      <span className="w-1.5 h-1.5 rounded-full shadow-xs shrink-0 bg-success-500 shadow-success-500/40" />
       {compact ? role : `Terminal: ${role}`}
     </div>
   );

@@ -31,7 +31,7 @@ import ConfigDropdown from "./ConfigDropdown";
 import SidebarTip from "./SidebarTip";
 import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
-import { navLinkClass, sidebarIconClass, sidebarTextClass } from "./sidebarNavClasses";
+import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
 import { getUserInitials } from "../../utils";
 
 interface SidebarNavProps {
@@ -116,7 +116,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
 
             <button
               aria-label="Cerrar menú lateral"
-              className="lg:hidden text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors duration-200 self-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
+              className={`lg:hidden text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors duration-200 self-start focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING}`}
               onClick={onClose}
             >
               <X className="h-5 w-5" />
@@ -147,7 +147,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
           aria-expanded={!isCollapsed}
           title={collapseLabel}
           onClick={onToggleCollapse}
-          className="group absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 hidden lg:flex items-center justify-center w-7 h-7 rounded-full bg-slate-800 border border-slate-700/80 text-slate-400 shadow-lg shadow-slate-950/40 ring-1 ring-black/20 transition-all duration-200 hover:text-white hover:bg-slate-700 hover:border-slate-500 hover:shadow-sky-500/20 hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]"
+          className={`group absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 hidden lg:flex items-center justify-center w-7 h-7 rounded-full bg-slate-800 border border-slate-700/80 text-slate-400 shadow-lg shadow-slate-950/40 ring-1 ring-black/20 transition-all duration-200 hover:text-white hover:bg-slate-700 hover:border-slate-500 hover:shadow-brand-500/20 hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]`}
         >
           <motion.div
             animate={{ rotate: isCollapsed ? 0 : 180 }}
@@ -165,11 +165,11 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/presidencia"
                 id="sidebar-presidencia"
                 onClick={onClose}
-                className={navLinkClass("bg-slate-800", "border-sky-400", effectiveCollapsed)}
+                className={navLinkClass("brand", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
-                    <TrendingUp className={sidebarIconClass(isActive, "text-sky-400")} />
+                    <TrendingUp className={sidebarIconClass(isActive)} />
                     <span className={sidebarTextClass(effectiveCollapsed)}>Presidencia</span>
                   </>
                 )}
@@ -183,7 +183,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/infraestructura"
                 id="sidebar-infraestructura"
                 onClick={onClose}
-                className={navLinkClass("bg-sky-500", "border-sky-400", effectiveCollapsed)}
+                className={navLinkClass("info", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
@@ -201,7 +201,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/cierre-obra"
                 id="sidebar-cierre"
                 onClick={onClose}
-                className={navLinkClass("bg-blue-600", "border-blue-400", effectiveCollapsed)}
+                className={navLinkClass("brand", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
@@ -219,7 +219,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/procura"
                 id="sidebar-procura"
                 onClick={onClose}
-                className={navLinkClass("bg-purple-600", "border-purple-400", effectiveCollapsed)}
+                className={navLinkClass("info", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
@@ -237,7 +237,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/analistas"
                 id="sidebar-analistas"
                 onClick={onClose}
-                className={navLinkClass("bg-emerald-600", "border-emerald-400", effectiveCollapsed)}
+                className={navLinkClass("success", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
@@ -255,7 +255,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/finanzas"
                 id="sidebar-finanzas"
                 onClick={onClose}
-                className={navLinkClass("bg-rose-600", "border-rose-400", effectiveCollapsed)}
+                className={navLinkClass("danger", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
@@ -273,11 +273,11 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/catalogos"
                 id="sidebar-catalogos"
                 onClick={onClose}
-                className={navLinkClass("bg-slate-800", "border-slate-400", effectiveCollapsed)}
+                className={navLinkClass("neutral", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
-                    <UserCog className={sidebarIconClass(isActive, "text-slate-300")} />
+                    <UserCog className={sidebarIconClass(isActive)} />
                     <span className={sidebarTextClass(effectiveCollapsed)}>Proveedores</span>
                   </>
                 )}
@@ -320,7 +320,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
               id="btn-logout"
               role="menuitem"
               onClick={onLogout}
-              className={`group w-full flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 ${
+              className={`group w-full flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} ${
                 effectiveCollapsed ? "justify-center gap-0 px-0 py-2.5" : "gap-3 px-3 py-2.5 hover:translate-x-0.5"
               }`}
             >

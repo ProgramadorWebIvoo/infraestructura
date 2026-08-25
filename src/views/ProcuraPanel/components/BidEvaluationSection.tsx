@@ -43,39 +43,39 @@ function ProposalSummary({ project }: { project: Project }) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-      <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
-        <div className="flex items-center gap-1.5 text-emerald-600 text-[9px] font-black uppercase tracking-wider">
+      <div className="rounded-xl border border-success-100 bg-success-50/40 p-3">
+        <div className="flex items-center gap-1.5 text-success-600 text-[9px] font-black uppercase tracking-wider">
           <Trophy className="h-3 w-3" /> Mejor Oferta
         </div>
-        <div className="mt-1 font-mono font-black text-emerald-700 text-sm">${best.totalCost.toLocaleString("en-US")}</div>
+        <div className="mt-1 font-mono font-black text-success-700 text-sm">${best.totalCost.toLocaleString("en-US")}</div>
         <div className="text-[10px] text-slate-500 font-medium truncate" title={best.contractorName}>{best.contractorName}</div>
       </div>
 
-      <div className={`rounded-xl border p-3 ${savings >= 0 ? "border-sky-100 bg-sky-50/40" : "border-rose-100 bg-rose-50/40"}`}>
-        <div className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider ${savings >= 0 ? "text-sky-600" : "text-rose-600"}`}>
+      <div className={`rounded-xl border p-3 ${savings >= 0 ? "border-info-100 bg-info-50/40" : "border-danger-100 bg-danger-50/40"}`}>
+        <div className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider ${savings >= 0 ? "text-info-600" : "text-danger-600"}`}>
           <Wallet className="h-3 w-3" /> {savings >= 0 ? "Ahorro" : "Sobre Presupuesto"}
         </div>
-        <div className={`mt-1 font-mono font-black text-sm ${savings >= 0 ? "text-sky-700" : "text-rose-700"}`}>
+        <div className={`mt-1 font-mono font-black text-sm ${savings >= 0 ? "text-info-700" : "text-danger-700"}`}>
           ${Math.abs(savings).toLocaleString("en-US")}
         </div>
         <div className="text-[10px] text-slate-500 font-medium">vs ${authorized.toLocaleString("en-US")} autorizado</div>
       </div>
 
-      <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
-        <div className="flex items-center gap-1.5 text-indigo-600 text-[9px] font-black uppercase tracking-wider">
+      <div className="rounded-xl border border-neutral-100 bg-neutral-50/40 p-3">
+        <div className="flex items-center gap-1.5 text-neutral-600 text-[9px] font-black uppercase tracking-wider">
           <Clock className="h-3 w-3" /> Entrega
         </div>
-        <div className="mt-1 font-mono font-black text-indigo-700 text-sm">
+        <div className="mt-1 font-mono font-black text-neutral-700 text-sm">
           {minWeeks > 0 ? `${minWeeks}–${maxWeeks}` : "—"}
         </div>
         <div className="text-[10px] text-slate-500 font-medium">semanas estimadas</div>
       </div>
 
-      <div className="rounded-xl border border-amber-100 bg-amber-50/40 p-3">
-        <div className="flex items-center gap-1.5 text-amber-600 text-[9px] font-black uppercase tracking-wider">
+      <div className="rounded-xl border border-warning-100 bg-warning-50/40 p-3">
+        <div className="flex items-center gap-1.5 text-warning-600 text-[9px] font-black uppercase tracking-wider">
           <Star className="h-3 w-3" /> Rating Promedio
         </div>
-        <div className="mt-1 font-mono font-black text-amber-700 text-sm">
+        <div className="mt-1 font-mono font-black text-warning-700 text-sm">
           {avgRating > 0 ? avgRating.toFixed(1) : "—"}
         </div>
         <div className="text-[10px] text-slate-500 font-medium">de {proposals.length} postores</div>
@@ -138,7 +138,7 @@ export default function BidEvaluationSection({
 
   return (
     <>
-      <Card className="border-l-4 border-l-emerald-400">
+      <Card accent="success" fillHeight className="min-h-0 flex-1">
         <SectionHeader
           icon={<Users className="h-5 w-5" />}
           title="Evaluación Comparativa de Ofertas y Contratación"
@@ -146,7 +146,7 @@ export default function BidEvaluationSection({
           color="emerald"
           actions={
             pendingContractSelection.length > 0 ? (
-              <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
+              <span className="text-[10px] font-mono font-bold text-success-600 bg-success-50 border border-success-100 px-2 py-0.5 rounded-lg">
                 {pendingContractSelection.length} cuadro{pendingContractSelection.length !== 1 ? "s" : ""} por adjudicar
               </span>
             ) : undefined
@@ -157,7 +157,7 @@ export default function BidEvaluationSection({
           <EmptyState message="No hay propuestas ni cuadros comparativos pendientes por revisión de contratación en este momento." />
         ) : (
           <div
-            className="space-y-6 max-h-[580px] overflow-y-auto pr-1 pb-2 scroll-smooth scroll-pb-2"
+            className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 pb-2 scroll-smooth scroll-pb-2"
           >
             {pendingContractSelection.map((p) => {
               const proposals = p.proposals ?? [];
@@ -171,7 +171,7 @@ export default function BidEvaluationSection({
                   {/* Project Brief */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/60 pb-4 gap-3">
                     <div>
-                      <span className="text-[9px] font-mono font-bold bg-gradient-to-br from-emerald-50 to-emerald-100/50 text-emerald-800 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                      <span className="text-[9px] font-mono font-bold bg-gradient-to-br from-success-50 to-success-100/50 text-success-800 px-2.5 py-0.5 rounded-lg border border-success-200">
                         {p.id}
                       </span>
                       <h4 className="text-sm font-bold text-slate-900 mt-1.5">{p.title}</h4>
@@ -182,7 +182,7 @@ export default function BidEvaluationSection({
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                      <span className="text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 font-mono text-[10px] tracking-wider uppercase shadow-xs">
+                      <span className="text-success-700 font-bold bg-success-50 px-3 py-1.5 rounded-xl border border-success-200 font-mono text-[10px] tracking-wider uppercase shadow-xs">
                         {proposals.length} Propuestas
                       </span>
                       <Button
@@ -190,7 +190,7 @@ export default function BidEvaluationSection({
                         onClick={() => setAiEvalProject(p)}
                         variant="secondary"
                         size="sm"
-                        className="text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200 hover:border-amber-300"
+                        className="text-warning-600 bg-warning-50 hover:bg-warning-100 border-warning-200 hover:border-warning-300"
                         icon={<BrainCircuit className="h-3.5 w-3.5" />}
                       >
                         Evaluación IA
@@ -199,7 +199,7 @@ export default function BidEvaluationSection({
                         onClick={() => handleOpenReject(p)}
                         variant="secondary"
                         size="sm"
-                        className="text-red-600 bg-red-50 hover:bg-red-100 border-red-200 hover:border-red-300"
+                        className="text-danger-600 bg-danger-50 hover:bg-danger-100 border-danger-200 hover:border-danger-300"
                         icon={<XCircle className="h-3.5 w-3.5" />}
                       >
                         Rechazar
@@ -220,7 +220,7 @@ export default function BidEvaluationSection({
                           render: (prop) => (
                             <>
                               <div className="font-bold text-slate-800 text-[12px]">{prop.contractorName}</div>
-                              <div className="font-mono text-[9px] text-emerald-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
+                              <div className="font-mono text-[9px] text-success-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
                               <div className="text-[10px] text-slate-400 mt-1 max-w-xs truncate font-medium" title={prop.description}>{prop.description}</div>
                             </>
                           ),
@@ -233,11 +233,11 @@ export default function BidEvaluationSection({
                           align: "right",
                           render: (prop) => (
                             <div className="flex items-center justify-end gap-1.5">
-                              <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-emerald-700" : "text-slate-700"}`}>
+                              <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
                                 ${prop.totalCost.toLocaleString("en-US")}
                               </span>
                               {prop.id === best?.id && (
-                                <span className="text-[8px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                                <span className="text-[8px] font-black uppercase tracking-wider bg-success-100 text-success-800 px-1.5 py-0.5 rounded-md border border-success-200">
                                   Mejor
                                 </span>
                               )}
@@ -272,8 +272,8 @@ export default function BidEvaluationSection({
                                 <span
                                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-[10px] border ${
                                     exceedsMax
-                                      ? "bg-amber-50 text-amber-800 border-amber-200"
-                                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                      ? "bg-warning-50 text-warning-800 border-warning-200"
+                                      : "bg-success-50 text-success-800 border-success-200"
                                   }`}
                                 >
                                   {exceedsMax && <AlertTriangle className="h-3 w-3" />}
@@ -281,7 +281,7 @@ export default function BidEvaluationSection({
                                 </span>
                                 <div className="text-[9px] text-slate-400 mt-1 font-semibold">(${(prop.totalCost * (prop.negotiatedAdvancePercent / 100)).toLocaleString("en-US", { maximumFractionDigits: 0 })})</div>
                                 {exceedsMax && (
-                                  <div className="text-[8px] text-amber-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>
+                                  <div className="text-[8px] text-warning-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>
                                 )}
                               </>
                             );
@@ -319,7 +319,7 @@ export default function BidEvaluationSection({
                       data={proposals}
                       rowKey={(prop) => prop.id}
                       selectedRowKey={best?.id}
-                      selectedRowClass="bg-emerald-50/60 ring-1 ring-emerald-200"
+                      selectedRowClass="bg-success-50/60 ring-1 ring-success-200"
                     />
                   </div>
                 </div>
@@ -358,11 +358,11 @@ export default function BidEvaluationSection({
         }
       >
         <div className="space-y-4">
-          <p className="text-xs text-red-600/80 font-medium leading-relaxed">
+          <p className="text-xs text-danger-600/80 font-medium leading-relaxed">
             Se eliminarán todas las propuestas cargadas y el proyecto regresará a <strong>Carga de Propuestas de Contratistas</strong> para que los Analistas inicien una nueva ronda.
           </p>
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-red-600">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-danger-600">
               Motivo del rechazo *
             </label>
             <textarea
@@ -371,7 +371,7 @@ export default function BidEvaluationSection({
               rows={3}
               maxLength={500}
               placeholder="Ej. Los precios presentados superan el presupuesto autorizado. Se requiere nueva ronda de licitación."
-              className="w-full rounded-xl border border-red-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-hidden focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none"
+              className="w-full rounded-xl border border-danger-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-hidden focus:border-danger-400 focus:ring-2 focus:ring-danger-100 resize-none"
             />
             <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{rejectReason.length}/500</span>
           </div>

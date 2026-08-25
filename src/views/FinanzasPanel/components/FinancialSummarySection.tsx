@@ -7,6 +7,7 @@
  * liberado, pendiente) + indicadores de negociación (anticipo y plazo promedio).
  */
 
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign } from "lucide-react";
 import type { Project } from "../../../types";
@@ -23,6 +24,15 @@ function ProgressDonut({ percent, centerValue, centerLabel }: { percent: number;
   const clamped = Math.min(100, Math.max(0, percent));
   const len = (clamped / 100) * circumference;
 
+  // Arranca en 0 y anima al valor real tras el montaje — igual que las
+  // barras de KpiSection, el dasharray ya calculado en el primer render
+  // nunca dispararía la transición por sí solo.
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   return (
     <div className="relative flex w-full items-center justify-center">
       <svg viewBox="0 0 170 170" className="w-full h-auto transform -rotate-90 drop-shadow-sm" role="img" aria-label={`Progreso de fondos liberados: ${clamped}%`}>
@@ -30,7 +40,7 @@ function ProgressDonut({ percent, centerValue, centerLabel }: { percent: number;
         <circle
           cx="85" cy="85" r={radius} fill="none"
           stroke="url(#progressGradient)" strokeWidth="14" strokeLinecap="round"
-          strokeDasharray={`${len} ${circumference - len}`}
+          strokeDasharray={filled ? `${len} ${circumference - len}` : `0 ${circumference}`}
           className="transition-all duration-1000 ease-out"
         />
         <defs>

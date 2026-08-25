@@ -68,6 +68,7 @@ export function getUserInitials(name: string): string {
 
 export const STATUS_COLORS: Record<string, string> = {
   CREADO: "bg-sky-50 text-sky-700 border-sky-200",
+  RECHAZADO_CIERRE: "bg-red-50 text-red-700 border-red-200",
   REVISADO_CIERRE: "bg-blue-50 text-blue-700 border-blue-200",
   CONFIRMADO_PROCURA: "bg-purple-50 text-purple-700 border-purple-200",
   COMPARATIVA_ENVIADA: "bg-amber-50 text-amber-700 border-amber-200",

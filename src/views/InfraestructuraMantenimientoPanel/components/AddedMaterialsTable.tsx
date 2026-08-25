@@ -11,9 +11,10 @@
  * hace notorio que existe un paso opcional-pero-recomendado sin completar.
  */
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Package, Pencil, Trash2 } from "lucide-react";
 import type { MaterialItem } from "../../../types";
 import { Table } from "../../../components/UI/Table";
+import EmptyState from "../../../components/UI/EmptyState";
 import { formatCurrency } from "../../../utils";
 
 interface AddedMaterialsTableProps {
@@ -81,7 +82,13 @@ export default function AddedMaterialsTable({ materials, onRemove, onEditRequest
         data={materials}
         rowKey={(_m, index) => index}
         rowHoverClass="hover:bg-emerald-50/40 transition-colors"
-        emptyMessage="No se han agregado materiales. Agregue elementos arriba."
+        emptyState={
+          <EmptyState
+            message="Aún no agregaste materiales. Elegí del catálogo o cargá uno personalizado arriba."
+            icon={<Package className="h-8 w-8" />}
+            className="border-0 bg-transparent py-8"
+          />
+        }
         pageSize={5}
         footer={materials.length > 0 ? (
           <tr>

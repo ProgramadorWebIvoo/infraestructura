@@ -65,26 +65,30 @@ export default function RequestFormSection({
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TextField
-          id={FIELD_IDS.title}
-          label="Título de la Obra"
-          placeholder="Ej. Remodelación Oficinas Administrativas Piso 2"
-          value={title}
-          onChange={onTitleChange}
-          error={errors.title}
-          required
-        />
-        <TextField
-          id={FIELD_IDS.location}
-          label="Ubicación / Tienda / CD"
-          placeholder="Ej. Tienda IVOO Chacao / CD Central"
-          value={location}
-          onChange={onLocationChange}
-          error={errors.location}
-          icon={<MapPin className="h-4 w-4" />}
-          required
-        />
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="md:col-span-3">
+          <TextField
+            id={FIELD_IDS.title}
+            label="Título de la Obra"
+            placeholder="Ej. Remodelación Oficinas Administrativas Piso 2"
+            value={title}
+            onChange={onTitleChange}
+            error={errors.title}
+            required
+          />
+        </div>
+        <div className="md:col-span-2">
+          <TextField
+            id={FIELD_IDS.location}
+            label="Ubicación / Tienda / CD"
+            placeholder="Ej. Tienda IVOO Chacao / CD Central"
+            value={location}
+            onChange={onLocationChange}
+            error={errors.location}
+            icon={<MapPin className="h-4 w-4" />}
+            required
+          />
+        </div>
       </div>
 
       <div>

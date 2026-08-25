@@ -13,7 +13,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Settings, ChevronDown, Users, UserCog, Package, Brain, SlidersHorizontal } from "lucide-react";
 import SidebarTip from "./SidebarTip";
-import { navLinkClass, sidebarIconClass, sidebarTextClass } from "./sidebarNavClasses";
+import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
 
 interface ConfigDropdownProps {
   isCollapsed: boolean;
@@ -32,7 +32,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
       <SidebarTip label="Configuración" disabled={!isCollapsed}>
         <button
           onClick={() => setIsConfigOpen((prev) => !prev)}
-          className={`group relative flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 ${
+          className={`group relative flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border-l-2 w-full text-left focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} ${
             isCollapsed ? "justify-center gap-0 px-0 py-2.5" : "gap-3 px-3 py-2.5 hover:translate-x-0.5"
           } ${
             isConfigActive && !isConfigOpen
@@ -73,7 +73,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/usuarios"
                   id="sidebar-usuarios"
                   onClick={onClose}
-                  className={navLinkClass("bg-sky-500", "border-sky-400", isCollapsed)}
+                  className={navLinkClass("info", isCollapsed)}
                 >
                   {({ isActive }) => (
                     <>
@@ -90,7 +90,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-proveedores"
                   id="sidebar-config-proveedores"
                   onClick={onClose}
-                  className={navLinkClass("bg-indigo-600", "border-indigo-400", isCollapsed)}
+                  className={navLinkClass("brand", isCollapsed)}
                 >
                   {({ isActive }) => (
                     <>
@@ -107,7 +107,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-materiales"
                   id="sidebar-config-materiales"
                   onClick={onClose}
-                  className={navLinkClass("bg-emerald-600", "border-emerald-400", isCollapsed)}
+                  className={navLinkClass("success", isCollapsed)}
                 >
                   {({ isActive }) => (
                     <>
@@ -124,7 +124,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-ia"
                   id="sidebar-config-ia"
                   onClick={onClose}
-                  className={navLinkClass("bg-violet-600", "border-violet-400", isCollapsed)}
+                  className={navLinkClass("warning", isCollapsed)}
                 >
                   {({ isActive }) => (
                     <>
@@ -141,7 +141,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-app"
                   id="sidebar-config-app"
                   onClick={onClose}
-                  className={navLinkClass("bg-slate-600", "border-slate-400", isCollapsed)}
+                  className={navLinkClass("neutral", isCollapsed)}
                 >
                   {({ isActive }) => (
                     <>

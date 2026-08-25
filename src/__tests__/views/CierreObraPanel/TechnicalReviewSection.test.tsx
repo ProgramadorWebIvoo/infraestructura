@@ -7,6 +7,7 @@
  * cobertura previa a este cambio).
  */
 
+import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import TechnicalReviewSection from "@/views/CierreObraPanel/components/TechnicalReviewSection";
@@ -22,20 +23,14 @@ vi.mock("motion/react", () => {
   return {
     useReducedMotion: () => false,
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    motion: {
-      div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-        <div {...stripMotionProps(props)}>{children}</div>
-      ),
-      tbody: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-        <tbody {...stripMotionProps(props)}>{children}</tbody>
-      ),
-      tr: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-        <tr {...stripMotionProps(props)}>{children}</tr>
-      ),
-      span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-        <span {...stripMotionProps(props)}>{children}</span>
-      ),
-    },
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tag: string) =>
+          ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+            React.createElement(tag, stripMotionProps(props), children),
+      },
+    ),
   };
 });
 

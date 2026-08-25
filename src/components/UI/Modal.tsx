@@ -178,7 +178,7 @@ export default function Modal({
                       </span>
                     )}
                     {title && (
-                      <h3 className="text-md font-bold font-sans truncate">{title}</h3>
+                      <h3 className="text-md font-black font-brand tracking-tight truncate">{title}</h3>
                     )}
                     {infoLine && (
                       <p className="text-[11px] text-text-muted font-mono mt-0.5 truncate">{infoLine}</p>

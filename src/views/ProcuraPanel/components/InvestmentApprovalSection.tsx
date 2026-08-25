@@ -92,28 +92,28 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   };
 
   return (
-    <Card className="border-l-4 border-l-purple-400">
+    <Card accent="brand" fillHeight className="min-h-0 flex-1">
       <SectionHeader
         icon={<TrendingUp className="h-5 w-5" />}
-        title="Gerencia de Procura: Autorización de Inversión Inicial"
+        title="Autorización de Inversión Inicial"
         description="Autorice el envío de expedientes de obra para la ronda de licitación. Fije los límites presupuestarios según las cubicaciones corregidas."
-        color="purple"
+        color="sky"
       />
 
       {pendingInvestmentApproval.length === 0 ? (
         <EmptyState message="No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario." />
       ) : (
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
+        <div className="min-h-0 flex-1 flex flex-col space-y-2.5">
+          <div className="flex items-center justify-between gap-2 shrink-0">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Peticiones Listas para Procura:
             </label>
-            <span className="text-[10px] font-mono font-bold text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-lg">
+            <span className="text-[10px] font-mono font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-lg">
               {pendingInvestmentApproval.length} pendiente{pendingInvestmentApproval.length !== 1 ? "s" : ""}
             </span>
           </div>
           <div
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-88 overflow-y-auto pr-2 -mr-2 pb-2 scroll-smooth scroll-pb-2"
+            className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 auto-rows-min gap-3 overflow-y-auto pr-2 -mr-2 pb-2 scroll-smooth scroll-pb-2"
           >
             {pendingInvestmentApproval.map((p) => {
               const isSelected = selectedReviewId === p.id;
@@ -126,12 +126,12 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                   style={{ contentVisibility: "auto", contain: "layout style paint" }}
                   className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-white text-purple-950 ring-2 ring-purple-100 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-purple-400 hover:bg-slate-50/50 hover:shadow-sm"
+                      ? "border-brand-500 bg-gradient-to-br from-brand-50 to-white text-brand-950 ring-2 ring-brand-100 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 hover:shadow-sm"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-mono text-[9px] font-bold text-purple-600">{p.id}</span>
+                    <span className="font-mono text-[9px] font-bold text-brand-600">{p.id}</span>
                     <span className="text-[9px] font-mono font-bold uppercase px-2 py-1 rounded-lg border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-200">
                       {p.type === "INFRAESTRUCTURA" ? "INFRA" : "MANT"}
                     </span>
@@ -143,7 +143,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                   </div>
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
                     <span className="text-[10px] font-mono font-bold text-slate-400">{p.createdDate}</span>
-                    <span className="font-mono font-bold text-purple-700">${formatNumber(p.estimatedTotal)}</span>
+                    <span className="font-mono font-bold text-brand-700">${formatNumber(p.estimatedTotal)}</span>
                   </div>
                 </button>
               );
@@ -158,7 +158,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
         onClose={closeReview}
         maxWidth="max-w-2xl"
         icon={<TrendingUp className="h-5 w-5" />}
-        iconColor="purple"
+        iconColor="sky"
         badge="Autorización de Inversión"
         title={activeReviewProject ? `Expediente ${activeReviewProject.id}` : ""}
         infoLine={activeReviewProject ? `${activeReviewProject.title} · ${activeReviewProject.location}` : ""}
@@ -177,7 +177,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                 {step < 2 ? (
                   <Button
                     variant="primary"
-                    colorScheme="purple"
+                    colorScheme="sky"
                     onClick={() => setStep(2)}
                     icon={<ArrowRight className="h-4 w-4" />}
                   >
@@ -187,7 +187,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                   <Button
                     id="btn-procura-approve-investment"
                     variant="primary"
-                    colorScheme="purple"
+                    colorScheme="sky"
                     onClick={handleApproveInvestmentSubmit}
                     icon={<CheckSquare className="h-4 w-4" />}
                   >
@@ -210,18 +210,18 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                 return (
                   <Fragment key={s.key}>
                     {i > 0 && (
-                      <div className={`h-0.5 flex-1 rounded-full ${step > i ? "bg-purple-400" : "bg-slate-200"}`} />
+                      <div className={`h-0.5 flex-1 rounded-full ${step > i ? "bg-brand-400" : "bg-slate-200"}`} />
                     )}
                     <div
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold whitespace-nowrap transition-all duration-200 ${
                         isActive
-                          ? "border-purple-500 bg-purple-50 text-purple-700 shadow-sm"
+                          ? "border-brand-500 bg-brand-50 text-brand-700 shadow-sm"
                           : isDone
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            ? "border-success-200 bg-success-50 text-success-700"
                             : "border-slate-200 bg-white text-slate-400"
                       }`}
                     >
-                      <span className={isActive ? "text-purple-500" : isDone ? "text-emerald-500" : "text-slate-300"}>
+                      <span className={isActive ? "text-brand-500" : isDone ? "text-success-500" : "text-slate-300"}>
                         <Icon className="h-3 w-3" />
                       </span>
                       {s.label}
@@ -234,10 +234,10 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
             {/* Paso 1: Revisar expediente */}
             {step === 1 && (
               <div className="space-y-5">
-                <div className="p-4 bg-gradient-to-br from-purple-50/40 to-white rounded-xl text-xs space-y-2 border border-purple-100/60 font-medium">
+                <div className="p-4 bg-gradient-to-br from-brand-50/40 to-white rounded-xl text-xs space-y-2 border border-brand-100/60 font-medium">
                   <div className="flex justify-between items-center">
                     <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
-                    <span className="font-mono font-bold text-purple-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                    <span className="font-mono font-bold text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
                   </div>
                   <div className="flex items-center gap-1 text-slate-500">
                     <MapPin className="h-3.5 w-3.5 text-slate-400" />
@@ -249,7 +249,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                       <span className="font-mono">${formatNumber(activeReviewProject.dossierAiSuggestedAmount)}</span>
                     </div>
                   )}
-                  <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-purple-100/60">
+                  <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-brand-100/60">
                     <span className="font-bold not-italic text-slate-600">Nota Cierre de Obra: </span>
                     {activeReviewProject.cierreObraNotes}
                   </div>
@@ -273,7 +273,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Cierre de Obra</span>
-                    <span className="font-mono font-black text-purple-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                    <span className="font-mono font-black text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
                   </div>
                 </div>
 
@@ -286,7 +286,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                     value={approvedAmount}
                     onChange={setApprovedAmount}
                     placeholder="0.00"
-                    className="focus:ring-purple-500"
+                    className="focus:ring-brand-500"
                   />
                 </div>
 
@@ -300,7 +300,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                     placeholder="Ej. Proyecto urgente de climatización, habilitar licitaciones prioritarias."
                     value={procuraNotes}
                     onChange={(e) => setProcuraNotes(e.target.value)}
-                    className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-purple-500 bg-white font-medium"
+                    className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-brand-500 bg-white font-medium"
                   />
                 </div>
               </div>

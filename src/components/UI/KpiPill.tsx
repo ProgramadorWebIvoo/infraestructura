@@ -22,7 +22,7 @@ export default function KpiPill({ icon, label, value, accent = "brand" }: KpiPil
   const c = SEMANTIC_COLOR_MAP[accent];
 
   return (
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border-default/80 shadow-xs">
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border-default/80 shadow-xs min-w-38 justify-center">
       <span className={c.icon500}>{icon}</span>
       <span className="text-[11px] font-bold text-text-tertiary uppercase tracking-wide">{label}</span>
       <span className={`text-xs font-black font-mono ${c.text700}`}>{value}</span>

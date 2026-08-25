@@ -263,7 +263,7 @@ describe("App", () => {
 
     await flushAll();
     expect(await screen.findByTestId("view-presidencia")).toBeInTheDocument();
-    expect(screen.getAllByText("IVOO").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByAltText("IVOO").length).toBeGreaterThanOrEqual(1);
   });
 
   it("passes handleLoginWithToast to LoginScreen", async () => {

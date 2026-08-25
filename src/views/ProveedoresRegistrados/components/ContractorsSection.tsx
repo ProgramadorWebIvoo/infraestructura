@@ -10,6 +10,7 @@ import { motion } from "motion/react";
 import { Link2, Mail, Pencil, Search, Star } from "lucide-react";
 import { itemVariants } from "../../../animations";
 import { Table, type Column } from "../../../components/UI/Table";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import type { Contractor } from "../../../types";
 
 interface ContractorsSectionProps {
@@ -50,8 +51,8 @@ export default function ContractorsSection({
       align: "center",
       render: (c) => (
         <div className="flex items-center justify-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50 px-2.5 py-1 font-mono text-[11px] font-black text-amber-600">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+          <div className={`flex items-center gap-1 rounded-lg border ${SEMANTIC_COLOR_MAP.warning.border200} bg-gradient-to-br ${SEMANTIC_COLOR_MAP.warning.bg50} to-warning-100/50 px-2.5 py-1 font-mono text-[11px] font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
+            <Star className={`h-3.5 w-3.5 fill-warning-400 ${SEMANTIC_COLOR_MAP.warning.icon500}`} />
             {c.rating.toFixed(1)}
           </div>
           <button aria-label="Actualizar evaluación" onClick={() => onOpenEdit(c)} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md hover:-translate-y-0.5" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>

@@ -93,23 +93,18 @@ describe("AuthenticatedLayout", () => {
     expect(sidebarBellRow.length).toBe(1);
   });
 
-  it("renders the footer with IVOO branding", () => {
+  it("renders the sidebar brand (IVOO logo), footer removed", () => {
     renderLayout();
-    // IVOO appears in sidebar brand and footer brand
-    expect(screen.getAllByText("IVOO").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Gestión de Infraestructura")).toBeInTheDocument();
-  });
-
-  it("renders the footer with current year", () => {
-    renderLayout();
-    const currentYear = new Date().getFullYear().toString();
-    expect(screen.getByText(`© ${currentYear}`)).toBeInTheDocument();
+    // El footer con marca/año fue removido deliberadamente (ver AuthenticatedLayout.tsx) —
+    // el único "IVOO" visible ahora es el logo del sidebar.
+    expect(screen.getAllByAltText("IVOO").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("Gestión de Infraestructura")).not.toBeInTheDocument();
   });
 
   it("renders OfflineBanner", () => {
     renderLayout();
     // OfflineBanner renders a banner, verify the layout rendered
-    expect(screen.getAllByText("IVOO").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("page-content")).toBeInTheDocument();
   });
 
   it("opens inspect modal when inspectedProject is provided", () => {

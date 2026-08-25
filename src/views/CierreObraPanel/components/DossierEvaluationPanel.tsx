@@ -24,14 +24,20 @@
  * apoyo a la decisión que quedara mezclado entre metadatos/materiales pasaba
  * desapercibido; acá es lo primero que ve el auditor al abrir cualquier
  * expediente.
+ *
+ * El resultado (DossierEvaluationResult) entra con stagger propio — es el
+ * momento de mayor peso informativo del flujo, así que score/chip/resumen/
+ * alertas/recomendación aparecen en secuencia en vez de todos a la vez.
  */
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 import Button from "../../../components/UI/Button";
 import Spinner from "../../../components/UI/Spinner";
 import { useToast } from "../../../components/UI/Toast";
 import { evaluateDossier } from "../../../services/aiEvaluationService";
+import { containerVariants, itemVariants } from "../../../animations";
 import type { Project } from "../../../types";
 
 interface DossierEvaluationPanelProps {
@@ -83,82 +89,113 @@ export default function DossierEvaluationPanel({ project, authToken, onEvaluated
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id, hasResult]);
 
-  if (isLoading) {
-    return (
-      <div className="p-4 rounded-2xl border-2 border-sky-200 bg-sky-50 flex items-center gap-3 shadow-sm">
-        <Spinner size="md" className="text-sky-500" />
-        <div>
-          <p className="text-xs font-bold text-sky-700">Analizando expediente con IA...</p>
-          <p className="text-[10px] text-sky-500 font-medium">Completitud, riesgo y datos ingresados.</p>
-        </div>
-      </div>
-    );
-  }
+  return (
+    <AnimatePresence mode="wait">
+      {isLoading ? (
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="p-4 rounded-2xl border-2 border-sky-200 bg-sky-50 flex items-center gap-3 shadow-sm"
+        >
+          <Spinner size="md" className="text-sky-500" />
+          <div>
+            <p className="text-xs font-bold text-sky-700">Analizando expediente con IA...</p>
+            <p className="text-[10px] text-sky-500 font-medium">Completitud, riesgo y datos ingresados.</p>
+          </div>
+        </motion.div>
+      ) : !hasResult ? (
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="p-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-slate-400" />
+            <span className="text-xs font-bold text-slate-500">Evaluación IA no disponible para este expediente.</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={runEvaluation} icon={<RefreshCw className="h-3.5 w-3.5" />}>
+            Reintentar evaluación
+          </Button>
+        </motion.div>
+      ) : (
+        <DossierEvaluationResult key="result" project={project} onReevaluate={runEvaluation} />
+      )}
+    </AnimatePresence>
+  );
+}
 
-  if (!hasResult) {
-    return (
-      <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-500">Evaluación IA no disponible para este expediente.</span>
-        </div>
-        <Button variant="secondary" size="sm" onClick={runEvaluation} icon={<RefreshCw className="h-3.5 w-3.5" />}>
-          Reintentar evaluación
-        </Button>
-      </div>
-    );
-  }
-
+/**
+ * Resultado de la evaluación — el momento de mayor valor informativo del
+ * flujo de Cierre de Obra. Entra con un stagger propio (score → chip →
+ * resumen → alertas → recomendación) en vez de aparecer de golpe, para que
+ * el auditor lea la información en el mismo orden de importancia con el
+ * que fue diseñada.
+ */
+function DossierEvaluationResult({ project, onReevaluate }: { project: Project; onReevaluate: () => void }) {
   const score = project.dossierAiScore ?? 0;
   const c = scoreClasses(score);
   const alerts = project.dossierAiAlerts ?? [];
 
   return (
-    <div className={`rounded-2xl ${c.bg} shadow-sm overflow-hidden`}>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className={`rounded-2xl ${c.bg} shadow-sm overflow-hidden`}
+    >
       <div className="p-4 flex items-start gap-4">
         {/* Score dominante, primer elemento visual del panel */}
-        <div className={`shrink-0 flex flex-col items-center justify-center h-16 w-16 rounded-full bg-white ring-4 ${c.ring} shadow-sm`}>
+        <motion.div
+          variants={itemVariants}
+          className={`shrink-0 flex flex-col items-center justify-center h-16 w-16 rounded-full bg-white ring-4 ${c.ring} shadow-sm`}
+        >
           <span className={`font-mono font-black text-xl leading-none ${c.text}`}>{score}</span>
           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">/100</span>
-        </div>
+        </motion.div>
 
         <div className="min-w-0 flex-1 space-y-2 text-xs">
-          <div className="flex items-center justify-between gap-2">
+          <motion.div variants={itemVariants} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-sky-500 shrink-0" />
               <span className="font-black text-slate-800">Evaluación IA del Expediente</span>
               <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${c.bg} ${c.text} border ${c.border}`}>{c.label}</span>
             </div>
-            <Button variant="secondary" size="sm" onClick={runEvaluation} icon={<RefreshCw className="h-3.5 w-3.5" />}>
+            <Button variant="secondary" size="sm" onClick={onReevaluate} icon={<RefreshCw className="h-3.5 w-3.5" />}>
               Reevaluar
             </Button>
-          </div>
+          </motion.div>
 
           {project.dossierAiSummary && (
-            <p className="text-slate-600 leading-relaxed">{project.dossierAiSummary}</p>
+            <motion.p variants={itemVariants} className="text-slate-600 leading-relaxed">{project.dossierAiSummary}</motion.p>
           )}
 
           {alerts.length > 0 && (
-            <ul className="space-y-1">
+            <motion.ul variants={itemVariants} className="space-y-1">
               {alerts.map((alert, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-slate-600">
                   <AlertTriangle className="h-3.5 w-3.5 text-warning-500 shrink-0 mt-px" />
                   {alert}
                 </li>
               ))}
-            </ul>
+            </motion.ul>
           )}
 
           {project.dossierAiRecommendation && (
-            <p className="italic text-slate-500 border-l-2 border-slate-300 pl-3">{project.dossierAiRecommendation}</p>
+            <motion.p variants={itemVariants} className="italic text-slate-500 border-l-2 border-slate-300 pl-3">{project.dossierAiRecommendation}</motion.p>
           )}
 
-          <p className="text-[10px] text-slate-400 font-medium">
+          <motion.p variants={itemVariants} className="text-[10px] text-slate-400 font-medium">
             Evaluado por {project.dossierAiProvider}
             {project.dossierAiEvaluatedAt && ` · ${relativeTime(project.dossierAiEvaluatedAt)}`}
-          </p>
+          </motion.p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

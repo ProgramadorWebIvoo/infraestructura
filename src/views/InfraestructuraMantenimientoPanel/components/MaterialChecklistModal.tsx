@@ -108,14 +108,23 @@ export default function MaterialChecklistModal({
       label: "",
       width: "2.5rem",
       render: (m) => (
-        <input
-          type="checkbox"
-          checked={selections.has(m.index)}
-          onChange={() => toggleRow(m.index)}
-          onClick={(e) => e.stopPropagation()}
-          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-          aria-label={`Seleccionar ${m.name}`}
-        />
+        <div
+          className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors duration-150 ${
+            selections.has(m.index)
+              ? "border-emerald-500 bg-emerald-500"
+              : "border-slate-300 bg-white"
+          }`}
+        >
+          {selections.has(m.index) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+          <input
+            type="checkbox"
+            checked={selections.has(m.index)}
+            onChange={() => toggleRow(m.index)}
+            onClick={(e) => e.stopPropagation()}
+            className="sr-only"
+            aria-label={`Seleccionar ${m.name}`}
+          />
+        </div>
       ),
     },
     {
@@ -150,7 +159,7 @@ export default function MaterialChecklistModal({
             )}
           </div>
         ) : (
-          <span className="text-slate-300">—</span>
+          <span className="text-slate-300 font-mono text-[11px]">{m.unit}</span>
         ),
     },
   ];

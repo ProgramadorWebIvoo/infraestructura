@@ -34,7 +34,7 @@ describe("AddedMaterialsTable", () => {
 
   it("muestra empty state sin materiales", () => {
     render(<AddedMaterialsTable materials={[]} onRemove={vi.fn()} onEditRequest={vi.fn()} reviewedIndexes={new Set()} subtotal={0} />);
-    expect(screen.getByText("No se han agregado materiales. Agregue elementos arriba.")).toBeInTheDocument();
+    expect(screen.getByText("Aún no agregaste materiales. Elegí del catálogo o cargá uno personalizado arriba.")).toBeInTheDocument();
   });
 
   it("muestra el indicador de 'sin revisar' solo en filas no incluidas en reviewedIndexes", () => {

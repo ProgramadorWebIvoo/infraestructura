@@ -15,6 +15,7 @@
  */
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Award,
   ArrowRight,
@@ -41,6 +42,7 @@ import { AttachmentsSummary, MaterialDetailRow, ProjectTypeBadge } from "./Techn
 import { formatNumber } from "../../../utils";
 import { downloadProjectDocument } from "../../../services/api";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import { springs } from "../../../animations";
 
 const WIZARD_STEPS: StepDefinition[] = [
   { id: "revisar", label: "Revisar", description: "Inversión y materiales" },
@@ -183,6 +185,14 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
               ariaLabel="Progreso de revisión"
             />
 
+            <AnimatePresence mode="wait">
+            <motion.div
+              key={stepIndex}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={springs.snappy}
+            >
             {/* Paso 1: Revisar expediente */}
             {stepIndex === 0 && (
               <div className="space-y-5">
@@ -294,6 +304,8 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                 />
               </div>
             )}
+            </motion.div>
+            </AnimatePresence>
           </div>
         )}
       </Modal>

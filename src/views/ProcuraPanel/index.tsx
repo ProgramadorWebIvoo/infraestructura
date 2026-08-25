@@ -3,18 +3,30 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Panel de Procura: aprobación de inversión inicial + evaluación comparativa.
+ *
+ * Dos vistas distintas por tabs (no lado a lado en un grid) — cada una es un
+ * flujo de trabajo independiente con su propio ritmo (autorizar es rápido y
+ * frecuente; evaluar cuadros comparativos es denso y ocasional), y compartir
+ * columna las obligaba a competir por el mismo ancho. Mismo patrón que
+ * InfraestructuraMantenimientoPanel (Tabs + TabPanel + altura real de
+ * viewport para que el contenido de cada tab pueda ocupar toda la pantalla
+ * disponible con su propio scroll interno).
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ClipboardList, Handshake, Scale, TrendingUp } from "lucide-react";
 import type { Project } from "../../types";
 import { ProjectStatus } from "../../types";
-import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
+import { SkeletonCard, SkeletonTable, SkeletonBlock } from "../../components/SkeletonLoader";
 import { containerVariants, itemVariants } from "../../animations";
-import KpiCard from "../../components/UI/KpiCard";
+import KpiPill from "../../components/UI/KpiPill";
+import Tabs from "../../components/UI/Tabs";
+import TabPanel from "../../components/UI/TabPanel";
 import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
 import BidEvaluationSection from "./components/BidEvaluationSection";
+
+type TabKey = "autorizacion" | "comparativa";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -33,7 +45,7 @@ export default function ProcuraPanel({
   authToken,
   isLoading = false,
 }: ProcuraPanelProps) {
-  if (isLoading) return <ProcuraSkeleton />;
+  const [activeTab, setActiveTab] = useState<TabKey>("autorizacion");
 
   const kpis = useMemo(
     () => ({
@@ -45,66 +57,55 @@ export default function ProcuraPanel({
     [projects],
   );
 
+  if (isLoading) return <ProcuraSkeleton />;
+
   return (
-    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
       <h1 className="sr-only">Procura</h1>
 
-      {/* Header del departamento */}
-      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-purple-50 border border-purple-100 rounded-2xl shadow-sm">
-            <Handshake className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900">Gerencia de Procura</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Autorice inversiones, evalúe ofertas y adjudique contratos a los contratistas idóneos.
-            </p>
-          </div>
-        </div>
+      {/* Tabs primero — barra de navegación principal de la vista, igual
+          criterio que InfraestructuraMantenimientoPanel. */}
+      <motion.div variants={itemVariants} className="shrink-0">
+        <Tabs
+          ariaLabel="Secciones de Procura"
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as TabKey)}
+          fullWidth
+          tabs={[
+            { key: "autorizacion", label: "Autorización de Inversión", count: kpis.pendingApproval },
+            { key: "comparativa", label: "Evaluación Comparativa", count: kpis.comparative },
+          ]}
+        />
       </motion.div>
 
-      {/* KPIs operativos del departamento */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Por Autorizar" accent="text-purple-600" borderAccent="border-l-purple-400">
-          <span className="text-2xl font-black font-mono bg-gradient-to-r from-purple-700 to-purple-500 bg-clip-text text-transparent">{kpis.pendingApproval}</span>
-          <p className="text-[10px] text-slate-400 mt-1 font-medium">Inversión en cola</p>
-        </KpiCard>
-
-        <KpiCard icon={<ClipboardList className="h-5 w-5" />} label="En Licitación" accent="text-sky-600" borderAccent="border-l-sky-400">
-          <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{kpis.inBidding}</span>
-          <p className="text-[10px] text-slate-400 mt-1 font-medium">Esperando propuestas</p>
-        </KpiCard>
-
-        <KpiCard icon={<Scale className="h-5 w-5" />} label="Comparativa" accent="text-emerald-600" borderAccent="border-l-emerald-400">
-          <span className="text-2xl font-black font-mono bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">{kpis.comparative}</span>
-          <p className="text-[10px] text-slate-400 mt-1 font-medium">Cuadros por adjudicar</p>
-        </KpiCard>
-
-        <KpiCard icon={<Handshake className="h-5 w-5" />} label="Contratados" accent="text-indigo-600" borderAccent="border-l-indigo-400">
-          <span className="text-2xl font-black font-mono bg-gradient-to-r from-indigo-700 to-indigo-500 bg-clip-text text-transparent">{kpis.contracted}</span>
-          <p className="text-[10px] text-slate-400 mt-1 font-medium">Contratos adjudicados</p>
-        </KpiCard>
+      {/* KPIs operativos del departamento — contexto secundario compacto
+          debajo de las tabs (mismo patrón que Infraestructura/Cierre de
+          Obra), no cards grandes compitiendo por atención con las tabs. */}
+      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
+        <KpiPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Por Autorizar" value={kpis.pendingApproval} accent="brand" />
+        <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="info" />
+        <KpiPill icon={<Scale className="h-3.5 w-3.5" />} label="Comparativa" value={kpis.comparative} accent="success" />
+        <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" />
       </motion.div>
 
-      {/* Secciones: autorización (izq) + evaluación comparativa (der) */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-5 space-y-6">
-          <InvestmentApprovalSection
-            projects={projects}
-            authToken={authToken}
-            onApproveInvestment={onApproveInvestment}
-          />
-        </div>
-
-        <div className="lg:col-span-7 space-y-6">
-          <BidEvaluationSection
-            projects={projects}
-            authToken={authToken}
-            onSelectContractor={onSelectContractor}
-            onRejectProposals={onRejectProposals}
-          />
-        </div>
+      <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
+        <TabPanel activeKey={activeTab}>
+          {activeTab === "autorizacion" && (
+            <InvestmentApprovalSection
+              projects={projects}
+              authToken={authToken}
+              onApproveInvestment={onApproveInvestment}
+            />
+          )}
+          {activeTab === "comparativa" && (
+            <BidEvaluationSection
+              projects={projects}
+              authToken={authToken}
+              onSelectContractor={onSelectContractor}
+              onRejectProposals={onRejectProposals}
+            />
+          )}
+        </TabPanel>
       </motion.div>
     </motion.div>
   );
@@ -113,28 +114,19 @@ export default function ProcuraPanel({
 /* ─── Skeleton Loader ─── */
 function ProcuraSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3.5">
-        <SkeletonBlock className="h-12 w-12 rounded-2xl bg-slate-200" />
-        <div className="space-y-2">
-          <SkeletonBlock className="h-5 w-56" />
-          <SkeletonBlock className="h-3 w-96" />
-        </div>
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <SkeletonBlock className="h-11 w-56 rounded-2xl" />
+        <SkeletonBlock className="h-11 w-56 rounded-2xl" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonStats key={i} />
-        ))}
+      <div className="flex flex-wrap gap-2">
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-5 space-y-6">
-          <SkeletonCard />
-        </div>
-        <div className="lg:col-span-7 space-y-6">
-          <SkeletonCard />
-          <SkeletonTable rows={3} columns={7} />
-        </div>
-      </div>
+      <SkeletonCard />
+      <SkeletonTable rows={3} columns={7} />
     </div>
   );
 }

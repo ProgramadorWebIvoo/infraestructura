@@ -6,7 +6,7 @@
  * las rutas con control de acceso por rol.
  */
 
-import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
+import { lazy, Suspense, useCallback, useEffect } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 
 // Views — lazy-loaded for route-level code-splitting
@@ -51,18 +51,12 @@ function FullScreenFallback() {
 
 /**
  * Pantalla de validación de sesión. Se muestra brevemente mientras se
- * verifica el token almacenado contra el backend. Lanza una notificación
- * toast para informar al usuario sin ocupar toda la atención visual.
+ * verifica el token almacenado contra el backend — la propia pantalla ya
+ * comunica "Cargando…" visualmente, así que no dispara un toast (antes lo
+ * hacía y quedaba apilado con el de "Sesión iniciada" un instante después,
+ * exponiendo el mecanismo interno de auth en vez de sentirse transparente).
  */
 function SessionValidationScreen() {
-  const { showToast } = useToast();
-  const notified = useRef(false);
-  useEffect(() => {
-    if (notified.current) return;
-    notified.current = true;
-    showToast("Verificando sesión almacenada…", "info");
-  }, [showToast]);
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
       <div className="flex flex-col items-center gap-2">

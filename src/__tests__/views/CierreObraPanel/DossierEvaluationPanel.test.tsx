@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import DossierEvaluationPanel from "@/views/CierreObraPanel/components/DossierEvaluationPanel";
@@ -8,6 +9,24 @@ const mockEvaluateDossier = vi.fn();
 vi.mock("@/services/aiEvaluationService", () => ({
   evaluateDossier: (...args: unknown[]) => mockEvaluateDossier(...args),
 }));
+
+vi.mock("motion/react", () => {
+  const stripMotionProps = (props: Record<string, unknown>) => {
+    const { initial, animate, exit, variants, transition, layout, ...rest } = props;
+    return rest;
+  };
+  return {
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tag: string) =>
+          ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+            React.createElement(tag, stripMotionProps(props), children),
+      },
+    ),
+  };
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
