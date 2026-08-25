@@ -8,7 +8,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Clock, FileStack, HardHat, ShieldCheck } from "lucide-react";
-import type { Project } from "../../types";
+import type { AuditLog, Project } from "../../types";
 import { ProjectStatus } from "../../types";
 import { containerVariants, itemVariants } from "../../animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
@@ -24,6 +24,7 @@ type TabKey = "revision" | "auditoria" | "documentos";
 
 interface CierreObraPanelProps {
   projects: Project[];
+  auditLogs: AuditLog[];
   authToken: string;
   onReviewProject: (projectId: string, notes: string) => void;
   onRejectProject: (
@@ -39,6 +40,7 @@ interface CierreObraPanelProps {
 
 export default function CierreObraPanel({
   projects,
+  auditLogs,
   authToken,
   onReviewProject,
   onRejectProject,
@@ -78,7 +80,7 @@ export default function CierreObraPanel({
             tabs={[
               { key: "revision", label: "Revisión de Cálculos y Planos", count: kpis.pendingReview, showDot: kpis.pendingReview > 0 && activeTab !== "revision" },
               { key: "auditoria", label: "Auditoría de Fin de Obra", count: kpis.inExecution + kpis.underAudit },
-              { key: "documentos", label: "Documentos ya Revisados", count: kpis.revised },
+              { key: "documentos", label: "Historial de Expedientes", count: kpis.revised },
             ]}
           />
         </motion.div>
@@ -115,6 +117,7 @@ export default function CierreObraPanel({
               <div className="min-h-0 flex flex-col flex-1">
                 <RevisedDocumentsSection
                   projects={projects}
+                  auditLogs={auditLogs}
                   authToken={authToken}
                 />
               </div>

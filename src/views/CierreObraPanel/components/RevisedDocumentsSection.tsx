@@ -10,8 +10,8 @@
  * libre sobre cualquier documento ya revisado.
  */
 
-import { useState } from "react";
-import { FileStack, MapPin } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, FileStack, MapPin } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import EmptyState from "../../../components/UI/EmptyState";
@@ -19,28 +19,67 @@ import Modal from "../../../components/UI/Modal";
 import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import StatusBadge from "../../../components/UI/StatusBadge";
+import Tabs from "../../../components/UI/Tabs";
+import TabPanel from "../../../components/UI/TabPanel";
 import { Table, type Column } from "../../../components/UI/Table";
+import { SelectFilter } from "../../../components/UI/FilterBar";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { downloadProjectDocument } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { ProjectStatus } from "../../../types";
-import type { Project, ProjectDocument } from "../../../types";
+import type { AuditLog, Project, ProjectDocument } from "../../../types";
+import ProjectIterationsTimeline from "./ProjectIterationsTimeline";
+import ExpedienteDetailTab from "./ExpedienteDetailTab";
+
+type ModalTabKey = "detalle" | "historial" | "archivos";
 
 interface RevisedDocumentsSectionProps {
   projects: Project[];
+  auditLogs: AuditLog[];
   authToken: string;
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
 
-export default function RevisedDocumentsSection({ projects, authToken }: RevisedDocumentsSectionProps) {
+const STATUS_FILTER_OPTIONS = [
+  { value: "ALL", label: "Todos los Estados" },
+  { value: "REJECTED", label: "Rechazados" },
+  { value: "APPROVED", label: "Aprobados" },
+];
+
+const REJECTION_ACTION = "Rechazo de petición de obra";
+
+function rejectionCountOf(projectId: string, auditLogs: AuditLog[]): number {
+  return auditLogs.filter((l) => l.projectId === projectId && l.action === REJECTION_ACTION).length;
+}
+
+export default function RevisedDocumentsSection({ projects, auditLogs, authToken }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
   const { containerRef } = useContainerRows({ paginated: false });
   const [selectedId, setSelectedId] = useState("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [modalTab, setModalTab] = useState<ModalTabKey>("historial");
 
-  const revisedProjects = projects.filter((p) => p.status !== ProjectStatus.CREADO);
+  // La tab activa por defecto es HISTORIAL — se reinicia a esa vista cada
+  // vez que se abre un expediente distinto, en vez de arrastrar la tab que
+  // haya quedado seleccionada del expediente previamente inspeccionado.
+  useEffect(() => {
+    if (selectedId) setModalTab("historial");
+  }, [selectedId]);
+
+  const revisedProjects = useMemo(() => projects.filter((p) => {
+    if (p.status === ProjectStatus.CREADO) return false;
+    if (statusFilter === "REJECTED" && p.status !== ProjectStatus.RECHAZADO_CIERRE) return false;
+    if (statusFilter === "APPROVED" && p.status === ProjectStatus.RECHAZADO_CIERRE) return false;
+    const projectDate = p.createdDate?.slice(0, 10);
+    if (dateFrom && (!projectDate || projectDate < dateFrom)) return false;
+    if (dateTo && (!projectDate || projectDate > dateTo)) return false;
+    return true;
+  }), [projects, statusFilter, dateFrom, dateTo]);
   const selectedProject = revisedProjects.find((p) => p.id === selectedId);
 
   const columns: Column<Project>[] = [
@@ -79,6 +118,23 @@ export default function RevisedDocumentsSection({ projects, authToken }: Revised
       align: "right",
       render: (p) => <span className="font-mono text-[11px] font-bold text-slate-600">{p.documents?.length ?? 0}</span>,
     },
+    {
+      key: "rejections",
+      label: "Rechazos",
+      width: "6rem",
+      align: "right",
+      render: (p) => {
+        const count = rejectionCountOf(p.id, auditLogs);
+        return count > 0 ? (
+          <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-danger-600">
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+            {count}
+          </span>
+        ) : (
+          <span className="font-mono text-[11px] text-slate-300">—</span>
+        );
+      },
+    },
   ];
 
   const handleDownload = async (doc: ProjectDocument) => {
@@ -94,10 +150,38 @@ export default function RevisedDocumentsSection({ projects, authToken }: Revised
     <Card accent="success" className="min-h-0 flex-1" fillHeight>
       <SectionHeader
         icon={<FileStack className="h-5 w-5" />}
-        title="Documentos Ya Revisados"
-        description="Consulta los adjuntos de proyectos que ya pasaron por revisión técnica."
+        title="Historial de Expedientes"
+        description="Consulta el historial completo de expedientes procesados, incluidas correcciones y rechazos."
         color="emerald"
       />
+
+      <div className="shrink-0 flex flex-wrap gap-2.5 mb-3">
+        <SelectFilter
+          id="revised-docs-filter-status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          ariaLabel="Filtrar por estado"
+          options={STATUS_FILTER_OPTIONS}
+        />
+        <input
+          id="revised-docs-date-from"
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          aria-label="Fecha desde"
+          className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
+          title="Fecha desde"
+        />
+        <input
+          id="revised-docs-date-to"
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          aria-label="Fecha hasta"
+          className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
+          title="Fecha hasta"
+        />
+      </div>
 
       {revisedProjects.length === 0 ? (
         <EmptyState message="No hay proyectos con documentación ya revisada." />
@@ -121,16 +205,50 @@ export default function RevisedDocumentsSection({ projects, authToken }: Revised
         maxWidth="max-w-3xl"
         icon={<FileStack className="h-5 w-5" />}
         iconColor="emerald"
-        badge="Documentos Ya Revisados"
+        badge="Historial de Expedientes"
         title={selectedProject ? `Expediente ${selectedProject.id}` : ""}
         infoLine={selectedProject ? `${selectedProject.title} · ${selectedProject.location}` : ""}
       >
         {selectedProject && (
-          <ProjectDocumentsList
-            project={selectedProject}
-            onDownload={handleDownload}
-            onPreview={setPreviewDoc}
-          />
+          <>
+            <Tabs
+              ariaLabel="Secciones del expediente"
+              activeKey={modalTab}
+              onChange={(key) => setModalTab(key as ModalTabKey)}
+              layoutId="modal-expediente-tabs-indicator"
+              fullWidth
+              tabs={[
+                { key: "detalle", label: "Detalle Expediente" },
+                {
+                  key: "historial",
+                  label: "Historial Iteraciones",
+                  count: rejectionCountOf(selectedProject.id, auditLogs) || undefined,
+                  showDot: rejectionCountOf(selectedProject.id, auditLogs) > 0,
+                },
+                { key: "archivos", label: "Archivos", count: selectedProject.documents?.length || undefined },
+              ]}
+            />
+            {/* min-h fija: sin esto el modal crece/decrece de alto entre tabs
+                según cuánto contenido tenga cada una, lo que se siente como
+                un salto visual al cambiar de pestaña. */}
+            <TabPanel activeKey={modalTab} className="mt-4 min-h-90">
+              {modalTab === "detalle" && (
+                <ExpedienteDetailTab project={selectedProject} rejectionCount={rejectionCountOf(selectedProject.id, auditLogs)} />
+              )}
+              {modalTab === "historial" && (
+                <ProjectIterationsTimeline projectId={selectedProject.id} auditLogs={auditLogs} />
+              )}
+              {modalTab === "archivos" && (
+                <ProjectDocumentsList
+                  project={selectedProject}
+                  authToken={authToken}
+                  auditLogs={auditLogs}
+                  onDownload={handleDownload}
+                  onPreview={setPreviewDoc}
+                />
+              )}
+            </TabPanel>
+          </>
         )}
       </Modal>
 

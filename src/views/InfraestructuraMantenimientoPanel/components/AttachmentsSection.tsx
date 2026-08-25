@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, Paperclip } from "lucide-react";
 import FileDropZone from "../../../components/UI/FileDropZone";
 import AlertBanner from "../../../components/UI/AlertBanner";
+import InfoBanner from "../../../components/UI/InfoBanner";
 import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
@@ -95,6 +96,14 @@ export default function AttachmentsSection({
 
       {hasExistingSection && ownDocuments.length > 0 && (
         <div className="mb-5">
+          <InfoBanner title="Cómo corregir un adjunto observado" color="sky" defaultOpen={false} className="mb-3">
+            Si Cierre de Obra observó un documento, sube el archivo corregido en el mismo
+            tipo (Fotos, Hojas de Cálculo o Planos) donde ya tenías un único adjunto de
+            ese tipo — el sistema lo reconocerá como la versión corregida de ese mismo
+            documento, no como uno adicional. Si agregas más de un archivo nuevo del
+            mismo tipo, o el tipo tenía más de un adjunto previo, se guardarán como
+            documentos nuevos por separado.
+          </InfoBanner>
           <h5 className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
             <Paperclip className="h-3.5 w-3.5" />
             Adjuntos ya cargados

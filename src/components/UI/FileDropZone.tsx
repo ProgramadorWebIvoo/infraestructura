@@ -6,9 +6,11 @@
  * Incluye input oculto, drag & drop y lista de archivos adjuntos.
  */
 
-import { useState, useRef, useCallback } from "react";
-import { X, Upload } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { CheckCircle2, Upload, X } from "lucide-react";
 import { formatFileSize } from "../../utils";
+import { springs } from "../../animations";
 
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -139,11 +141,18 @@ export default function FileDropZone({
 }: FileDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  // Dispara un shake sutil en la zona cuando se rechaza un archivo — feedback
+  // de fallo in-place, sin depender de que el padre muestre un toast.
+  const [hasError, setHasError] = useState(false);
+  const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t = COLOR_THEMES[color] ?? COLOR_THEMES.sky;
 
   const reject = useCallback(
     (fileName: string, reason: string) => {
       onFileRejected?.(fileName, reason);
+      setHasError(true);
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setHasError(false), 500);
     },
     [onFileRejected],
   );
@@ -205,8 +214,10 @@ export default function FileDropZone({
         {required && <span className="text-rose-500">*</span>}
       </label>
 
-      {/* Drop zone */}
-      <div
+      {/* Drop zone — su propio contenido cambia cuando ya hay archivos, para
+          que quede visible sin depender de que el usuario scrollee hasta la
+          lista de abajo. */}
+      <motion.div
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragEnter={() => setIsDragging(true)}
         onDragLeave={() => setIsDragging(false)}
@@ -216,13 +227,46 @@ export default function FileDropZone({
           if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
         }}
         onClick={() => inputRef.current?.click()}
+        animate={hasError ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
+        transition={hasError ? { duration: 0.4, ease: "easeInOut" } : springs.gentle}
         className={`relative flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-          isDragging ? `${t.dragBorder} ${t.dragBg}` : `border-slate-200 bg-slate-50 ${t.hover}`
+          hasError
+            ? "border-danger-400 bg-danger-50/40"
+            : isDragging
+              ? `${t.dragBorder} ${t.dragBg}`
+              : files.length > 0
+                ? `${t.border} ${t.bg}`
+                : `border-slate-200 bg-slate-50 ${t.hover}`
         }`}
       >
-        {icon ?? <Upload className="h-6 w-6 text-slate-400" />}
-        <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
-        <span className="text-[10px] text-slate-400 font-medium">{extensionsLabel}</span>
+        {files.length > 0 ? (
+          <motion.div
+            key="has-files"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={springs.gentle}
+            className="flex flex-col items-center gap-1.5"
+          >
+            <motion.span
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={springs.snappy}
+              className={t.text}
+            >
+              <CheckCircle2 className="h-6 w-6" />
+            </motion.span>
+            <span className={`text-[11px] font-bold ${t.fileText}`}>
+              {files.length} {files.length === 1 ? "archivo listo" : "archivos listos"}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">Haz clic para agregar más</span>
+          </motion.div>
+        ) : (
+          <>
+            {icon ?? <Upload className="h-6 w-6 text-slate-400" />}
+            <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
+            <span className="text-[10px] text-slate-400 font-medium">{extensionsLabel}</span>
+          </>
+        )}
         <input
           ref={inputRef}
           id={id}
@@ -236,27 +280,37 @@ export default function FileDropZone({
             e.target.value = "";
           }}
         />
-      </div>
+      </motion.div>
 
       {/* File list */}
       {files.length > 0 && (
         <ul className="mt-2 space-y-1.5">
-          {files.map((file, i) => (
-            <li key={i} className={`flex items-center justify-between ${t.fileBg} ${t.fileBorder} border rounded-lg px-3 py-2`}>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`${t.text} shrink-0`}>{fileIcon}</span>
-                <span className={`text-[11px] font-bold ${t.fileText} truncate`}>{file.name}</span>
-                <span className={`text-[10px] ${t.text} font-medium shrink-0`}>{formatFileSize(file.size)}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeFile(i)}
-                className={`ml-2 ${t.text} hover:text-rose-500 transition-colors shrink-0 cursor-pointer`}
+          <AnimatePresence initial={false}>
+            {files.map((file, i) => (
+              <motion.li
+                key={file.name + file.size}
+                layout
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 12, scale: 0.96, transition: { duration: 0.15 } }}
+                transition={springs.gentle}
+                className={`flex items-center justify-between ${t.fileBg} ${t.fileBorder} border rounded-lg px-3 py-2`}
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </li>
-          ))}
+                <div className="flex items-center gap-2 min-w-0">
+                  <CheckCircle2 className={`${t.text} shrink-0 h-3.5 w-3.5`} />
+                  <span className={`text-[11px] font-bold ${t.fileText} truncate`}>{file.name}</span>
+                  <span className={`text-[10px] ${t.text} font-medium shrink-0`}>{formatFileSize(file.size)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  className={`ml-2 ${t.text} hover:text-rose-500 transition-colors shrink-0 cursor-pointer`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </motion.li>
+            ))}
+          </AnimatePresence>
         </ul>
       )}
 

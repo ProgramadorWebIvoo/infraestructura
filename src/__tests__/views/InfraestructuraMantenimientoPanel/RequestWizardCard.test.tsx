@@ -37,6 +37,10 @@ vi.mock("motion/react", () => ({
       const { initial, animate, exit, variants, transition, layout, ...rest } = props;
       return <tr {...rest}>{children}</tr>;
     },
+    li: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+      const { initial, animate, exit, variants, transition, layout, ...rest } = props;
+      return <li {...rest}>{children}</li>;
+    },
   },
 }));
 

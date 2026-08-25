@@ -124,3 +124,16 @@ export async function downloadProjectDocument(
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Todas las versiones (histórico completo) del grupo al que pertenece un documento. */
+export async function fetchDocumentHistory(
+  projectId: string,
+  documentId: number,
+  authToken: string,
+): Promise<ProjectDocument[]> {
+  const { data } = await apiFetch<{ data: ProjectDocument[] }>(
+    `/projects/${projectId}/documents/${documentId}/history`,
+    { token: authToken },
+  );
+  return data;
+}
