@@ -11,7 +11,7 @@ vi.mock("@/hooks/usePolling", () => ({
 }));
 
 vi.mock("@/hooks/usePollingSettings", () => ({
-  usePollingSettings: () => ({ notificationsIntervalMs: 8_000, dashboardIntervalMs: 25_000 }),
+  usePollingSettings: () => ({ dashboardIntervalMs: 25_000 }),
 }));
 
 const mockUseAuth = vi.fn(() => ({ authToken: "token" }));
