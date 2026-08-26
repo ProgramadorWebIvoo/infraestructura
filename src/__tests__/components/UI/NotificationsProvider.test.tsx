@@ -1,19 +1,29 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act } from "react";
 import { renderHook } from "@testing-library/react";
 import type { AppNotification } from "@/types";
 import { useNotifications, NotificationsProvider } from "@/components/UI/NotificationsProvider";
 
-const mockUsePolling = vi.fn();
-vi.mock("@/hooks/usePolling", () => ({
-  usePolling: (...args: unknown[]) => mockUsePolling(...args),
+// Simula el Echo real lo suficiente para probar la suscripción: private()
+// devuelve un canal con listen()/stopListening(), y el módulo expone el
+// callback registrado para que el test lo dispare manualmente (equivalente
+// a "el WS recibió un evento").
+const mockChannelListen = vi.fn();
+const mockEcho = {
+  private: vi.fn(() => ({ listen: mockChannelListen })),
+  leave: vi.fn(),
+  disconnect: vi.fn(),
+};
+const mockCreateEchoClient = vi.fn(() => mockEcho);
+vi.mock("@/services/echo", () => ({
+  createEchoClient: () => mockCreateEchoClient(),
 }));
 
-vi.mock("@/hooks/usePollingSettings", () => ({
-  usePollingSettings: () => ({ notificationsIntervalMs: 8_000, dashboardIntervalMs: 25_000 }),
+type MockAuthUser = { id: number; name: string; email: string } | null;
+const mockUseAuth = vi.fn<() => { authToken: string; authUser: MockAuthUser }>(() => ({
+  authToken: "token",
+  authUser: { id: 1, name: "Test", email: "t@t.com" },
 }));
-
-const mockUseAuth = vi.fn(() => ({ authToken: "token" }));
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
@@ -43,27 +53,34 @@ function makeNotification(overrides: Partial<AppNotification> = {}): AppNotifica
 }
 
 // useNotifications() ahora solo lee un contexto compartido — la lógica real
-// (fetch, polling, toast) vive en useNotificationsSource(), instanciada UNA
-// sola vez por <NotificationsProvider> (evita duplicar polling/toasts cuando
-// NotificationBell se monta más de una vez, ver App.tsx). Los tests siguen
-// ejercitando el comportamiento a través del hook público, envuelto en el provider.
+// (fetch inicial, suscripción WS, toast) vive en useNotificationsSource(),
+// instanciada UNA sola vez por <NotificationsProvider> (evita duplicar
+// conexiones/toasts cuando NotificationBell se monta más de una vez, ver
+// App.tsx). Los tests siguen ejercitando el comportamiento a través del
+// hook público, envuelto en el provider.
 function renderNotifications() {
   return renderHook(() => useNotifications(), {
     wrapper: ({ children }) => <NotificationsProvider>{children}</NotificationsProvider>,
   });
 }
 
+/** Extrae el callback que la suscripción registró para "notification.created". */
+function getListenCallback(): (payload: AppNotification) => void {
+  const call = mockChannelListen.mock.calls.find(([event]) => event === ".notification.created");
+  if (!call) throw new Error('Ningún listener registrado para ".notification.created"');
+  return call[1] as (payload: AppNotification) => void;
+}
+
 describe("useNotifications", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    mockUsePolling.mockClear();
     mockApiFetch.mockClear();
     mockShowToast.mockClear();
-    mockUseAuth.mockReturnValue({ authToken: "token" });
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
+    mockCreateEchoClient.mockClear();
+    mockChannelListen.mockClear();
+    mockEcho.private.mockClear();
+    mockEcho.leave.mockClear();
+    mockEcho.disconnect.mockClear();
+    mockUseAuth.mockReturnValue({ authToken: "token", authUser: { id: 1, name: "Test", email: "t@t.com" } });
   });
 
   it("carga notificaciones y conteo de no leídas al montar", async () => {
@@ -82,8 +99,8 @@ describe("useNotifications", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it("sin authToken no consulta el endpoint", async () => {
-    mockUseAuth.mockReturnValue({ authToken: "" });
+  it("sin authToken no consulta el endpoint ni abre conexión WebSocket", async () => {
+    mockUseAuth.mockReturnValue({ authToken: "", authUser: null });
 
     renderNotifications();
 
@@ -92,9 +109,10 @@ describe("useNotifications", () => {
     });
 
     expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(mockCreateEchoClient).not.toHaveBeenCalled();
   });
 
-  it("activa polling de 8s con pauseWhenHidden=false cuando hay authToken", async () => {
+  it("se suscribe al canal privado App.Models.User.{id} cuando hay authToken y authUser", async () => {
     mockApiFetch.mockResolvedValue([]);
 
     renderNotifications();
@@ -103,13 +121,9 @@ describe("useNotifications", () => {
       await Promise.resolve();
     });
 
-    // pauseWhenHidden=false es intencional (regression test): las notifica-
-    // ciones nativas del navegador (Notification API) exigen que el fetch
-    // detecte la novedad MIENTRAS la pestaña sigue oculta — si el polling se
-    // pausara en background (como el resto de pollings de la app), nunca se
-    // dispararía nada mientras el usuario no mira la pestaña, y al volver ya
-    // es tarde (notifyBrowser() exige document.hidden en el momento del disparo).
-    expect(mockUsePolling).toHaveBeenCalledWith(expect.any(Function), 8_000, true, false);
+    expect(mockCreateEchoClient).toHaveBeenCalled();
+    expect(mockEcho.private).toHaveBeenCalledWith("App.Models.User.1");
+    expect(mockChannelListen).toHaveBeenCalledWith(".notification.created", expect.any(Function));
   });
 
   it("markRead llama al endpoint PATCH y actualiza estado local", async () => {
@@ -216,7 +230,7 @@ describe("useNotifications", () => {
     expect(result.current.unreadCount).toBe(0);
   });
 
-  it("no dispara toast en la carga inicial (solo en polls posteriores)", async () => {
+  it("no dispara toast en la carga inicial", async () => {
     mockApiFetch
       .mockResolvedValueOnce([makeNotification({ id: 1 }), makeNotification({ id: 2 })])
       .mockResolvedValueOnce({ count: 2 });
@@ -230,29 +244,23 @@ describe("useNotifications", () => {
     expect(mockShowToast).not.toHaveBeenCalled();
   });
 
-  it("dispara un toast (variant notification) por cada notificación nueva detectada en un poll posterior", async () => {
+  it("dispara un toast (variant notification) al recibir una notificación por el canal WebSocket", async () => {
     mockApiFetch
       .mockResolvedValueOnce([makeNotification({ id: 1 })])
       .mockResolvedValueOnce({ count: 1 });
 
-    renderNotifications();
+    const { result } = renderNotifications();
 
     await act(async () => {
       await Promise.resolve();
     });
 
-    expect(mockUsePolling).toHaveBeenCalled();
-    const pollCallback = mockUsePolling.mock.calls[0][0] as () => Promise<void>;
+    const onNotificationCreated = getListenCallback();
 
-    mockApiFetch
-      .mockResolvedValueOnce([
-        makeNotification({ id: 1 }),
+    act(() => {
+      onNotificationCreated(
         makeNotification({ id: 2, project_title_snapshot: "Obra Nueva", action: "Rechazo de cuadro comparativo" }),
-      ])
-      .mockResolvedValueOnce({ count: 2 });
-
-    await act(async () => {
-      await pollCallback();
+      );
     });
 
     expect(mockShowToast).toHaveBeenCalledTimes(1);
@@ -261,6 +269,8 @@ describe("useNotifications", () => {
       "info",
       { variant: "notification" },
     );
+    expect(result.current.notifications).toHaveLength(2);
+    expect(result.current.unreadCount).toBe(2);
   });
 
   it("mapea el type del backend al AlertType correcto del toast", async () => {
@@ -274,17 +284,12 @@ describe("useNotifications", () => {
       await Promise.resolve();
     });
 
-    const pollCallback = mockUsePolling.mock.calls[0][0] as () => Promise<void>;
+    const onNotificationCreated = getListenCallback();
 
-    mockApiFetch
-      .mockResolvedValueOnce([
-        makeNotification({ id: 1 }),
+    act(() => {
+      onNotificationCreated(
         makeNotification({ id: 2, action: "Rechazo de cuadro comparativo", type: "accion_requerida" }),
-      ])
-      .mockResolvedValueOnce({ count: 2 });
-
-    await act(async () => {
-      await pollCallback();
+      );
     });
 
     expect(mockShowToast).toHaveBeenCalledWith(
@@ -294,31 +299,22 @@ describe("useNotifications", () => {
     );
   });
 
-  it("no dispara toast en un poll si no hay notificaciones nuevas", async () => {
-    mockApiFetch
-      .mockResolvedValueOnce([makeNotification({ id: 1 })])
-      .mockResolvedValueOnce({ count: 1 });
+  it("limpia la suscripción (leave + disconnect) al desmontar", async () => {
+    mockApiFetch.mockResolvedValue([]);
 
-    renderNotifications();
+    const { unmount } = renderNotifications();
 
     await act(async () => {
       await Promise.resolve();
     });
 
-    const pollCallback = mockUsePolling.mock.calls[0][0] as () => Promise<void>;
+    unmount();
 
-    mockApiFetch
-      .mockResolvedValueOnce([makeNotification({ id: 1 })])
-      .mockResolvedValueOnce({ count: 1 });
-
-    await act(async () => {
-      await pollCallback();
-    });
-
-    expect(mockShowToast).not.toHaveBeenCalled();
+    expect(mockEcho.leave).toHaveBeenCalledWith("App.Models.User.1");
+    expect(mockEcho.disconnect).toHaveBeenCalled();
   });
 
-  it("una sola instancia de NotificationsProvider comparte estado entre múltiples consumidores (fix de toasts/polling duplicados)", async () => {
+  it("una sola instancia de NotificationsProvider comparte estado entre múltiples consumidores (fix de toasts/conexiones duplicadas)", async () => {
     mockApiFetch
       .mockResolvedValueOnce([makeNotification({ id: 1 })])
       .mockResolvedValueOnce({ count: 1 });
@@ -346,5 +342,8 @@ describe("useNotifications", () => {
     // apiFetch se llamó exactamente 2 veces (list + count) en total, no 4
     // (2 por consumidor) — confirma una sola instancia de useNotificationsSource.
     expect(mockApiFetch).toHaveBeenCalledTimes(2);
+
+    // Idem para la conexión WebSocket: una sola suscripción, no dos.
+    expect(mockCreateEchoClient).toHaveBeenCalledTimes(1);
   });
 });

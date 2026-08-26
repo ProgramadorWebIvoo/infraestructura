@@ -43,7 +43,7 @@ const STORAGE_USER = "ivoo_auth_user";
 
 async function renderAuthenticated() {
   mockApiFetch.mockResolvedValueOnce({
-    user: { name: "Test", email: "test@ivoo.local", role: "ADMIN" },
+    user: { id: 1, name: "Test", email: "test@ivoo.local", role: "ADMIN" },
   });
   const hook = renderHook(() => useAuth());
   await waitFor(() => expect(hook.result.current.isValidatingSession).toBe(false));
@@ -82,6 +82,7 @@ describe("useAuth", () => {
 
       expect(result.current.authToken).toBe("authenticated");
       expect(result.current.authUser).toEqual({
+        id: 1,
         name: "Test",
         email: "test@ivoo.local",
         role: "ADMIN",
@@ -133,10 +134,11 @@ describe("useAuth", () => {
     it("guarda usuario sanitizado (String/undefined)", async () => {
       const { result } = await renderAuthenticated();
 
-      mockApiFetch.mockResolvedValueOnce({ user: { name: 123, email: null, role: "" } });
+      mockApiFetch.mockResolvedValueOnce({ user: { id: 7, name: 123, email: null, role: "" } });
       await act(() => result.current.handleLogin("x@y.z", "p"));
 
       expect(result.current.authUser).toEqual({
+        id: 7,
         name: "123",
         email: "",
         role: undefined,

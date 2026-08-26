@@ -67,12 +67,12 @@ export { API_BASE_URL };
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-function readCookie(name: string): string | null {
+export function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-async function ensureCsrfCookie(): Promise<void> {
+export async function ensureCsrfCookie(): Promise<void> {
   if (readCookie("XSRF-TOKEN")) return;
 
   // getApiBaseUrl() (no la constante API_BASE_URL congelada al importar el

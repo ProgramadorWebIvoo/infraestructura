@@ -19,9 +19,11 @@
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.10",
     "dompurify": "^3.4.12",
+    "laravel-echo": "^2.4.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "pdfjs-dist": "^6.2.108",
+    "pusher-js": "^8.6.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-router-dom": "^7.18.0",

@@ -27,7 +27,7 @@ const STORAGE_USER = "ivoo_auth_user";
 const AUTHENTICATED_SENTINEL = "authenticated";
 const INACTIVITY_CHECK_MS = 15_000; // cada 15s verificar tiempo real transcurrido
 
-export type AuthUser = { name: string; email: string; role?: string } | null;
+export type AuthUser = { id: number; name: string; email: string; role?: string } | null;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -80,12 +80,13 @@ export function useAuth() {
   useEffect(() => {
     let cancelled = false;
 
-    apiFetch<{ user: { name: string; email: string; role?: string } }>("/user", {
+    apiFetch<{ user: { id: number; name: string; email: string; role?: string } }>("/user", {
       method: "GET",
     })
       .then((data) => {
         if (cancelled) return;
         const safeUser = {
+          id: Number(data.user.id),
           name: String(data.user.name ?? ""),
           email: String(data.user.email ?? ""),
           role: data.user.role ? String(data.user.role) : undefined,
@@ -176,7 +177,7 @@ export function useAuth() {
     // Sin device_name: el backend detecta por Referer/Origin que esta
     // petición viene del SPA (dominio "stateful") y responde con cookie
     // de sesión httpOnly en vez de un token Bearer.
-    const data = await apiFetch<{ user: { name: string; email: string; role?: string } }>("/login", {
+    const data = await apiFetch<{ user: { id: number; name: string; email: string; role?: string } }>("/login", {
       method: "POST",
       body: JSON.stringify({
         email: sanitizedEmail,
@@ -185,6 +186,7 @@ export function useAuth() {
     });
 
     const safeUser = {
+      id: Number(data.user.id),
       name: String(data.user.name ?? ""),
       email: String(data.user.email ?? ""),
       role: data.user.role ? String(data.user.role) : undefined,

@@ -2,32 +2,27 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Bandeja de alertas internas persistentes: consume GET /notifications +
- * /notifications/unread-count (backend, Fase 1.2 del plan de 90 días) con
- * polling, mismo patrón que useDashboardSummary.
+ * Bandeja de alertas internas persistentes: carga inicial vía GET
+ * /notifications + /notifications/unread-count, luego se mantiene al día por
+ * WebSocket (Laravel Reverb) — cada AppNotification nueva llega por el canal
+ * privado App.Models.User.{id} apenas NotificationDispatcher la crea en el
+ * backend, sin volver a preguntar.
  *
  * Vive en components/UI/ (no en hooks/) siguiendo el mismo patrón que
  * Toast.tsx: expone un componente <Provider> con JSX (createContext +
  * .Provider), así que pertenece junto al resto de contextos de la app,
  * no en hooks/ (que son funciones puras sin JSX).
  *
- * Dispara un toast cuando el poll trae IDs de notificación nuevos (no vistos
- * en el fetch anterior) — antes la bandeja se actualizaba silenciosamente y
- * el usuario solo se enteraba si abría la campana.
- *
- * No hay push real (WebSockets) todavía: el backend está en Laravel 9 y
- * Laravel Reverb requiere Laravel 10+. El intervalo de polling es
- * configurable desde CONFIG APP (`polling_notificaciones_segundos`, default
- * 8s — se bajó de 30s como mitigación mientras tanto) — Reverb (o
- * Pusher/Ably como alternativa sin upgrade de framework) queda pendiente en
- * el roadmap para push real.
+ * Dispara un toast por cada notificación que llega por el canal — antes la
+ * bandeja se actualizaba silenciosamente y el usuario solo se enteraba si
+ * abría la campana.
  *
  * IMPORTANTE — instancia única: NotificationBell se monta dos veces en el
  * layout (MobileTopBar + SidebarNav, una oculta por CSS según breakpoint,
- * pero ambas presentes en el DOM). Si cada una llamara este hook por su
- * cuenta, habría dos pollings y dos toasts duplicados por cada notificación
- * nueva. Por eso la lógica real vive en useNotificationsSource() y se
- * instancia UNA sola vez en <NotificationsProvider> (ver App.tsx); todo
+ * pero ambas presentes en el DOM). Si cada una abriera su propia conexión
+ * WebSocket, habría dos suscripciones y dos toasts duplicados por cada
+ * notificación nueva. Por eso la lógica real vive en useNotificationsSource()
+ * y se instancia UNA sola vez en <NotificationsProvider> (ver App.tsx); todo
  * consumidor (NotificationBell, etc.) usa useNotifications(), que solo lee
  * el contexto ya compartido.
  *
@@ -37,15 +32,18 @@
  * (document.hidden); con la pestaña visible el toast en pantalla ya avisa,
  * duplicar con el widget nativo sería ruido. A diferencia del toast, esto
  * NUNCA se usa para el feedback local de acción (success/error/warning/info)
- * — es exclusivo de alertas del backend.
+ * — es exclusivo de alertas del backend. Con WS puro esto ya no depende de
+ * que un poll siga corriendo en background (a diferencia del polling
+ * anterior, que necesitaba seguir activo con la pestaña oculta solo para
+ * que esta detección siguiera funcionando).
  */
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Channel } from "pusher-js";
 import type { AppNotification } from "../../types";
 import { apiFetch } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
-import { usePolling } from "../../hooks/usePolling";
-import { usePollingSettings } from "../../hooks/usePollingSettings";
+import { createEchoClient } from "../../services/echo";
 import { useToast } from "./Toast";
 import { BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
 import { notifyBrowser } from "../../services/browserNotifications";
@@ -62,63 +60,68 @@ export interface UseNotificationsResult {
 }
 
 function useNotificationsSource(): UseNotificationsResult {
-  const { authToken } = useAuth();
+  const { authToken, authUser } = useAuth();
   const { showToast } = useToast();
-  const { notificationsIntervalMs } = usePollingSettings();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // IDs ya vistos en algún fetch anterior — permite detectar cuáles son
-  // realmente "nuevas" en cada poll sin tocar el toast en la carga inicial
-  // (que traería notificaciones viejas ya conocidas por el usuario).
-  const knownIds = useRef<Set<number> | null>(null);
+  const load = useCallback(async () => {
+    if (!authToken) return;
+    try {
+      // apiFetch desenvuelve "data" automáticamente (convención Laravel):
+      // el endpoint paginado responde {data: [...], links, meta} -> aquí ya llega el array.
+      const [list, count] = await Promise.all([
+        apiFetch<AppNotification[]>("/notifications?per_page=20", { token: authToken }),
+        apiFetch<{ count: number }>("/notifications/unread-count", { token: authToken }),
+      ]);
 
-  const load = useCallback(
-    async (isPoll = false) => {
-      if (!authToken) return;
-      try {
-        // apiFetch desenvuelve "data" automáticamente (convención Laravel):
-        // el endpoint paginado responde {data: [...], links, meta} -> aquí ya llega el array.
-        const [list, count] = await Promise.all([
-          apiFetch<AppNotification[]>("/notifications?per_page=20", { token: authToken }),
-          apiFetch<{ count: number }>("/notifications/unread-count", { token: authToken }),
-        ]);
-
-        if (knownIds.current) {
-          const fresh = list.filter(n => !knownIds.current!.has(n.id));
-          for (const n of fresh) {
-            const title = n.project_title_snapshot ?? "IVOO Gestión";
-            const message = n.project_title_snapshot ? `${n.project_title_snapshot} — ${n.action}` : n.action;
-            const alertType = BACKEND_NOTIFICATION_TYPE_MAP[n.type] ?? "info";
-
-            showToast(message, alertType, { variant: "notification" });
-            notifyBrowser(title, n.action);
-          }
-        }
-        knownIds.current = new Set(list.map(n => n.id));
-
-        setNotifications(list);
-        setUnreadCount(count.count);
-      } catch {
-        // Silencioso: la bandeja no es crítica para el flujo principal.
-      } finally {
-        if (!isPoll) setIsLoading(false);
-      }
-    },
-    [authToken, showToast],
-  );
+      setNotifications(list);
+      setUnreadCount(count.count);
+    } catch {
+      // Silencioso: la bandeja no es crítica para el flujo principal.
+    } finally {
+      setIsLoading(false);
+    }
+  }, [authToken]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  // pauseWhenHidden=false: a diferencia del resto de pollings de la app, este
-  // debe seguir corriendo con la pestaña en background — si se pausa ahí,
-  // notifyBrowser() nunca detecta nada nuevo mientras el usuario no mira la
-  // pestaña, y al volver ya es tarde (la notificación nativa exige que la
-  // pestaña siga oculta en el momento del fetch, ver browserNotifications.ts).
-  usePolling(useCallback(() => load(true), [load]), notificationsIntervalMs, !!authToken, false);
+  // Suscripción WebSocket al canal privado del usuario — reemplaza el
+  // polling: cada AppNotification nueva llega apenas
+  // NotificationDispatcher::notify() la crea en el backend (ver
+  // app/Events/NotificationCreated.php).
+  useEffect(() => {
+    if (!authToken || !authUser?.id) return;
+
+    const echo = createEchoClient();
+    const channelName = `App.Models.User.${authUser.id}`;
+    const channel = echo.private(channelName);
+
+    // El punto inicial en ".notification.created" le indica a Echo que no
+    // anteponga el namespace default de eventos — el evento define
+    // broadcastAs() explícito en el backend, sin namespace.
+    channel.listen(".notification.created", (payload: AppNotification) => {
+      setNotifications(prev => [payload, ...prev]);
+      setUnreadCount(prev => prev + 1);
+
+      const title = payload.project_title_snapshot ?? "IVOO Gestión";
+      const message = payload.project_title_snapshot
+        ? `${payload.project_title_snapshot} — ${payload.action}`
+        : payload.action;
+      const alertType = BACKEND_NOTIFICATION_TYPE_MAP[payload.type] ?? "info";
+
+      showToast(message, alertType, { variant: "notification" });
+      notifyBrowser(title, payload.action);
+    });
+
+    return () => {
+      echo.leave(channelName);
+      echo.disconnect();
+    };
+  }, [authToken, authUser?.id, showToast]);
 
   const markRead = useCallback(
     async (id: number) => {
