@@ -198,19 +198,19 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
    * adjuntos nuevos + refetch), pero contra /resubmit en vez de crear un proyecto.
    *
    * `existingDocuments` son los adjuntos vivos (no marcados para eliminar) que
-   * el proyecto ya tenía antes de este reenvío — cuando para un tipo dado queda
-   * exactamente un documento existente y se sube exactamente un archivo nuevo
-   * del mismo tipo, se linkea como nueva versión del original (new_version_of)
-   * en vez de crear un grupo desconectado: un caso típico de corrección es
-   * "reemplazar el plano rechazado", no "agregar un plano más". Con 0, 2+
-   * existentes o 2+ nuevos del mismo tipo el vínculo es ambiguo, así que se
-   * sube como grupo nuevo (comportamiento previo) en vez de adivinar. */
+   * el proyecto ya tenía antes de este reenvío. `versionReplacements` son
+   * archivos elegidos EXPLÍCITAMENTE por el usuario (botón "Nueva versión" por
+   * fila en AttachmentsSection) como reemplazo de un documento puntual — cada
+   * uno sube con `new_version_of` fijo al id de esa fila, sin adivinar. Los 3
+   * grupos de `files` (fotos/documentos/planos) son siempre archivos nuevos
+   * sin vínculo, nunca versionan nada existente. */
   const handleResubmitProject = useCallback(
     async (
       projectId: string,
       updated: Omit<Project, "id" | "createdDate" | "status" | "type">,
       files: { photos: File[]; documents: File[]; plans: File[] },
       existingDocuments: ProjectDocument[] = [],
+      versionReplacements: { documentId: number; documentType: ProjectDocument["documentType"]; file: File }[] = [],
     ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
@@ -230,17 +230,10 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         return { ok: false, partial: false, failedGroups: [] };
       }
 
-      const soleExistingDocOfType = (type: "FOTO" | "CALC" | "PLANO") => {
-        const matches = existingDocuments.filter((d) => d.documentType === type);
-        return matches.length === 1 ? matches[0] : null;
-      };
-
       const uploadGroup = async (list: File[], type: "FOTO" | "CALC" | "PLANO", groupLabel: string) => {
         if (list.length === 0) return null;
-        const versionTarget = list.length === 1 ? soleExistingDocOfType(type) : null;
         const form = new FormData();
         form.append("document_type", type);
-        if (versionTarget) form.append("new_version_of", String(versionTarget.id));
         list.forEach(f => form.append("files[]", f));
         try {
           await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
@@ -251,10 +244,25 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         }
       };
 
+      const uploadReplacement = async (documentId: number, documentType: ProjectDocument["documentType"], file: File) => {
+        const form = new FormData();
+        form.append("document_type", documentType);
+        form.append("new_version_of", String(documentId));
+        form.append("files[]", file);
+        try {
+          await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+          return null;
+        } catch (error) {
+          logError(`handleResubmitProject:uploadReplacement:${documentId}`, error);
+          return `nueva versión de ${file.name}`;
+        }
+      };
+
       const results = await Promise.all([
         uploadGroup(files.photos, "FOTO", "fotos"),
         uploadGroup(files.documents, "CALC", "documentos"),
         uploadGroup(files.plans, "PLANO", "planos"),
+        ...versionReplacements.map((r) => uploadReplacement(r.documentId, r.documentType, r.file)),
       ]);
       const failedGroups = results.filter((r): r is string => r !== null);
 

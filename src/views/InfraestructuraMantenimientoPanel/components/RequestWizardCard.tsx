@@ -137,6 +137,9 @@ export default function RequestWizardCard({ form, materialsCatalog, authToken, v
               onToggleDeletion={(id) =>
                 form.deletedDocumentIds.has(id) ? form.unmarkDocumentForDeletion(id) : form.markDocumentForDeletion(id)
               }
+              onRequestNewVersion={(doc, file) => form.setVersionReplacement(doc.id, file)}
+              pendingReplacementFor={form.pendingReplacementFor}
+              onClearReplacement={form.clearVersionReplacement}
               authToken={authToken}
             />
           )}

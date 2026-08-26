@@ -502,4 +502,58 @@ describe("FileDropZone", () => {
     expect(dropZone).toHaveClass("border-slate-200");
     expect(dropZone).toHaveClass("hover:border-indigo-400");
   });
+
+  // -----------------------------------------------------------------------
+  // compact
+  // -----------------------------------------------------------------------
+
+  it("compact=true reemplaza el recuadro grande por un botón chico, sin perder la lista de archivos", () => {
+    render(
+      <FileDropZone
+        files={[]}
+        onFilesChange={onFilesChange}
+        label="Planos"
+        accept=".pdf"
+        extensionsLabel="PDF"
+        compact
+      />
+    );
+
+    expect(screen.queryByText(/arrastra o haz clic/i)).not.toBeInTheDocument();
+    expect(screen.getByText("+ Cargar archivo")).toBeInTheDocument();
+  });
+
+  it("compact=true sigue validando y agregando archivos vía el input oculto", () => {
+    render(
+      <FileDropZone
+        files={[]}
+        onFilesChange={onFilesChange}
+        label="Planos"
+        accept=".pdf"
+        extensionsLabel="PDF"
+        compact
+      />
+    );
+
+    const file = createFile("plano", 1000, "application/pdf", ".pdf");
+    const input = screen.getByTestId("file-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(onFilesChange).toHaveBeenCalledWith([file]);
+  });
+
+  it("compact=false (default) muestra el recuadro grande de arrastrar", () => {
+    render(
+      <FileDropZone
+        files={[]}
+        onFilesChange={onFilesChange}
+        label="Planos"
+        accept=".pdf"
+        extensionsLabel="PDF"
+      />
+    );
+
+    expect(screen.getByText(/arrastra o haz clic/i)).toBeInTheDocument();
+    expect(screen.queryByText("+ Cargar archivo")).not.toBeInTheDocument();
+  });
 });

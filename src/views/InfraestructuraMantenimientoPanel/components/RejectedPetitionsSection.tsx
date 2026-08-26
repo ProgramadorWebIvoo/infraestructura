@@ -47,6 +47,7 @@ interface RejectedPetitionsSectionProps {
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
     existingDocuments: ProjectDocument[],
+    versionReplacements: { documentId: number; documentType: ProjectDocument["documentType"]; file: File }[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onDeleteDocument: (projectId: string, documentId: number) => Promise<void>;
   /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el consumidor. */

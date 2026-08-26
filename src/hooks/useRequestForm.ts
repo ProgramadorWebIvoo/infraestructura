@@ -68,6 +68,13 @@ export function validateRequestForm(fields: FormFields): FieldErrors {
   return { ...validateDatosStep(fields), ...validateMaterialesStep(fields), ...validateAdjuntosStep(fields) };
 }
 
+/** Un archivo elegido explícitamente como nueva versión de UN documento existente puntual. */
+export interface VersionReplacement {
+  documentId: number;
+  documentType: ProjectDocument["documentType"];
+  file: File;
+}
+
 interface UseRequestFormParams {
   onAddProject: (
     project: Omit<Project, "id" | "createdDate" | "status">,
@@ -81,6 +88,7 @@ interface UseRequestFormParams {
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
     files: { photos: File[]; documents: File[]; plans: File[] },
     existingDocuments: ProjectDocument[],
+    versionReplacements: VersionReplacement[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   /** Requerido cuando existingProject está presente y el usuario marca adjuntos
    * existentes para eliminar (ver markDocumentForDeletion) — handleSubmit lo
@@ -122,6 +130,22 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
       next.delete(documentId);
       return next;
     });
+
+  // Modo edición: archivo elegido explícitamente como "nueva versión" de UN
+  // documento existente puntual — reemplaza la inferencia automática previa
+  // (que solo funcionaba si había exactamente 1 documento existente del tipo
+  // y se subía exactamente 1 archivo nuevo). Reversible hasta el submit,
+  // igual criterio que deletedDocumentIds.
+  const [versionReplacements, setVersionReplacementsState] = useState<Map<number, File>>(new Map());
+  const setVersionReplacement = (documentId: number, file: File) =>
+    setVersionReplacementsState((prev) => new Map(prev).set(documentId, file));
+  const clearVersionReplacement = (documentId: number) =>
+    setVersionReplacementsState((prev) => {
+      const next = new Map(prev);
+      next.delete(documentId);
+      return next;
+    });
+  const pendingReplacementFor = (documentId: number) => versionReplacements.get(documentId);
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -174,9 +198,15 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
     try {
       const materials = addedMaterials.map((m, index) => ({ id: `m-new-${index}-${Date.now()}`, ...m }));
       const files = { photos: photoFiles, documents: documentFiles, plans: planFiles };
+      const replacements: VersionReplacement[] = Array.from(versionReplacements.entries())
+        .map(([documentId, file]) => {
+          const original = existingDocuments.find((d) => d.id === documentId);
+          return original ? { documentId, documentType: original.documentType, file } : null;
+        })
+        .filter((r): r is VersionReplacement => r !== null);
 
       const result = existingProject
-        ? await onResubmitProject!(existingProject.id, { title, description, location, materials, estimatedTotal: materialsSubtotal }, files, existingDocuments)
+        ? await onResubmitProject!(existingProject.id, { title, description, location, materials, estimatedTotal: materialsSubtotal }, files, existingDocuments, replacements)
         : await onAddProject({ title, type, description, location, materials, estimatedTotal: materialsSubtotal }, files);
 
       if (result.ok) {
@@ -194,6 +224,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
         setReviewedMaterialIndexes(new Set());
         setPhotoFiles([]); setDocumentFiles([]); setPlanFiles([]);
         setDeletedDocumentIds(new Set());
+        setVersionReplacementsState(new Map());
         // el toast de éxito/advertencia ya lo emite onAddProject/onResubmitProject (solo ahí se conoce el resultado real de los uploads)
       }
     } finally {
@@ -214,6 +245,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
     planFiles, setPlanFiles: handlePlanFilesChange,
     hasExistingAttachments,
     existingDocuments, markDocumentForDeletion, unmarkDocumentForDeletion, deletedDocumentIds,
+    setVersionReplacement, clearVersionReplacement, pendingReplacementFor,
     existingProjectId: existingProject?.id,
     fieldErrors,
     isSubmitting,

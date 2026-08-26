@@ -59,6 +59,12 @@ interface FileDropZoneProps {
   maxSizeBytes?: number;
   /** Callback cuando un archivo es rechazado por validación client-side */
   onFileRejected?: (fileName: string, reason: string) => void;
+  /** Reemplaza el recuadro grande de arrastrar-y-soltar por un botón chico
+   * "+ Cargar archivo" — misma validación/lista de archivos debajo, solo
+   * cambia el punto de entrada visual. Pensado para contextos más densos
+   * (ej. gestión de adjuntos ya existentes en Infraestructura) donde el
+   * recuadro grande compite de más por atención. */
+  compact?: boolean;
 }
 
 /**
@@ -150,6 +156,7 @@ export default function FileDropZone({
   countLabel,
   maxSizeBytes = DEFAULT_MAX_SIZE,
   onFileRejected,
+  compact = false,
 }: FileDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -228,71 +235,101 @@ export default function FileDropZone({
 
       {/* Drop zone — su propio contenido cambia cuando ya hay archivos, para
           que quede visible sin depender de que el usuario scrollee hasta la
-          lista de abajo. */}
-      <motion.div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragEnter={() => setIsDragging(true)}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
-        }}
-        onClick={() => inputRef.current?.click()}
-        animate={hasError ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
-        transition={hasError ? { duration: 0.4, ease: "easeInOut" } : springs.gentle}
-        className={`relative flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-          hasError
-            ? "border-danger-400 bg-danger-50/40"
-            : isDragging
-              ? `${t.dragBorder} ${t.dragBg}`
-              : files.length > 0
-                ? `${t.border} ${t.bg}`
-                : `border-slate-200 bg-slate-50 ${t.hover}`
-        }`}
-      >
-        {files.length > 0 ? (
-          <motion.div
-            key="has-files"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={springs.gentle}
-            className="flex flex-col items-center gap-1.5"
-          >
-            <motion.span
-              initial={{ scale: 0, rotate: -45 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={springs.snappy}
-              className={t.text}
-            >
-              <CheckCircle2 className="h-6 w-6" />
-            </motion.span>
-            <span className={`text-[11px] font-bold ${t.fileText}`}>
-              {files.length} {files.length === 1 ? "archivo listo" : "archivos listos"}
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium">Haz clic para agregar más</span>
-          </motion.div>
-        ) : (
-          <>
-            {icon ?? <Upload className="h-6 w-6 text-slate-400" />}
-            <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
-            <span className="text-[10px] text-slate-400 font-medium">{extensionsLabel}</span>
-          </>
-        )}
-        <input
-          ref={inputRef}
-          id={id}
-          type="file"
-          multiple
-          accept={accept}
-          data-testid="file-input"
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files) addFiles(e.target.files);
-            e.target.value = "";
+          lista de abajo. En modo compact, el punto de entrada es un botón
+          chico en vez del recuadro grande de arrastrar — misma validación/
+          input oculto por debajo, solo cambia la presentación. */}
+      {compact ? (
+        <motion.button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          animate={hasError ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
+          transition={hasError ? { duration: 0.4, ease: "easeInOut" } : springs.gentle}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
+            hasError ? "border-danger-300 bg-danger-50 text-danger-600" : `border-slate-200 bg-slate-50 text-slate-600 ${t.hover}`
+          }`}
+        >
+          <Upload className="h-3.5 w-3.5" />
+          + Cargar archivo
+          <input
+            ref={inputRef}
+            id={id}
+            type="file"
+            multiple
+            accept={accept}
+            data-testid="file-input"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </motion.button>
+      ) : (
+        <motion.div
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragEnter={() => setIsDragging(true)}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
           }}
-        />
-      </motion.div>
+          onClick={() => inputRef.current?.click()}
+          animate={hasError ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
+          transition={hasError ? { duration: 0.4, ease: "easeInOut" } : springs.gentle}
+          className={`relative flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+            hasError
+              ? "border-danger-400 bg-danger-50/40"
+              : isDragging
+                ? `${t.dragBorder} ${t.dragBg}`
+                : files.length > 0
+                  ? `${t.border} ${t.bg}`
+                  : `border-slate-200 bg-slate-50 ${t.hover}`
+          }`}
+        >
+          {files.length > 0 ? (
+            <motion.div
+              key="has-files"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={springs.gentle}
+              className="flex flex-col items-center gap-1.5"
+            >
+              <motion.span
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={springs.snappy}
+                className={t.text}
+              >
+                <CheckCircle2 className="h-6 w-6" />
+              </motion.span>
+              <span className={`text-[11px] font-bold ${t.fileText}`}>
+                {files.length} {files.length === 1 ? "archivo listo" : "archivos listos"}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Haz clic para agregar más</span>
+            </motion.div>
+          ) : (
+            <>
+              {icon ?? <Upload className="h-6 w-6 text-slate-400" />}
+              <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
+              <span className="text-[10px] text-slate-400 font-medium">{extensionsLabel}</span>
+            </>
+          )}
+          <input
+            ref={inputRef}
+            id={id}
+            type="file"
+            multiple
+            accept={accept}
+            data-testid="file-input"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </motion.div>
+      )}
 
       {/* File list */}
       {files.length > 0 && (

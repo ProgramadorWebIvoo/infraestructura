@@ -125,15 +125,34 @@ export async function downloadProjectDocument(
   URL.revokeObjectURL(url);
 }
 
-/** Todas las versiones (histórico completo) del grupo al que pertenece un documento. */
+/**
+ * Todas las versiones (histórico completo) del grupo al que pertenece un
+ * documento. `apiFetch` ya desenvuelve `response.data` internamente
+ * (convención Laravel) — pedir `{ data: ProjectDocument[] }` y desestructurar
+ * `.data` de nuevo aquí encima devolvía `undefined`.
+ */
 export async function fetchDocumentHistory(
   projectId: string,
   documentId: number,
   authToken: string,
 ): Promise<ProjectDocument[]> {
-  const { data } = await apiFetch<{ data: ProjectDocument[] }>(
+  return apiFetch<ProjectDocument[]>(
     `/projects/${projectId}/documents/${documentId}/history`,
     { token: authToken },
   );
-  return data;
+}
+
+/**
+ * Histórico completo de documentos de un proyecto: todas las versiones de
+ * cada grupo (no solo la vigente) + grupos eliminados (soft-delete) — a
+ * diferencia de `Project.documents`, que siempre trae solo la última versión
+ * viva de cada grupo (correcto para el resto de la app, pero insuficiente
+ * para la tab "Archivos" de Historial de Expedientes, que necesita mostrar
+ * todo lo que ocurrió, no solo el estado actual).
+ */
+export async function fetchAllProjectDocuments(projectId: string, authToken: string): Promise<ProjectDocument[]> {
+  return apiFetch<ProjectDocument[]>(
+    `/projects/${projectId}/documents?all_versions=true&include_deleted=true`,
+    { token: authToken },
+  );
 }

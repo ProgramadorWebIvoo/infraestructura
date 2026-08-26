@@ -20,6 +20,7 @@ import Modal from "../../../components/UI/Modal";
 import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
 import StatusBadge from "../../../components/UI/StatusBadge";
+import Spinner from "../../../components/UI/Spinner";
 import Tabs from "../../../components/UI/Tabs";
 import TabPanel from "../../../components/UI/TabPanel";
 import { Table, type Column } from "../../../components/UI/Table";
@@ -29,7 +30,7 @@ import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { viewSwitchVariants } from "../../../animations";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
-import { downloadProjectDocument } from "../../../services/api";
+import { downloadProjectDocument, fetchAllProjectDocuments } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { ProjectStatus } from "../../../types";
 import type { AuditLog, Project, ProjectDocument } from "../../../types";
@@ -67,6 +68,8 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [modalTab, setModalTab] = useState<ModalTabKey>("historial");
+  const [historyDocs, setHistoryDocs] = useState<ProjectDocument[] | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
 
   // La tab activa por defecto es HISTORIAL — se reinicia a esa vista cada
@@ -74,7 +77,25 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
   // haya quedado seleccionada del expediente previamente inspeccionado.
   useEffect(() => {
     if (selectedId) setModalTab("historial");
+    setHistoryDocs(null);
   }, [selectedId]);
+
+  // Tab "Archivos": trae TODAS las versiones de cada documento + grupos
+  // eliminados (soft-delete) — a diferencia de `project.documents`, que solo
+  // trae la versión vigente de cada grupo (correcto para el resto de la app,
+  // insuficiente para un historial completo). Se carga on-demand recién al
+  // activar la tab, no de entrada junto con el resto del modal.
+  useEffect(() => {
+    if (modalTab !== "archivos" || !selectedId) return;
+    let cancelled = false;
+    setIsLoadingHistory(true);
+    fetchAllProjectDocuments(selectedId, authToken)
+      .then((docs) => { if (!cancelled) setHistoryDocs(docs); })
+      .catch(() => { if (!cancelled) showToast("No se pudo cargar el historial de archivos.", "error"); })
+      .finally(() => { if (!cancelled) setIsLoadingHistory(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalTab, selectedId]);
 
   const revisedProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -296,13 +317,18 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
                 <ProjectIterationsTimeline projectId={selectedProject.id} auditLogs={auditLogs} />
               )}
               {modalTab === "archivos" && (
-                <ProjectDocumentsList
-                  project={selectedProject}
-                  authToken={authToken}
-                  auditLogs={auditLogs}
-                  onDownload={handleDownload}
-                  onPreview={setPreviewDoc}
-                />
+                isLoadingHistory ? (
+                  <div className="flex items-center justify-center gap-2 py-12 text-xs font-semibold text-slate-400">
+                    <Spinner size="sm" /> Cargando historial de archivos…
+                  </div>
+                ) : (
+                  <ProjectDocumentsList
+                    project={{ ...selectedProject, documents: historyDocs ?? [] }}
+                    auditLogs={auditLogs}
+                    onDownload={handleDownload}
+                    onPreview={setPreviewDoc}
+                  />
+                )
               )}
             </TabPanel>
           </>

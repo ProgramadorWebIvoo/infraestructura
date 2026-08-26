@@ -6,6 +6,7 @@
  * rechazadas con motivo (desde AuditLog) y permite editar y reenviar.
  */
 
+import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import RejectedPetitionsSection from "@/views/InfraestructuraMantenimientoPanel/components/RejectedPetitionsSection";
@@ -13,32 +14,24 @@ import { ToastProvider } from "@/components/UI/Toast";
 import { ProjectStatus } from "@/types";
 import type { AuditLog, Project } from "@/types";
 
-vi.mock("motion/react", () => ({
-  useReducedMotion: () => false,
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, exit, variants, transition, ...rest } = props;
-      return <div {...rest}>{children}</div>;
-    },
-    span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, exit, variants, transition, ...rest } = props;
-      return <span {...rest}>{children}</span>;
-    },
-    p: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, exit, variants, transition, ...rest } = props;
-      return <p {...rest}>{children}</p>;
-    },
-    tbody: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, exit, variants, transition, ...rest } = props;
-      return <tbody {...rest}>{children}</tbody>;
-    },
-    tr: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, exit, variants, transition, layout, ...rest } = props;
-      return <tr {...rest}>{children}</tr>;
-    },
-  },
-}));
+vi.mock("motion/react", () => {
+  const stripMotionProps = (props: Record<string, unknown>) => {
+    const { initial, animate, exit, variants, transition, layout, ...rest } = props;
+    return rest;
+  };
+  return {
+    useReducedMotion: () => false,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tag: string) =>
+          ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+            React.createElement(tag, stripMotionProps(props), children),
+      },
+    ),
+  };
+});
 
 vi.mock("react-dom", () => ({ createPortal: (content: React.ReactNode) => content }));
 
@@ -184,6 +177,7 @@ describe("RejectedPetitionsSection", () => {
       expect.objectContaining({ title: "Remodelación depósito", location: "CD Central" }),
       { photos: [], documents: [], plans: [] },
       [{ id: 1, documentType: "FOTO", originalName: "foto1.png", documentGroupId: 1, versionNumber: 1 }],
+      [],
     );
   });
 

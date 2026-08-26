@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { apiFetch, apiDownload, setTokenRefreshHandler, setApiBaseUrl } from "@/services/api";
+import { apiFetch, apiDownload, setTokenRefreshHandler, setApiBaseUrl, fetchDocumentHistory, fetchAllProjectDocuments } from "@/services/api";
 
 const BASE_URL = "http://localhost:8000/api";
 
@@ -379,6 +379,55 @@ describe("apiFetch", () => {
     await expect(apiFetch("/dedup-error")).rejects.toThrow();
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// fetchDocumentHistory / fetchAllProjectDocuments — apiFetch ya desenvuelve
+// `response.data` internamente (convención Laravel); estas dos funciones
+// deben devolver el array directo, sin volver a desestructurar `.data` por
+// encima (bug real: eso devolvía `undefined` en producción, ver commit que
+// agrega estos tests).
+// ---------------------------------------------------------------------------
+
+describe("fetchDocumentHistory", () => {
+  it("devuelve el array de versiones directo, no envuelto en { data }", async () => {
+    const versions = [
+      { id: 1, documentType: "PLANO", originalName: "v1.pdf", documentGroupId: 1, versionNumber: 1 },
+      { id: 2, documentType: "PLANO", originalName: "v2.pdf", documentGroupId: 1, versionNumber: 2 },
+    ];
+    mockFetch({ body: { data: versions } });
+
+    const result = await fetchDocumentHistory("PRJ-001", 2, "token");
+
+    expect(result).toEqual(versions);
+    expect(Array.isArray(result)).toBe(true);
+  });
+});
+
+describe("fetchAllProjectDocuments", () => {
+  it("devuelve el array de documentos directo, no envuelto en { data }", async () => {
+    const documents = [
+      { id: 40, documentType: "FOTO", originalName: "LOGO.jpg", documentGroupId: 40, versionNumber: 1, deletedAt: null },
+      { id: 42, documentType: "FOTO", originalName: "borrado.png", documentGroupId: 42, versionNumber: 1, deletedAt: "2026-08-26T13:10:20+00:00" },
+    ];
+    mockFetch({ body: { data: documents } });
+
+    const result = await fetchAllProjectDocuments("PRJ-015", "token");
+
+    expect(result).toEqual(documents);
+    expect(result).toHaveLength(2);
+  });
+
+  it("llama al endpoint con all_versions=true e include_deleted=true", async () => {
+    mockFetch({ body: { data: [] } });
+
+    await fetchAllProjectDocuments("PRJ-015", "token");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${BASE_URL}/projects/PRJ-015/documents?all_versions=true&include_deleted=true`,
+      expect.anything(),
+    );
   });
 });
 

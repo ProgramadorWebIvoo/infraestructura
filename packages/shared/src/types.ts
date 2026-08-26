@@ -74,6 +74,7 @@ export interface ProjectDocument {
   uploadedAt?: string;
   documentGroupId: number;
   versionNumber: number;
+  deletedAt?: string | null;
 }
 
 export interface Project {
