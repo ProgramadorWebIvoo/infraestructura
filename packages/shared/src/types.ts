@@ -42,6 +42,8 @@ export interface MaterialItem {
   observations?: string;
 }
 
+export type ProposalOrigin = "MANUAL" | "RENEGOCIACION" | "PORTAL-PROV" | "SEED-INSERT";
+
 export interface Proposal {
   id: string;
   contractorCode: string;
@@ -53,6 +55,13 @@ export interface Proposal {
   deliveryWeeks: number;
   negotiatedAdvancePercent: number;
   description: string;
+  origen: ProposalOrigin;
+  fechaOferta: string;
+  creadoPor?: string | null;
+  precioAnterior?: number | null;
+  precioNuevo?: number | null;
+  diferencia?: number | null;
+  motivo?: string | null;
 }
 
 export interface ProjectDocument {

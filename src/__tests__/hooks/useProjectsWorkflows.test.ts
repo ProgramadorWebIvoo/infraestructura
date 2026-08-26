@@ -509,6 +509,8 @@ describe("useProjectsWorkflows", () => {
         deliveryWeeks: 4,
         negotiatedAdvancePercent: 30,
         description: "Test proposal",
+        origen: "MANUAL",
+        fechaOferta: "2026-07-01",
       };
 
       await result.current.handleAddProposal("PRJ-001", proposal);

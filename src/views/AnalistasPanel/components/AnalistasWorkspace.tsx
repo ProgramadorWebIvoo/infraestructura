@@ -15,14 +15,16 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Project, Contractor, Proposal } from "../../../types";
+import type { Project, Contractor, Proposal, ProposalOrigin } from "../../../types";
 import {
   AlertTriangle,
+  ArrowRight,
   Award,
   ChevronDown,
   FileSpreadsheet,
   Loader2,
   LayoutList,
+  MessageSquareWarning,
   Plus,
   Send,
   SearchX,
@@ -44,6 +46,7 @@ import ConfirmDialog from "../../../components/UI/ConfirmDialog";
 import ProposalSummary from "../../../components/ProposalSummary";
 import { HelpHint, RequiredMark } from "../../../components/UI/HintSignals";
 import Tooltip from "../../../components/UI/Tooltip";
+import Tabs from "../../../components/UI/Tabs";
 import { renderAnalistasCard } from "./AnalistasGridCard";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { useContainerRows } from "../../../hooks/useContainerRows";
@@ -51,6 +54,17 @@ import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { useToast } from "../../../components/UI/Toast";
 import { viewSwitchVariants } from "../../../animations";
 import { formatCurrency, formatNumber } from "../../../utils";
+
+const ORIGIN_BADGE: Record<ProposalOrigin, { label: string; className: string }> = {
+  MANUAL: { label: "Manual", className: "bg-slate-100 text-slate-600 border-slate-200" },
+  RENEGOCIACION: { label: "Renegoc.", className: "bg-warning-50 text-warning-800 border-warning-200" },
+  "PORTAL-PROV": { label: "Portal", className: "bg-info-50 text-info-800 border-info-200" },
+  "SEED-INSERT": { label: "Seed", className: "bg-slate-100 text-slate-400 border-slate-200" },
+};
+
+function todayISODate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 interface ImportResult {
   message: string;
@@ -260,7 +274,18 @@ function ExpedienteWorkspaceModal({
   const [deliveryWeeks, setDeliveryWeeks] = useState<number | "">(2);
   const [advancePercent, setAdvancePercent] = useState<number | "">(30);
   const [description, setDescription] = useState("");
+  const [origin, setOrigin] = useState<Exclude<ProposalOrigin, "PORTAL-PROV" | "SEED-INSERT">>("MANUAL");
+  const [fechaOferta, setFechaOferta] = useState(todayISODate());
+  const [precioAnterior, setPrecioAnterior] = useState<number | "">("");
+  const [precioNuevo, setPrecioNuevo] = useState<number | "">("");
+  const [motivo, setMotivo] = useState("");
   const [pendingProposal, setPendingProposal] = useState<Omit<Proposal, "id"> | null>(null);
+
+  const isRenegotiation = origin === "RENEGOCIACION";
+  const exceedsAdvanceForMotivo = advancePercent !== "" && advancePercent > maxAdvancePercent;
+  const motivoRequired = isRenegotiation || exceedsAdvanceForMotivo;
+  const motivoFilled = motivo.trim().length > 0;
+  const diferencia = precioAnterior !== "" && precioNuevo !== "" ? precioNuevo - precioAnterior : null;
 
   const [isImporting, setIsImporting] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
@@ -285,10 +310,16 @@ function ExpedienteWorkspaceModal({
     setMaterialCost(1000);
     setLaborCost(800);
     setDeliveryWeeks(2);
+    setOrigin("MANUAL");
+    setFechaOferta(todayISODate());
+    setPrecioAnterior("");
+    setPrecioNuevo("");
+    setMotivo("");
   };
 
   const handleAddProposal = (e: React.FormEvent) => {
     e.preventDefault();
+    if (motivoRequired && !motivoFilled) return;
     const contractor = contractors.find(c => c.code === contractorCode);
     if (!contractor) return;
 
@@ -306,6 +337,12 @@ function ExpedienteWorkspaceModal({
       deliveryWeeks: delWeeksNum,
       negotiatedAdvancePercent: Number(advancePercent || 0),
       description: description.trim() || `Propuesta para trabajos de ${project.title}. Incluye materiales e instalación certificada.`,
+      origen: origin,
+      fechaOferta,
+      ...(isRenegotiation && precioAnterior !== "" && precioNuevo !== ""
+        ? { precioAnterior, precioNuevo, diferencia: precioNuevo - precioAnterior }
+        : {}),
+      ...(motivoFilled ? { motivo: motivo.trim() } : {}),
     };
 
     if (exceedsBudget || exceedsAdvance) {
@@ -366,6 +403,22 @@ function ExpedienteWorkspaceModal({
           <div className="font-mono text-[9px] text-emerald-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
         </div>
       ),
+    },
+    {
+      key: "origen",
+      label: "Origen",
+      width: "6rem",
+      align: "center",
+      render: (prop) => {
+        const badge = ORIGIN_BADGE[prop.origen] ?? ORIGIN_BADGE.MANUAL;
+        const badgeEl = (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold text-[9px] border whitespace-nowrap ${badge.className}`}>
+            {prop.motivo && <MessageSquareWarning className="h-3 w-3 shrink-0" />}
+            {badge.label}
+          </span>
+        );
+        return prop.motivo ? <Tooltip content={prop.motivo}>{badgeEl}</Tooltip> : badgeEl;
+      },
     },
     { key: "materialCost", label: "Materiales", width: "7rem", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">{formatCurrency(prop.materialCost)}</span> },
     { key: "laborCost", label: "Mano de Obra", width: "7rem", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">{formatCurrency(prop.laborCost)}</span> },
@@ -494,6 +547,20 @@ function ExpedienteWorkspaceModal({
                   className="overflow-hidden"
                 >
                   <form onSubmit={handleAddProposal} className="px-5 pb-5 pt-3 border-t border-emerald-100/60 space-y-4">
+                    <div className="flex items-center gap-1.5">
+                      <Tabs
+                        ariaLabel="Origen de la oferta"
+                        activeKey={origin}
+                        onChange={(key) => setOrigin(key as typeof origin)}
+                        layoutId="analistas-origin-tabs"
+                        tabs={[
+                          { key: "MANUAL", label: "Carga normal" },
+                          { key: "RENEGOCIACION", label: "Renegociación" },
+                        ]}
+                      />
+                      <HelpHint content="Registra cómo se obtuvo esta oferta, para poder auditar cuánto se ahorró vía renegociación." />
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -525,7 +592,57 @@ function ExpedienteWorkspaceModal({
                         </label>
                         <NumericInput id="analistas-weeks" value={deliveryWeeks} onChange={setDeliveryWeeks} min={1} integer placeholder="0" />
                       </div>
+
+                      <div>
+                        <label htmlFor="analistas-fecha-oferta" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Fecha de la Oferta
+                          <RequiredMark filled={fechaOferta.trim().length > 0} />
+                        </label>
+                        <input
+                          id="analistas-fecha-oferta"
+                          type="date"
+                          value={fechaOferta}
+                          onChange={(e) => setFechaOferta(e.target.value)}
+                          max={todayISODate()}
+                          className="w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 focus:ring-brand-500 bg-surface font-mono font-bold text-text-secondary"
+                        />
+                      </div>
                     </div>
+
+                    {isRenegotiation && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-lg bg-warning-50/50 border border-warning-100">
+                        <div>
+                          <label htmlFor="analistas-precio-anterior" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Precio Anterior ($)
+                            <RequiredMark filled={precioAnterior !== "" && precioAnterior > 0} />
+                          </label>
+                          <NumericInput id="analistas-precio-anterior" value={precioAnterior} onChange={setPrecioAnterior} min={0} placeholder="0.00" />
+                        </div>
+
+                        <div>
+                          <label htmlFor="analistas-precio-nuevo" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Precio Nuevo ($)
+                            <RequiredMark filled={precioNuevo !== "" && precioNuevo > 0} />
+                          </label>
+                          <NumericInput id="analistas-precio-nuevo" value={precioNuevo} onChange={setPrecioNuevo} min={0} placeholder="0.00" />
+                        </div>
+
+                        <div>
+                          <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia</span>
+                          <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold flex items-center gap-1.5">
+                            {diferencia === null ? (
+                              <span className="text-slate-300">—</span>
+                            ) : (
+                              <>
+                                <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
+                                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia))}</span>
+                                <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
@@ -582,6 +699,32 @@ function ExpedienteWorkspaceModal({
                       </p>
                     )}
 
+                    {motivoRequired && (
+                      <div>
+                        <label htmlFor="analistas-motivo" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          <MessageSquareWarning className="h-3 w-3 shrink-0 text-warning-500" />
+                          Motivo
+                          <RequiredMark filled={motivoFilled} />
+                          <HelpHint
+                            content={
+                              isRenegotiation
+                                ? "Obligatorio: explica por qué se renegoció esta oferta, para dejar trazabilidad de la excepción."
+                                : "Obligatorio: el anticipo negociado excede el máximo configurado en CONFIG APP — justifica esta excepción para auditoría."
+                            }
+                          />
+                        </label>
+                        <textarea
+                          id="analistas-motivo"
+                          value={motivo}
+                          onChange={(e) => setMotivo(e.target.value)}
+                          rows={2}
+                          maxLength={500}
+                          placeholder="Ej. Proveedor exige anticipo mayor por escasez de materiales importados."
+                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-warning-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-warning-500 text-slate-700 font-medium resize-none"
+                        />
+                      </div>
+                    )}
+
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-emerald-100/60">
                       <div className="text-xs font-bold text-slate-700">
                         Costo Total Oferta:{" "}
@@ -589,7 +732,14 @@ function ExpedienteWorkspaceModal({
                           ${formatNumber(newTotal)}
                         </span>
                       </div>
-                      <Button id="btn-analistas-add-bid" type="submit" variant="primary" colorScheme="emerald" icon={<Plus className="h-4 w-4" />}>
+                      <Button
+                        id="btn-analistas-add-bid"
+                        type="submit"
+                        variant="primary"
+                        colorScheme="emerald"
+                        icon={<Plus className="h-4 w-4" />}
+                        disabled={motivoRequired && !motivoFilled}
+                      >
                         Agregar al Cuadro
                       </Button>
                     </div>

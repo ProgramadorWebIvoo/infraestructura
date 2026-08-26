@@ -98,6 +98,8 @@ const makeProposal = (over: Partial<Proposal> & { id: string; contractorCode: st
   deliveryWeeks: 4,
   negotiatedAdvancePercent: 20,
   contractorRating: 4.5,
+  origen: "MANUAL",
+  fechaOferta: "2026-07-01",
   ...over,
 });
 

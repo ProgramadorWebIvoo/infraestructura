@@ -101,6 +101,8 @@ const makeProposal = (over: Partial<Proposal> & { id: string; contractorCode: st
   deliveryWeeks: 4,
   negotiatedAdvancePercent: 20,
   contractorRating: 4.5,
+  origen: "MANUAL",
+  fechaOferta: "2026-07-01",
   ...over,
 });
 
@@ -289,8 +291,92 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
 
       expect(onAddProposal).toHaveBeenCalledWith(
         "P1",
-        expect.objectContaining({ contractorCode: "C-001", materialCost: 1000, laborCost: 800 }),
+        expect.objectContaining({ contractorCode: "C-001", materialCost: 1000, laborCost: 800, origen: "MANUAL" }),
       );
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("seleccionar 'Renegociación' revela precio anterior/nuevo y calcula la diferencia", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      renderWorkspace({
+        pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })],
+        contractors: [makeContractor({ code: "C-001" })],
+      });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+
+      expect(screen.queryByLabelText("Precio Anterior ($)")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText("Renegociación"));
+
+      expect(screen.getByLabelText("Precio Anterior ($)")).toBeInTheDocument();
+      expect(screen.getByLabelText("Precio Nuevo ($)")).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText("Precio Anterior ($)"), { target: { value: "5000" } });
+      fireEvent.change(screen.getByLabelText("Precio Nuevo ($)"), { target: { value: "4200" } });
+
+      expect(screen.getByText("$800.00")).toBeInTheDocument();
+      expect(screen.getByText("ahorro")).toBeInTheDocument();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("el motivo es obligatorio y bloquea el submit cuando el anticipo excede el máximo configurado", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    const onAddProposal = vi.fn();
+    try {
+      renderWorkspace({
+        pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })],
+        contractors: [makeContractor({ code: "C-001" })],
+        onAddProposal,
+      });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+
+      // maxAdvancePercent mockeado en 30 — supera el máximo.
+      fireEvent.change(document.getElementById("analistas-advance")!, { target: { value: "50" } });
+
+      expect(screen.getByText("Agregar al Cuadro").closest("button")).toBeDisabled();
+      expect(document.getElementById("analistas-motivo")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText("Agregar al Cuadro").closest("button")!);
+      expect(onAddProposal).not.toHaveBeenCalled();
+
+      fireEvent.change(document.getElementById("analistas-motivo")!, { target: { value: "Proveedor exige anticipo mayor por escasez." } });
+      expect(screen.getByText("Agregar al Cuadro").closest("button")).not.toBeDisabled();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("el motivo es obligatorio cuando el origen es Renegociación aunque el anticipo no exceda el máximo", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      renderWorkspace({
+        pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })],
+        contractors: [makeContractor({ code: "C-001" })],
+      });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+      fireEvent.click(screen.getByText("Renegociación"));
+
+      // Anticipo bajo el máximo (30 por defecto en el formulario).
+      const submitButton = screen.getByText("Agregar al Cuadro").closest("button");
+      expect(document.getElementById("analistas-motivo")).toBeInTheDocument();
+      expect(submitButton).toBeDisabled();
     } finally {
       restoreSize();
       restoreRO();
@@ -315,6 +401,30 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       fireEvent.click(screen.getByLabelText("Eliminar propuesta de Constructora ABC"));
 
       expect(onRemoveProposal).toHaveBeenCalledWith("P1", "PROP-1");
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("muestra el badge de origen en la tabla de propuestas ya cargadas", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const projects = [
+        makeProject({
+          id: "P1",
+          title: "Remodelación de oficinas",
+          proposals: [
+            makeProposal({ id: "PROP-1", contractorCode: "C-001", origen: "RENEGOCIACION", motivo: "Ajuste de precio tras revisión." }),
+          ],
+        }),
+      ];
+      renderWorkspace({ pendingLicitacion: projects });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+
+      expect(screen.getByText("Renegoc.")).toBeInTheDocument();
     } finally {
       restoreSize();
       restoreRO();

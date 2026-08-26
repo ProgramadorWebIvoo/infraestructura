@@ -10,6 +10,7 @@ export { ProjectStatus } from "@ivoo/shared";
 export type {
   MaterialItem,
   Proposal,
+  ProposalOrigin,
   ProjectDocument,
   Project,
   Contractor,

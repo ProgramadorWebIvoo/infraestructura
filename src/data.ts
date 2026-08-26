@@ -103,7 +103,9 @@ export const INITIAL_PROJECTS: Project[] = [
         totalCost: 2600.0,
         deliveryWeeks: 2,
         negotiatedAdvancePercent: 30,
-        description: "Trabajo completo de andamiaje, lavado previo a presión, sellado de fisuras y dos manos de pintura premium. 30% de anticipo negociado."
+        description: "Trabajo completo de andamiaje, lavado previo a presión, sellado de fisuras y dos manos de pintura premium. 30% de anticipo negociado.",
+        origen: "MANUAL",
+        fechaOferta: "2026-06-16"
       },
       {
         id: "PROP-202",
@@ -115,7 +117,9 @@ export const INITIAL_PROJECTS: Project[] = [
         totalCost: 3000.0,
         deliveryWeeks: 3,
         negotiatedAdvancePercent: 40,
-        description: "Reparación estructural menor con malla de fibra y pintura de intemperie con garantía de 5 años. 40% de anticipo requerido."
+        description: "Reparación estructural menor con malla de fibra y pintura de intemperie con garantía de 5 años. 40% de anticipo requerido.",
+        origen: "MANUAL",
+        fechaOferta: "2026-06-17"
       }
     ]
   },
@@ -150,7 +154,9 @@ export const INITIAL_PROJECTS: Project[] = [
         totalCost: 7600.0,
         deliveryWeeks: 4,
         negotiatedAdvancePercent: 30,
-        description: "Construcción de losa con fibra de alta resistencia y herrería de columnas de soporte para techado de zinc."
+        description: "Construcción de losa con fibra de alta resistencia y herrería de columnas de soporte para techado de zinc.",
+        origen: "MANUAL",
+        fechaOferta: "2026-05-12"
       }
     ],
     selectedContractorCode: "CON-301",
