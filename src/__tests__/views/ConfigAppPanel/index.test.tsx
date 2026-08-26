@@ -325,6 +325,10 @@ describe("ConfigAppPanel", () => {
 
     render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
 
+    // La matriz de reglas vive en la tab "Notificaciones" — no es la activa
+    // por default (esa es "Negocio").
+    fireEvent.click(screen.getByRole("tab", { name: "Notificaciones" }));
+
     // Expande la fila de la matriz y togglea un rol — no dispara ningún
     // guardado por sí solo, solo queda en el borrador local.
     await waitFor(() => expect(screen.getByText("Rechazo de cuadro comparativo")).toBeInTheDocument());
@@ -373,6 +377,10 @@ describe("ConfigAppPanel", () => {
     });
 
     render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+
+    // La matriz de reglas vive en la tab "Notificaciones" — no es la activa
+    // por default (esa es "Negocio").
+    fireEvent.click(screen.getByRole("tab", { name: "Notificaciones" }));
 
     await waitFor(() => expect(screen.getByText("Notificaciones por rol")).toBeInTheDocument());
 

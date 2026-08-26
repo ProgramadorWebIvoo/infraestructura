@@ -12,7 +12,7 @@
  * el renderizado de cada sección vive en SettingGroupCard/NotificationRulesCard.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Gauge,
@@ -25,11 +25,13 @@ import {
   Check,
   RotateCcw,
 } from "lucide-react";
-import { containerVariants, itemVariants, springs } from "../../animations";
+import { itemVariants, springs } from "../../animations";
 import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
 import Button from "../../components/UI/Button";
 import AlertBanner from "../../components/UI/AlertBanner";
 import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
+import Tabs from "../../components/UI/Tabs";
+import TabPanel from "../../components/UI/TabPanel";
 import { useToast } from "../../components/UI/Toast";
 import { getErrorMessage } from "../../services/logger";
 import { useAppSettings } from "../../hooks/useAppSettings";
@@ -54,14 +56,17 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
 };
 
 /**
- * 3 macro-grupos visuales para no dejar las secciones como una lista plana
- * sin estructura — cada uno con un título separador simple (no otro nivel
- * de Card/colapsable).
+ * 3 macro-grupos, cada uno su propia tab — antes se apilaban en scroll
+ * vertical continuo separados solo por un <h2>, lo que obligaba a scrollear
+ * mucho para llegar a "Aplicación" aunque el usuario solo quisiera tocar un
+ * único setting ahí. El historial de auditoría (columna lateral) y la barra
+ * de guardado quedan fuera de las tabs a propósito: son bitácora/acciones
+ * globales de TODA la configuración, no de la sección que se esté mirando.
  */
-const MACRO_GROUPS: { title: string; groups: string[] }[] = [
-  { title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "__currencies__", "fiscal"] },
-  { title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
-  { title: "Aplicación", groups: ["app"] },
+const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
+  { key: "negocio", title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "__currencies__", "fiscal"] },
+  { key: "notificaciones", title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
+  { key: "aplicacion", title: "Aplicación", groups: ["app"] },
 ];
 
 interface ConfigAppPanelProps {
@@ -203,6 +208,33 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   const hasPendingChanges = settingsDraft.dirtyKeys.length > 0 || rulesDraft.dirtyKeys.length > 0;
   const pendingCount = settingsDraft.dirtyKeys.length + rulesDraft.dirtyKeys.length;
 
+  const visibleGroupsByMacro = useMemo(
+    () =>
+      new Map(
+        MACRO_GROUPS.map(macro => [
+          macro.key,
+          macro.groups.filter(g =>
+            g === "__notification_rules__" || g === "__currencies__" ? isSuperadmin : hasSettingsFor(g),
+          ),
+        ]),
+      ),
+    [isSuperadmin, settings],
+  );
+  const visibleMacroGroups = MACRO_GROUPS.filter(macro => (visibleGroupsByMacro.get(macro.key)?.length ?? 0) > 0);
+  const [activeMacroTab, setActiveMacroTab] = useState(MACRO_GROUPS[0].key);
+
+  // Si la tab activa deja de tener contenido visible (ej. pierde isSuperadmin
+  // mientras estaba en "Notificaciones" y esa tab solo tenía la matriz de
+  // reglas), reconciliar a la primera tab visible en vez de mostrar un panel
+  // vacío en silencio.
+  useEffect(() => {
+    if (visibleMacroGroups.length === 0) return;
+    if (!visibleMacroGroups.some(m => m.key === activeMacroTab)) {
+      setActiveMacroTab(visibleMacroGroups[0].key);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleMacroGroups.map(m => m.key).join(",")]);
+
   const handleSaveAll = async () => {
     if (!hasPendingChanges) return;
     setSavingAll(true);
@@ -268,59 +300,70 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
       )}
 
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 items-start" : ""}>
-        <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
-          {MACRO_GROUPS.map(macro => {
-            const visibleGroups = macro.groups.filter(g =>
-              g === "__notification_rules__" || g === "__currencies__" ? isSuperadmin : hasSettingsFor(g),
-            );
-            if (visibleGroups.length === 0) return null;
+        <div className="min-w-0">
+          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="mb-6">
+            <Tabs
+              ariaLabel="Secciones de configuración"
+              activeKey={activeMacroTab}
+              onChange={setActiveMacroTab}
+              fullWidth
+              tabs={visibleMacroGroups.map(macro => ({ key: macro.key, label: macro.title }))}
+            />
+          </motion.div>
 
-            return (
-              <motion.div key={macro.title} variants={itemVariants}>
-                <h2 className="text-xs font-black text-text-muted uppercase tracking-wider mb-3 px-1">{macro.title}</h2>
-                <div className="space-y-6">
-                  {visibleGroups.map(group =>
-                    group === "__notification_rules__" ? (
-                      <NotificationRulesCard
-                        key={group}
-                        actions={ruleActions}
-                        roles={ruleRoles}
-                        isLoading={isLoadingRules}
-                        valueOf={rulesDraft.valueOf}
-                        onChange={rulesDraft.onChange}
-                        isDirty={rulesDraft.isDirty}
-                        unconfigured={unconfigured}
-                        errors={rulesDraft.errors}
-                        silencedChannelsFor={silencedChannelsFor}
-                      />
-                    ) : group === "__currencies__" ? (
-                      <CurrencyCard
-                        key={group}
-                        currencies={currencies}
-                        isLoading={isLoadingCurrencies}
-                        onAdd={handleAddCurrency}
-                        onUpdate={handleUpdateCurrency}
-                        onSetBase={handleSetBaseCurrency}
-                        onDelete={handleDeleteCurrency}
-                      />
-                    ) : (
-                      <SettingGroupCard
-                        key={group}
-                        group={group}
-                        meta={GROUP_META[group] ?? { title: group, description: "", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" }}
-                        settings={settings[group]}
-                        valueOf={setting => settingsDraft.valueOf(setting.id)}
-                        onChange={settingsDraft.onChange}
-                        errors={settingsDraft.errors}
-                        notificationActionsCatalog={notificationActionsCatalog}
-                      />
-                    ),
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+          {/*
+            TabPanel queda deliberadamente FUERA de la cadena de
+            containerVariants/itemVariants (a diferencia del resto de esta
+            vista): anidarlo dentro de un motion.div con `variants` heredados
+            de un ancestro hacía que, al remontar con key={activeKey} en cada
+            cambio de tab, Motion resolviera el estado inicial contra los
+            variants "hidden"/"visible" del ancestro en vez de respetar el
+            `initial`/`animate` inline de TabPanel — el contenido quedaba
+            atascado en opacity 0 después del primer cambio de tab. TabPanel
+            ya trae su propia transición de entrada, no necesita heredar nada.
+          */}
+          <TabPanel activeKey={activeMacroTab}>
+            <div className="space-y-6">
+              {(visibleGroupsByMacro.get(activeMacroTab) ?? []).map(group =>
+                group === "__notification_rules__" ? (
+                  <NotificationRulesCard
+                    key={group}
+                    actions={ruleActions}
+                    roles={ruleRoles}
+                    isLoading={isLoadingRules}
+                    valueOf={rulesDraft.valueOf}
+                    onChange={rulesDraft.onChange}
+                    isDirty={rulesDraft.isDirty}
+                    unconfigured={unconfigured}
+                    errors={rulesDraft.errors}
+                    silencedChannelsFor={silencedChannelsFor}
+                  />
+                ) : group === "__currencies__" ? (
+                  <CurrencyCard
+                    key={group}
+                    currencies={currencies}
+                    isLoading={isLoadingCurrencies}
+                    onAdd={handleAddCurrency}
+                    onUpdate={handleUpdateCurrency}
+                    onSetBase={handleSetBaseCurrency}
+                    onDelete={handleDeleteCurrency}
+                  />
+                ) : (
+                  <SettingGroupCard
+                    key={group}
+                    group={group}
+                    meta={GROUP_META[group] ?? { title: group, description: "", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" }}
+                    settings={settings[group]}
+                    valueOf={setting => settingsDraft.valueOf(setting.id)}
+                    onChange={settingsDraft.onChange}
+                    errors={settingsDraft.errors}
+                    notificationActionsCatalog={notificationActionsCatalog}
+                  />
+                ),
+              )}
+            </div>
+          </TabPanel>
+        </div>
 
         {isSuperadmin && (
           <ConfigAuditLogPanel
