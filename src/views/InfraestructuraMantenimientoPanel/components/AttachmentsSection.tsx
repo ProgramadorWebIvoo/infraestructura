@@ -66,7 +66,7 @@ export default function AttachmentsSection({
   onClearReplacement,
   authToken,
 }: AttachmentsSectionProps) {
-  const { maxFileSizeBytes } = useAppGroupSettings();
+  const { maxFileSizeBytes, maxFileCount } = useAppGroupSettings();
   const { showToast } = useToast();
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
 
@@ -143,6 +143,7 @@ export default function AttachmentsSection({
           extensionsLabel="PNG, JPG, JPEG, WEBP"
           color="purple"
           maxSizeBytes={maxFileSizeBytes}
+          maxFileCount={maxFileCount}
           onFileRejected={onFileRejected}
           compact={hasExistingSection}
         />
@@ -155,6 +156,7 @@ export default function AttachmentsSection({
           extensionsLabel="PDF, XLSX, XLS, CSV, ODS"
           color="indigo"
           maxSizeBytes={maxFileSizeBytes}
+          maxFileCount={maxFileCount}
           onFileRejected={onFileRejected}
           compact={hasExistingSection}
         />
@@ -167,6 +169,7 @@ export default function AttachmentsSection({
           extensionsLabel="PDF, PNG, JPG, SVG, TIFF, DWG, DXF"
           color="sky"
           maxSizeBytes={maxFileSizeBytes}
+          maxFileCount={maxFileCount}
           onFileRejected={onFileRejected}
           compact={hasExistingSection}
         />

@@ -57,6 +57,8 @@ interface FileDropZoneProps {
   countLabel?: string;
   /** Tamaño máximo en bytes (default: 10 MB). 0 = sin límite. */
   maxSizeBytes?: number;
+  /** Cantidad máxima de archivos en total (existentes + nuevos). undefined/0 = sin límite. */
+  maxFileCount?: number;
   /** Callback cuando un archivo es rechazado por validación client-side */
   onFileRejected?: (fileName: string, reason: string) => void;
   /** Reemplaza el recuadro grande de arrastrar-y-soltar por un botón chico
@@ -155,6 +157,7 @@ export default function FileDropZone({
   required = false,
   countLabel,
   maxSizeBytes = DEFAULT_MAX_SIZE,
+  maxFileCount,
   onFileRejected,
   compact = false,
 }: FileDropZoneProps) {
@@ -208,14 +211,24 @@ export default function FileDropZone({
         }
 
         // 4. Evitar duplicados
-        if (!existing.has(f.name + f.size)) {
-          merged.push(f);
+        if (existing.has(f.name + f.size)) {
+          return;
         }
+
+        // 5. Validar cantidad máxima (existentes + ya aceptados en este mismo
+        // drop) — se evalúa último para no rechazar por cupo un archivo que
+        // de todas formas iba a rechazarse por extensión/tamaño/MIME.
+        if (maxFileCount && merged.length >= maxFileCount) {
+          reject(f.name, `Se alcanzó el máximo de ${maxFileCount} archivo(s).`);
+          return;
+        }
+
+        merged.push(f);
       });
 
       onFilesChange(merged);
     },
-    [files, onFilesChange, accept, maxSizeBytes, reject],
+    [files, onFilesChange, accept, maxSizeBytes, maxFileCount, reject],
   );
 
   const removeFile = useCallback(

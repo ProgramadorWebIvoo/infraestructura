@@ -35,7 +35,7 @@ interface RejectProjectModalProps {
 
 export default function RejectProjectModal({ project, isOpen, onClose, onRejectProject, onRejected }: RejectProjectModalProps) {
   const { showToast } = useToast();
-  const { maxFileSizeBytes } = useAppGroupSettings();
+  const { maxFileSizeBytes, maxFileCount } = useAppGroupSettings();
   const [reason, setReason] = useState("");
   const [observations, setObservations] = useState("");
   const [correctionFiles, setCorrectionFiles] = useState<File[]>([]);
@@ -144,6 +144,7 @@ export default function RejectProjectModal({ project, isOpen, onClose, onRejectP
           fileIcon={<AlertTriangle className="h-3.5 w-3.5" />}
           id="reject-project-corrections-upload"
           maxSizeBytes={maxFileSizeBytes}
+          maxFileCount={maxFileCount}
           onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "error")}
         />
       </div>

@@ -325,6 +325,106 @@ describe("FileDropZone", () => {
   });
 
   // -----------------------------------------------------------------------
+  // Validación de cantidad máxima
+  // -----------------------------------------------------------------------
+
+  it("rechaza archivos que exceden maxFileCount (contando los ya existentes)", () => {
+    const existing = [createFile("existing", 100, "application/pdf", ".pdf")];
+    const newFile = createFile("new", 100, "application/pdf", ".pdf");
+
+    render(
+      <FileDropZone
+        files={existing}
+        onFilesChange={onFilesChange}
+        label="Docs"
+        accept=".pdf"
+        extensionsLabel="PDF"
+        maxFileCount={1}
+        onFileRejected={onFileRejected}
+      />
+    );
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, { target: { files: [newFile] } });
+
+    expect(onFileRejected).toHaveBeenCalledWith(
+      "new.pdf",
+      expect.stringContaining("máximo de 1 archivo"),
+    );
+    // No se agrega — se llama con el mismo array de existentes.
+    expect(onFilesChange).toHaveBeenCalledWith(existing);
+  });
+
+  it("acepta hasta llegar exactamente a maxFileCount, rechaza el resto del mismo drop", () => {
+    const fileA = createFile("a", 100, "application/pdf", ".pdf");
+    const fileB = createFile("b", 100, "application/pdf", ".pdf");
+    const fileC = createFile("c", 100, "application/pdf", ".pdf");
+
+    render(
+      <FileDropZone
+        files={[]}
+        onFilesChange={onFilesChange}
+        label="Docs"
+        accept=".pdf"
+        extensionsLabel="PDF"
+        maxFileCount={2}
+        onFileRejected={onFileRejected}
+      />
+    );
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, { target: { files: [fileA, fileB, fileC] } });
+
+    expect(onFilesChange).toHaveBeenCalledWith([fileA, fileB]);
+    expect(onFileRejected).toHaveBeenCalledWith("c.pdf", expect.stringContaining("máximo de 2 archivo"));
+  });
+
+  it("no valida cantidad si maxFileCount no se pasa (undefined)", () => {
+    const files = Array.from({ length: 5 }, (_, i) => createFile(`doc${i}`, 100, "application/pdf", ".pdf"));
+
+    render(
+      <FileDropZone
+        files={[]}
+        onFilesChange={onFilesChange}
+        label="Docs"
+        accept=".pdf"
+        extensionsLabel="PDF"
+      />
+    );
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, { target: { files } });
+
+    expect(onFilesChange).toHaveBeenCalledWith(files);
+    expect(onFileRejected).not.toHaveBeenCalled();
+  });
+
+  it("una extensión inválida no cuenta contra el cupo de maxFileCount", () => {
+    const validFile = createFile("valid", 100, "application/pdf", ".pdf");
+    const invalidFile = createFile("invalid", 100, "image/png", ".png");
+
+    render(
+      <FileDropZone
+        files={[]}
+        onFilesChange={onFilesChange}
+        label="Docs"
+        accept=".pdf"
+        extensionsLabel="PDF"
+        maxFileCount={1}
+        onFileRejected={onFileRejected}
+      />
+    );
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, { target: { files: [invalidFile, validFile] } });
+
+    // El .png se rechaza por extensión (no por cupo), dejando espacio real
+    // para que el .pdf entre dentro del límite de 1.
+    expect(onFileRejected).toHaveBeenCalledWith("invalid.png", expect.stringContaining("Extensión"));
+    expect(onFilesChange).toHaveBeenCalledWith([validFile]);
+  });
+
+  // -----------------------------------------------------------------------
   // Duplicados — onFilesChange siempre se llama; verificar que no se agregue
   // -----------------------------------------------------------------------
 
