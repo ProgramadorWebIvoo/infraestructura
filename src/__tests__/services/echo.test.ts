@@ -64,6 +64,40 @@ describe("createEchoClient", () => {
     );
   });
 
+  it("retorna null sin instanciar Echo cuando VITE_PUSHER_APP_KEY no está definida", async () => {
+    // Stub explícito a "" (no unstub): unstub revierte al valor real del
+    // .env local, que sí tiene VITE_PUSHER_APP_KEY seteada para desarrollo
+    // — este test simula el escenario real que rompió PRD (build sin la env
+    // var definida), que solo se reproduce forzando el valor vacío acá.
+    vi.stubEnv("VITE_PUSHER_APP_KEY", "");
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { createEchoClient } = await import("@/services/echo");
+    const result = createEchoClient();
+
+    expect(result).toBeNull();
+    expect(echoConstructorSpy).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("VITE_PUSHER_APP_KEY"));
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("retorna null en vez de lanzar si el constructor de Echo tira una excepción síncrona", async () => {
+    vi.stubEnv("VITE_PUSHER_APP_KEY", "test-key");
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    echoConstructorSpy.mockImplementationOnce(() => {
+      throw new Error("You must pass your app key when you instantiate Pusher.");
+    });
+
+    const { createEchoClient } = await import("@/services/echo");
+
+    let result: unknown;
+    expect(() => { result = createEchoClient(); }).not.toThrow();
+    expect(result).toBeNull();
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it("usa 'mt1' como cluster por defecto si VITE_PUSHER_APP_CLUSTER no está seteado", async () => {
     vi.unstubAllEnvs();
     vi.stubEnv("VITE_PUSHER_APP_KEY", "test-key");

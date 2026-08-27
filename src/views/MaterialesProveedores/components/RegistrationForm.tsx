@@ -2,16 +2,22 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Formulario de registro público de proveedores — extraído de MaterialesProveedores.
+ * Formulario de registro público de proveedores — extraído de
+ * MaterialesProveedores. Rediseño premium: entrada con stagger propio,
+ * confirmación de éxito con spring (icono + mensaje) en vez del hack de
+ * max-h/overflow-hidden, y feedback de foco/hover consistente con el resto
+ * de la app.
  */
 
 import { useState, type FormEvent } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Contractor } from "../../../types";
-import { CheckCircle, Loader2, Mail, Send, UserRound } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, Send, UserRound } from "lucide-react";
 import { apiFetch } from "../../../services/api";
 import { useToast } from "../../../components/UI/Toast";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import { isValidEmail } from "../../../utils/validators";
+import { containerVariants, itemVariants, springs } from "../../../animations";
 
 interface RegistrationFormProps {
   onAddContractor: (contractor: Contractor) => void;
@@ -95,33 +101,47 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
   };
 
   return (
-    <section
-      className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/40 motion-safe:animate-[fadeIn_0.6s_ease-out_0.15s_both] sm:p-6"
+    <motion.section
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/40 sm:p-6"
     >
-      <div className="mb-6 flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
+      <motion.div variants={itemVariants} className="mb-6 flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
           <h3 className="text-lg font-black tracking-tight text-slate-950">Datos del proveedor</h3>
-          <p className="mt-1 text-xs font-medium text-slate-500">La evaluacion inicial se asigna automaticamente al registrar.</p>
+          <p className="mt-1 text-xs font-medium text-slate-500">La evaluación inicial se asigna automáticamente al registrar.</p>
         </div>
         <div className="rounded-xl bg-slate-100 p-2 text-slate-500">
           <UserRound className="h-5 w-5" />
         </div>
-      </div>
+      </motion.div>
 
-      <div
-        className={`overflow-hidden transition-all duration-500 ease-out ${
-          submittedCode ? "mb-5 max-h-24 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
+      <AnimatePresence initial={false}>
         {submittedCode && (
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 motion-safe:animate-[slideUp_0.4s_ease-out]">
-            <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
-            Registro recibido con codigo <span className="font-mono font-black">{submittedCode}</span>.
-          </div>
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
+              <motion.span
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ ...springs.snappy, delay: 0.1 }}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </motion.span>
+              Registro recibido con código <span className="font-mono font-black">{submittedCode}</span>.
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label
             htmlFor="public-provider-name"
@@ -160,7 +180,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             htmlFor="public-provider-specialty"
             className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
           >
-            Especialidad tecnica <RequiredMark filled={specialty.trim().length > 0} />
+            Especialidad técnica <RequiredMark filled={specialty.trim().length > 0} />
           </label>
           <input
             id="public-provider-specialty"
@@ -171,7 +191,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             value={specialty}
             onChange={(event) => setSpecialty(event.target.value)}
             onBlur={() => setTouched((prev) => ({ ...prev, specialty: true }))}
-            placeholder="Ej. Electricidad, climatizacion, obra civil"
+            placeholder="Ej. Electricidad, climatización, obra civil"
             aria-required="true"
             aria-invalid={specialtyError || undefined}
             aria-describedby={specialtyError ? "public-provider-specialty-error" : undefined}
@@ -183,7 +203,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
           />
           {specialtyError && (
             <p id="public-provider-specialty-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
-              La especialidad tecnica es obligatoria.
+              La especialidad técnica es obligatoria.
             </p>
           )}
         </div>
@@ -196,7 +216,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             Correo de contacto <RequiredMark filled={isValidEmail(contact)} />
           </label>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Mail className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
             <input
               id="public-provider-contact"
               type="email"
@@ -219,16 +239,19 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
           </div>
           {contactError && (
             <p id="public-provider-contact-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
-              Ingresa un correo electronico valido.
+              Ingresa un correo electrónico válido.
             </p>
           )}
         </div>
 
-        <button
+        <motion.button
           id="btn-public-provider-submit"
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-500/20 transition-all duration-200 hover:bg-sky-600 hover:shadow-xl hover:shadow-sky-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          whileHover={!isSubmitting ? { scale: 1.012, y: -1 } : undefined}
+          whileTap={!isSubmitting ? { scale: 0.985 } : undefined}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-500/20 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -236,8 +259,8 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             <Send className="h-4 w-4" />
           )}
           {isSubmitting ? "Enviando..." : "Enviar registro"}
-        </button>
-      </form>
-    </section>
+        </motion.button>
+      </motion.form>
+    </motion.section>
   );
 }

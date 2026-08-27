@@ -1,18 +1,72 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Portal público de cotización de materiales — lo que ve el proveedor
+ * externo al abrir su enlace único, la carta de presentación de IVOO frente
+ * a terceros. Rediseño premium: fondo con orbes en deriva lenta (mismo
+ * lenguaje visual que LoginScreen/MaterialesProveedores), entrada en cascada
+ * coordinada por sección, y confirmación de éxito con spring en vez de un
+ * bloque estático.
  */
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { motion, useReducedMotion } from "motion/react";
 import { useToast } from "../../components/UI/Toast";
-import { CheckCircle, Loader2, Package } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Package } from "lucide-react";
 import { apiFetch } from "../../services/api";
+import { containerVariants, itemVariants, springs } from "../../animations";
 import TopBar from "./components/TopBar";
 import ProjectSummary from "./components/ProjectSummary";
 import MaterialsProposalTable from "./components/MaterialsProposalTable";
 import ProposalDetailsSection from "./components/ProposalDetailsSection";
 import { sanitize, type DurationUnit, type InvitationPublicInfo, type ItemRow } from "./types";
+
+/**
+ * Fondo compartido con LoginScreen/MaterialesProveedores — malla de
+ * gradientes en deriva lenta, grid arquitectónico y grano fino. Inline acá
+ * (no extraído a un componente compartido cross-vista) porque cada una vive
+ * en una app pública distinta con su propio bundle de entrada; duplicar
+ * ~30 líneas de JSX puramente decorativo es más simple que forzar un import
+ * compartido entre módulos que no tienen otra razón para acoplarse.
+ */
+function BackgroundDecor() {
+  const reduceMotion = useReducedMotion();
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(155deg,#020617_0%,#0b1220_38%,#0c1e3d_62%,#020617_100%)]" />
+      <motion.div
+        className="absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-sky-500/20 blur-[110px]"
+        animate={reduceMotion ? undefined : { x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.08, 1] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute -bottom-48 -right-32 h-[34rem] w-[34rem] rounded-full bg-indigo-500/15 blur-[120px]"
+        animate={reduceMotion ? undefined : { x: [0, -40, 0], y: [0, -26, 0], scale: [1, 1.1, 1] }}
+        transition={{ duration: 21, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 100%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.025] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(2,6,23,0.55)_100%)]" />
+    </div>
+  );
+}
 
 export default function PropuestaMaterialesPublica() {
   const { showToast } = useToast();
@@ -134,68 +188,130 @@ export default function PropuestaMaterialesPublica() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-sky-400 animate-spin" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950">
+        <BackgroundDecor />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="relative z-10 flex flex-col items-center gap-3 text-slate-400"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
+          <span className="text-xs font-semibold uppercase tracking-widest">Cargando propuesta…</span>
+        </motion.div>
       </div>
     );
   }
 
   if (loadError || !invitation) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-        <div className="text-center space-y-3">
-          <Package className="h-12 w-12 text-slate-600 mx-auto" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-6 text-white">
+        <BackgroundDecor />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 space-y-3 text-center"
+        >
+          <motion.span
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ ...springs.snappy, delay: 0.1 }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-500"
+          >
+            {loadError ? <AlertTriangle className="h-7 w-7" /> : <Package className="h-7 w-7" />}
+          </motion.span>
           <h2 className="text-xl font-black text-slate-300">{loadError || "Enlace no disponible"}</h2>
           <p className="text-sm text-slate-500">Verifique el enlace recibido o contacte a IVOO.</p>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans antialiased">
-      <TopBar />
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white antialiased">
+      <BackgroundDecor />
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-6">
-        <ProjectSummary invitation={invitation} />
+      <div className="relative z-10">
+        <TopBar />
 
-        {submittedId ? (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-3">
-            <CheckCircle className="h-14 w-14 text-emerald-400 mx-auto" />
-            <h3 className="text-xl font-black text-emerald-300">Propuesta enviada exitosamente</h3>
-            <p className="text-sm text-emerald-200/80">
-              Su cotizacion fue registrada con el codigo{" "}
-              <span className="font-mono font-bold text-emerald-300">{submittedId}</span>.
-            </p>
-            <p className="text-xs text-slate-400">El equipo de IVOO revisara su propuesta y se comunicara con usted.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <MaterialsProposalTable
-              items={items}
-              onUpdateItem={updateItem}
-              onAddCustomItem={addCustomItem}
-              onRemoveItem={removeItem}
-            />
+        <motion.main
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6"
+        >
+          <ProjectSummary invitation={invitation} />
 
-            <ProposalDetailsSection
-              estimatedDays={estimatedDays}
-              onEstimatedDaysChange={setEstimatedDays}
-              durationUnit={durationUnit}
-              onDurationUnitChange={setDurationUnit}
-              advancePercent={advancePercent}
-              onAdvancePercentChange={setAdvancePercent}
-              generalNotes={generalNotes}
-              onGeneralNotesChange={setGeneralNotes}
-              isSubmitting={isSubmitting}
-            />
-          </form>
-        )}
-      </main>
+          {submittedId ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-3 rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-8 text-center"
+            >
+              <motion.span
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ ...springs.snappy, delay: 0.15 }}
+                className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/15 text-emerald-400"
+              >
+                <CheckCircle2 className="h-9 w-9" strokeWidth={2.25} />
+              </motion.span>
+              <motion.h3
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+                className="text-xl font-black text-emerald-300"
+              >
+                Propuesta enviada exitosamente
+              </motion.h3>
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.38, duration: 0.3 }}
+                className="text-sm text-emerald-200/80"
+              >
+                Su cotización fue registrada con el código{" "}
+                <span className="font-mono font-bold text-emerald-300">{submittedId}</span>.
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.46, duration: 0.3 }}
+                className="text-xs text-slate-400"
+              >
+                El equipo de IVOO revisará su propuesta y se comunicará con usted.
+              </motion.p>
+            </motion.div>
+          ) : (
+            <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-6">
+              <MaterialsProposalTable
+                items={items}
+                onUpdateItem={updateItem}
+                onAddCustomItem={addCustomItem}
+                onRemoveItem={removeItem}
+              />
 
-      <footer className="border-t border-white/10 py-6 mt-10 text-center text-xs text-slate-600 font-medium">
-        IVOO Gestion de Infraestructura &copy; {new Date().getFullYear()} — Portal de Cotizacion de Materiales
-      </footer>
+              <ProposalDetailsSection
+                estimatedDays={estimatedDays}
+                onEstimatedDaysChange={setEstimatedDays}
+                durationUnit={durationUnit}
+                onDurationUnitChange={setDurationUnit}
+                advancePercent={advancePercent}
+                onAdvancePercentChange={setAdvancePercent}
+                generalNotes={generalNotes}
+                onGeneralNotesChange={setGeneralNotes}
+                isSubmitting={isSubmitting}
+              />
+            </motion.form>
+          )}
+        </motion.main>
+
+        <footer className="mt-10 border-t border-white/10 py-6 text-center text-xs font-medium text-slate-600">
+          IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()} — Portal de Cotización de Materiales
+        </footer>
+      </div>
     </div>
   );
 }

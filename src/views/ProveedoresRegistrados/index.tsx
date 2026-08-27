@@ -1,16 +1,25 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Proveedores: base de contratistas registrados + propuestas de materiales
+ * recibidas por el portal público, en dos tabs (mismo patrón de Tabs+TabPanel
+ * que ProcuraPanel/InfraestructuraMantenimientoPanel) en vez de dos secciones
+ * apiladas en scroll — separa dos flujos de trabajo distintos (gestionar la
+ * base de proveedores vs. revisar cotizaciones) que antes competían por
+ * atención en la misma pantalla.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
-import { ExternalLink, Users } from "lucide-react";
+import { ExternalLink, Package, Star, Users } from "lucide-react";
 import type { Contractor, Project } from "../../types";
 import { useToast } from "../../components/UI/Toast";
 import { containerVariants, itemVariants } from "../../animations";
 import { useProveedores } from "../../hooks/useProveedores";
+import KpiPill from "../../components/UI/KpiPill";
+import Tabs from "../../components/UI/Tabs";
+import TabPanel from "../../components/UI/TabPanel";
 import ContractorsSection from "./components/ContractorsSection";
 import SupplierProposalsList from "./components/SupplierProposalsList";
 import RatingModal from "./components/RatingModal";
@@ -24,6 +33,8 @@ interface ProveedoresRegistradosProps {
   isLoading?: boolean;
 }
 
+type TabKey = "contractors" | "proposals";
+
 export default function ProveedoresRegistrados({
   contractors,
   projects,
@@ -33,6 +44,7 @@ export default function ProveedoresRegistrados({
 }: ProveedoresRegistradosProps) {
   const { showToast } = useToast();
   const { proposals, isLoadingProposals, handleInviteSupplier } = useProveedores(authToken, showToast);
+  const [activeTab, setActiveTab] = useState<TabKey>("contractors");
 
   // Un solo estado discriminado en vez de dos independientes: evita que
   // rating e invite queden abiertos a la vez (dos modales superpuestos con
@@ -51,40 +63,66 @@ export default function ProveedoresRegistrados({
 
   const closeModal = useCallback(() => setActiveModal(null), []);
 
+  const avgRating = useMemo(() => {
+    if (contractors.length === 0) return 0;
+    return contractors.reduce((sum, c) => sum + c.rating, 0) / contractors.length;
+  }, [contractors]);
+
   return (
     <>
-      <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
+        <h1 className="sr-only">Proveedores</h1>
 
-        {/* Header */}
-        <motion.div variants={itemVariants} className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 border-l-4 border-l-sky-400 bg-white p-5 shadow-xs md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-700">
-              <Users className="h-3.5 w-3.5" />
-              Base de proveedores
-            </div>
-            <h1 className="font-brand text-lg font-black tracking-tight text-slate-900">Proveedores registrados</h1>
-            <p className="text-xs font-medium text-slate-500">
-              Consulte las empresas recibidas desde el portal publico de registro.
-            </p>
+        {/* ── KPIs operativos + acceso al registro público — contexto secundario
+            compacto, mismo patrón que ProcuraPanel/InfraestructuraMantenimientoPanel
+            (ninguna vista fuera de CONFIG APP usa SectionHeader a este nivel). ── */}
+        <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            <KpiPill icon={<Users className="h-3.5 w-3.5" />} label="Proveedores" value={contractors.length} accent="brand" />
+            <KpiPill icon={<Star className="h-3.5 w-3.5" />} label="Rating Promedio" value={avgRating.toFixed(1)} accent="warning" />
+            <KpiPill icon={<Package className="h-3.5 w-3.5" />} label="Propuestas Recibidas" value={proposals.length} accent="info" />
           </div>
-          <Link
+          <a
             id="link-open-public-provider-registration"
-            to="/registro-proveedores"
+            href="/registro-proveedores"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-sky-500/20 transition-all duration-200 hover:from-sky-700 hover:to-sky-600 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5"
           >
             <ExternalLink className="h-4 w-4" />
-            Abrir registro publico
-          </Link>
+            Abrir registro público
+          </a>
         </motion.div>
 
-        <ContractorsSection
-          contractors={contractors}
-          isLoading={isLoading}
-          onOpenEdit={handleOpenEdit}
-          onOpenInvite={handleOpenInviteModal}
-        />
+        {/* ── Tabs: dos flujos de trabajo independientes ── */}
+        <motion.div variants={itemVariants} className="shrink-0">
+          <Tabs
+            ariaLabel="Secciones de Proveedores"
+            activeKey={activeTab}
+            onChange={(key) => setActiveTab(key as TabKey)}
+            fullWidth
+            tabs={[
+              { key: "contractors", label: "Proveedores Registrados", count: contractors.length },
+              { key: "proposals", label: "Propuestas de Materiales", count: proposals.length },
+            ]}
+          />
+        </motion.div>
 
-        <SupplierProposalsList proposals={proposals} isLoading={isLoadingProposals} />
+        <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
+          <TabPanel activeKey={activeTab}>
+            {activeTab === "contractors" && (
+              <ContractorsSection
+                contractors={contractors}
+                isLoading={isLoading}
+                onOpenEdit={handleOpenEdit}
+                onOpenInvite={handleOpenInviteModal}
+              />
+            )}
+            {activeTab === "proposals" && (
+              <SupplierProposalsList proposals={proposals} isLoading={isLoadingProposals} />
+            )}
+          </TabPanel>
+        </motion.div>
       </motion.div>
 
       <RatingModal

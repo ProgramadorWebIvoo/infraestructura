@@ -6,9 +6,11 @@
  * PropuestaMaterialesPublica.
  */
 
-import { Clock, HandCoins, Send } from "lucide-react";
+import { motion } from "motion/react";
+import { Clock, HandCoins, Loader2, Send } from "lucide-react";
 import NumericInput from "../../../components/UI/NumericInput";
 import Select from "../../../components/UI/Select";
+import { itemVariants } from "../../../animations";
 import { DURATION_UNITS, sanitize, type DurationUnit } from "../types";
 
 interface ProposalDetailsSectionProps {
@@ -37,13 +39,13 @@ export default function ProposalDetailsSection({
   return (
     <>
       {/* Estimated duration */}
-      <div className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
+        <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
           <Clock className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Tiempo estimado de ejecucion</h3>
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Tiempo estimado de ejecución</h3>
         </div>
-        <p className="text-xs text-slate-500 font-medium mb-4">
-          Indique cuanto tiempo estima que tomaria completar esta obra desde el inicio de los trabajos.
+        <p className="mb-4 text-xs font-medium text-slate-500">
+          Indique cuánto tiempo estima que tomaría completar esta obra desde el inicio de los trabajos.
         </p>
         <div className="flex items-center gap-3">
           <div className="flex-1">
@@ -64,18 +66,18 @@ export default function ProposalDetailsSection({
             />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Advance percent */}
-      <div className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
+        <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
           <HandCoins className="h-4 w-4 text-slate-500" />
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Anticipo requerido</h3>
         </div>
-        <p className="text-xs text-slate-500 font-medium mb-4">
-          Indique que porcentaje de anticipo necesita para iniciar el pedido (dejelo vacio si no requiere anticipo).
+        <p className="mb-4 text-xs font-medium text-slate-500">
+          Indique qué porcentaje de anticipo necesita para iniciar el pedido (déjelo vacío si no requiere anticipo).
         </p>
-        <div className="flex items-center gap-3 max-w-[10rem]">
+        <div className="flex max-w-[10rem] items-center gap-3">
           <div className="flex-1">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Porcentaje (%)</label>
             <NumericInput
@@ -87,10 +89,10 @@ export default function ProposalDetailsSection({
             />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* General notes */}
-      <div className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
+      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
         <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
           Observaciones generales (opcional)
         </label>
@@ -99,19 +101,33 @@ export default function ProposalDetailsSection({
           onChange={(e) => onGeneralNotesChange(sanitize(e.target.value))}
           rows={3}
           maxLength={1000}
-          placeholder="Condiciones de pago, garantias, disponibilidad, etc."
-          className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-800 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 resize-none"
+          placeholder="Condiciones de pago, garantías, disponibilidad, etc."
+          className="w-full resize-none rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-800 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
         />
-      </div>
+      </motion.div>
 
-      <button
+      <motion.button
+        variants={itemVariants}
         type="submit"
         disabled={isSubmitting}
-        className="cursor-pointer inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+        whileHover={!isSubmitting ? { scale: 1.008, y: -1 } : undefined}
+        whileTap={!isSubmitting ? { scale: 0.99 } : undefined}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className="relative inline-flex w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 px-5 py-4 text-sm font-black text-white shadow-lg shadow-sky-500/20 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Send className="h-4 w-4" />
-        {isSubmitting ? "Enviando propuesta..." : "Enviar propuesta de materiales"}
-      </button>
+        {!isSubmitting && (
+          <motion.span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.35)_50%,transparent_60%)] bg-[length:220%_100%]"
+            animate={{ backgroundPosition: ["150% 0%", "-50% 0%"] }}
+            transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
+          />
+        )}
+        <span className="relative z-10 inline-flex items-center gap-2">
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {isSubmitting ? "Enviando propuesta..." : "Enviar propuesta de materiales"}
+        </span>
+      </motion.button>
     </>
   );
 }

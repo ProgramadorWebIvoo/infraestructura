@@ -116,6 +116,8 @@ function useNotificationsSource(authToken: string, authUser: AuthUser): UseNotif
     if (!authToken || !authUser?.id) return;
 
     const echo = createEchoClient();
+    if (!echo) return; // Pusher sin key: sin WebSocket, pero la app sigue funcional.
+
     const channelName = `App.Models.User.${authUser.id}`;
     const channel = echo.private(channelName);
 
@@ -138,6 +140,16 @@ function useNotificationsSource(authToken: string, authUser: AuthUser): UseNotif
 
     return () => {
       echo.leave(channelName);
+      // React StrictMode monta cada efecto, lo limpia y lo vuelve a montar
+      // una vez (en dev Y en el build de producción, no es exclusivo de
+      // dev) — la primera instancia de Echo puede alcanzar a abrir el
+      // WebSocket y ser desconectada acá antes de que el handshake termine,
+      // lo que el navegador loguea como "WebSocket connection ... failed:
+      // closed before the connection is established". Es un log del
+      // navegador sobre el socket nativo, no una excepción de JS — no hay
+      // forma de suprimirlo sin dejar la conexión huérfana abierta (peor:
+      // un leak real), así que se documenta acá en vez de "arreglarlo": el
+      // segundo montaje (el que persiste) sí completa la conexión normal.
       echo.disconnect();
     };
   }, [authToken, authUser?.id, showToast]);

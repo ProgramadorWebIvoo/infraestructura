@@ -2,15 +2,27 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Tabla de proveedores registrados con búsqueda — extraída de ProveedoresRegistrados.
+ * Tabla/grid de proveedores registrados — extraída de ProveedoresRegistrados.
+ * Reescrita sobre el vocabulario compartido (Card, TableToolbar, Tooltip vía
+ * IconActionButton, toggle Tabla/Grid) en vez de markup a mano: antes era la
+ * única vista de configuración de datos sin estos componentes, con un look
+ * visiblemente distinto al resto de la app.
  */
 
 import { useMemo, useState } from "react";
-import { motion } from "motion/react";
-import { Link2, Mail, Pencil, Search, Star } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Link2, Mail, Pencil, SearchX, Star, Users } from "lucide-react";
 import { itemVariants } from "../../../animations";
+import Card from "../../../components/UI/Card";
+import TableToolbar from "../../../components/UI/TableToolbar";
+import EmptyState from "../../../components/UI/EmptyState";
+import IconActionButton from "../../../components/UI/IconActionButton";
 import { Table, type Column } from "../../../components/UI/Table";
+import GridView from "../../../components/UI/GridView/GridView";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import { useTableViewMode } from "../../../hooks/useTableViewMode";
+import { useContainerRows } from "../../../hooks/useContainerRows";
+import { renderContractorGridCard } from "./ContractorGridCard";
 import type { Contractor } from "../../../types";
 
 interface ContractorsSectionProps {
@@ -26,72 +38,117 @@ export default function ContractorsSection({
   onOpenEdit,
   onOpenInvite,
 }: ContractorsSectionProps) {
-  const [search, setSearch] = useState("");
-
-  const filteredContractors = useMemo(
-    () =>
-      contractors.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.code.toLowerCase().includes(search.toLowerCase()) ||
-          c.specialty.toLowerCase().includes(search.toLowerCase()) ||
-          c.email.toLowerCase().includes(search.toLowerCase())
-      ),
-    [contractors, search],
-  );
+  const [query, setQuery] = useState("");
+  const filteredContractors = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return contractors.filter(
+      (c) =>
+        !q ||
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
+        c.specialty.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q),
+    );
+  }, [contractors, query]);
+  const { viewMode, viewToggle } = useTableViewMode("table");
+  const { containerRef, rows: pageSize } = useContainerRows();
 
   const contractorColumns: Column<Contractor>[] = useMemo(() => [
-    { key: "code", label: "Codigo", render: (c) => <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">{c.code}</span> },
-    { key: "name", label: "Empresa", render: (c) => <span className="font-bold text-slate-800">{c.name}</span> },
-    { key: "specialty", label: "Especialidad", render: (c) => <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{c.specialty}</span> },
+    { key: "code", label: "Código", width: "8rem", render: (c) => <span className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-600">{c.code}</span> },
+    { key: "name", label: "Empresa", sortable: true, render: (c) => <span className="font-bold text-slate-800">{c.name}</span> },
+    { key: "specialty", label: "Especialidad", sortable: true, render: (c) => <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{c.specialty}</span> },
     { key: "email", label: "Contacto", render: (c) => <div className="flex items-center gap-2 font-mono font-semibold text-slate-500"><Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />{c.email}</div> },
+    {
+      key: "rating",
+      label: "Rating",
+      width: "6rem",
+      align: "center",
+      sortable: true,
+      render: (c) => (
+        <div className={`inline-flex items-center gap-1 rounded-lg border ${SEMANTIC_COLOR_MAP.warning.border200} bg-gradient-to-br ${SEMANTIC_COLOR_MAP.warning.bg50} to-warning-100/50 px-2.5 py-1 font-mono text-[11px] font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
+          <Star className={`h-3.5 w-3.5 fill-warning-400 ${SEMANTIC_COLOR_MAP.warning.icon500}`} />
+          {c.rating.toFixed(1)}
+        </div>
+      ),
+    },
     {
       key: "actions",
       label: "Acciones",
+      width: "7rem",
       align: "center",
       render: (c) => (
-        <div className="flex items-center justify-center gap-2">
-          <div className={`flex items-center gap-1 rounded-lg border ${SEMANTIC_COLOR_MAP.warning.border200} bg-gradient-to-br ${SEMANTIC_COLOR_MAP.warning.bg50} to-warning-100/50 px-2.5 py-1 font-mono text-[11px] font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
-            <Star className={`h-3.5 w-3.5 fill-warning-400 ${SEMANTIC_COLOR_MAP.warning.icon500}`} />
-            {c.rating.toFixed(1)}
-          </div>
-          <button aria-label="Actualizar evaluación" onClick={() => onOpenEdit(c)} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md hover:-translate-y-0.5" title="Actualizar evaluacion"><Pencil className="h-3 w-3" /></button>
-          <button aria-label="Generar enlace de propuesta de materiales" onClick={() => onOpenInvite(c)} className="cursor-pointer rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-md hover:-translate-y-0.5" title="Generar enlace de propuesta de materiales"><Link2 className="h-3 w-3" /></button>
+        <div className="flex items-center justify-center gap-1.5">
+          <IconActionButton
+            label={`Actualizar evaluación de ${c.name}`}
+            tooltip="Actualizar evaluación"
+            onClick={() => onOpenEdit(c)}
+            tone="sky"
+            icon={<Pencil className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
+            label={`Generar enlace de propuesta para ${c.name}`}
+            tooltip="Generar enlace de propuesta"
+            onClick={() => onOpenInvite(c)}
+            tone="indigo"
+            icon={<Link2 className="h-3.5 w-3.5" />}
+          />
         </div>
       ),
     },
   ], [onOpenEdit, onOpenInvite]);
 
   return (
-    <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-          <input
-            id="registered-provider-search"
-            type="text"
-            placeholder="Buscar por nombre, codigo, correo o especialidad..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-sky-500"
-          />
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-2.5 text-xs font-bold text-slate-600">
-          Total: <span className="text-slate-950">{contractors.length}</span>
-        </div>
-      </div>
-
-      <Table
-        columns={contractorColumns}
-        data={filteredContractors}
-        rowKey={(c) => c.code}
-        isLoading={isLoading}
-        emptyMessage="No se encontraron proveedores con ese criterio."
-        maxHeight="29rem"
-        containerClassName="pr-2"
-        pageSize={20}
+    <Card accent="brand" fillHeight className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col">
+      <TableToolbar
+        searchId="registered-provider-search"
+        searchValue={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="Buscar por nombre, código, correo o especialidad..."
+        searchAriaLabel="Buscar proveedores registrados"
+        countIcon={<Users />}
+        filteredCount={filteredContractors.length}
+        totalCount={contractors.length}
+        noun="proveedor"
+        nounPlural="proveedores"
+        viewToggle={{ ...viewToggle, accent: "brand" }}
       />
-    </motion.div>
+
+      <AnimatePresence mode="wait">
+        {viewMode === "table" ? (
+          <motion.div key="table" variants={itemVariants} initial="hidden" animate="visible" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <Table
+              columns={contractorColumns}
+              data={filteredContractors}
+              rowKey={(c) => c.code}
+              isLoading={isLoading}
+              pageSize={pageSize}
+              fillViewport
+              stickyHeader
+              emptyState={
+                <EmptyState
+                  message={contractors.length === 0 ? "Aún no hay proveedores registrados." : "No se encontraron proveedores con ese criterio."}
+                  icon={<SearchX className="h-8 w-8" />}
+                />
+              }
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="grid" variants={itemVariants} initial="hidden" animate="visible" className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <GridView
+              items={filteredContractors}
+              rowKey={(c) => c.code}
+              renderCard={(c) => renderContractorGridCard(c, { onOpenEdit, onOpenInvite })}
+              cardAccent={() => "brand"}
+              emptyState={
+                <EmptyState
+                  message={contractors.length === 0 ? "Aún no hay proveedores registrados." : "No se encontraron proveedores con ese criterio."}
+                  icon={<SearchX className="h-8 w-8" />}
+                />
+              }
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
   );
 }
-

@@ -2,15 +2,24 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Lista colapsable de propuestas de materiales de proveedores — extraída
- * de ProveedoresRegistrados.
+ * Lista de propuestas de materiales de proveedores — extraída de
+ * ProveedoresRegistrados. Cada fila dispara la inspección del detalle
+ * completo en un modal (InspectSupplierProposalModal) en vez de expandirse
+ * como acordeón inline: con el detalle completo (materiales línea por línea,
+ * condiciones, notas) el acordeón empujaba el resto de la lista y era fácil
+ * perder el contexto de qué otra fila se estaba comparando.
  */
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, ChevronUp, Clock, HandCoins, Loader2, Mail, Package, Search } from "lucide-react";
+import { motion } from "motion/react";
+import { ChevronRight, Mail, Package, SearchX } from "lucide-react";
+import Card from "../../../components/UI/Card";
+import TableToolbar from "../../../components/UI/TableToolbar";
+import EmptyState from "../../../components/UI/EmptyState";
+import { Table, type Column } from "../../../components/UI/Table";
 import { itemVariants } from "../../../animations";
-import { Table } from "../../../components/UI/Table";
+import { useContainerRows } from "../../../hooks/useContainerRows";
+import InspectSupplierProposalModal from "./InspectSupplierProposalModal";
 import type { SupplierMaterialProposal } from "../../../types";
 
 interface SupplierProposalsListProps {
@@ -22,8 +31,9 @@ const proposalTotal = (p: SupplierMaterialProposal) =>
   p.items.reduce((sum, i) => sum + i.totalPrice, 0);
 
 export default function SupplierProposalsList({ proposals, isLoading }: SupplierProposalsListProps) {
-  const [expandedProposal, setExpandedProposal] = useState<string | null>(null);
   const [proposalSearch, setProposalSearch] = useState("");
+  const [inspectingProposal, setInspectingProposal] = useState<SupplierMaterialProposal | null>(null);
+  const { containerRef, rows: pageSize } = useContainerRows();
 
   const filteredProposals = useMemo(
     () =>
@@ -37,205 +47,81 @@ export default function SupplierProposalsList({ proposals, isLoading }: Supplier
     [proposals, proposalSearch],
   );
 
+  const proposalColumns: Column<SupplierMaterialProposal>[] = useMemo(() => [
+    { key: "id", label: "ID", width: "7rem", render: (p) => <span className="rounded-lg border border-indigo-200 bg-gradient-to-br from-indigo-50 to-indigo-100/50 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-600">{p.id}</span> },
+    {
+      key: "supplierName",
+      label: "Proveedor",
+      sortable: true,
+      render: (p) => (
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <span className="text-xs font-black text-slate-800">{p.supplierName}</span>
+            {p.supplierCompany && <span className="text-[11px] font-semibold text-slate-500">{p.supplierCompany}</span>}
+          </div>
+          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-slate-400 font-medium">
+            <Mail className="h-3 w-3 shrink-0" />
+            <span className="truncate">{p.supplierContact}</span>
+          </div>
+        </div>
+      ),
+    },
+    { key: "projectTitleSnapshot", label: "Obra", sortable: true, render: (p) => <span className="text-xs font-semibold text-slate-600 truncate block max-w-xs">{p.projectTitleSnapshot}</span> },
+    { key: "items", label: "Materiales", width: "7rem", align: "center", sortValue: (p) => p.items.length, render: (p) => <span className="font-mono text-xs font-black text-slate-600">{p.items.length}</span> },
+    { key: "submittedAt", label: "Fecha", width: "7rem", sortable: true, render: (p) => <span className="text-[11px] font-semibold text-slate-500">{p.submittedAt}</span> },
+    {
+      key: "total",
+      label: "Total Oferta",
+      width: "9rem",
+      align: "right",
+      sortValue: (p) => proposalTotal(p),
+      render: (p) => <span className="font-mono text-sm font-black text-indigo-700">${proposalTotal(p).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>,
+    },
+    { key: "chevron", label: "", width: "2rem", align: "center", render: () => <ChevronRight className="h-4 w-4 text-slate-300" /> },
+  ], []);
+
   return (
-    <motion.div variants={itemVariants} className="overflow-hidden rounded-2xl border border-slate-200/80 border-l-4 border-l-indigo-400 bg-white shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-            <Package className="h-[18px] w-[18px]" />
-          </div>
-          <div>
-            <h3 className="text-sm font-black text-slate-900">Propuestas de materiales recibidas</h3>
-            <p className="text-[11px] font-medium text-slate-500">
-              Cotizaciones enviadas por proveedores desde el portal publico.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por proveedor u obra..."
-              value={proposalSearch}
-              onChange={(e) => setProposalSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-xs font-semibold text-slate-700 placeholder-slate-400 outline-hidden focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="shrink-0 rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-2.5 text-xs font-bold text-slate-600">
-            Total: <span className="text-slate-950">{proposals.length}</span>
-          </div>
-        </div>
-      </div>
+    <>
+      <Card accent="info" fillHeight className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col">
+        <TableToolbar
+          searchId="supplier-proposal-search"
+          searchValue={proposalSearch}
+          onSearchChange={setProposalSearch}
+          searchPlaceholder="Buscar por proveedor u obra..."
+          searchAriaLabel="Buscar propuestas de materiales"
+          countIcon={<Package />}
+          filteredCount={filteredProposals.length}
+          totalCount={proposals.length}
+          noun="propuesta"
+          nounPlural="propuestas"
+        />
 
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-400">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Cargando propuestas...
-        </div>
-      ) : (
-        <div className="divide-y divide-slate-100 grid grid-cols-1 pr-2 scroll-smooth overflow-y-auto max-h-115">
-          {filteredProposals.length === 0 ? (
-            <p className="py-12 text-center text-sm font-medium italic text-slate-400">
-              {proposals.length === 0
-                ? "Aun no se han recibido propuestas de materiales."
-                : "No se encontraron propuestas con ese criterio."}
-            </p>
-          ) : (
-            filteredProposals.map((proposal) => {
-              const isExpanded = expandedProposal === proposal.id;
-              const total = proposalTotal(proposal);
-              return (
-                <div key={proposal.id} className="transition hover:bg-slate-50/40">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedProposal(isExpanded ? null : proposal.id)}
-                    className="cursor-pointer w-full text-left px-5 py-4"
-                    aria-expanded={isExpanded}
-                    aria-controls={`proposal-detail-${proposal.id}`}
-                  >
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="rounded-lg border border-indigo-200 bg-gradient-to-br from-indigo-50 to-indigo-100/50 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-600">
-                        {proposal.id}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="text-xs font-black text-slate-800">{proposal.supplierName}</span>
-                          {proposal.supplierCompany && (
-                            <span className="text-[11px] font-semibold text-slate-500">{proposal.supplierCompany}</span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 mt-0.5 text-[11px] text-slate-400 font-medium">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {proposal.supplierContact}
-                          </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="truncate max-w-xs">{proposal.projectTitleSnapshot}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <div className="text-right">
-                          <div className="text-[10px] font-bold uppercase text-slate-400">Total oferta</div>
-                          <div className="font-mono text-sm font-black text-indigo-700">
-                            ${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                          </div>
-                        </div>
-                        <div className="text-right hidden sm:block">
-                          <div className="text-[10px] font-bold uppercase text-slate-400">Materiales</div>
-                          <div className="font-mono text-xs font-black text-slate-600">{proposal.items.length}</div>
-                        </div>
-                        <div className="text-right hidden sm:block">
-                          <div className="text-[10px] font-bold uppercase text-slate-400">Fecha</div>
-                          <div className="text-[11px] font-semibold text-slate-500">{proposal.submittedAt}</div>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
-                        )}
-                      </div>
-                    </div>
-                  </button>
+        <motion.div variants={itemVariants} initial="hidden" animate="visible" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+          <Table
+            columns={proposalColumns}
+            data={filteredProposals}
+            rowKey={(p) => p.id}
+            isLoading={isLoading}
+            pageSize={pageSize}
+            fillViewport
+            stickyHeader
+            onRowClick={(p) => setInspectingProposal(p)}
+            emptyState={
+              <EmptyState
+                message={proposals.length === 0 ? "Aún no se han recibido propuestas de materiales." : "No se encontraron propuestas con ese criterio."}
+                icon={<SearchX className="h-8 w-8" />}
+              />
+            }
+          />
+        </motion.div>
+      </Card>
 
-                  <AnimatePresence>
-                    {isExpanded && (
-                    <motion.div
-                      id={`proposal-detail-${proposal.id}`}
-                      key={`proposal-${proposal.id}`}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.22, ease: "easeOut" }}
-                      className="overflow-hidden"
-                    >
-                    <div className="px-5 pb-5 space-y-3">
-                      <div className="rounded-xl bg-gradient-to-br from-indigo-50/40 to-white border border-indigo-100/60 p-3 text-xs">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div>
-                            <div className="text-[10px] font-bold uppercase text-indigo-500">Obra</div>
-                            <div className="font-semibold text-slate-700 mt-0.5">{proposal.projectTitleSnapshot}</div>
-                            <div className="font-mono text-[10px] text-indigo-600">{proposal.projectId}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-bold uppercase text-indigo-500">Proveedor</div>
-                            <div className="font-semibold text-slate-700 mt-0.5">{proposal.supplierName}</div>
-                            {proposal.supplierCompany && (
-                              <div className="text-[11px] text-slate-500">{proposal.supplierCompany}</div>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-bold uppercase text-indigo-500">Contacto</div>
-                            <div className="font-semibold text-slate-700 mt-0.5 flex items-center gap-1">
-                              <Mail className="h-3 w-3 text-slate-400" />
-                              {proposal.supplierContact}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-bold uppercase text-indigo-500">Enviado</div>
-                            <div className="font-semibold text-slate-700 mt-0.5">{proposal.submittedAt}</div>
-                          </div>
-                        </div>
-                        {(proposal.estimatedDays != null || proposal.advancePercent != null) && (
-                          <div className="mt-3 pt-3 border-t border-indigo-100 flex flex-wrap items-center gap-x-6 gap-y-2">
-                            {proposal.estimatedDays != null && (
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                                <div className="text-[10px] font-bold uppercase text-indigo-500">Tiempo estimado:</div>
-                                <div className="font-black text-slate-700 text-xs">
-                                  {proposal.estimatedDays} {proposal.durationUnit ?? "dias"}
-                                </div>
-                              </div>
-                            )}
-                            {proposal.advancePercent != null && (
-                              <div className="flex items-center gap-2">
-                                <HandCoins className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                                <div className="text-[10px] font-bold uppercase text-indigo-500">Anticipo solicitado:</div>
-                                <div className="font-black text-slate-700 text-xs">{proposal.advancePercent}%</div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {proposal.generalNotes && (
-                          <div className="mt-3 pt-3 border-t border-indigo-100">
-                            <div className="text-[10px] font-bold uppercase text-indigo-500 mb-1">Observaciones generales</div>
-                            <p className="text-slate-600">{proposal.generalNotes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="overflow-x-auto rounded-xl border border-slate-200">
-                        <Table
-                          columns={[
-                            { key: "materialName", label: "Material", render: (item) => <span className="font-semibold text-slate-800">{item.materialName}</span> },
-                            { key: "quantity", label: "Cantidad", align: "center", render: (item) => <span className="font-mono font-bold text-slate-600">{item.quantity}</span> },
-                            { key: "unit", label: "Unidad", render: (item) => <span className="text-slate-500">{item.unit}</span> },
-                            { key: "unitPrice", label: "Precio unit.", align: "right", render: (item) => <span className="font-mono font-bold text-slate-700">${item.unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
-                            { key: "totalPrice", label: "Total", align: "right", render: (item) => <span className="font-mono font-black text-indigo-700">${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
-                            { key: "notes", label: "Notas", render: (item) => <span className="text-slate-400 italic">{item.notes || "—"}</span> },
-                          ]}
-                          data={proposal.items}
-                          rowKey={(item) => `${item.materialName}-${item.unit}`}
-                          pageSize={10}
-                          footer={
-                            <tr className="border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-                              <td colSpan={4} className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-600">Total propuesta:</td>
-                              <td className="px-4 py-3 text-right font-mono text-sm font-black text-indigo-700">${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
-                              <td />
-                            </tr>
-                          }
-                        />
-                      </div>
-                    </div>
-                    </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })
-          )}
-        </div>
+      {inspectingProposal && (
+        <InspectSupplierProposalModal
+          proposal={inspectingProposal}
+          onClose={() => setInspectingProposal(null)}
+        />
       )}
-    </motion.div>
+    </>
   );
 }
