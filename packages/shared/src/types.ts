@@ -124,6 +124,21 @@ export interface Project {
   };
   dossierAiProvider?: string;
   dossierAiEvaluatedAt?: string;
+  /** Cache de la última Evaluación IA del cuadro comparativo (Procura). Se
+   * invalida server-side ante cualquier cambio al conjunto de propuestas
+   * (carga, renegociación, eliminación) — null si no hay evaluación vigente. */
+  bidEvaluationAi?: {
+    winnerContractorCode: string;
+    winnerContractorName: string;
+    confidenceScore: number;
+    summary: string;
+    strengths: string[];
+    weaknesses: string[];
+    riskFactors: string[];
+    recommendation: string;
+    providerUsed: "chatgpt" | "gemini" | "claude";
+    evaluatedAt: string;
+  } | null;
   documents?: ProjectDocument[];
   procuraReviewNotes?: string;
   approvedInvestmentAmount?: number;

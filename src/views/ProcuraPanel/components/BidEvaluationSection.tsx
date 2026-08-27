@@ -9,12 +9,13 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Button from "../../../components/UI/Button";
-import { AlertTriangle, BrainCircuit, Gauge, SearchX, ShieldCheck, Trophy, Users, XCircle } from "lucide-react";
+import { AlertTriangle, BrainCircuit, Eye, Gauge, SearchX, ShieldCheck, Trophy, Users, XCircle } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import EmptyState from "../../../components/UI/EmptyState";
 import Modal from "../../../components/UI/Modal";
 import TableToolbar from "../../../components/UI/TableToolbar";
+import Tooltip from "@/components/UI/Tooltip";
 import { Table, type Column } from "../../../components/UI/Table";
 import GridView from "../../../components/UI/GridView/GridView";
 import { RequiredMark } from "../../../components/UI/HintSignals";
@@ -22,6 +23,7 @@ import ProposalSummary from "../../../components/ProposalSummary";
 import { renderBidEvaluationCard } from "./BidEvaluationGridCard";
 import EvaluacionInteligenteModal from "../../../components/Modals/EvaluacionInteligenteModal";
 import HireConfirmDialog from "../../../components/Modals/HireConfirmDialog";
+import InspectProposalModal from "./InspectProposalModal";
 import { useBudgetSemaphore, SEMAPHORE_COLORS, type SemaphoreLevel } from "../../../hooks/useBudgetSemaphore";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { useContainerRows } from "../../../hooks/useContainerRows";
@@ -29,7 +31,7 @@ import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { viewSwitchVariants } from "../../../animations";
 import { formatCurrency } from "../../../utils";
 import { ProjectStatus } from "../../../types";
-import type { Project } from "../../../types";
+import type { Project, Proposal } from "../../../types";
 import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
 
 interface BidEvaluationSectionProps {
@@ -46,6 +48,7 @@ function BidEvaluationDetail({
   onOpenAiEval,
   onOpenReject,
   onHire,
+  onInspect,
   levelOf,
   maxAdvancePercent,
 }: {
@@ -54,6 +57,7 @@ function BidEvaluationDetail({
   onOpenAiEval: () => void;
   onOpenReject: () => void;
   onHire: (args: { projectId: string; contractorCode: string; proposalId: string; contractorName: string; advancePercent: number; executedPct: number }) => void;
+  onInspect: (proposal: Proposal) => void;
   levelOf: (pct: number) => SemaphoreLevel;
   maxAdvancePercent: number;
 }) {
@@ -204,29 +208,40 @@ function BidEvaluationDetail({
               {
                 key: "actions",
                 label: "Contratación",
-                width: "8rem",
+                width: "11.5rem",
                 align: "center",
                 render: (prop) => {
                   const authorized = project.approvedInvestmentAmount ?? 0;
                   const executedPct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
                   return (
-                    <Button
-                      id={`btn-hire-${project.id}-${prop.contractorCode}`}
-                      onClick={() => onHire({
-                        projectId: project.id,
-                        contractorCode: prop.contractorCode,
-                        proposalId: prop.id,
-                        contractorName: prop.contractorName,
-                        advancePercent: prop.negotiatedAdvancePercent,
-                        executedPct,
-                      })}
-                      variant="primary"
-                      colorScheme="sky"
-                      size="sm"
-                      icon={<ShieldCheck className="h-4 w-4" />}
-                    >
-                      Adjudicar
-                    </Button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Tooltip content="Inspeccionar" placement="top">
+                        <Button
+                          id={`btn-inspect-${project.id}-${prop.contractorCode}`}
+                          onClick={() => onInspect(prop)}
+                          variant="secondary"
+                          size="sm"
+                          icon={<Eye className="h-3.5 w-3.5" />}
+                        />
+                      </Tooltip>
+                      <Button
+                        id={`btn-hire-${project.id}-${prop.contractorCode}`}
+                        onClick={() => onHire({
+                          projectId: project.id,
+                          contractorCode: prop.contractorCode,
+                          proposalId: prop.id,
+                          contractorName: prop.contractorName,
+                          advancePercent: prop.negotiatedAdvancePercent,
+                          executedPct,
+                        })}
+                        variant="primary"
+                        colorScheme="sky"
+                        size="sm"
+                        icon={<ShieldCheck className="h-4 w-4" />}
+                      >
+                        Adjudicar
+                      </Button>
+                    </div>
                   );
                 },
               },
@@ -271,6 +286,7 @@ export default function BidEvaluationSection({
   const [isSelecting, setIsSelecting] = useState(false);
 
   const [aiEvalProject, setAiEvalProject] = useState<Project | null>(null);
+  const [inspectingProposal, setInspectingProposal] = useState<Proposal | null>(null);
 
   const pendingContractSelection = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.COMPARATIVA_ENVIADA),
@@ -433,8 +449,18 @@ export default function BidEvaluationSection({
           onOpenAiEval={() => setAiEvalProject(selectedProject)}
           onOpenReject={() => handleOpenReject(selectedProject)}
           onHire={setConfirmSelect}
+          onInspect={setInspectingProposal}
           levelOf={levelOf}
           maxAdvancePercent={maxAdvancePercent}
+        />
+      )}
+
+      {/* ── Inspección de detalle de propuesta ── */}
+      {inspectingProposal && selectedProject && (
+        <InspectProposalModal
+          project={selectedProject}
+          proposal={inspectingProposal}
+          onClose={() => setInspectingProposal(null)}
         />
       )}
 

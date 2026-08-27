@@ -41,10 +41,10 @@ const IDLE_COLUMNS: Column<ProposalRow>[] = [
     ),
   },
   {
-    key: "deliveryWeeks",
+    key: "durationLabel",
     label: "Plazo",
     align: "center",
-    render: (p) => <>{p.deliveryWeeks > 0 ? `${p.deliveryWeeks} sem` : "Sin dato"}</>,
+    render: (p) => <>{p.durationLabel}</>,
   },
   {
     key: "contractorRating",
@@ -74,8 +74,7 @@ const IDLE_COLUMNS: Column<ProposalRow>[] = [
 export default function IdleView({
   proposalCount,
   approvedInvestmentAmount,
-  deliveryWeeksMin,
-  deliveryWeeksMax,
+  durationRangeLabel,
   proposals,
   onStart,
   selectedProvider,
@@ -113,7 +112,7 @@ export default function IdleView({
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
           <Clock className="h-4 w-4 text-slate-400 mx-auto mb-1" />
           <div className="font-bold text-slate-800">
-            {deliveryWeeksMax > 0 ? `${deliveryWeeksMin}–${deliveryWeeksMax} sem` : "Sin dato"}
+            {durationRangeLabel}
           </div>
           <div className="text-slate-400 mt-0.5">Plazo Ofertado</div>
         </div>

@@ -17,7 +17,7 @@ export interface ResultViewProps {
   result: AIEvaluationResult;
   winnerProposalName: string;
   winnerTotalCost: number;
-  winnerDeliveryWeeks: number;
+  winnerDuration: string;
   winnerRating: number | null;
   accepting: boolean;
   acceptSuccess: boolean;
@@ -42,15 +42,14 @@ export interface ErrorViewProps {
 export interface IdleViewProps {
   proposalCount: number;
   approvedInvestmentAmount?: number;
-  deliveryWeeksMin: number;
-  deliveryWeeksMax: number;
+  durationRangeLabel: string;
   proposals: Array<{
     id: string;
     contractorName: string;
     materialCost: number;
     laborCost: number;
     totalCost: number;
-    deliveryWeeks: number;
+    durationLabel: string;
     contractorRating: number | null;
   }>;
   onStart: () => Promise<void>;

@@ -20,7 +20,7 @@ export default function ResultView({
   result,
   winnerProposalName,
   winnerTotalCost,
-  winnerDeliveryWeeks,
+  winnerDuration,
   winnerRating,
   accepting,
   acceptSuccess,
@@ -41,13 +41,13 @@ export default function ResultView({
         <AcceptedBanner
           name={winnerProposalName}
           totalCost={winnerTotalCost}
-          deliveryWeeks={winnerDeliveryWeeks}
+          duration={winnerDuration}
         />
       ) : (
         <WinnerCard
           name={winnerProposalName}
           totalCost={winnerTotalCost}
-          deliveryWeeks={winnerDeliveryWeeks}
+          duration={winnerDuration}
           rating={winnerRating}
         />
       )}
@@ -139,12 +139,12 @@ function ScoreBadge({ score }: { score: number }) {
 function WinnerCard({
   name,
   totalCost,
-  deliveryWeeks,
+  duration,
   rating,
 }: {
   name: string;
   totalCost: number;
-  deliveryWeeks: number;
+  duration: string;
   rating: number | null;
 }) {
   return (
@@ -162,7 +162,7 @@ function WinnerCard({
           <span className="font-mono font-bold text-emerald-700 text-sm">
             ${totalCost.toLocaleString()} USD
           </span>
-          <span>{deliveryWeeks > 0 ? `${deliveryWeeks} semanas` : "Sin dato"}</span>
+          <span>{duration}</span>
           <span>Rating: {rating?.toFixed(1) ?? "—"}</span>
         </div>
       </div>
@@ -173,11 +173,11 @@ function WinnerCard({
 function AcceptedBanner({
   name,
   totalCost,
-  deliveryWeeks,
+  duration,
 }: {
   name: string;
   totalCost: number;
-  deliveryWeeks: number;
+  duration: string;
 }) {
   return (
     <motion.div
@@ -191,7 +191,7 @@ function AcceptedBanner({
       </div>
       <div className="flex items-center gap-4 text-xs text-emerald-800">
         <span className="font-mono font-bold">${totalCost.toLocaleString()} USD</span>
-        <span>{deliveryWeeks} semanas</span>
+        <span>{duration}</span>
       </div>
       <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-300">
         <CheckCircle className="h-4 w-4" />

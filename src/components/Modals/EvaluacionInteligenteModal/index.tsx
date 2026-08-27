@@ -22,6 +22,7 @@ import IdleView from "./IdleView";
 import LoadingView from "./LoadingView";
 import ResultView from "./ResultView";
 import ErrorView from "./ErrorView";
+import { formatProposalDuration } from "../../../views/AnalistasPanel/components/RegisterProposalModal";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -58,17 +59,36 @@ export default function EvaluacionInteligenteModal({
   const [selectedProvider, setSelectedProvider] = useState<"auto" | AIProviderUsed>("auto");
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  // Reset al abrir
+  // Al abrir: si hay una evaluación cacheada para este expediente (no
+  // invalidada por cambios posteriores al cuadro comparativo), se muestra
+  // directamente en vez de forzar una nueva llamada a IA — solo "Re-evaluar"
+  // dispara una nueva.
   useEffect(() => {
     if (isOpen) {
-      setStatus("idle");
-      setResult(null);
+      const cached = project.bidEvaluationAi;
+      if (cached) {
+        setResult({
+          winnerContractorCode: cached.winnerContractorCode,
+          winnerContractorName: cached.winnerContractorName,
+          confidenceScore: cached.confidenceScore,
+          summary: cached.summary,
+          strengths: cached.strengths,
+          weaknesses: cached.weaknesses,
+          riskFactors: cached.riskFactors,
+          recommendation: cached.recommendation,
+          providerUsed: cached.providerUsed,
+        });
+        setStatus("result");
+      } else {
+        setStatus("idle");
+        setResult(null);
+      }
       setErrorMsg("");
       setFailoverLog([]);
       setAcceptSuccess(false);
       setAcceptError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, project.bidEvaluationAi]);
 
   // Auto-scroll del log
   useEffect(() => {
@@ -144,12 +164,17 @@ export default function EvaluacionInteligenteModal({
 
   // --- Métricas para IdleView ---
   const idleMetrics = useMemo(() => {
-    const weeks = proposals.map((p) => p.deliveryWeeks).filter((w) => w > 0);
+    const durationLabels = proposals.map((p) => formatProposalDuration(p)).filter((d) => d !== "Sin dato");
+    const durationRangeLabel =
+      durationLabels.length === 0
+        ? "Sin dato"
+        : durationLabels.every((d) => d === durationLabels[0])
+          ? durationLabels[0]
+          : `${durationLabels[0]} – ${durationLabels[durationLabels.length - 1]}`;
     return {
       proposalCount: proposals.length,
       approvedInvestmentAmount: project.approvedInvestmentAmount,
-      deliveryWeeksMin: weeks.length > 0 ? Math.min(...weeks) : 0,
-      deliveryWeeksMax: weeks.length > 0 ? Math.max(...weeks) : 0,
+      durationRangeLabel,
     };
   }, [proposals, project.approvedInvestmentAmount]);
 
@@ -169,6 +194,7 @@ export default function EvaluacionInteligenteModal({
             status={status}
             acceptSuccess={acceptSuccess}
             acceptError={acceptError}
+            cachedEvaluatedAt={project.bidEvaluationAi?.evaluatedAt ?? null}
           />
           {acceptSuccess ? (
             <AcceptedBadge />
@@ -184,15 +210,14 @@ export default function EvaluacionInteligenteModal({
         <IdleView
           proposalCount={idleMetrics.proposalCount}
           approvedInvestmentAmount={idleMetrics.approvedInvestmentAmount}
-          deliveryWeeksMin={idleMetrics.deliveryWeeksMin}
-          deliveryWeeksMax={idleMetrics.deliveryWeeksMax}
+          durationRangeLabel={idleMetrics.durationRangeLabel}
           proposals={proposals.map((p) => ({
             id: p.id,
             contractorName: p.contractorName,
             materialCost: p.materialCost,
             laborCost: p.laborCost,
             totalCost: p.totalCost,
-            deliveryWeeks: p.deliveryWeeks,
+            durationLabel: formatProposalDuration(p),
             contractorRating: p.contractorRating ?? null,
           }))}
           onStart={runEvaluation}
@@ -221,10 +246,10 @@ export default function EvaluacionInteligenteModal({
             proposals.find((p) => p.contractorCode === result.winnerContractorCode)
               ?.totalCost ?? 0
           }
-          winnerDeliveryWeeks={
-            proposals.find((p) => p.contractorCode === result.winnerContractorCode)
-              ?.deliveryWeeks ?? 0
-          }
+          winnerDuration={(() => {
+            const winner = proposals.find((p) => p.contractorCode === result.winnerContractorCode);
+            return winner ? formatProposalDuration(winner) : "Sin dato";
+          })()}
           winnerRating={
             proposals.find((p) => p.contractorCode === result.winnerContractorCode)
               ?.contractorRating ?? null
@@ -248,19 +273,24 @@ function FooterHint({
   status,
   acceptSuccess,
   acceptError,
+  cachedEvaluatedAt,
 }: {
   status: string;
   acceptSuccess: boolean;
   acceptError: string | null;
+  cachedEvaluatedAt: string | null;
 }) {
+  const cachedNote = cachedEvaluatedAt
+    ? ` · Evaluado el ${new Date(cachedEvaluatedAt).toLocaleString("es", { dateStyle: "short", timeStyle: "short" })}`
+    : "";
   const hints: Record<string, string> = {
     idle: "Powered by ChatGPT · Gemini · Claude",
     loading: "Evaluando propuestas...",
-    result: acceptSuccess
+    result: (acceptSuccess
       ? "Contratista adjudicado exitosamente."
       : acceptError
         ? "Error al adjudicar. Puede reintentar o cerrar."
-        : "Puede aceptar la recomendación o cerrar y decidir manualmente.",
+        : "Puede aceptar la recomendación o cerrar y decidir manualmente.") + cachedNote,
     error: "Error en la evaluación. Puede reintentar o cambiar de proveedor.",
   };
   return (

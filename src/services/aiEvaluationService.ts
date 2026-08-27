@@ -7,7 +7,7 @@
  * que orquesta ChatGPT → Gemini → Claude con failover automático.
  */
 
-import type { Project, Proposal } from "../types";
+import type { MaterialItem, Project, Proposal } from "../types";
 import { apiFetch } from "./api";
 
 // ---------------------------------------------------------------------------
@@ -53,7 +53,14 @@ export interface AIEvaluationResult {
 type AIEvaluationProposalPayload = Pick<Proposal,
   "id" | "contractorCode" | "contractorName" | "contractorRating" |
   "materialCost" | "laborCost" | "totalCost" | "deliveryWeeks" |
-  "negotiatedAdvancePercent" | "description"
+  "negotiatedAdvancePercent" | "description" |
+  "materialItems" | "durationValue" | "durationUnit" | "origen" |
+  "precioAnterior" | "precioNuevo" | "diferencia" | "motivo" |
+  "motivoAnticipoExcedido" | "fechaOferta"
+>;
+
+type AIEvaluationMaterialPayload = Pick<MaterialItem,
+  "name" | "quantity" | "unit" | "estimatedUnitPrice" | "condition"
 >;
 
 /** Cuerpo enviado al backend. */
@@ -64,6 +71,8 @@ interface AIEvaluationPayload {
   projectLocation: string;
   projectType: string;
   approvedInvestmentAmount: number;
+  estimatedTotal?: number;
+  materials?: AIEvaluationMaterialPayload[];
   proposals: AIEvaluationProposalPayload[];
   provider?: 'chatgpt' | 'gemini' | 'claude';
 }
@@ -89,6 +98,14 @@ export async function evaluateProposals(
     projectLocation: project.location,
     projectType: project.type,
     approvedInvestmentAmount: project.approvedInvestmentAmount ?? 0,
+    estimatedTotal: project.estimatedTotal,
+    materials: (project.materials ?? []).map<AIEvaluationMaterialPayload>((m) => ({
+      name: m.name,
+      quantity: m.quantity,
+      unit: m.unit,
+      estimatedUnitPrice: m.estimatedUnitPrice,
+      condition: m.condition,
+    })),
     proposals: proposals.map<AIEvaluationProposalPayload>((p) => ({
       id: p.id,
       contractorCode: p.contractorCode,
@@ -100,6 +117,16 @@ export async function evaluateProposals(
       deliveryWeeks: p.deliveryWeeks,
       negotiatedAdvancePercent: p.negotiatedAdvancePercent,
       description: p.description,
+      materialItems: p.materialItems,
+      durationValue: p.durationValue,
+      durationUnit: p.durationUnit,
+      origen: p.origen,
+      precioAnterior: p.precioAnterior,
+      precioNuevo: p.precioNuevo,
+      diferencia: p.diferencia,
+      motivo: p.motivo,
+      motivoAnticipoExcedido: p.motivoAnticipoExcedido,
+      fechaOferta: p.fechaOferta,
     })),
   };
 
