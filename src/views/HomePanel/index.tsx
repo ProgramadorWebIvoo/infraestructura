@@ -143,10 +143,20 @@ export default function HomePanel({ user, activeRole, projects, auditLogs = [], 
         className="relative overflow-hidden rounded-container border border-border-default/70 bg-surface-inverted px-6 py-8 text-text-inverted sm:px-9 sm:py-10"
       >
         {/* Malla de gradientes de marca — mismo lenguaje visual que el login,
-            para que el Home se sienta parte de la misma familia premium. */}
+            para que el Home se sienta parte de la misma familia premium.
+            Los orbes derivan lentamente sin detenerse nunca del todo (mismo
+            patrón que BackgroundDecor del login) — antes eran estáticos. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-sky-500/20 blur-[100px]" />
-          <div className="absolute -right-20 -bottom-28 h-80 w-80 rounded-full bg-indigo-500/15 blur-[110px]" />
+          <motion.div
+            className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-sky-500/30 blur-[80px]"
+            animate={reduceMotion ? undefined : { x: [0, 60, 0], y: [0, 34, 0], scale: [1, 1.15, 1] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute -right-20 -bottom-28 h-80 w-80 rounded-full bg-indigo-500/25 blur-[90px]"
+            animate={reduceMotion ? undefined : { x: [0, -50, 0], y: [0, -30, 0], scale: [1, 1.18, 1] }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+          />
           <div
             className="absolute inset-0 opacity-[0.04]"
             style={{

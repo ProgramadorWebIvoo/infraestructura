@@ -55,22 +55,44 @@ export default function BrandPanel() {
           </motion.p>
           <motion.h1
             variants={item}
-            className="text-[2.6rem] font-black leading-[1.08] tracking-tight text-white xl:text-5xl"
+            className="relative text-[2.6rem] font-black leading-[1.08] tracking-tight text-white xl:text-5xl"
           >
             La obra, bajo
             <br />
             control total.
+            {/* Barrido de brillo continuo sobre el titular — movimiento
+                constante y sutil que no compite con la entrada en cascada
+                (arranca después de que el stagger termina) ni con los orbes
+                del fondo, mismo lenguaje visual (luz difusa en deriva
+                lenta), solo que acá recorre el texto en vez del lienzo. */}
+            {!reduceMotion && (
+              <motion.span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,transparent_25%,rgba(186,230,253,0.5)_43%,rgba(125,211,252,0.95)_50%,rgba(186,230,253,0.5)_57%,transparent_75%)] bg-[length:220%_100%] bg-clip-text text-transparent"
+                style={{ WebkitBackgroundClip: "text" }}
+                animate={{ backgroundPosition: ["160% 0%", "-60% 0%"] }}
+                transition={{ duration: 3.4, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut", delay: 1 }}
+              >
+                La obra, bajo
+                <br />
+                control total.
+              </motion.span>
+            )}
           </motion.h1>
           <motion.p variants={item} className="mt-6 text-[15px] leading-relaxed text-slate-300/90">
             Ingrese sus credenciales para continuar.
           </motion.p>
 
           <motion.ul variants={item} className="mt-10 space-y-4">
-            {proofPoints.map(({ icon: Icon, label }) => (
+            {proofPoints.map(({ icon: Icon, label }, i) => (
               <li key={label} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                <motion.span
+                  className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5"
+                  animate={reduceMotion ? undefined : { y: [0, -3, 0] }}
+                  transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+                >
                   <Icon className="h-3.5 w-3.5 text-sky-300" aria-hidden="true" strokeWidth={2.25} />
-                </span>
+                </motion.span>
                 <span className="pt-0.5 text-[13.5px] font-medium leading-snug text-slate-300/90">{label}</span>
               </li>
             ))}

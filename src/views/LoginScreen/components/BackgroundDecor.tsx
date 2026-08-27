@@ -16,22 +16,40 @@ export default function BackgroundDecor() {
       {/* Base: gradiente diagonal profundo */}
       <div className="absolute inset-0 bg-[linear-gradient(155deg,#020617_0%,#0b1220_38%,#0c1e3d_62%,#020617_100%)]" />
 
-      {/* Orbes de luz — deriva lenta, nunca se detienen del todo */}
+      {/* Orbes de luz — deriva lenta, nunca se detienen del todo. Rango de
+          movimiento y opacidad ampliados respecto a la versión original
+          (que era casi imperceptible) para que el fondo se sienta vivo sin
+          volverse ruidoso ni competir con el contenido. */}
       <motion.div
-        className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-sky-500/20 blur-[110px]"
-        animate={reduceMotion ? undefined : { x: [0, 40, 0], y: [0, 24, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-sky-500/25 blur-[110px]"
+        animate={reduceMotion ? undefined : { x: [0, 70, 0], y: [0, 42, 0], scale: [1, 1.08, 1] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute -bottom-48 -right-32 h-[36rem] w-[36rem] rounded-full bg-indigo-500/15 blur-[120px]"
-        animate={reduceMotion ? undefined : { x: [0, -30, 0], y: [0, -20, 0] }}
-        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute -bottom-48 -right-32 h-[38rem] w-[38rem] rounded-full bg-indigo-500/20 blur-[120px]"
+        animate={reduceMotion ? undefined : { x: [0, -55, 0], y: [0, -36, 0], scale: [1, 1.1, 1] }}
+        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
       <motion.div
-        className="absolute left-1/3 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-cyan-400/10 blur-[100px]"
-        animate={reduceMotion ? undefined : { opacity: [0.4, 0.8, 0.4] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute left-1/3 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-cyan-400/15 blur-[100px]"
+        animate={reduceMotion ? undefined : { opacity: [0.35, 0.9, 0.35], scale: [0.9, 1.15, 0.9] }}
+        transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
       />
+
+      {/* Sheen cónico girando muy lentamente — un barrido de luz difusa que
+          recorre todo el panel, la capa de movimiento más "grande" del
+          fondo. Rotación completa cada 40s: siempre en marcha, nunca se nota
+          el punto de loop. */}
+      {!reduceMotion && (
+        <motion.div
+          className="absolute -inset-1/4"
+          style={{
+            background: "conic-gradient(from 0deg, transparent 0deg, rgba(56,189,248,0.10) 60deg, transparent 140deg, rgba(99,102,241,0.08) 220deg, transparent 300deg, transparent 360deg)",
+          }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        />
+      )}
 
       {/* Grid arquitectónico sutil, se desvanece hacia los bordes */}
       <div

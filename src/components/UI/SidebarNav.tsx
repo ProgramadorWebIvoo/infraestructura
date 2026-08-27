@@ -94,32 +94,20 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
 
           <div className={`flex items-center relative ${effectiveCollapsed ? "justify-center" : "justify-between"}`}>
             {effectiveCollapsed ? (
-              // Colapsado: el botón de expandir vive superpuesto al tile de
-              // marca — al hacer hover, el ícono de casa se desvanece y el
-              // de flecha aparece en su lugar (patrón Gemini), en vez de un
-              // botón aparte que compita por el espacio angosto del rail.
+              // Colapsado: solo el ícono de expandir, sin el tile de marca
+              // (casa con fondo verde) que ocupaba este lugar antes — el
+              // rail angosto no necesita reafirmar la marca, ya la vio
+              // expandida; este espacio es puramente funcional.
               <SidebarTip label={collapseLabel} disabled={!effectiveCollapsed}>
-                <div className="relative shrink-0 h-10 w-10">
-                  <button
-                    ref={collapseButtonRef}
-                    aria-label={collapseLabel}
-                    aria-expanded={!isCollapsed}
-                    onClick={onToggleCollapse}
-                    className={`group/collapse relative hidden lg:flex h-10 w-10 items-center justify-center rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset transition-opacity duration-200 group-hover/collapse:opacity-0" />
-                    <div className="absolute inset-0 bg-slate-700 rounded-xl ring-1 ring-white/12 ring-inset opacity-0 transition-opacity duration-200 group-hover/collapse:opacity-100" />
-                    <House className="relative h-5 w-5 text-white stroke-[2.5] transition-opacity duration-200 group-hover/collapse:opacity-0" />
-                    <ChevronRight className="absolute h-5 w-5 text-white stroke-[2.5] opacity-0 transition-opacity duration-200 group-hover/collapse:opacity-100" />
-                  </button>
-                  {/* Mobile: el tile de marca queda decorativo (el botón de
-                      colapso está oculto por completo con lg:flex arriba). */}
-                  <div className="absolute inset-0 lg:hidden">
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-white/12 ring-inset">
-                      <House className="h-5 w-5 text-white stroke-[2.5]" />
-                    </div>
-                  </div>
-                </div>
+                <button
+                  ref={collapseButtonRef}
+                  aria-label={collapseLabel}
+                  aria-expanded={!isCollapsed}
+                  onClick={onToggleCollapse}
+                  className={`hidden lg:flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 cursor-pointer transition-colors duration-200 hover:text-white hover:bg-slate-800/60 focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
+                >
+                  <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+                </button>
               </SidebarTip>
             ) : (
               <SidebarTip label="IVOO GESTIÓN" disabled={!effectiveCollapsed}>

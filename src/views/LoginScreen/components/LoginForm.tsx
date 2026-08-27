@@ -67,9 +67,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     >
       {/* Logo oficial y título */}
       <div className="mb-7 flex items-center gap-3.5">
-        <div className="shrink-0 overflow-hidden">
+        <motion.div
+          className="shrink-0 overflow-hidden"
+          animate={reduceMotion ? undefined : { y: [0, -2, 0] }}
+          transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+        >
           <img src="/ivoo_logoo.svg" alt="IVOO" className="block h-12 w-auto" />
-        </div>
+        </motion.div>
         <div>
           <h1 className="text-xl font-black tracking-tight text-slate-900">Gestión</h1>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
@@ -120,15 +124,28 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               disabled={isBlocked}
               className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
             />
-            <button
+            <motion.button
               type="button"
               onClick={() => setShowPassword((p) => !p)}
               disabled={isBlocked}
               aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
+              whileHover={!isBlocked && !reduceMotion ? { scale: 1.12 } : undefined}
+              whileTap={!isBlocked && !reduceMotion ? { scale: 0.9 } : undefined}
               className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-150 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
-            </button>
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={showPassword ? "hide" : "show"}
+                  initial={reduceMotion ? undefined : { opacity: 0, rotate: -35, scale: 0.6 }}
+                  animate={reduceMotion ? undefined : { opacity: 1, rotate: 0, scale: 1 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, rotate: 35, scale: 0.6 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="block"
+                >
+                  {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                </motion.span>
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
 
@@ -149,7 +166,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           )}
         </AnimatePresence>
 
-        {/* Botón submit */}
+        {/* Botón submit — sheen diagonal en loop constante (no solo en
+            hover) para que el CTA principal siempre tenga algo de vida,
+            además del feedback existente de hover/tap. */}
         <motion.button
           id="btn-login-submit"
           type="submit"
@@ -157,24 +176,34 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           whileHover={canSubmit && !reduceMotion ? { scale: 1.012, y: -1 } : undefined}
           whileTap={canSubmit && !reduceMotion ? { scale: 0.985 } : undefined}
           transition={{ duration: 0.15, ease: "easeOut" }}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Validando...
-            </>
-          ) : isBlocked ? (
-            <>
-              <Loader2 className="h-4 w-4" aria-hidden="true" />
-              Espere {blockTimer}s
-            </>
-          ) : (
-            <>
-              <LogIn className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-              Ingresar
-            </>
+          {canSubmit && !reduceMotion && (
+            <motion.span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.35)_50%,transparent_60%)] bg-[length:220%_100%]"
+              animate={{ backgroundPosition: ["150% 0%", "-50% 0%"] }}
+              transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
+            />
           )}
+          <span className="relative z-10 inline-flex items-center gap-2">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Validando...
+              </>
+            ) : isBlocked ? (
+              <>
+                <Loader2 className="h-4 w-4" aria-hidden="true" />
+                Espere {blockTimer}s
+              </>
+            ) : (
+              <>
+                <LogIn className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+                Ingresar
+              </>
+            )}
+          </span>
         </motion.button>
       </form>
 

@@ -125,7 +125,6 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
           key={gesture.type ? gesture.id : "idle"}
           animate={gesture.type ? GESTURE_ANIMATE[gesture.type] : undefined}
           transition={gesture.type ? GESTURE_TRANSITION[gesture.type] : undefined}
-          whileHover={{ rotate: [0, -10, 8, -5, 0], transition: { duration: 0.5, ease: "easeInOut" } }}
           className="block"
           style={{ transformOrigin: "50% 0%" }}
         >
@@ -225,7 +224,7 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
                 onMarkAllRead={markAllRead}
                 onDelete={deleteNotification}
                 onDeleteAll={deleteAllNotifications}
-                listClassName="flex-1 overflow-y-auto [scrollbar-gutter:stable] pb-[env(safe-area-inset-bottom)]"
+                listClassName="flex-1 overflow-y-auto light-scrollbar pb-[env(safe-area-inset-bottom)]"
               />
             </motion.div>
           </motion.div>

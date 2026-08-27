@@ -253,6 +253,33 @@
   }
 }
 
+/* ── Scrollbar estilizada para superficies claras (dropdowns, listas) ──
+   Track transparente + thumb delgado: a diferencia de `scrollbar-gutter:
+   stable` (reserva el ancho nativo de la barra, ~15-17px en Windows, dejando
+   una franja en blanco junto al fondo de las filas cuando no hay overflow o
+   cuando el fondo de la fila tiene tinte de color), acá el ancho reservado
+   es el del thumb delgado (6px) y su track es transparente — no hay franja
+   visible porque no hay "hueco" de color de fondo distinto al del contenido. */
+.light-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.light-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.light-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.25); /* slate-500 con 25% */
+  border-radius: 3px;
+}
+.light-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.4);
+}
+@supports (scrollbar-color: auto) {
+  .light-scrollbar {
+    scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+    scrollbar-width: thin;
+  }
+}
+
 body {
   background-color: #F8FAFC;
   font-family: var(--font-sans);

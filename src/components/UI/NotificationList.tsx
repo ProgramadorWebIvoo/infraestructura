@@ -51,12 +51,12 @@ export default function NotificationList({
   onMarkAllRead,
   onDelete,
   onDeleteAll,
-  // [scrollbar-gutter:stable]: reserva el ancho de la scrollbar siempre,
-  // aunque no haya overflow todavía — sin esto, la barra aparece/desaparece
-  // exactamente en el frame en que el alto animado (layout + exit height)
-  // cruza el límite de max-h-96, y el contenido "salta" de ancho durante
-  // la transición de vaciar/eliminar notificaciones.
-  listClassName = "max-h-96 overflow-y-auto [scrollbar-gutter:stable]",
+  // .light-scrollbar: thumb delgado (6px) con track transparente en vez de
+  // la barra nativa del SO — evita el salto de ancho al aparecer/desaparecer
+  // overflow (igual razón que antes con scrollbar-gutter:stable) sin dejar
+  // la franja en blanco que ese gutter reservaba junto a filas con fondo
+  // tintado (no leídas).
+  listClassName = "max-h-96 overflow-y-auto light-scrollbar",
 }: NotificationListProps) {
   return (
     <>

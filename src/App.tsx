@@ -6,8 +6,9 @@
  * las rutas con control de acceso por rol.
  */
 
-import { lazy, Suspense, useCallback, useEffect } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 
 // Views — lazy-loaded for route-level code-splitting
 const LoginScreen = lazy(() => import("./views/LoginScreen"));
@@ -66,6 +67,48 @@ function SessionValidationScreen() {
         <span className="text-sm font-medium text-slate-400">Cargando…</span>
       </div>
     </div>
+  );
+}
+
+/**
+ * Pantalla de despedida durante el logout. Antes handleLogout() era
+ * instantáneo — la app saltaba de golpe al login en cuanto resolvía la
+ * llamada a /logout, sin ningún acuse de que la acción se había registrado.
+ * Se monta apenas se hace click en "Cerrar Sesión" (antes de que la llamada
+ * a red siquiera empiece) para que el feedback sea inmediato, y permanece un
+ * beat mínimo (ver MIN_DISPLAY_MS en handleLogout) para que no sea un flash
+ * ilegible en conexiones rápidas.
+ */
+function LoggingOutScreen() {
+  return (
+    <motion.div
+      key="logging-out"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-100 flex items-center justify-center bg-[#F8FAFC]"
+    >
+      <div className="flex flex-col items-center gap-3">
+        <motion.span
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="text-5xl font-black tracking-tight text-slate-300 select-none"
+        >
+          IVOO
+        </motion.span>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15, duration: 0.3 }}
+          className="flex items-center gap-2 text-slate-400"
+        >
+          <Spinner size="sm" />
+          <span className="text-sm font-medium">Cerrando sesión…</span>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -163,13 +206,20 @@ function AppRoutes() {
   } = useProjects(authToken, showToast);
 
   // ---- Logout compuesto (limpia auth + datos) ----
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const handleLogout = async () => {
-    await authLogout();
-    showToast("Sesión cerrada.", "info");
+    setIsLoggingOut(true);
+    // Beat mínimo para que LoggingOutScreen no sea un flash ilegible cuando
+    // /logout resuelve casi instantáneo (localhost, red rápida) — el logout
+    // real y el timer corren en paralelo, se espera el más lento de los dos.
+    const minDisplay = new Promise((resolve) => setTimeout(resolve, 550));
+    await Promise.all([authLogout(), minDisplay]);
     resetData();
     resetContractors();
     resetCatalog();
     navigate(ROUTES.HOME);
+    showToast("Sesión cerrada.", "info");
+    setIsLoggingOut(false);
   };
 
   // ---- Login wrapper con toast de bienvenida ----
@@ -186,6 +236,15 @@ function AppRoutes() {
   // ---- Public routes (sin auth) ----
   if (isPublicRoute(location.pathname)) {
     return <PublicRouteShell contractorsCount={contractors.length} onAddContractor={handleAddContractor} />;
+  }
+
+  // ---- Cerrando sesión — overlay de despedida, ver LoggingOutScreen ----
+  if (isLoggingOut) {
+    return (
+      <AnimatePresence>
+        <LoggingOutScreen />
+      </AnimatePresence>
+    );
   }
 
   // ---- Validando sesión guardada (token en localStorage, consultando backend) ----
