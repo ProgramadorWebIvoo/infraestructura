@@ -11,6 +11,9 @@
 // ---------------------------------------------------------------------------
 // Configuración global (por plataforma)
 // ---------------------------------------------------------------------------
+import axios, { AxiosInstance, AxiosError } from "axios";
+
+const http: AxiosInstance = axios.create();
 
 let _baseUrl = "";
 let _onTokenRefreshed: ((token: string) => void) | null = null;
@@ -32,7 +35,6 @@ export function getApiBaseUrl(): string {
 // ---------------------------------------------------------------------------
 
 export interface ApiFetchOptions extends RequestInit {
-  /** Auth token para Authorization: Bearer */
   token?: string;
 }
 
@@ -53,6 +55,75 @@ const inFlightGets = new Map<string, Promise<unknown>>();
 function isDedupableGet(options: ApiFetchOptions): boolean {
   const method = (options.method ?? "GET").toUpperCase();
   return method === "GET";
+}
+
+function normalizeHeaders(h: HeadersInit | undefined): Record<string, string> {
+  if (!h) return {};
+
+  if (h instanceof Headers) {
+    const o: Record<string, string> = {};
+    h.forEach((v, k) => { o[k] = v; });
+    return o;
+  }
+
+  if (Array.isArray(h)) return Object.fromEntries(h);
+
+  return h as Record<string, string>;
+}
+
+export class ApiError extends Error {
+  attemptLog?: string[];
+  status: number;
+
+  constructor(message: string, status: number, attemptLog?: string[]) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.attemptLog = attemptLog;
+  }
+}
+
+const ERROR_MESSAGES: Record<number, string> = {
+  401: "Sesión expirada. Inicia sesión nuevamente.",
+  403: "No tienes permiso para realizar esta acción.",
+  404: "El recurso solicitado no fue encontrado.",
+  429: "Demasiadas solicitudes. Intenta nuevamente en un minuto.",
+};
+
+function safeJsonParse(text: string): Record<string, any> | null {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+export function buildApiError(status: number, text: string): ApiError {
+  if (ERROR_MESSAGES[status]) {
+    return new ApiError(ERROR_MESSAGES[status], status);
+  }
+
+  const body = safeJsonParse(text);
+
+  if (status === 422) {
+    const firstKey = body?.errors ? Object.keys(body.errors)[0] : null;
+    const message = firstKey
+      ? body?.errors[firstKey][0]
+      : (body?.message ?? "Datos inválidos. Revisa la información ingresada.");
+    
+    return new ApiError(message, status);
+  }
+
+  if (status === 503) {
+    const message = body?.error ?? "Error en la evaluación de IA. Intenta más tarde.";
+    return new ApiError(message, status, body?.attemptLog);
+  }
+
+  const fallbackMessage = status >= 500 
+    ? "Error interno del servidor. Intenta más tarde." 
+    : `Error del servidor (${status}).`;
+
+  return new ApiError(fallbackMessage, status);
 }
 
 // ---------------------------------------------------------------------------
@@ -106,60 +177,32 @@ async function apiFetchUncached<T = unknown>(
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${_baseUrl}${path}`, {
-    ...fetchOptions,
-    headers: { ...headers, ...(fetchOptions.headers as Record<string, string>) },
-  });
+  let response; 
+  try {
+    response = await http.request<string>({
+      url: `${_baseUrl}${path}`,
+      method: (fetchOptions.method ?? 'GET') as any,
+      headers: { ...headers, ...normalizeHeaders(fetchOptions.headers) },
+      data: fetchOptions.body,
+      signal: fetchOptions.signal as any,
+      withCredentials: fetchOptions.credentials === "include",
+      responseType: "text",
+    });
+  } catch (err) {
+    const ex = err as AxiosError;
+    if (ex.response) throw buildApiError(ex.response.status, (ex.response.data as string) ?? "");
+    throw err;
+  }
 
   // 204 No Content
   if (response.status === 204) {
     return undefined as T;
   }
 
-  const text = await response.text();
-
-  if (!response.ok) {
-    const status = response.status;
-    let message: string;
-    let attemptLog: string[] | undefined;
-
-    if (status === 401) {
-      message = "Sesión expirada. Inicia sesión nuevamente.";
-    } else if (status === 403) {
-      message = "No tienes permiso para realizar esta acción.";
-    } else if (status === 404) {
-      message = "El recurso solicitado no fue encontrado.";
-    } else if (status === 422) {
-      try {
-        const body = JSON.parse(text);
-        const firstKey = Object.keys(body.errors ?? {})[0];
-        message = firstKey ? body.errors[firstKey][0] : (body.message ?? "Datos inválidos.");
-      } catch {
-        message = "Datos inválidos. Revisa la información ingresada.";
-      }
-    } else if (status === 429) {
-      message = "Demasiadas solicitudes. Intenta nuevamente en un minuto.";
-    } else if (status === 503) {
-      try {
-        const body = JSON.parse(text);
-        message = body.error ?? "Error en la evaluación de IA. Intenta más tarde.";
-        attemptLog = body.attemptLog;
-      } catch {
-        message = "Error en la evaluación de IA. Intenta más tarde.";
-      }
-    } else if (status >= 500) {
-      message = "Error interno del servidor. Intenta más tarde.";
-    } else {
-      message = `Error del servidor (${status}).`;
-    }
-
-    const error = new Error(message) as Error & { attemptLog?: string[] };
-    if (attemptLog) error.attemptLog = attemptLog;
-    throw error;
-  }
+  const text = (response.data ?? "") as string;
 
   // Si el backend renovó el token via RefreshSanctumToken middleware, lo persistimos
-  const refreshedToken = response.headers.get("X-Refresh-Token");
+  const refreshedToken = response.headers["x-refresh-token"] as string | undefined;
   if (refreshedToken && _onTokenRefreshed) {
     _onTokenRefreshed(refreshedToken);
   }
@@ -199,27 +242,37 @@ export async function apiDownload(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${_baseUrl}${path}`, {
-    ...fetchOptions,
-    headers: { ...headers, ...(fetchOptions.headers as Record<string, string>) },
-  });
-
-  if (!response.ok) {
-    let message: string;
-    try {
-      const text = await response.text();
-      const body = JSON.parse(text);
-      message = body.message ?? body.error ?? `Error al descargar (${response.status})`;
-    } catch {
-      message = `Error al descargar (${response.status})`;
+  let response;
+  try {
+    response = await http.request<Blob>({
+      url: `${_baseUrl}${path}`,
+      method: (fetchOptions.method ?? "GET") as any,
+      headers: { ...headers, ...normalizeHeaders(fetchOptions.headers) },
+      data: fetchOptions.body,
+      signal: fetchOptions.signal as any,
+      withCredentials: fetchOptions.credentials === "include",
+      responseType: "blob",
+    });
+  } catch (err) {
+    const ex = err as AxiosError;
+    if (ex.response) {
+      let message: string;
+      try {
+        const text = await (ex.response.data as unknown as Blob).text();
+        const body = JSON.parse(text);
+        message = body.message ?? body.error ?? `Error al descargar (${ex.response.status})`;
+      } catch {
+        message = `Error al descargar (${ex.response.status})`;
+      }
+      throw new Error(message);
     }
-    throw new Error(message);
+    throw err;
   }
 
-  const refreshedToken = response.headers.get("X-Refresh-Token");
+  const refreshedToken = response.headers["x-refresh-token"] as string | undefined;
   if (refreshedToken && _onTokenRefreshed) {
     _onTokenRefreshed(refreshedToken);
   }
 
-  return response.blob();
+  return response.data;
 }

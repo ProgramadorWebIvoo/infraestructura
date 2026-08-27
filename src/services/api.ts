@@ -17,6 +17,7 @@
  * (mobile lo usa, web ya no).
  */
 
+import axios from "axios";
 import {
   setApiBaseUrl,
   setTokenRefreshHandler,
@@ -79,7 +80,7 @@ export async function ensureCsrfCookie(): Promise<void> {
   // módulo) para respetar setApiBaseUrl() si algo la cambia después del boot
   // inicial (ej. tests).
   const root = getApiBaseUrl().replace(/\/api\/?$/, "");
-  await fetch(`${root}/sanctum/csrf-cookie`, { credentials: "include" });
+  await axios.get(`${root}/sanctum/csrf-cookie`, { withCredentials: true });
 }
 
 export async function apiFetch<T = unknown>(

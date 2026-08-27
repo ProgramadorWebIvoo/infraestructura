@@ -3,7 +3,11 @@ import { waitFor } from "@testing-library/react";
 
 // Mock de laravel-echo: capturamos las opciones pasadas al constructor sin
 // levantar una conexión WebSocket real.
-const echoConstructorSpy = vi.fn();
+const { echoConstructorSpy, mockPost } = vi.hoisted(() => ({
+  echoConstructorSpy: vi.fn(),
+  mockPost: vi.fn(),
+}));
+
 vi.mock("laravel-echo", () => ({
   default: class MockEcho {
     constructor(options: unknown) {
@@ -16,6 +20,12 @@ vi.mock("pusher-js", () => ({
   default: class MockPusher {},
 }));
 
+vi.mock("axios", () => ({
+  default: {
+    post: (...args: unknown[]) => mockPost(...args),
+  },
+}));
+
 const mockGetApiBaseUrl = vi.fn(() => "http://localhost:8000/api");
 const mockEnsureCsrfCookie = vi.fn().mockResolvedValue(undefined);
 const mockReadCookie = vi.fn((_name: string) => "csrf-token-123");
@@ -26,58 +36,50 @@ vi.mock("@/services/api", () => ({
 }));
 
 describe("createEchoClient", () => {
-  const originalFetch = global.fetch;
-
   beforeEach(() => {
     echoConstructorSpy.mockClear();
+    mockPost.mockReset();
     mockGetApiBaseUrl.mockClear();
     mockEnsureCsrfCookie.mockClear();
     mockReadCookie.mockClear();
-    vi.stubEnv("VITE_REVERB_APP_KEY", "test-key");
-    vi.stubEnv("VITE_REVERB_HOST", "localhost");
-    vi.stubEnv("VITE_REVERB_PORT", "8080");
-    vi.stubEnv("VITE_REVERB_SCHEME", "http");
+    vi.stubEnv("VITE_PUSHER_APP_KEY", "test-key");
+    vi.stubEnv("VITE_PUSHER_APP_CLUSTER", "mt1");
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
     vi.unstubAllEnvs();
   });
 
-  it("configura Echo con broadcaster reverb y las variables de entorno", async () => {
+  it("configura Echo con broadcaster pusher y las variables de entorno", async () => {
     const { createEchoClient } = await import("@/services/echo");
     createEchoClient();
 
     expect(echoConstructorSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        broadcaster: "reverb",
+        broadcaster: "pusher",
         key: "test-key",
-        wsHost: "localhost",
-        wsPort: 8080,
-        wssPort: 8080,
-        forceTLS: false,
-        enabledTransports: ["ws", "wss"],
+        cluster: "mt1",
+        forceTLS: true,
       }),
     );
   });
 
-  it("forceTLS es true cuando VITE_REVERB_SCHEME es https", async () => {
-    vi.stubEnv("VITE_REVERB_SCHEME", "https");
+  it("usa 'mt1' como cluster por defecto si VITE_PUSHER_APP_CLUSTER no está seteado", async () => {
+    vi.unstubAllEnvs();
+    vi.stubEnv("VITE_PUSHER_APP_KEY", "test-key");
+    // VITE_PUSHER_APP_CLUSTER deliberadamente sin stubear (undefined).
 
     const { createEchoClient } = await import("@/services/echo");
     createEchoClient();
 
     expect(echoConstructorSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ forceTLS: true }),
+      expect.objectContaining({ cluster: "mt1" }),
     );
   });
 
-  it("el authorizer llama a /broadcasting/auth (sin prefijo /api) con credentials include y el header CSRF", async () => {
+  it("el authorizer llama a /broadcasting/auth (sin prefijo /api) con withCredentials y el header CSRF", async () => {
     const mockResponse = { auth: "signed-auth-string" };
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    }) as unknown as typeof fetch;
+    mockPost.mockResolvedValue({ data: mockResponse });
 
     const { createEchoClient } = await import("@/services/echo");
     createEchoClient();
@@ -93,20 +95,19 @@ describe("createEchoClient", () => {
     await waitFor(() => expect(callback).toHaveBeenCalled());
 
     expect(mockEnsureCsrfCookie).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(mockPost).toHaveBeenCalledWith(
       "http://localhost:8000/broadcasting/auth",
+      { socket_id: "socket-id-123", channel_name: "private-App.Models.User.1" },
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
+        withCredentials: true,
         headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-token-123" }),
-        body: JSON.stringify({ socket_id: "socket-id-123", channel_name: "private-App.Models.User.1" }),
       }),
     );
     expect(callback).toHaveBeenCalledWith(null, mockResponse);
   });
 
   it("el authorizer invoca el callback con error si la respuesta no es ok", async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 }) as unknown as typeof fetch;
+    mockPost.mockRejectedValue({ isAxiosError: true, response: { status: 403 } });
 
     const { createEchoClient } = await import("@/services/echo");
     createEchoClient();

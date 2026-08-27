@@ -10,7 +10,7 @@ export default defineConfig(({mode}) => {
     "default-src 'self';",
     `script-src 'self'${isDev ? " 'unsafe-inline'" : ''};`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
-    `connect-src 'self' blob: https://infraestructuraback.ivoofix.com${isDev ? ' http://localhost:* ws://localhost:* http://10.20.16.247:* ws://10.20.16.247:*' : ''};`,
+    `connect-src 'self' blob: https://infraestructuraback.ivoofix.com${isDev ? ' http://localhost:* ws://localhost:* http://10.20.16.247:* ws://10.20.16.247:*' : ''} https://sockjs-mt1.pusher.com wss://ws-mt1.pusher.com;`,
     "img-src 'self' data: blob:;",
     "font-src 'self' https://fonts.gstatic.com;",
     "form-action 'self';",

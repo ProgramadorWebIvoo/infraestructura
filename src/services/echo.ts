@@ -2,12 +2,11 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Cliente WebSocket (Laravel Reverb) para notificaciones push instantáneas —
- * reemplaza el polling de NotificationsProvider. No es un singleton de
- * módulo: se crea/destruye según el ciclo de vida de la suscripción (mismo
- * patrón que `enabled` en usePolling), ver useNotificationsSource.
+ * Cliente WebSocket (Pusher Channels) para notificaciones push instantáneas.
+ * Reemplaza el polling de NotificationsProvider.
  */
 
+import axios, { AxiosError } from "axios";
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
 import type { ChannelAuthorizerGenerator } from "pusher-js/types/src/core/auth/deprecated_channel_authorizer";
@@ -47,33 +46,32 @@ async function authorizeChannel(
   await ensureCsrfCookie();
   const csrfToken = readCookie("XSRF-TOKEN");
 
-  const response = await fetch(resolveBroadcastingAuthUrl(), {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(csrfToken ? { "X-XSRF-TOKEN": csrfToken } : {}),
-    },
-    body: JSON.stringify({ socket_id: socketId, channel_name: channelName }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`No se pudo autorizar el canal "${channelName}" (HTTP ${response.status}).`);
+  try {
+    const response = await axios.post(
+      resolveBroadcastingAuthUrl(),
+      { socket_id: socketId, channel_name: channelName },
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(csrfToken ? { "X-XSRF-TOKEN": csrfToken } : {}),
+        },
+      },
+    );
+    return response.data;
+  } catch (err) {
+    const status = (err as AxiosError).response?.status;
+    throw new Error(`No se pudo autorizar el canal "${channelName}" (HTTP ${status ?? "?"}).`);
   }
-
-  return response.json();
 }
 
-export function createEchoClient(): Echo<"reverb"> {
+export function createEchoClient(): Echo<"pusher"> {
   return new Echo({
-    broadcaster: "reverb",
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-    wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? "http") === "https",
-    enabledTransports: ["ws", "wss"],
+    broadcaster: "pusher",
+    key: import.meta.env.VITE_PUSHER_APP_KEY,
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? "mt1",
+    forceTLS: true,
     authorizer: ((channel) => ({
       authorize(socketId, callback) {
         authorizeChannel(socketId, channel.name)
