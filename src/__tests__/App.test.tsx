@@ -29,6 +29,9 @@ vi.mock("@/hooks/useCatalog", () => ({
 }));
 
 // Mocks de vistas lazy
+vi.mock("@/views/HomePanel", () => ({
+  default: () => <div data-testid="view-home">Home Panel</div>,
+}));
 vi.mock("@/views/PresidenciaDashboard", () => ({
   default: () => <div data-testid="view-presidencia">Presidencia Dashboard</div>,
 }));
@@ -191,7 +194,7 @@ describe("App", () => {
   it("renders without crashing", async () => {
     render(<App />);
     await flushAll();
-    expect(await screen.findByTestId("view-presidencia")).toBeInTheDocument();
+    expect(await screen.findByTestId("view-home")).toBeInTheDocument();
   });
 
   // ── Public routes (use MemoryRouter via router prop) ──────────────────────
@@ -262,11 +265,11 @@ describe("App", () => {
   });
 
   // ── Authenticated layout ───────────────────────────────────────────────────
-  it("renders AuthenticatedLayout with PresidenciaDashboard by default", async () => {
+  it("renders AuthenticatedLayout with HomePanel by default", async () => {
     render(<App />);
 
     await flushAll();
-    expect(await screen.findByTestId("view-presidencia")).toBeInTheDocument();
+    expect(await screen.findByTestId("view-home")).toBeInTheDocument();
     expect(screen.getAllByAltText("IVOO").length).toBeGreaterThanOrEqual(1);
   });
 

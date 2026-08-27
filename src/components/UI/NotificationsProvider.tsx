@@ -26,6 +26,18 @@
  * consumidor (NotificationBell, etc.) usa useNotifications(), que solo lee
  * el contexto ya compartido.
  *
+ * IMPORTANTE — authToken/authUser vienen como PROPS, no de un useAuth()
+ * propio: <NotificationsProvider> solía llamar useAuth() internamente, una
+ * segunda instancia independiente de la que ya vive en AppRoutes. Cada
+ * instancia valida sesión por su cuenta (su propio GET /user al montar) y
+ * puede resolver en momentos distintos — un logout podía dejar la instancia
+ * de AppRoutes ya mostrando <LoginScreen> mientras la de este provider
+ * seguía "autenticada" unos instantes más (o viceversa tras un login
+ * nuevo), manteniendo el canal WebSocket privado suscrito y disparando
+ * toasts de notificación por encima de la pantalla de login. Recibir
+ * authToken/authUser como props de la única instancia real elimina esa
+ * ventana de desincronización por completo.
+ *
  * Cada notificación nueva también intenta disparar la Notification API
  * nativa del navegador (notifyBrowser) — solo si el permiso ya fue concedido
  * (pedido al login, ver useAuth) y solo si la pestaña está en background
@@ -39,10 +51,9 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Channel } from "pusher-js";
 import type { AppNotification } from "../../types";
+import type { AuthUser } from "../../hooks/useAuth";
 import { apiFetch } from "../../services/api";
-import { useAuth } from "../../hooks/useAuth";
 import { createEchoClient } from "../../services/echo";
 import { useToast } from "./Toast";
 import { BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
@@ -59,15 +70,23 @@ export interface UseNotificationsResult {
   deleteAllNotifications: () => Promise<void>;
 }
 
-function useNotificationsSource(): UseNotificationsResult {
-  const { authToken, authUser } = useAuth();
+function useNotificationsSource(authToken: string, authUser: AuthUser): UseNotificationsResult {
   const { showToast } = useToast();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!authToken) return;
+    if (!authToken) {
+      // Sin sesión (logout, o antes del primer login): limpiar cualquier
+      // dato que hubiera quedado de una sesión anterior en el mismo árbol
+      // montado — sin esto, la bandeja podía seguir mostrando notificaciones
+      // del usuario previo hasta que el siguiente load() las reemplazara.
+      setNotifications([]);
+      setUnreadCount(0);
+      setIsLoading(false);
+      return;
+    }
     try {
       // apiFetch desenvuelve "data" automáticamente (convención Laravel):
       // el endpoint paginado responde {data: [...], links, meta} -> aquí ya llega el array.
@@ -212,8 +231,14 @@ function useNotificationsSource(): UseNotificationsResult {
 
 const NotificationsContext = createContext<UseNotificationsResult | null>(null);
 
-export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const value = useNotificationsSource();
+interface NotificationsProviderProps {
+  authToken: string;
+  authUser: AuthUser;
+  children: ReactNode;
+}
+
+export function NotificationsProvider({ authToken, authUser, children }: NotificationsProviderProps) {
+  const value = useNotificationsSource(authToken, authUser);
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 

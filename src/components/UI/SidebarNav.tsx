@@ -181,6 +181,23 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
 
         {/* ── Sidebar Navigation Items ────────────────────────────────────── */}
         <nav aria-label="Menú principal" className={`sidebar-scrollbar flex-1 overflow-y-auto py-6 space-y-1 ${effectiveCollapsed ? "px-2" : "px-4"}`}>
+          <SidebarTip label="Inicio" disabled={!effectiveCollapsed}>
+            <NavLink
+              to="/"
+              id="sidebar-home"
+              end
+              onClick={onClose}
+              className={navLinkClass("neutral", effectiveCollapsed)}
+            >
+              {({ isActive }) => (
+                <>
+                  <House className={sidebarIconClass(isActive)} />
+                  <span className={sidebarTextClass(effectiveCollapsed)}>Inicio</span>
+                </>
+              )}
+            </NavLink>
+          </SidebarTip>
+
           {canAccess("/presidencia") && (
             <SidebarTip label="Presidencia" disabled={!effectiveCollapsed}>
               <NavLink

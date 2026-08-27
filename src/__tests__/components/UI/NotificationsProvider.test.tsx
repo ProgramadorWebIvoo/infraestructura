@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act } from "react";
-import { renderHook } from "@testing-library/react";
+import { render, renderHook } from "@testing-library/react";
 import type { AppNotification } from "@/types";
+import type { AuthUser } from "@/hooks/useAuth";
 import { useNotifications, NotificationsProvider } from "@/components/UI/NotificationsProvider";
 
 // Simula el Echo real lo suficiente para probar la suscripción: private()
@@ -19,15 +20,6 @@ vi.mock("@/services/echo", () => ({
   createEchoClient: () => mockCreateEchoClient(),
 }));
 
-type MockAuthUser = { id: number; name: string; email: string } | null;
-const mockUseAuth = vi.fn<() => { authToken: string; authUser: MockAuthUser }>(() => ({
-  authToken: "token",
-  authUser: { id: 1, name: "Test", email: "t@t.com" },
-}));
-vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => mockUseAuth(),
-}));
-
 const mockShowToast = vi.fn();
 vi.mock("@/components/UI/Toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
@@ -37,6 +29,8 @@ const mockApiFetch = vi.fn();
 vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
+
+const DEFAULT_USER: AuthUser = { id: 1, name: "Test", email: "t@t.com" };
 
 function makeNotification(overrides: Partial<AppNotification> = {}): AppNotification {
   return {
@@ -56,11 +50,18 @@ function makeNotification(overrides: Partial<AppNotification> = {}): AppNotifica
 // (fetch inicial, suscripción WS, toast) vive en useNotificationsSource(),
 // instanciada UNA sola vez por <NotificationsProvider> (evita duplicar
 // conexiones/toasts cuando NotificationBell se monta más de una vez, ver
-// App.tsx). Los tests siguen ejercitando el comportamiento a través del
-// hook público, envuelto en el provider.
-function renderNotifications() {
+// App.tsx). authToken/authUser se pasan como props explícitas — la única
+// fuente real de sesión vive en AppRoutes (ver App.tsx); el provider ya no
+// llama su propio useAuth() para evitar dos instancias de validación de
+// sesión desincronizadas entre sí (bug real reportado por QA: toasts de
+// notificación aparecían sobre la pantalla de login).
+function renderNotifications(authToken = "token", authUser: AuthUser = DEFAULT_USER) {
   return renderHook(() => useNotifications(), {
-    wrapper: ({ children }) => <NotificationsProvider>{children}</NotificationsProvider>,
+    wrapper: ({ children }) => (
+      <NotificationsProvider authToken={authToken} authUser={authUser}>
+        {children}
+      </NotificationsProvider>
+    ),
   });
 }
 
@@ -80,7 +81,6 @@ describe("useNotifications", () => {
     mockEcho.private.mockClear();
     mockEcho.leave.mockClear();
     mockEcho.disconnect.mockClear();
-    mockUseAuth.mockReturnValue({ authToken: "token", authUser: { id: 1, name: "Test", email: "t@t.com" } });
   });
 
   it("carga notificaciones y conteo de no leídas al montar", async () => {
@@ -100,9 +100,7 @@ describe("useNotifications", () => {
   });
 
   it("sin authToken no consulta el endpoint ni abre conexión WebSocket", async () => {
-    mockUseAuth.mockReturnValue({ authToken: "", authUser: null });
-
-    renderNotifications();
+    renderNotifications("", null);
 
     await act(async () => {
       await Promise.resolve();
@@ -326,7 +324,11 @@ describe("useNotifications", () => {
     }
 
     const { result } = renderHook(() => TwoConsumers(), {
-      wrapper: ({ children }) => <NotificationsProvider>{children}</NotificationsProvider>,
+      wrapper: ({ children }) => (
+        <NotificationsProvider authToken="token" authUser={DEFAULT_USER}>
+          {children}
+        </NotificationsProvider>
+      ),
     });
 
     await act(async () => {
@@ -345,5 +347,50 @@ describe("useNotifications", () => {
 
     // Idem para la conexión WebSocket: una sola suscripción, no dos.
     expect(mockCreateEchoClient).toHaveBeenCalledTimes(1);
+  });
+
+  it("al perder authToken (logout) limpia notificaciones y contador previos", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([makeNotification({ id: 1 })])
+      .mockResolvedValueOnce({ count: 1 });
+
+    let captured: ReturnType<typeof useNotifications> | undefined;
+    function Probe() {
+      captured = useNotifications();
+      return null;
+    }
+    function Wrapper({ authToken, authUser }: { authToken: string; authUser: AuthUser }) {
+      return (
+        <NotificationsProvider authToken={authToken} authUser={authUser}>
+          <Probe />
+        </NotificationsProvider>
+      );
+    }
+
+    // Se usa render directo (no renderHook con wrapper paramétrico, que no
+    // permite recibir props nuevas en rerender) para poder cambiar
+    // authToken/authUser entre renders y observar la limpieza vía el mismo
+    // <NotificationsProvider> — igual que en producción, donde la instancia
+    // nunca se desmonta entre login/logout.
+    const view = render(<Wrapper authToken="token" authUser={DEFAULT_USER} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(captured?.notifications).toHaveLength(1);
+    expect(captured?.unreadCount).toBe(1);
+
+    // Logout: authToken pasa a "" en la misma instancia de provider (nunca
+    // se desmonta entre login/logout, ver App.tsx) — sin limpieza explícita,
+    // la bandeja seguiría mostrando datos del usuario anterior.
+    view.rerender(<Wrapper authToken="" authUser={null} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(captured?.notifications).toHaveLength(0);
+    expect(captured?.unreadCount).toBe(0);
   });
 });

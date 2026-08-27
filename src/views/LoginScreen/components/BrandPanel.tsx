@@ -62,7 +62,7 @@ export default function BrandPanel() {
             control total.
           </motion.h1>
           <motion.p variants={item} className="mt-6 text-[15px] leading-relaxed text-slate-300/90">
-            Ingresa con tus credenciales para continuar.
+            Ingrese sus credenciales para continuar.
           </motion.p>
 
           <motion.ul variants={item} className="mt-10 space-y-4">

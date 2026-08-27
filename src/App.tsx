@@ -79,20 +79,16 @@ export default function App({ router: Router = BrowserRouter, ...routerProps }: 
   return (
     <Router {...routerProps}>
       <ToastProvider>
-        {/* PublicSettingsProvider por fuera de NotificationsProvider: este último
-            depende de usePollingSettings(), que ahora lee de aquel contexto en
-            vez de fetchear /settings por su cuenta — un solo GET /settings
+        {/* PublicSettingsProvider por fuera de AppRoutes: este último depende
+            de usePollingSettings(), que ahora lee de aquel contexto en vez de
+            fetchear /settings por su cuenta — un solo GET /settings
             compartido por toda la sesión en vez de uno por cada hook que lo
             necesitaba (usePollingSettings, useMaxAdvancePercent,
-            useBudgetSemaphore). */}
+            useBudgetSemaphore).
+            NotificationsProvider NO vive aquí a propósito — ver su montaje
+            dentro de AppRoutes, después de resolver la sesión real. */}
         <PublicSettingsProvider>
-          {/* NotificationsProvider instancia useNotifications() UNA sola vez para
-              toda la app — NotificationBell se monta dos veces en el layout
-              (MobileTopBar + SidebarNav) y consumir el hook directamente ahí
-              duplicaba el polling y los toasts de "notificación nueva". */}
-          <NotificationsProvider>
-            <AppRoutes />
-          </NotificationsProvider>
+          <AppRoutes />
         </PublicSettingsProvider>
       </ToastProvider>
     </Router>
@@ -216,42 +212,50 @@ function AppRoutes() {
   }
 
   // ---- Layout autenticado ----
+  // NotificationsProvider se monta acá, no en App() — solo cuando authToken
+  // y authUser ya están confirmados por ESTA MISMA instancia de useAuth()
+  // (no una segunda instancia propia con su propio ciclo de validación
+  // desincronizado, ver comentario en NotificationsProvider.tsx). Fuera de
+  // esta rama (login, validando sesión, sin rol) no hay bandeja que
+  // mostrar, así que tampoco debe haber conexión WebSocket activa.
   const fallbackRoute = firstAllowedRoute(authUser.role) as string;
   return (
-    <AuthenticatedRoutes
-      user={authUser}
-      activeRole={activeRole ?? ""}
-      canAccess={canAccess}
-      fallbackRoute={fallbackRoute}
-      projects={projects}
-      auditLogs={auditLogs}
-      isLoadingApi={isLoadingApi}
-      inspectedProject={inspectedProject}
-      onCloseInspectedProject={() => setInspectedProject(null)}
-      onSelectProject={(p: Record<string, unknown>) => { setInspectedProject(p as never); }}
-      onLogout={handleLogout}
-      contractors={contractors}
-      onUpdateContractorRating={handleUpdateContractorRating}
-      onContractorMutated={() => loadContractors()}
-      materialsCatalog={materialsCatalog}
-      onAddProject={handleAddProject}
-      onResubmitProject={handleResubmitProject}
-      onReviewProject={handleReviewProject}
-      onRejectProject={handleRejectProject}
-      onDeleteDocument={handleDeleteDocument}
-      onSyncProject={syncProject}
-      onApproveInvestment={handleApproveInvestment}
-      onAddProposal={handleAddProposal}
-      onRemoveProposal={handleRemoveProposal}
-      onImportSupplierProposals={handleImportSupplierProposals}
-      onSubmitComparative={handleSubmitComparative}
-      onSelectContractor={handleSelectContractor}
-      onRejectProposals={handleRejectProposals}
-      onPayAdvance={handlePayAdvance}
-      onVerifyCompletion={handleVerifyCompletion}
-      onPayFinal={handlePayFinal}
-      authToken={authToken}
-      location={location}
-    />
+    <NotificationsProvider authToken={authToken} authUser={authUser}>
+      <AuthenticatedRoutes
+        user={authUser}
+        activeRole={activeRole ?? ""}
+        canAccess={canAccess}
+        fallbackRoute={fallbackRoute}
+        projects={projects}
+        auditLogs={auditLogs}
+        isLoadingApi={isLoadingApi}
+        inspectedProject={inspectedProject}
+        onCloseInspectedProject={() => setInspectedProject(null)}
+        onSelectProject={(p: Record<string, unknown>) => { setInspectedProject(p as never); }}
+        onLogout={handleLogout}
+        contractors={contractors}
+        onUpdateContractorRating={handleUpdateContractorRating}
+        onContractorMutated={() => loadContractors()}
+        materialsCatalog={materialsCatalog}
+        onAddProject={handleAddProject}
+        onResubmitProject={handleResubmitProject}
+        onReviewProject={handleReviewProject}
+        onRejectProject={handleRejectProject}
+        onDeleteDocument={handleDeleteDocument}
+        onSyncProject={syncProject}
+        onApproveInvestment={handleApproveInvestment}
+        onAddProposal={handleAddProposal}
+        onRemoveProposal={handleRemoveProposal}
+        onImportSupplierProposals={handleImportSupplierProposals}
+        onSubmitComparative={handleSubmitComparative}
+        onSelectContractor={handleSelectContractor}
+        onRejectProposals={handleRejectProposals}
+        onPayAdvance={handlePayAdvance}
+        onVerifyCompletion={handleVerifyCompletion}
+        onPayFinal={handlePayFinal}
+        authToken={authToken}
+        location={location}
+      />
+    </NotificationsProvider>
   );
 }

@@ -20,6 +20,7 @@ export const ROLE_LABELS: Record<string, string> = {
   ANALISTA: "Analistas",
   FINANZAS: "Finanzas",
   CATALOGOS: "Catálogos",
+  MARKETING: "Marketing",
 };
 
 export function roleLabel(role: string): string {

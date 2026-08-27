@@ -2,8 +2,10 @@ import { lazy } from "react";
 import { Location, Navigate, Route, Routes } from "react-router-dom";
 import { ROUTES, ProtectedRoute } from "../routes.tsx";
 import AuthenticatedLayout from "../components/Layout/AuthenticatedLayout";
+import { useHomeAnnouncement } from "../hooks/useHomeAnnouncement";
 // Types are enforced at the leaf view component level; this shell passes through any props.
 
+const HomePanel = lazy(() => import("../views/HomePanel"));
 const PresidenciaDashboard = lazy(() => import("../views/PresidenciaDashboard"));
 const InfraestructuraMantenimientoPanel = lazy(() => import("../views/InfraestructuraMantenimientoPanel"));
 const CierreObraPanel = lazy(() => import("../views/CierreObraPanel"));
@@ -32,6 +34,8 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     authToken, location,
   } = props;
 
+  const homeAnnouncement = useHomeAnnouncement();
+
   return (
     <AuthenticatedLayout
       user={user}
@@ -44,7 +48,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
       <Routes location={location}>
         <Route
           path={ROUTES.HOME}
-          element={<Navigate to={fallbackRoute} replace />}
+          element={<HomePanel user={user} activeRole={activeRole} projects={projects} auditLogs={auditLogs} isLoading={isLoadingApi} announcement={homeAnnouncement} />}
         />
         <Route
           path={ROUTES.PRESIDENCIA}
