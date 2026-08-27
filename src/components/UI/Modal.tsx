@@ -8,7 +8,7 @@
 
 import { createPortal } from "react-dom";
 import { type ReactNode, useCallback, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 
@@ -95,6 +95,7 @@ export default function Modal({
   const iconStyle = { bg: semantic.bgAlpha400, text: semantic.icon400 };
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const reduceMotion = useReducedMotion();
 
   // ── Keep mutable callbacks in refs so the effect never re-runs due to reference changes ──
   const onCloseRef = useRef(onClose);
@@ -147,71 +148,92 @@ export default function Modal({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div
+        <motion.div
           data-testid="modal-backdrop"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
+          initial={reduceMotion ? undefined : { opacity: 0, backdropFilter: "blur(0px)" }}
+          animate={reduceMotion ? undefined : { opacity: 1, backdropFilter: "blur(6px)" }}
+          exit={reduceMotion ? undefined : { opacity: 0, backdropFilter: "blur(0px)" }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-label={title ?? "Diálogo"}
         >
           <motion.div
             ref={modalRef}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className={`bg-surface rounded-container w-full ${maxWidth} border border-border-default shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
+            initial={reduceMotion ? undefined : { opacity: 0, scale: 0.94, y: 18 }}
+            animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96, y: 10 }}
+            transition={reduceMotion ? undefined : { duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className={`bg-surface rounded-container w-full ${maxWidth} border border-border-default overflow-hidden max-h-[90vh] flex flex-col [box-shadow:0_2px_4px_rgba(0,0,0,0.06),0_12px_24px_-6px_rgba(0,0,0,0.14),0_40px_80px_-20px_rgba(2,6,23,0.45)]`}
           >
             {/* ── Header ── */}
             {(title || icon || badge) && (
-              <div className="p-5 bg-surface-inverted text-text-inverted flex items-center justify-between border-b border-border-inverted shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
-                  {icon && (
-                    <div data-testid="modal-icon" className={`${iconStyle.bg} ${iconStyle.text} p-2 rounded-control shrink-0`}>
-                      {icon}
+              <div className="relative shrink-0 overflow-hidden border-b border-border-inverted bg-surface-inverted p-5 text-text-inverted">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_140%_at_0%_0%,rgba(255,255,255,0.06),transparent_60%)]"
+                />
+                <div className="relative flex items-center justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {icon && (
+                      <motion.div
+                        data-testid="modal-icon"
+                        initial={reduceMotion ? undefined : { opacity: 0, scale: 0.6, rotate: -6 }}
+                        animate={reduceMotion ? undefined : { opacity: 1, scale: 1, rotate: 0 }}
+                        transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1], delay: 0.08 }}
+                        className={`${iconStyle.bg} ${iconStyle.text} shrink-0 rounded-control p-2 ring-1 ring-white/10`}
+                      >
+                        {icon}
+                      </motion.div>
+                    )}
+                    <div className="min-w-0">
+                      {badge && (
+                        <span className="block truncate text-[10px] font-mono font-bold uppercase tracking-wide text-amber-400">
+                          {badge}
+                        </span>
+                      )}
+                      {title && (
+                        <h3 className="text-md truncate font-brand font-black tracking-tight">{title}</h3>
+                      )}
+                      {infoLine && (
+                        <p className="mt-0.5 truncate font-mono text-[11px] text-text-muted">{infoLine}</p>
+                      )}
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    {badge && (
-                      <span className="text-[10px] font-mono text-amber-400 font-bold uppercase block truncate">
-                        {badge}
-                      </span>
-                    )}
-                    {title && (
-                      <h3 className="text-md font-black font-brand tracking-tight truncate">{title}</h3>
-                    )}
-                    {infoLine && (
-                      <p className="text-[11px] text-text-muted font-mono mt-0.5 truncate">{infoLine}</p>
-                    )}
                   </div>
+                  {!hideCloseButton && (
+                    <button
+                      type="button"
+                      aria-label="Cerrar"
+                      onClick={onClose}
+                      disabled={closeDisabled}
+                      className="ml-3 shrink-0 cursor-pointer rounded-full p-1 text-text-muted transition-all duration-150 hover:bg-border-inverted hover:text-text-inverted active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  )}
                 </div>
-                {!hideCloseButton && (
-                  <button
-                    type="button"
-                    aria-label="Cerrar"
-                    onClick={onClose}
-                    disabled={closeDisabled}
-                    className="cursor-pointer text-text-muted hover:text-text-inverted p-1 rounded-full hover:bg-border-inverted transition-colors disabled:cursor-not-allowed disabled:opacity-30 shrink-0 ml-3"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                )}
               </div>
             )}
 
             {/* ── Body ── */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <motion.div
+              initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut", delay: 0.06 }}
+              className="flex-1 space-y-6 overflow-y-auto p-6"
+            >
               {children}
-            </div>
+            </motion.div>
 
             {/* ── Footer ── */}
             {footer && (
-              <div className="p-4 border-t border-border-subtle bg-surface-sunken shrink-0">
+              <div className="shrink-0 border-t border-border-subtle bg-surface-sunken p-4">
                 {footer}
               </div>
             )}
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body,

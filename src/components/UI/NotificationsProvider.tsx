@@ -126,37 +126,77 @@ function useNotificationsSource(): UseNotificationsResult {
   const markRead = useCallback(
     async (id: number) => {
       if (!authToken) return;
-      await apiFetch(`/notifications/${id}/read`, { method: "PATCH", token: authToken });
+      const target = notifications.find(n => n.id === id);
+      if (!target || target.read_at != null) return;
+
+      // Optimista: la UI refleja el cambio de inmediato; si la request falla,
+      // se revierte al snapshot previo en vez de esperar el round-trip.
       setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
       setUnreadCount(prev => Math.max(0, prev - 1));
+
+      try {
+        await apiFetch(`/notifications/${id}/read`, { method: "PATCH", token: authToken });
+      } catch (err) {
+        setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read_at: target.read_at } : n)));
+        setUnreadCount(prev => prev + 1);
+        throw err;
+      }
     },
-    [authToken],
+    [authToken, notifications],
   );
 
   const markAllRead = useCallback(async () => {
     if (!authToken) return;
-    await apiFetch("/notifications/read-all", { method: "PATCH", token: authToken });
+    const snapshot = notifications;
+
     setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
     setUnreadCount(0);
-  }, [authToken]);
+
+    try {
+      await apiFetch("/notifications/read-all", { method: "PATCH", token: authToken });
+    } catch (err) {
+      setNotifications(snapshot);
+      setUnreadCount(snapshot.filter(n => n.read_at == null).length);
+      throw err;
+    }
+  }, [authToken, notifications]);
 
   const deleteNotification = useCallback(
     async (id: number) => {
       if (!authToken) return;
-      const wasUnread = notifications.find(n => n.id === id)?.read_at == null;
-      await apiFetch(`/notifications/${id}`, { method: "DELETE", token: authToken });
+      const snapshot = notifications;
+      const target = snapshot.find(n => n.id === id);
+      const wasUnread = target?.read_at == null;
+
       setNotifications(prev => prev.filter(n => n.id !== id));
       if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+
+      try {
+        await apiFetch(`/notifications/${id}`, { method: "DELETE", token: authToken });
+      } catch (err) {
+        setNotifications(snapshot);
+        if (wasUnread) setUnreadCount(prev => prev + 1);
+        throw err;
+      }
     },
     [authToken, notifications],
   );
 
   const deleteAllNotifications = useCallback(async () => {
     if (!authToken) return;
-    await apiFetch("/notifications", { method: "DELETE", token: authToken });
+    const snapshot = notifications;
+
     setNotifications([]);
     setUnreadCount(0);
-  }, [authToken]);
+
+    try {
+      await apiFetch("/notifications", { method: "DELETE", token: authToken });
+    } catch (err) {
+      setNotifications(snapshot);
+      setUnreadCount(snapshot.filter(n => n.read_at == null).length);
+      throw err;
+    }
+  }, [authToken, notifications]);
 
   return {
     notifications,

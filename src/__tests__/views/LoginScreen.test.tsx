@@ -6,6 +6,7 @@
  * rate limiting, toggle password, errores, y limpieza de interval.
  */
 
+import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -15,17 +16,34 @@ import LoginScreen from "@/views/LoginScreen";
 // Mock motion (framer-motion no necesario en tests unitarios)
 // ---------------------------------------------------------------------------
 
-vi.mock("motion/react", () => ({
-  useReducedMotion: () => false,
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      // Pasar className y key pero ignorar motion-specific props
-      const { initial, animate, exit, variants, transition, ...rest } = props;
-      return <div {...rest}>{children}</div>;
-    },
-  },
-}));
+vi.mock("motion/react", () => {
+  const stripMotionProps = (props: Record<string, unknown>) => {
+    const { initial, animate, exit, variants, transition, whileHover, whileTap, ...rest } = props;
+    return rest;
+  };
+
+  const tagCache = new Map<string, React.FC<React.PropsWithChildren<Record<string, unknown>>>>();
+  const makeTag = (Tag: string) => {
+    const cached = tagCache.get(Tag);
+    if (cached) return cached;
+    const Component: React.FC<React.PropsWithChildren<Record<string, unknown>>> = ({ children, ...props }) => {
+      return React.createElement(Tag, stripMotionProps(props), children);
+    };
+    tagCache.set(Tag, Component);
+    return Component;
+  };
+
+  return {
+    useReducedMotion: () => false,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tag: string) => makeTag(tag),
+      },
+    ),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -13,6 +13,7 @@ import UsuariosPanel from "@/views/UsuariosPanel";
 import type { UserRecord } from "@/hooks/useUsuarios";
 
 vi.mock("motion/react", () => ({
+  useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {

@@ -13,6 +13,7 @@ import MaterialConfigPanel from "@/views/MaterialConfigPanel";
 import type { ConfigMaterial } from "@/views/MaterialConfigPanel/types";
 
 vi.mock("motion/react", () => ({
+  useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {

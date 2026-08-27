@@ -6,6 +6,7 @@
  */
 
 import { useState } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { LogIn, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useRateLimit } from "../../../hooks/useRateLimit";
 
@@ -19,7 +20,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [shakeKey, setShakeKey] = useState(0);
   const { blockTimer, isBlocked, recordAttempt, resetAttempts } = useRateLimit();
+  const reduceMotion = useReducedMotion();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -39,6 +42,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       } else {
         setError(message || "Correo o clave incorrectos.");
       }
+      setShakeKey((k) => k + 1);
     } finally {
       setIsSubmitting(false);
     }
@@ -47,7 +51,20 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const canSubmit = !isSubmitting && !isBlocked;
 
   return (
-    <div className="relative w-full max-w-md animate-slide-up rounded-2xl border border-slate-700/60 bg-white/95 p-7 text-slate-900 shadow-2xl shadow-slate-950/50 backdrop-blur-xl sm:p-8">
+    <motion.div
+      initial={reduceMotion ? undefined : { opacity: 0, y: 22, scale: 0.985 }}
+      animate={
+        reduceMotion
+          ? undefined
+          : { opacity: 1, y: 0, scale: 1, x: shakeKey === 0 ? 0 : [0, -7, 6, -4, 2, 0] }
+      }
+      transition={
+        shakeKey === 0
+          ? { duration: 0.65, ease: [0.16, 1, 0.3, 1] }
+          : { x: { duration: 0.42, ease: "easeOut" } }
+      }
+      className="relative w-full max-w-md rounded-2xl border border-slate-700/60 bg-white/95 p-7 text-slate-900 shadow-[0_1px_1px_rgba(0,0,0,0.05),0_4px_8px_rgba(0,0,0,0.08),0_16px_32px_-8px_rgba(2,6,23,0.35),0_32px_64px_-16px_rgba(2,6,23,0.35)] backdrop-blur-xl sm:p-8"
+    >
       {/* Logo oficial y título */}
       <div className="mb-7 flex items-center gap-3.5">
         <div className="shrink-0 overflow-hidden">
@@ -79,7 +96,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="usuario@ivoo.local"
             disabled={isBlocked}
-            className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
 
@@ -101,14 +118,14 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               disabled={isBlocked}
-              className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
             />
             <button
               type="button"
               onClick={() => setShowPassword((p) => !p)}
               disabled={isBlocked}
               aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
-              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-150 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
             </button>
@@ -116,22 +133,31 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         </div>
 
         {/* Mensaje de error */}
-        {error && (
-          <div
-            role="alert"
-            className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700"
-          >
-            <AlertCircle className="mt-0.5 h-[14px] w-[14px] shrink-0 stroke-[2.5]" aria-hidden="true" />
-            <span>{error}</span>
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              role="alert"
+              initial={reduceMotion ? undefined : { opacity: 0, height: 0, y: -6 }}
+              animate={reduceMotion ? undefined : { opacity: 1, height: "auto", y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, height: 0, y: -6 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="flex items-start gap-2.5 overflow-hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700"
+            >
+              <AlertCircle className="mt-0.5 h-[14px] w-[14px] shrink-0 stroke-[2.5]" aria-hidden="true" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Botón submit */}
-        <button
+        <motion.button
           id="btn-login-submit"
           type="submit"
           disabled={!canSubmit}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-all duration-200 hover:from-sky-600 hover:to-sky-700 hover:shadow-xl hover:shadow-sky-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          whileHover={canSubmit && !reduceMotion ? { scale: 1.012, y: -1 } : undefined}
+          whileTap={canSubmit && !reduceMotion ? { scale: 0.985 } : undefined}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <>
@@ -149,13 +175,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               Ingresar
             </>
           )}
-        </button>
+        </motion.button>
       </form>
 
       {/* Footer */}
       <p className="mt-6 text-center text-[11px] font-medium text-slate-400">
         IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()}
       </p>
-    </div>
+    </motion.div>
   );
 }

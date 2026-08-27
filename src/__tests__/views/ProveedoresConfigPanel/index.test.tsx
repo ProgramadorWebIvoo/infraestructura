@@ -13,6 +13,7 @@ import ProveedoresConfigPanel from "@/views/ProveedoresConfigPanel";
 import type { ConfigContractor } from "@/views/ProveedoresConfigPanel/types";
 
 vi.mock("motion/react", () => ({
+  useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
