@@ -29,6 +29,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     onLogout, contractors, onUpdateContractorRating, onContractorMutated,
     materialsCatalog,
     onAddProject, onResubmitProject, onRejectProject, onReviewProject, onDeleteDocument, onSyncProject, onApproveInvestment, onAddProposal,
+    onRenegotiateProposal,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
@@ -86,7 +87,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.ANALISTAS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
-              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} isLoading={isLoadingApi} />
+              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

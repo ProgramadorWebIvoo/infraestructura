@@ -148,6 +148,7 @@ const defaultUseProjects = () => ({
   handleReviewProject: vi.fn(),
   handleApproveInvestment: vi.fn(),
   handleAddProposal: vi.fn(),
+  handleRenegotiateProposal: vi.fn(),
   handleRemoveProposal: vi.fn(),
   handleImportSupplierProposals: vi.fn(),
   handleSubmitComparative: vi.fn(),

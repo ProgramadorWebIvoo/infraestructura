@@ -44,15 +44,31 @@ export interface MaterialItem {
 
 export type ProposalOrigin = "MANUAL" | "RENEGOCIACION" | "PORTAL-PROV" | "SEED-INSERT";
 
+export interface ProposalMaterialItem {
+  materialName: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  totalPrice: number;
+  notes?: string;
+}
+
+export type ProposalDurationUnit = "dias" | "semanas" | "meses";
+
 export interface Proposal {
   id: string;
   contractorCode: string;
   contractorName: string;
   contractorRating?: number;
   materialCost: number;
+  /** Detalle línea por línea, igual al portal público del proveedor. Puede
+   * faltar en propuestas antiguas cargadas antes de este campo. */
+  materialItems?: ProposalMaterialItem[];
   laborCost: number;
   totalCost: number;
   deliveryWeeks: number;
+  durationValue?: number;
+  durationUnit?: ProposalDurationUnit;
   negotiatedAdvancePercent: number;
   description: string;
   origen: ProposalOrigin;
@@ -61,7 +77,11 @@ export interface Proposal {
   precioAnterior?: number | null;
   precioNuevo?: number | null;
   diferencia?: number | null;
+  /** Por qué se renegoció esta oferta (origen RENEGOCIACION). */
   motivo?: string | null;
+  /** Distinto de `motivo`: por qué el anticipo negociado supera el máximo
+   * configurado en CONFIG APP — puede darse a la vez que una renegociación. */
+  motivoAnticipoExcedido?: string | null;
 }
 
 export interface ProjectDocument {

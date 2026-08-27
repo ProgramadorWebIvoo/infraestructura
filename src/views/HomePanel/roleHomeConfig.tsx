@@ -195,14 +195,6 @@ const kpiAnalistas: HomeKpi[] = [
     accent: "success",
     route: ROUTES.ANALISTAS,
   }),
-  kpi({
-    key: "comparative-sent",
-    icon: <Handshake className="h-4 w-4" strokeWidth={2.25} />,
-    label: "Comparativas enviadas",
-    filter: (p) => p.filter((x) => x.status === ProjectStatus.COMPARATIVA_ENVIADA),
-    accent: "brand",
-    route: ROUTES.ANALISTAS,
-  }),
 ];
 
 const kpiFinanzas: HomeKpi[] = [

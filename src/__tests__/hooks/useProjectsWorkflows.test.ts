@@ -397,6 +397,79 @@ describe("useProjectsWorkflows", () => {
     });
   });
 
+  // ── Actualización optimista ────────────────────────────────────────────────
+  // Regresión: reportado en pruebas manuales — al aprobar una inversión el
+  // proyecto seguía apareciendo en la lista de "pendientes de aprobación"
+  // durante varios segundos (el tiempo del round-trip real), aunque el modal
+  // ya se había cerrado. syncProject() se llamaba solo con la respuesta del
+  // servidor, nunca antes. optimisticUpdate() debe llamar a syncProject de
+  // inmediato con el status esperado, ANTES de que el fetch resuelva.
+  describe("actualización optimista (evita el 'parpadeo' de varios segundos)", () => {
+    it("handleApproveInvestment aplica CONFIRMADO_PROCURA de inmediato, antes de que resuelva el fetch", async () => {
+      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_CIERRE });
+      getProject.mockReturnValue(current);
+
+      let resolveFetch!: (value: Project) => void;
+      mockApiFetch.mockReturnValue(new Promise<Project>((resolve) => { resolveFetch = resolve; }));
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      const promise = result.current.handleApproveInvestment("PRJ-001", "aprobado", 5000);
+
+      // Antes de que el fetch resuelva: syncProject ya fue llamado con el
+      // status optimista — esto es lo que hace que el proyecto desaparezca
+      // de "pendientes" de inmediato en vez de esperar la red.
+      expect(syncProject).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "PRJ-001", status: ProjectStatus.CONFIRMADO_PROCURA, approvedInvestmentAmount: 5000 }),
+      );
+
+      const serverProject = createMockProject({ id: "PRJ-001", status: ProjectStatus.CONFIRMADO_PROCURA });
+      resolveFetch(serverProject);
+      await promise;
+
+      // La respuesta real reemplaza al optimista como segunda llamada.
+      expect(syncProject).toHaveBeenLastCalledWith(serverProject);
+    });
+
+    it("handleApproveInvestment revierte al proyecto anterior si el fetch falla", async () => {
+      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_CIERRE });
+      getProject.mockReturnValue(current);
+      mockApiFetch.mockRejectedValue(new Error("fail"));
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current.handleApproveInvestment("PRJ-001", "notes", 1000);
+
+      // 1ra llamada: optimista (CONFIRMADO_PROCURA). 2da: reversión al status original.
+      expect(syncProject).toHaveBeenCalledTimes(2);
+      expect(syncProject).toHaveBeenLastCalledWith(current);
+    });
+
+    it("handleReviewProject aplica REVISADO_CIERRE de inmediato", async () => {
+      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.CREADO });
+      getProject.mockReturnValue(current);
+      mockApiFetch.mockResolvedValue(createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_CIERRE }));
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current.handleReviewProject("PRJ-001", "notas");
+
+      expect(syncProject).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ status: ProjectStatus.REVISADO_CIERRE }),
+      );
+    });
+
+    it("no aplica optimista si getProject no encuentra el proyecto (evita sync con datos vacíos)", async () => {
+      getProject.mockReturnValue(undefined);
+      mockApiFetch.mockResolvedValue(createMockProject({ status: ProjectStatus.CONFIRMADO_PROCURA }));
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current.handleApproveInvestment("PRJ-001", "notes", 1000);
+
+      // Solo la llamada con la respuesta real del servidor.
+      expect(syncProject).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("handleSelectContractor", () => {
     it("POSTs to /projects/{id}/select-contractor and syncs", async () => {
       const project = createMockProject({ status: ProjectStatus.CONTRATADO });

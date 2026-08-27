@@ -18,19 +18,15 @@ import { AnimatePresence, motion } from "motion/react";
 import type { Project, Contractor, Proposal, ProposalOrigin } from "../../../types";
 import {
   AlertTriangle,
-  ArrowRight,
   Award,
-  ChevronDown,
   FileSpreadsheet,
-  Loader2,
-  LayoutList,
+  Handshake,
   MessageSquareWarning,
-  Plus,
   Send,
   SearchX,
   Trash2,
+  UserPlus,
   Users,
-  Wallet,
 } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
@@ -39,15 +35,13 @@ import Modal from "../../../components/UI/Modal";
 import TableToolbar from "../../../components/UI/TableToolbar";
 import { Table, type Column } from "../../../components/UI/Table";
 import GridView from "../../../components/UI/GridView/GridView";
-import SelectModal from "../../../components/UI/SelectModal";
-import NumericInput from "../../../components/UI/NumericInput";
 import Button from "../../../components/UI/Button";
 import ConfirmDialog from "../../../components/UI/ConfirmDialog";
 import ProposalSummary from "../../../components/ProposalSummary";
-import { HelpHint, RequiredMark } from "../../../components/UI/HintSignals";
 import Tooltip from "../../../components/UI/Tooltip";
-import Tabs from "../../../components/UI/Tabs";
 import { renderAnalistasCard } from "./AnalistasGridCard";
+import RegisterProposalModal, { formatProposalDuration } from "./RegisterProposalModal";
+import RenegotiateProposalModal from "./RenegotiateProposalModal";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode } from "../../../hooks/useTableViewMode";
@@ -72,10 +66,13 @@ interface ImportResult {
   skipped: number;
 }
 
+type RenegotiationPayload = Omit<Proposal, "id" | "contractorCode" | "contractorName" | "contractorRating" | "origen" | "precioAnterior" | "precioNuevo" | "diferencia">;
+
 interface AnalistasWorkspaceProps {
   pendingLicitacion: Project[];
   contractors: Contractor[];
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
+  onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
@@ -85,6 +82,7 @@ export default function AnalistasWorkspace({
   pendingLicitacion,
   contractors,
   onAddProposal,
+  onRenegotiateProposal,
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
@@ -233,6 +231,7 @@ export default function AnalistasWorkspace({
           contractors={contractors}
           onClose={() => setSelectedId("")}
           onAddProposal={onAddProposal}
+          onRenegotiateProposal={onRenegotiateProposal}
           onRemoveProposal={onRemoveProposal}
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}
@@ -249,6 +248,7 @@ function ExpedienteWorkspaceModal({
   contractors,
   onClose,
   onAddProposal,
+  onRenegotiateProposal,
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
@@ -258,122 +258,21 @@ function ExpedienteWorkspaceModal({
   contractors: Contractor[];
   onClose: () => void;
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
+  onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
   onComparativeSubmitted: () => void;
 }) {
-  const { showToast } = useToast();
   const maxAdvancePercent = useMaxAdvancePercent();
+  const { showToast } = useToast();
 
-  const [isRegisterFormOpen, setIsRegisterFormOpen] = useState(false);
-  const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
-  const [isContractorModalOpen, setIsContractorModalOpen] = useState(false);
-  const [materialCost, setMaterialCost] = useState<number | "">(1000);
-  const [laborCost, setLaborCost] = useState<number | "">(800);
-  const [deliveryWeeks, setDeliveryWeeks] = useState<number | "">(2);
-  const [advancePercent, setAdvancePercent] = useState<number | "">(30);
-  const [description, setDescription] = useState("");
-  const [origin, setOrigin] = useState<Exclude<ProposalOrigin, "PORTAL-PROV" | "SEED-INSERT">>("MANUAL");
-  const [fechaOferta, setFechaOferta] = useState(todayISODate());
-  const [precioAnterior, setPrecioAnterior] = useState<number | "">("");
-  const [precioNuevo, setPrecioNuevo] = useState<number | "">("");
-  const [motivo, setMotivo] = useState("");
-  const [pendingProposal, setPendingProposal] = useState<Omit<Proposal, "id"> | null>(null);
-
-  const isRenegotiation = origin === "RENEGOCIACION";
-  const exceedsAdvanceForMotivo = advancePercent !== "" && advancePercent > maxAdvancePercent;
-  const motivoRequired = isRenegotiation || exceedsAdvanceForMotivo;
-  const motivoFilled = motivo.trim().length > 0;
-  const diferencia = precioAnterior !== "" && precioNuevo !== "" ? precioNuevo - precioAnterior : null;
-
-  const [isImporting, setIsImporting] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [renegotiatingProposal, setRenegotiatingProposal] = useState<Proposal | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
-  const contractorOptions = contractors.map(c => ({
-    value: c.code,
-    label: c.name,
-    description: `${c.code} · ${c.specialty} · Rating: ${c.rating.toFixed(1)}`,
-    raw: c,
-  }));
-
   const proposals = project.proposals ?? [];
-  const newTotal = (Number(materialCost) || 0) + (Number(laborCost) || 0);
   const approvedBudget = project.approvedInvestmentAmount ?? 0;
-  const exceedsBudget = approvedBudget > 0 && newTotal > approvedBudget;
-  const budgetExcess = newTotal - approvedBudget;
-  const exceedsAdvance = advancePercent !== "" && advancePercent > maxAdvancePercent;
-
-  const commitProposal = (proposal: Omit<Proposal, "id">) => {
-    onAddProposal(project.id, proposal);
-    setDescription("");
-    setMaterialCost(1000);
-    setLaborCost(800);
-    setDeliveryWeeks(2);
-    setOrigin("MANUAL");
-    setFechaOferta(todayISODate());
-    setPrecioAnterior("");
-    setPrecioNuevo("");
-    setMotivo("");
-  };
-
-  const handleAddProposal = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (motivoRequired && !motivoFilled) return;
-    const contractor = contractors.find(c => c.code === contractorCode);
-    if (!contractor) return;
-
-    const matCostNum = Number(materialCost || 0);
-    const laborCostNum = Number(laborCost || 0);
-    const delWeeksNum = Number(deliveryWeeks || 1);
-
-    const proposal: Omit<Proposal, "id"> = {
-      contractorCode: contractor.code,
-      contractorName: contractor.name,
-      contractorRating: contractor.rating,
-      materialCost: matCostNum,
-      laborCost: laborCostNum,
-      totalCost: matCostNum + laborCostNum,
-      deliveryWeeks: delWeeksNum,
-      negotiatedAdvancePercent: Number(advancePercent || 0),
-      description: description.trim() || `Propuesta para trabajos de ${project.title}. Incluye materiales e instalación certificada.`,
-      origen: origin,
-      fechaOferta,
-      ...(isRenegotiation && precioAnterior !== "" && precioNuevo !== ""
-        ? { precioAnterior, precioNuevo, diferencia: precioNuevo - precioAnterior }
-        : {}),
-      ...(motivoFilled ? { motivo: motivo.trim() } : {}),
-    };
-
-    if (exceedsBudget || exceedsAdvance) {
-      setPendingProposal(proposal);
-      return;
-    }
-
-    commitProposal(proposal);
-  };
-
-  const handleConfirmPending = () => {
-    if (!pendingProposal) return;
-    commitProposal(pendingProposal);
-    setPendingProposal(null);
-  };
-
-  const handleImport = async () => {
-    if (!onImportSupplierProposals) return;
-    setIsImporting(true);
-    try {
-      const result = await onImportSupplierProposals(project.id);
-      showToast(result.message, "success");
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Error inesperado al importar propuestas.",
-        "error",
-      );
-    } finally {
-      setIsImporting(false);
-    }
-  };
 
   const handleSubmit = () => {
     if (proposals.length === 0) {
@@ -433,7 +332,7 @@ function ExpedienteWorkspaceModal({
         </span>
       ),
     },
-    { key: "deliveryWeeks", label: "Plazo", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} sem` : "Sin dato"}</span> },
+    { key: "deliveryWeeks", label: "Plazo", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{formatProposalDuration(prop)}</span> },
     {
       key: "advance",
       label: "Anticipo",
@@ -456,17 +355,29 @@ function ExpedienteWorkspaceModal({
     {
       key: "actions",
       label: "",
-      width: "3.5rem",
+      width: "6rem",
       align: "center",
       render: (prop) => (
-        <button
-          id={`btn-delete-proposal-${prop.id}`}
-          onClick={() => onRemoveProposal(project.id, prop.id)}
-          className="text-rose-400 hover:bg-rose-50 hover:text-rose-600 p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer"
-          aria-label={`Eliminar propuesta de ${prop.contractorName}`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center justify-center gap-1">
+          <Tooltip content="Renegociar: reemplaza esta oferta por nuevas condiciones, conservando el registro original para auditoría.">
+            <button
+              id={`btn-renegotiate-proposal-${prop.id}`}
+              onClick={() => setRenegotiatingProposal(prop)}
+              className="text-amber-500 hover:bg-amber-50 hover:text-amber-600 p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer"
+              aria-label={`Renegociar propuesta de ${prop.contractorName}`}
+            >
+              <Handshake className="h-4 w-4" />
+            </button>
+          </Tooltip>
+          <button
+            id={`btn-delete-proposal-${prop.id}`}
+            onClick={() => onRemoveProposal(project.id, prop.id)}
+            className="text-rose-400 hover:bg-rose-50 hover:text-rose-600 p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer"
+            aria-label={`Eliminar propuesta de ${prop.contractorName}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -509,266 +420,22 @@ function ExpedienteWorkspaceModal({
           {/* Resumen comparativo — solo aparece con al menos 1 propuesta cargada */}
           <ProposalSummary project={project} />
 
-          {/* Registrar oferta — colapsado por defecto: la carga manual es la
-              tarea menos frecuente frente a "Traer del portal" e importar,
-              así que no debe competir por atención con el cuadro comparativo
-              ya cargado. */}
-          <div className="rounded-xl border border-emerald-100/60 bg-gradient-to-br from-emerald-50/30 to-white overflow-hidden">
-            <button
-              type="button"
-              id="btn-analistas-toggle-register-form"
-              onClick={() => setIsRegisterFormOpen((v) => !v)}
-              aria-expanded={isRegisterFormOpen}
-              className="w-full flex items-center justify-between gap-2.5 p-5 cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                </div>
-                <h4 className="text-xs font-bold text-slate-800">Registrar Oferta del Proveedor</h4>
-              </div>
-              <motion.span
-                animate={{ rotate: isRegisterFormOpen ? 180 : 0 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="text-slate-400 shrink-0"
-              >
-                <ChevronDown className="h-4 w-4" />
-              </motion.span>
-            </button>
-
-            <AnimatePresence initial={false}>
-              {isRegisterFormOpen && (
-                <motion.div
-                  key="register-form-body"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="overflow-hidden"
-                >
-                  <form onSubmit={handleAddProposal} className="px-5 pb-5 pt-3 border-t border-emerald-100/60 space-y-4">
-                    <div className="flex items-center gap-1.5">
-                      <Tabs
-                        ariaLabel="Origen de la oferta"
-                        activeKey={origin}
-                        onChange={(key) => setOrigin(key as typeof origin)}
-                        layoutId="analistas-origin-tabs"
-                        tabs={[
-                          { key: "MANUAL", label: "Carga normal" },
-                          { key: "RENEGOCIACION", label: "Renegociación" },
-                        ]}
-                      />
-                      <HelpHint content="Registra cómo se obtuvo esta oferta, para poder auditar cuánto se ahorró vía renegociación." />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Proveedor / Contratista
-                          <RequiredMark filled={!!contractorCode} />
-                        </label>
-                        <SelectModal
-                          isOpen={isContractorModalOpen}
-                          onClose={() => setIsContractorModalOpen(false)}
-                          onOpen={() => setIsContractorModalOpen(true)}
-                          onSelect={(opt) => setContractorCode(opt.value as string)}
-                          onDeselect={() => setContractorCode("")}
-                          options={contractorOptions}
-                          selectedValue={contractorCode}
-                          triggerLabel="Seleccionar proveedor..."
-                          title="Seleccionar Proveedor"
-                          infoLine={`${contractorOptions.length} proveedores disponibles`}
-                          icon={<Users className="h-5 w-5" />}
-                          iconColor="sky"
-                          maxWidth="max-w-xl"
-                          searchPlaceholder="Buscar por nombre, código, especialidad..."
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="analistas-weeks" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Semanas de Ejecución
-                          <RequiredMark filled={deliveryWeeks !== "" && deliveryWeeks > 0} />
-                        </label>
-                        <NumericInput id="analistas-weeks" value={deliveryWeeks} onChange={setDeliveryWeeks} min={1} integer placeholder="0" />
-                      </div>
-
-                      <div>
-                        <label htmlFor="analistas-fecha-oferta" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Fecha de la Oferta
-                          <RequiredMark filled={fechaOferta.trim().length > 0} />
-                        </label>
-                        <input
-                          id="analistas-fecha-oferta"
-                          type="date"
-                          value={fechaOferta}
-                          onChange={(e) => setFechaOferta(e.target.value)}
-                          max={todayISODate()}
-                          className="w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 focus:ring-brand-500 bg-surface font-mono font-bold text-text-secondary"
-                        />
-                      </div>
-                    </div>
-
-                    {isRenegotiation && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-lg bg-warning-50/50 border border-warning-100">
-                        <div>
-                          <label htmlFor="analistas-precio-anterior" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                            Precio Anterior ($)
-                            <RequiredMark filled={precioAnterior !== "" && precioAnterior > 0} />
-                          </label>
-                          <NumericInput id="analistas-precio-anterior" value={precioAnterior} onChange={setPrecioAnterior} min={0} placeholder="0.00" />
-                        </div>
-
-                        <div>
-                          <label htmlFor="analistas-precio-nuevo" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                            Precio Nuevo ($)
-                            <RequiredMark filled={precioNuevo !== "" && precioNuevo > 0} />
-                          </label>
-                          <NumericInput id="analistas-precio-nuevo" value={precioNuevo} onChange={setPrecioNuevo} min={0} placeholder="0.00" />
-                        </div>
-
-                        <div>
-                          <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia</span>
-                          <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold flex items-center gap-1.5">
-                            {diferencia === null ? (
-                              <span className="text-slate-300">—</span>
-                            ) : (
-                              <>
-                                <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
-                                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia))}</span>
-                                <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label htmlFor="analistas-mat-cost" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Costo Materiales ($)
-                          <RequiredMark filled={materialCost !== "" && materialCost > 0} />
-                        </label>
-                        <NumericInput id="analistas-mat-cost" value={materialCost} onChange={setMaterialCost} min={0} placeholder="0.00" />
-                      </div>
-
-                      <div>
-                        <label htmlFor="analistas-labor-cost" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Costo Mano de Obra ($)
-                          <RequiredMark filled={laborCost !== "" && laborCost > 0} />
-                        </label>
-                        <NumericInput id="analistas-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
-                      </div>
-
-                      <div>
-                        <label htmlFor="analistas-advance" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Anticipo Negociado (%)
-                          <RequiredMark filled={advancePercent !== "" && advancePercent >= 0} />
-                          <HelpHint content={`El máximo permitido por CONFIG APP es ${maxAdvancePercent}%. Anticipos mayores requieren confirmación manual antes de cargarse.`} />
-                        </label>
-                        <NumericInput id="analistas-advance" value={advancePercent} onChange={setAdvancePercent} min={0} max={100} integer placeholder="0" />
-                        {advancePercent !== "" && advancePercent > maxAdvancePercent && (
-                          <p className="mt-1 flex items-center gap-1 text-[9px] font-bold text-amber-600">
-                            <AlertTriangle className="h-3 w-3 shrink-0" />
-                            Supera el máximo permitido ({maxAdvancePercent}%)
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="analistas-bid-desc" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Alcance y Condiciones de la Oferta
-                        <HelpHint content="Opcional. Si se deja vacío, se genera una descripción automática a partir del título del expediente." />
-                      </label>
-                      <input
-                        id="analistas-bid-desc"
-                        type="text"
-                        placeholder="Ej. Suministro total de cables, incluye garantía y flete."
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-700 font-medium"
-                      />
-                    </div>
-
-                    {exceedsBudget && (
-                      <p className="flex items-center gap-1 text-[9px] font-bold text-amber-600">
-                        <Wallet className="h-3 w-3 shrink-0" />
-                        Supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}
-                      </p>
-                    )}
-
-                    {motivoRequired && (
-                      <div>
-                        <label htmlFor="analistas-motivo" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          <MessageSquareWarning className="h-3 w-3 shrink-0 text-warning-500" />
-                          Motivo
-                          <RequiredMark filled={motivoFilled} />
-                          <HelpHint
-                            content={
-                              isRenegotiation
-                                ? "Obligatorio: explica por qué se renegoció esta oferta, para dejar trazabilidad de la excepción."
-                                : "Obligatorio: el anticipo negociado excede el máximo configurado en CONFIG APP — justifica esta excepción para auditoría."
-                            }
-                          />
-                        </label>
-                        <textarea
-                          id="analistas-motivo"
-                          value={motivo}
-                          onChange={(e) => setMotivo(e.target.value)}
-                          rows={2}
-                          maxLength={500}
-                          placeholder="Ej. Proveedor exige anticipo mayor por escasez de materiales importados."
-                          className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-warning-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-warning-500 text-slate-700 font-medium resize-none"
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-emerald-100/60">
-                      <div className="text-xs font-bold text-slate-700">
-                        Costo Total Oferta:{" "}
-                        <span className={`font-mono text-sm font-black ${exceedsBudget ? "text-amber-700" : "text-emerald-700"}`}>
-                          ${formatNumber(newTotal)}
-                        </span>
-                      </div>
-                      <Button
-                        id="btn-analistas-add-bid"
-                        type="submit"
-                        variant="primary"
-                        colorScheme="emerald"
-                        icon={<Plus className="h-4 w-4" />}
-                        disabled={motivoRequired && !motivoFilled}
-                      >
-                        Agregar al Cuadro
-                      </Button>
-                    </div>
-                  </form>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
           {/* Cuadro comparativo de propuestas */}
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Propuestas Ingresadas ({proposals.length})
               </span>
-              {onImportSupplierProposals && (
-                <Tooltip content="Importa las propuestas recibidas desde el portal de proveedores, sin necesidad de cargarlas manualmente.">
-                  <Button
-                    onClick={handleImport}
-                    disabled={isImporting}
-                    variant="secondary"
-                    size="sm"
-                    className="text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300"
-                    icon={isImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LayoutList className="h-3.5 w-3.5" />}
-                  >
-                    {isImporting ? "Importando..." : "Traer del portal"}
-                  </Button>
-                </Tooltip>
-              )}
+              <Button
+                id="btn-analistas-open-register"
+                onClick={() => setIsRegisterModalOpen(true)}
+                variant="primary"
+                colorScheme="emerald"
+                size="sm"
+                icon={<UserPlus className="h-3.5 w-3.5" />}
+              >
+                Registrar oferta
+              </Button>
             </div>
             <div className="border border-slate-100 rounded-xl bg-white overflow-hidden shadow-xs">
               <Table
@@ -780,7 +447,7 @@ function ExpedienteWorkspaceModal({
                 emptyState={
                   <EmptyState
                     icon={<FileSpreadsheet className="h-6 w-6" />}
-                    message="Ninguna oferta registrada. Use el formulario o importe desde el portal de proveedores."
+                    message="Ninguna oferta registrada. Use el botón «Registrar oferta» para cargar una manualmente o importar desde el portal de proveedores."
                   />
                 }
               />
@@ -789,23 +456,24 @@ function ExpedienteWorkspaceModal({
         </div>
       </Modal>
 
-      <ConfirmDialog
-        isOpen={!!pendingProposal}
-        onClose={() => setPendingProposal(null)}
-        onConfirm={handleConfirmPending}
-        title="¿Está seguro de cargar esta propuesta?"
-        message={[
-          exceedsBudget
-            ? `El costo total (${formatNumber(newTotal)}) supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}.`
-            : null,
-          exceedsAdvance
-            ? `El anticipo negociado (${advancePercent}%) supera el máximo permitido en CONFIG APP (${maxAdvancePercent}%).`
-            : null,
-          "Puede continuar si esta condición fue negociada o autorizada de otra forma.",
-        ].filter(Boolean).join(" ")}
-        variant="warning"
-        confirmLabel="Sí, cargar propuesta"
-      />
+      {isRegisterModalOpen && (
+        <RegisterProposalModal
+          project={project}
+          contractors={contractors}
+          onClose={() => setIsRegisterModalOpen(false)}
+          onAddProposal={onAddProposal}
+          onImportSupplierProposals={onImportSupplierProposals}
+        />
+      )}
+
+      {renegotiatingProposal && (
+        <RenegotiateProposalModal
+          project={project}
+          proposal={renegotiatingProposal}
+          onClose={() => setRenegotiatingProposal(null)}
+          onRenegotiateProposal={onRenegotiateProposal}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={confirmSubmit}

@@ -127,6 +127,7 @@ function renderWorkspace(props: Partial<React.ComponentProps<typeof AnalistasWor
         pendingLicitacion={[]}
         contractors={[makeContractor({ code: "C-001" })]}
         onAddProposal={vi.fn()}
+        onRenegotiateProposal={vi.fn().mockResolvedValue(undefined)}
         onRemoveProposal={vi.fn()}
         onSubmitComparative={vi.fn()}
         {...props}
@@ -161,7 +162,7 @@ describe("AnalistasWorkspace — lista de expedientes en licitación", () => {
     try {
       renderWorkspace({ pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })] });
 
-      expect(screen.queryByText("Registrar Oferta del Proveedor")).not.toBeInTheDocument();
+      expect(screen.queryByText("Propuestas Ingresadas (0)")).not.toBeInTheDocument();
     } finally {
       restoreSize();
       restoreRO();
@@ -176,7 +177,7 @@ describe("AnalistasWorkspace — lista de expedientes en licitación", () => {
 
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
 
-      expect(screen.getByText("Registrar Oferta del Proveedor")).toBeInTheDocument();
+      expect(screen.getByText("Propuestas Ingresadas (0)")).toBeInTheDocument();
     } finally {
       restoreSize();
       restoreRO();
@@ -234,7 +235,7 @@ describe("AnalistasWorkspace — lista de expedientes en licitación", () => {
 });
 
 describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
-  it("el formulario de registro manual arranca colapsado y se expande al hacer click", () => {
+  it("el botón 'Registrar oferta' abre el modal dedicado de registro", () => {
     const restoreRO = stubSyncResizeObserver();
     const restoreSize = stubContainerSize(900, 600);
     try {
@@ -243,12 +244,10 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
 
       expect(screen.queryByText("Agregar al Cuadro")).not.toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Registrar Oferta del Proveedor/i })).toHaveAttribute("aria-expanded", "false");
 
-      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+      fireEvent.click(screen.getByText("Registrar oferta"));
 
       expect(screen.getByText("Agregar al Cuadro")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Registrar Oferta del Proveedor/i })).toHaveAttribute("aria-expanded", "true");
     } finally {
       restoreSize();
       restoreRO();
@@ -265,7 +264,8 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       });
 
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
-      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+      fireEvent.click(screen.getByText("Registrar oferta"));
+      fireEvent.click(screen.getByText("Carga manual"));
 
       expect(screen.getByLabelText("Campo obligatorio pendiente")).toBeInTheDocument();
     } finally {
@@ -286,43 +286,14 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       });
 
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
-      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+      fireEvent.click(screen.getByText("Registrar oferta"));
+      fireEvent.click(screen.getByText("Carga manual"));
       fireEvent.click(screen.getByText("Agregar al Cuadro"));
 
       expect(onAddProposal).toHaveBeenCalledWith(
         "P1",
-        expect.objectContaining({ contractorCode: "C-001", materialCost: 1000, laborCost: 800, origen: "MANUAL" }),
+        expect.objectContaining({ contractorCode: "C-001", materialCost: 0, laborCost: 0, origen: "MANUAL" }),
       );
-    } finally {
-      restoreSize();
-      restoreRO();
-    }
-  });
-
-  it("seleccionar 'Renegociación' revela precio anterior/nuevo y calcula la diferencia", () => {
-    const restoreRO = stubSyncResizeObserver();
-    const restoreSize = stubContainerSize(900, 600);
-    try {
-      renderWorkspace({
-        pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })],
-        contractors: [makeContractor({ code: "C-001" })],
-      });
-
-      fireEvent.click(screen.getByText("Remodelación de oficinas"));
-      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
-
-      expect(screen.queryByLabelText("Precio Anterior ($)")).not.toBeInTheDocument();
-
-      fireEvent.click(screen.getByText("Renegociación"));
-
-      expect(screen.getByLabelText("Precio Anterior ($)")).toBeInTheDocument();
-      expect(screen.getByLabelText("Precio Nuevo ($)")).toBeInTheDocument();
-
-      fireEvent.change(screen.getByLabelText("Precio Anterior ($)"), { target: { value: "5000" } });
-      fireEvent.change(screen.getByLabelText("Precio Nuevo ($)"), { target: { value: "4200" } });
-
-      expect(screen.getByText("$800.00")).toBeInTheDocument();
-      expect(screen.getByText("ahorro")).toBeInTheDocument();
     } finally {
       restoreSize();
       restoreRO();
@@ -341,42 +312,20 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       });
 
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
-      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
+      fireEvent.click(screen.getByText("Registrar oferta"));
+      fireEvent.click(screen.getByText("Carga manual"));
 
       // maxAdvancePercent mockeado en 30 — supera el máximo.
       fireEvent.change(document.getElementById("analistas-advance")!, { target: { value: "50" } });
 
       expect(screen.getByText("Agregar al Cuadro").closest("button")).toBeDisabled();
-      expect(document.getElementById("analistas-motivo")).toBeInTheDocument();
+      expect(document.getElementById("analistas-motivo-anticipo")).toBeInTheDocument();
 
       fireEvent.click(screen.getByText("Agregar al Cuadro").closest("button")!);
       expect(onAddProposal).not.toHaveBeenCalled();
 
-      fireEvent.change(document.getElementById("analistas-motivo")!, { target: { value: "Proveedor exige anticipo mayor por escasez." } });
+      fireEvent.change(document.getElementById("analistas-motivo-anticipo")!, { target: { value: "Proveedor exige anticipo mayor por escasez." } });
       expect(screen.getByText("Agregar al Cuadro").closest("button")).not.toBeDisabled();
-    } finally {
-      restoreSize();
-      restoreRO();
-    }
-  });
-
-  it("el motivo es obligatorio cuando el origen es Renegociación aunque el anticipo no exceda el máximo", () => {
-    const restoreRO = stubSyncResizeObserver();
-    const restoreSize = stubContainerSize(900, 600);
-    try {
-      renderWorkspace({
-        pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })],
-        contractors: [makeContractor({ code: "C-001" })],
-      });
-
-      fireEvent.click(screen.getByText("Remodelación de oficinas"));
-      fireEvent.click(screen.getByText("Registrar Oferta del Proveedor"));
-      fireEvent.click(screen.getByText("Renegociación"));
-
-      // Anticipo bajo el máximo (30 por defecto en el formulario).
-      const submitButton = screen.getByText("Agregar al Cuadro").closest("button");
-      expect(document.getElementById("analistas-motivo")).toBeInTheDocument();
-      expect(submitButton).toBeDisabled();
     } finally {
       restoreSize();
       restoreRO();
@@ -401,6 +350,70 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       fireEvent.click(screen.getByLabelText("Eliminar propuesta de Constructora ABC"));
 
       expect(onRemoveProposal).toHaveBeenCalledWith("P1", "PROP-1");
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("el botón 'Renegociar' abre el modal con el precio anterior tomado de la propuesta existente (solo lectura)", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const projects = [
+        makeProject({
+          id: "P1",
+          title: "Remodelación de oficinas",
+          proposals: [makeProposal({ id: "PROP-1", contractorCode: "C-001", contractorName: "Constructora ABC", totalCost: 3200 })],
+        }),
+      ];
+      renderWorkspace({ pendingLicitacion: projects });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+      fireEvent.click(screen.getByLabelText("Renegociar propuesta de Constructora ABC"));
+
+      expect(screen.getByText("Precio Anterior")).toBeInTheDocument();
+      expect(screen.getAllByText("$3,200.00").length).toBeGreaterThan(0);
+      // No hay ningún input editable para el precio anterior — es de solo lectura.
+      expect(screen.queryByLabelText(/Precio Anterior/)).not.toBeInTheDocument();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("el motivo es obligatorio para confirmar una renegociación", async () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    const onRenegotiateProposal = vi.fn().mockResolvedValue(undefined);
+    try {
+      const projects = [
+        makeProject({
+          id: "P1",
+          title: "Remodelación de oficinas",
+          proposals: [makeProposal({ id: "PROP-1", contractorCode: "C-001", contractorName: "Constructora ABC" })],
+        }),
+      ];
+      renderWorkspace({ pendingLicitacion: projects, onRenegotiateProposal });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+      fireEvent.click(screen.getByLabelText("Renegociar propuesta de Constructora ABC"));
+
+      const confirmButton = screen.getByText("Confirmar Renegociación").closest("button");
+      expect(confirmButton).toBeDisabled();
+
+      const motivoField = document.getElementById("renegotiate-motivo") as HTMLTextAreaElement;
+      fireEvent.change(motivoField, { target: { value: "El contratista bajó el precio." } });
+      expect(motivoField.value).toBe("El contratista bajó el precio.");
+      const enabledConfirmButton = screen.getByText("Confirmar Renegociación").closest("button");
+      expect(enabledConfirmButton).not.toBeDisabled();
+
+      fireEvent.click(enabledConfirmButton!);
+      await vi.waitFor(() => expect(onRenegotiateProposal).toHaveBeenCalledWith(
+        "P1",
+        "PROP-1",
+        expect.objectContaining({ motivo: "El contratista bajó el precio." }),
+      ));
     } finally {
       restoreSize();
       restoreRO();
@@ -466,7 +479,8 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       });
 
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
-      fireEvent.click(screen.getByText("Traer del portal"));
+      fireEvent.click(screen.getByText("Registrar oferta"));
+      fireEvent.click(screen.getByRole("button", { name: "Traer del portal" }));
 
       await vi.waitFor(() => expect(onImportSupplierProposals).toHaveBeenCalledWith("P1"));
     } finally {
@@ -475,15 +489,17 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
     }
   });
 
-  it("no muestra el botón 'Traer del portal' cuando no se provee la prop", () => {
+  it("el botón 'Traer del portal' del modal de registro está deshabilitado cuando no se provee la prop", () => {
     const restoreRO = stubSyncResizeObserver();
     const restoreSize = stubContainerSize(900, 600);
     try {
       renderWorkspace({ pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })] });
 
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
+      fireEvent.click(screen.getByText("Registrar oferta"));
+      fireEvent.click(screen.getByRole("tab", { name: "Traer del portal" }));
 
-      expect(screen.queryByText("Traer del portal")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Traer del portal" })).toBeDisabled();
     } finally {
       restoreSize();
       restoreRO();
@@ -528,7 +544,7 @@ describe("AnalistasWorkspace — envío del cuadro comparativo", () => {
       fireEvent.click(within(dialog as HTMLElement).getByText("Enviar a Procura"));
 
       expect(onSubmitComparative).toHaveBeenCalledWith("P1");
-      await vi.waitFor(() => expect(screen.queryByText("Registrar Oferta del Proveedor")).not.toBeInTheDocument());
+      await vi.waitFor(() => expect(screen.queryByText("Propuestas Ingresadas (1)")).not.toBeInTheDocument());
     } finally {
       restoreSize();
       restoreRO();

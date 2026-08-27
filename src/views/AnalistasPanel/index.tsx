@@ -19,10 +19,13 @@ interface ImportResult {
   skipped: number;
 }
 
+type RenegotiationPayload = Omit<Proposal, "id" | "contractorCode" | "contractorName" | "contractorRating" | "origen" | "precioAnterior" | "precioNuevo" | "diferencia">;
+
 interface AnalistasPanelProps {
   projects: Project[];
   contractors: Contractor[];
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
+  onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
@@ -33,6 +36,7 @@ export default function AnalistasPanel({
   projects,
   contractors,
   onAddProposal,
+  onRenegotiateProposal,
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
@@ -73,6 +77,7 @@ export default function AnalistasPanel({
           pendingLicitacion={pendingLicitacion}
           contractors={contractors}
           onAddProposal={onAddProposal}
+          onRenegotiateProposal={onRenegotiateProposal}
           onRemoveProposal={onRemoveProposal}
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}

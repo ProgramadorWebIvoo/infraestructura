@@ -30,6 +30,7 @@ import { viewSwitchVariants } from "../../../animations";
 import { formatCurrency } from "../../../utils";
 import { ProjectStatus } from "../../../types";
 import type { Project } from "../../../types";
+import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
 
 interface BidEvaluationSectionProps {
   projects: Project[];
@@ -172,7 +173,7 @@ function BidEvaluationDetail({
                   );
                 },
               },
-              { key: "deliveryWeeks", label: "Entrega", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{prop.deliveryWeeks > 0 ? `${prop.deliveryWeeks} semanas` : "Sin dato"}</span> },
+              { key: "deliveryWeeks", label: "Entrega", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{formatProposalDuration(prop)}</span> },
               {
                 key: "advance",
                 label: "Anticipo Pactado",

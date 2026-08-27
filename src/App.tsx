@@ -150,6 +150,7 @@ function AppRoutes() {
     syncProject,
     handleApproveInvestment,
     handleAddProposal,
+    handleRenegotiateProposal,
     handleRemoveProposal,
     handleImportSupplierProposals,
     handleSubmitComparative,
@@ -245,6 +246,7 @@ function AppRoutes() {
         onSyncProject={syncProject}
         onApproveInvestment={handleApproveInvestment}
         onAddProposal={handleAddProposal}
+        onRenegotiateProposal={handleRenegotiateProposal}
         onRemoveProposal={handleRemoveProposal}
         onImportSupplierProposals={handleImportSupplierProposals}
         onSubmitComparative={handleSubmitComparative}

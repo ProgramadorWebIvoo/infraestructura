@@ -44,6 +44,29 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   const getProjectRef = useRef(options.getProject);
   getProjectRef.current = options.getProject;
 
+  /**
+   * Aplica de inmediato el status (y campos opcionales) que el backend va a
+   * confirmar, ANTES de esperar la respuesta real — sin esto, un proyecto
+   * seguía apareciendo en la lista filtrada por su status anterior durante
+   * todo el round-trip de red (varios segundos percibidos, reportado como
+   * "acepto y el registro se mantiene unos segundos antes de desaparecer").
+   * syncProject() ya actualiza el estado local de forma síncrona
+   * (setProjects), así que esta llamada extra antes del fetch es la que
+   * hace la diferencia visual — la llamada real después solo reemplaza el
+   * optimista por los datos reales (auditLog, montos, fechas del servidor).
+   *
+   * Devuelve el snapshot previo para poder revertir si el fetch falla —
+   * el catch de cada handler ya muestra el toast de error; sin la
+   * reversión, el proyecto quedaría con un status que el backend nunca
+   * confirmó, hasta el siguiente poll (hasta 25s).
+   */
+  const optimisticUpdate = useCallback((projectId: string, patch: Partial<Project>): Project | undefined => {
+    const current = getProjectRef.current(projectId);
+    if (!current) return undefined;
+    syncProjectRef.current({ ...current, ...patch });
+    return current;
+  }, []);
+
   // ── Infraestructura / Mantenimiento ───────────────────────────────
   /**
    * Orquesta 2 fases desde la perspectiva de la UX (un solo submit): (1)
@@ -125,6 +148,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_CIERRE, cierreObraNotes: notes.trim() || undefined });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
           method: "POST",
@@ -134,10 +158,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handleReviewProject", error);
+        if (previous) sync(previous);
         show("No se pudo guardar la revisión técnica.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   /** Rechaza la petición inicial (antes de revisión de planos) — distinto de
@@ -156,6 +181,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
 
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.RECHAZADO_CIERRE });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/reject-project`, {
           method: "POST",
@@ -165,6 +191,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handleRejectProject", error);
+        if (previous) sync(previous);
         show("No se pudo rechazar la petición.", "error");
         return { ok: false, partial: false, failedGroups: [] };
       }
@@ -190,7 +217,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         return { ok: true, partial: true, failedGroups: ["correcciones"] };
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   /** Reenvía una petición previamente rechazada (mismo Project.id) con los campos
@@ -314,6 +341,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, {
+        status: ProjectStatus.CONFIRMADO_PROCURA,
+        procuraReviewNotes: notes,
+        approvedInvestmentAmount: approvedAmount,
+      });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/approve-investment`, {
           method: "POST",
@@ -323,12 +355,19 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handleApproveInvestment", error);
+        if (previous) sync(previous);
         show("No se pudo aprobar la inversión.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
+  // Sin actualización optimista a propósito: el proyecto NO cambia de
+  // status acá (solo queda "adjudicado" dentro del mismo COMPARATIVA_ENVIADA
+  // hasta que se envía la comparativa), y el caller (AnalistasWorkspace)
+  // depende de que el error se propague (throw) para no cerrar su modal —
+  // aplicar y revertir un optimista sin cambio de status visible no
+  // resolvería ningún parpadeo real.
   const handleSelectContractor = useCallback(
     async (projectId: string, contractorCode: string, proposalId: string) => {
       const token = authTokenRef.current;
@@ -353,6 +392,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.CONFIRMADO_PROCURA });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/reject-proposals`, {
           method: "POST",
@@ -362,10 +402,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handleRejectProposals", error);
+        if (previous) sync(previous);
         show("No se pudo rechazar el cuadro comparativo.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   // ── Analistas ──────────────────────────────────────────────────────
@@ -384,6 +425,27 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       } catch (error) {
         logError("handleAddProposal", error);
         show("No se pudo cargar la propuesta.", "error");
+      }
+    },
+    [],
+  );
+
+  const handleRenegotiateProposal = useCallback(
+    async (projectId: string, proposalId: string, renegotiation: Omit<Proposal, "id" | "contractorCode" | "contractorName" | "contractorRating" | "origen" | "precioAnterior" | "precioNuevo" | "diferencia">) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        const project = await apiFetch<Project>(`/projects/${projectId}/proposals/${proposalId}/renegotiate`, {
+          method: "POST",
+          token,
+          body: JSON.stringify(renegotiation),
+        });
+        sync(project);
+      } catch (error) {
+        logError("handleRenegotiateProposal", error);
+        show("No se pudo renegociar la propuesta.", "error");
+        throw error;
       }
     },
     [],
@@ -413,6 +475,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.COMPARATIVA_ENVIADA });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/submit-comparative`, {
           method: "POST",
@@ -421,10 +484,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handleSubmitComparative", error);
+        if (previous) sync(previous);
         show("No se pudo enviar el cuadro comparativo.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   const handleImportSupplierProposals = useCallback(
@@ -459,6 +523,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_EJECUCION, advancePaidAmount: amount });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
           method: "POST",
@@ -468,10 +533,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handlePayAdvance", error);
+        if (previous) sync(previous);
         show("No se pudo registrar el anticipo.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   const handlePayFinal = useCallback(
@@ -479,6 +545,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.COMPLETADO_PAGADO, finalPaidAmount: amount });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
           method: "POST",
@@ -488,10 +555,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(project);
       } catch (error) {
         logError("handlePayFinal", error);
+        if (previous) sync(previous);
         show("No se pudo registrar el pago final.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   // ── Cierre de Obra ───────────────────────────────────────────────
@@ -503,7 +571,9 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
       const get = getProjectRef.current;
       const project = get(projectId);
       const isStartingVerification = project?.status === ProjectStatus.EN_EJECUCION;
+      const nextStatus = isStartingVerification ? ProjectStatus.VERIFICANDO_FINALIZACION : ProjectStatus.LISTO_PAGO_FINAL;
 
+      const previous = optimisticUpdate(projectId, { status: nextStatus });
       try {
         const updated = await apiFetch<Project>(
           `/projects/${projectId}/${isStartingVerification ? "report-finished" : "verify-completion"}`,
@@ -516,10 +586,11 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
         sync(updated);
       } catch (error) {
         logError("handleVerifyCompletion", error);
+        if (previous) sync(previous);
         show("No se pudo actualizar la verificación de cierre.", "error");
       }
     },
-    [],
+    [optimisticUpdate],
   );
 
   return {
@@ -530,6 +601,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     handleDeleteDocument,
     handleApproveInvestment,
     handleAddProposal,
+    handleRenegotiateProposal,
     handleRemoveProposal,
     handleImportSupplierProposals,
     handleSubmitComparative,
