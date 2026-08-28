@@ -9,6 +9,7 @@
  * entrega, notas) no cabe en una fila expandida sin saturar la lista.
  */
 
+import React, { useMemo } from "react";
 import { Clock, FileSearch, HandCoins, Mail, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
@@ -22,8 +23,8 @@ interface InspectSupplierProposalModalProps {
 const proposalTotal = (p: SupplierMaterialProposal) =>
   p.items.reduce((sum, i) => sum + i.totalPrice, 0);
 
-export default function InspectSupplierProposalModal({ proposal, onClose }: InspectSupplierProposalModalProps) {
-  const total = proposalTotal(proposal);
+function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSupplierProposalModalProps) {
+  const total = useMemo(() => proposalTotal(proposal), [proposal]);
 
   return (
     <Modal
@@ -147,11 +148,15 @@ export default function InspectSupplierProposalModal({ proposal, onClose }: Insp
   );
 }
 
-function SummaryStat({ label, value, emphasize = false }: { label: string; value: string; emphasize?: boolean }) {
-  return (
-    <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
-      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</span>
-      <span className={`font-mono font-black ${emphasize ? "text-sm text-indigo-700" : "text-xs text-slate-700"}`}>{value}</span>
-    </div>
-  );
-}
+const SummaryStat = React.memo(
+  function SummaryStat({ label, value, emphasize = false }: { label: string; value: string; emphasize?: boolean }) {
+    return (
+      <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
+        <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</span>
+        <span className={`font-mono font-black ${emphasize ? "text-sm text-indigo-700" : "text-xs text-slate-700"}`}>{value}</span>
+      </div>
+    );
+  }
+);
+
+export default React.memo(InspectSupplierProposalModalComponent);

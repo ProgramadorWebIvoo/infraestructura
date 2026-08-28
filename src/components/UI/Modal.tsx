@@ -170,7 +170,7 @@ export default function Modal({
             initial={reduceMotion ? undefined : { opacity: 0, scale: 0.94, y: 18 }}
             animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96, y: 10 }}
-            transition={reduceMotion ? undefined : { duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            transition={reduceMotion ? undefined : { duration: 0.28, ease: "easeOut" }}
             className={`bg-surface rounded-container w-full ${maxWidth} border border-border-default overflow-hidden max-h-[90vh] flex flex-col [box-shadow:0_2px_4px_rgba(0,0,0,0.06),0_12px_24px_-6px_rgba(0,0,0,0.14),0_40px_80px_-20px_rgba(2,6,23,0.45)]`}
           >
             {/* ── Header ── */}
@@ -183,15 +183,12 @@ export default function Modal({
                 <div className="relative flex items-center justify-between">
                   <div className="flex min-w-0 items-center gap-3">
                     {icon && (
-                      <motion.div
+                      <div
                         data-testid="modal-icon"
-                        initial={reduceMotion ? undefined : { opacity: 0, scale: 0.6, rotate: -6 }}
-                        animate={reduceMotion ? undefined : { opacity: 1, scale: 1, rotate: 0 }}
-                        transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1], delay: 0.08 }}
                         className={`${iconStyle.bg} ${iconStyle.text} shrink-0 rounded-control p-2 ring-1 ring-white/10`}
                       >
                         {icon}
-                      </motion.div>
+                      </div>
                     )}
                     <div className="min-w-0">
                       {badge && (
@@ -223,14 +220,12 @@ export default function Modal({
             )}
 
             {/* ── Body ── */}
-            <motion.div
-              initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut", delay: 0.06 }}
-              className="flex-1 space-y-6 overflow-y-auto p-6"
-            >
+            {/* No se anima el body: mientras se renderiza la tabla grande
+                dentro, animar redundaba en más trabajo del main thread sin
+                valor visual. El panel principal se anima, y eso es suficiente. */}
+            <div className="flex-1 space-y-6 overflow-y-auto p-6">
               {children}
-            </motion.div>
+            </div>
 
             {/* ── Footer ── */}
             {footer && (

@@ -36,6 +36,8 @@ export interface SupplierInvitationInfo {
 }
 
 export function useProveedores(authToken: string, showToast: ShowToast) {
+  // Polling cada 60s (en lugar de 30s) para reducir carga de servidor
+  // Las propuestas de proveedores cambian lentamente (solo cuando se envía una nueva)
   const { data: proposals, setData: setProposals, isLoading, refresh: loadProposals } =
     usePolledFetch<SupplierMaterialProposal>({
       authToken,
@@ -46,6 +48,7 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
       ),
       getSignature: useCallback((data: SupplierMaterialProposal[]) => data.map(p => p.id).join("|"), []),
       errorMessage: "No se pudo cargar las propuestas de proveedores.",
+      interval: 60_000, // 60 segundos (era 30s)
     });
 
   const handleInviteSupplier = useCallback(

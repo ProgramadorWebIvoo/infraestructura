@@ -10,6 +10,7 @@
  */
 
 import { useMemo, useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, Package, SearchX } from "lucide-react";
 import Card from "../../../components/UI/Card";
@@ -37,7 +38,7 @@ interface ProjectProposalSummary {
   latestProposalDate: string;
 }
 
-export default function SupplierProposalsList({ proposals, isLoading }: SupplierProposalsListProps) {
+function SupplierProposalsListComponent({ proposals, isLoading }: SupplierProposalsListProps) {
   const [projectSearch, setProjectSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<ProjectProposalSummary | null>(null);
   const { viewMode, viewToggle } = useTableViewMode("table");
@@ -229,3 +230,5 @@ export default function SupplierProposalsList({ proposals, isLoading }: Supplier
     </>
   );
 }
+
+export default React.memo(SupplierProposalsListComponent);
