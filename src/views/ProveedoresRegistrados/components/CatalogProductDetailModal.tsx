@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Boxes, Package, TrendingUp, Layers2, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Boxes, Package, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import EmptyState from "../../../components/UI/EmptyState";
 import Button from "../../../components/UI/Button";
@@ -17,6 +17,7 @@ import { SkeletonPriceChart, SkeletonSupplierList } from "../../../components/Sk
 import { apiFetch } from "../../../services/api";
 import type { BaseCurrency, CatalogProduct, CatalogProductPriceHistoryEntry } from "../../../types";
 import { getErrorMessage } from "../../../services/logger";
+import Tooltip from "@/components/UI/Tooltip";
 
 interface CatalogProductDetailModalProps {
   product: CatalogProduct | null;
@@ -66,9 +67,10 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
           {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(1)}%
         </span>
       </div>
+
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full rounded-control border border-border-subtle bg-surface-sunken/40 p-2"
+        className="h-auto w-full"
         role="img"
         aria-label="Serie temporal de precio"
       >
@@ -81,19 +83,21 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
         <path d={areaPath} fill="url(#price-history-fill)" />
         <path d={path} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p) => (
-          <circle
-            key={p.entry.id}
-            cx={p.x}
-            cy={p.y}
-            r="3.5"
-            fill="var(--color-accent-primary)"
-            className="cursor-help"
-            style={{ opacity: 0.85 }}
-          >
-            <title>{`$${p.entry.price_usd.toFixed(2)} — ${new Date(p.entry.quoted_at).toLocaleDateString("es-VE")} (${p.entry.supplier_code})`}</title>
-          </circle>
+          <Tooltip content={`$${p.entry.price_usd.toFixed(2)} — ${new Date(p.entry.quoted_at).toLocaleDateString("es-VE")} (${p.entry.supplier_code})`}>
+            <circle
+              key={p.entry.id}
+              cx={p.x}
+              cy={p.y}
+              r="3.5"
+              fill="var(--color-accent-primary)"
+              className="cursor-help"
+              style={{ opacity: 0.85 }}
+            >
+            </circle>
+          </Tooltip>
         ))}
       </svg>
+        
       <p className="text-[10px] text-text-muted italic">Pasa el cursor sobre los puntos para ver detalles</p>
     </div>
   );
@@ -156,33 +160,27 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
           {/* Stats overview */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {/* Unit */}
-            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Unidad</div>
-              <div className="mt-2 text-sm font-black text-text-primary">{product.unit}</div>
+            <div className="p-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Unidad</div>
+              <div className="mt-1.5 text-sm font-black text-text-primary">{product.unit}</div>
             </div>
             {/* Reference price */}
-            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Precio ref.</div>
-              <div className="mt-2 font-mono text-sm font-black text-text-primary">
+            <div className="p-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Precio ref.</div>
+              <div className="mt-1.5 font-mono text-sm font-black text-text-primary">
                 {baseCurrency?.symbol ?? "$"}{convertFromUsd(product.estimated_unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
               <div className="text-[9px] text-text-muted">{baseCurrency?.code ?? "USD"}</div>
             </div>
             {/* Suppliers count */}
-            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
-              <div className="flex items-center gap-1.5">
-                <ShoppingCart className="h-3.5 w-3.5 text-text-muted" />
-                <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Proveedores</div>
-              </div>
-              <div className="mt-2 text-sm font-black text-text-primary">{(detail ?? product).suppliers?.length ?? 0}</div>
+            <div className="p-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Proveedores</div>
+              <div className="mt-1.5 text-sm font-black text-text-primary">{(detail ?? product).suppliers?.length ?? 0}</div>
             </div>
             {/* Status */}
-            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
-              <div className="flex items-center gap-1.5">
-                <Layers2 className="h-3.5 w-3.5 text-text-muted" />
-                <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Estado</div>
-              </div>
-              <div className={`mt-2 text-sm font-black ${product.is_active ? "text-semantic-success" : "text-text-muted"}`}>
+            <div className="p-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Estado</div>
+              <div className={`mt-1.5 text-sm font-black ${product.is_active ? "text-semantic-success" : "text-text-muted"}`}>
                 {product.is_active ? "Activo" : "Inactivo"}
               </div>
             </div>
@@ -225,9 +223,9 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
               <EmptyState message="Ningún proveedor registrado tiene este producto vinculado todavía." icon={<Boxes className="h-7 w-7" />} className="py-6" />
             ) : (
               <>
-                <div className="space-y-2">
+                <div className="divide-y divide-border-subtle">
                   {paginatedSuppliers.map((link) => (
-                    <div key={link.id} className="flex items-center justify-between gap-3 rounded-control border border-border-subtle bg-surface-sunken/40 px-4 py-3 text-xs">
+                    <div key={link.id} className="flex items-center justify-between gap-3 py-2.5 text-xs">
                       <div>
                         <div className="font-bold text-text-primary">{link.supplier?.name ?? link.supplier_code}</div>
                         <div className="font-mono text-[10px] text-text-muted">{link.supplier_code}</div>
@@ -244,28 +242,28 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
 
                 {/* Paginación */}
                 {totalSupplierPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+                  <div className="flex items-center justify-between py-2.5 border-t border-border-subtle">
                     <div className="text-[10px] text-text-muted">
                       Página {supplierPage + 1} de {totalSupplierPages}
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1.5">
                       <Button
                         variant="secondary"
                         size="sm"
                         disabled={supplierPage === 0}
                         onClick={() => setSupplierPage(Math.max(0, supplierPage - 1))}
-                        className="h-7 w-7 p-0"
+                        className="h-6 w-6 p-0"
                       >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         disabled={supplierPage >= totalSupplierPages - 1}
                         onClick={() => setSupplierPage(Math.min(totalSupplierPages - 1, supplierPage + 1))}
-                        className="h-7 w-7 p-0"
+                        className="h-6 w-6 p-0"
                       >
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
