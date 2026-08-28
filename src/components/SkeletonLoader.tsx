@@ -281,6 +281,88 @@ export const SkeletonButton = memo(function SkeletonButton({ className = "" }: {
 });
 
 /**
+ * Skeleton de gráfico de precios (sparkline + rango + trending indicator).
+ * Simula la estructura de PriceHistorySparkline en CatalogProductDetailModal.
+ */
+export const SkeletonPriceChart = memo(function SkeletonPriceChart({ className = "" }: { className?: string }) {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      <div className="flex items-center justify-between">
+        <SkeletonBlock className="h-3 w-24 rounded" />
+        <SkeletonBlock className="h-4 w-16 rounded" />
+      </div>
+      <SkeletonBlock className="h-32 w-full rounded-xl" />
+    </div>
+  );
+});
+
+/**
+ * Skeleton de supplier link (nombre + código + precio + count).
+ * Para listar proveedores que ofrecen un producto.
+ */
+export const SkeletonSupplierLink = memo(function SkeletonSupplierLink({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-control border border-border-subtle bg-surface p-3.5 ${className}`}>
+      <div className="flex-1 space-y-1.5">
+        <SkeletonBlock className="h-3.5 w-32" />
+        <SkeletonBlock className="h-3 w-24 rounded" />
+      </div>
+      <div className="space-y-1 text-right">
+        <SkeletonBlock className="h-3.5 w-16 rounded" />
+        <SkeletonBlock className="h-3 w-12 rounded" />
+      </div>
+    </div>
+  );
+});
+
+/**
+ * Skeleton de lista de proveedores (N SkeletonSupplierLink en cascada).
+ */
+export const SkeletonSupplierList = memo(function SkeletonSupplierList({
+  items = 3,
+  className = "",
+}: {
+  items?: number;
+  className?: string;
+}) {
+  return (
+    <motion.div className={`space-y-2 ${className}`} variants={containerVariants} initial="hidden" animate="visible">
+      {Array.from({ length: items }).map((_, i) => (
+        <motion.div key={i} variants={itemVariants}>
+          <SkeletonSupplierLink />
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+});
+
+/**
+ * Skeleton de stat card (eyebrow + valor grande + descripción).
+ * Para los 4 pequeños cuadros de info en CatalogProductDetailModal.
+ */
+export const SkeletonStatCard = memo(function SkeletonStatCard({ className = "" }: { className?: string }) {
+  return (
+    <div className={`rounded-control border border-border-subtle bg-surface p-3.5 space-y-2 ${className}`}>
+      <SkeletonBlock className="h-2.5 w-16 rounded" />
+      <SkeletonBlock className="h-4 w-24 rounded" />
+    </div>
+  );
+});
+
+/**
+ * Skeleton de grid de stats (4 SkeletonStatCard en grid, sin animación de cascada).
+ */
+export const SkeletonStatCardGrid = memo(function SkeletonStatCardGrid({ className = "" }: { className?: string }) {
+  return (
+    <div className={`grid grid-cols-2 gap-3 sm:grid-cols-4 ${className}`}>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <SkeletonStatCard key={i} />
+      ))}
+    </div>
+  );
+});
+
+/**
  * Envoltorio de stagger genérico: entra en cascada cualquier grupo de piezas
  * skeleton que el consumidor arme a mano (ej. 2 SkeletonCard, 4 SkeletonStats
  * en grid, N SkeletonCollapsedRow) sin que cada vista repita el

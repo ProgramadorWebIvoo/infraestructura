@@ -9,9 +9,11 @@
  */
 
 import { useEffect, useState } from "react";
-import { Boxes, Package, TrendingUp } from "lucide-react";
+import { Boxes, Package, TrendingUp, Layers2, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import EmptyState from "../../../components/UI/EmptyState";
+import Button from "../../../components/UI/Button";
+import { SkeletonPriceChart, SkeletonSupplierList } from "../../../components/SkeletonLoader";
 import { apiFetch } from "../../../services/api";
 import type { BaseCurrency, CatalogProduct, CatalogProductPriceHistoryEntry } from "../../../types";
 import { getErrorMessage } from "../../../services/logger";
@@ -26,7 +28,7 @@ interface CatalogProductDetailModalProps {
 function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistoryEntry[] }) {
   if (entries.length < 2) {
     return (
-      <p className="text-xs italic text-slate-400">
+      <p className="text-xs italic text-text-muted">
         {entries.length === 1 ? "Solo hay una cotización registrada — se necesita más de un dato para graficar una tendencia." : "Sin histórico de precios todavía."}
       </p>
     );
@@ -54,31 +56,45 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
   const changePercent = first > 0 ? ((last - first) / first) * 100 : 0;
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[11px] font-bold text-slate-500">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold text-text-muted">
           ${min.toLocaleString("en-US", { minimumFractionDigits: 2 })} — ${max.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </span>
-        <span className={`inline-flex items-center gap-1 text-xs font-black ${changePercent >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+        <span className={`inline-flex items-center gap-1 text-xs font-black ${changePercent >= 0 ? "text-semantic-success" : "text-semantic-critical"}`}>
           <TrendingUp className={`h-3.5 w-3.5 ${changePercent < 0 ? "rotate-180" : ""}`} />
           {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(1)}%
         </span>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label="Serie temporal de precio">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-auto w-full rounded-control border border-border-subtle bg-surface-sunken/40 p-2"
+        role="img"
+        aria-label="Serie temporal de precio"
+      >
         <defs>
           <linearGradient id="price-history-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--color-accent-primary)" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="var(--color-accent-primary)" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={areaPath} fill="url(#price-history-fill)" />
-        <path d={path} fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p) => (
-          <circle key={p.entry.id} cx={p.x} cy={p.y} r="3" fill="#0ea5e9">
+          <circle
+            key={p.entry.id}
+            cx={p.x}
+            cy={p.y}
+            r="3.5"
+            fill="var(--color-accent-primary)"
+            className="cursor-help"
+            style={{ opacity: 0.85 }}
+          >
             <title>{`$${p.entry.price_usd.toFixed(2)} — ${new Date(p.entry.quoted_at).toLocaleDateString("es-VE")} (${p.entry.supplier_code})`}</title>
           </circle>
         ))}
       </svg>
+      <p className="text-[10px] text-text-muted italic">Pasa el cursor sobre los puntos para ver detalles</p>
     </div>
   );
 }
@@ -87,11 +103,18 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
   const [history, setHistory] = useState<CatalogProductPriceHistoryEntry[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState("");
-  // El listado (GET /catalog/products) no trae `suppliers.supplier` (solo la
-  // fila de vínculo, sin el Contractor anidado) — se pide el detalle
-  // completo al abrir el modal en vez de confiar en lo que ya trae `product`.
   const [detail, setDetail] = useState<CatalogProduct | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+  // Paginación de proveedores (5 por página)
+  const SUPPLIERS_PER_PAGE = 5;
+  const [supplierPage, setSupplierPage] = useState(0);
+  const suppliers = detail?.suppliers ?? [];
+  const totalSupplierPages = Math.ceil(suppliers.length / SUPPLIERS_PER_PAGE);
+  const paginatedSuppliers = suppliers.slice(
+    supplierPage * SUPPLIERS_PER_PAGE,
+    (supplierPage + 1) * SUPPLIERS_PER_PAGE
+  );
 
   useEffect(() => {
     if (!product) {
@@ -100,6 +123,10 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
       setDetail(null);
       return;
     }
+
+    // Reset paginación cuando cambia el producto
+    setSupplierPage(0);
+
     setIsLoadingHistory(true);
     setHistoryError("");
     apiFetch<CatalogProductPriceHistoryEntry[]>(`/catalog/products/${product.id}/price-history`)
@@ -126,68 +153,124 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
     >
       {product && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-xl bg-slate-50 p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Unidad</div>
-              <div className="mt-0.5 text-sm font-black text-slate-800">{product.unit}</div>
+          {/* Stats overview */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* Unit */}
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Unidad</div>
+              <div className="mt-2 text-sm font-black text-text-primary">{product.unit}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Precio ref. ({baseCurrency?.code ?? "USD"})</div>
-              <div className="mt-0.5 font-mono text-sm font-black text-slate-800">
+            {/* Reference price */}
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Precio ref.</div>
+              <div className="mt-2 font-mono text-sm font-black text-text-primary">
                 {baseCurrency?.symbol ?? "$"}{convertFromUsd(product.estimated_unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
+              <div className="text-[9px] text-text-muted">{baseCurrency?.code ?? "USD"}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Proveedores</div>
-              <div className="mt-0.5 text-sm font-black text-slate-800">{(detail ?? product).suppliers?.length ?? 0}</div>
+            {/* Suppliers count */}
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
+              <div className="flex items-center gap-1.5">
+                <ShoppingCart className="h-3.5 w-3.5 text-text-muted" />
+                <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Proveedores</div>
+              </div>
+              <div className="mt-2 text-sm font-black text-text-primary">{(detail ?? product).suppliers?.length ?? 0}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estado</div>
-              <div className={`mt-0.5 text-sm font-black ${product.is_active ? "text-emerald-600" : "text-slate-400"}`}>{product.is_active ? "Activo" : "Inactivo"}</div>
+            {/* Status */}
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/60 p-3.5">
+              <div className="flex items-center gap-1.5">
+                <Layers2 className="h-3.5 w-3.5 text-text-muted" />
+                <div className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Estado</div>
+              </div>
+              <div className={`mt-2 text-sm font-black ${product.is_active ? "text-semantic-success" : "text-text-muted"}`}>
+                {product.is_active ? "Activo" : "Inactivo"}
+              </div>
             </div>
           </div>
 
-          <div>
-            <h4 className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500">
-              <TrendingUp className="h-4 w-4" /> Histórico de precios (USD)
-            </h4>
-            <p className="-mt-2 mb-3 text-[10px] italic text-slate-400">
-              Serie histórica siempre en USD para que sea comparable en el tiempo, aunque la moneda base cambie.
-            </p>
+          <div className="space-y-3">
+            <div>
+              <h4 className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-text-primary">
+                <TrendingUp className="h-4 w-4" /> Histórico de precios
+              </h4>
+              <p className="text-[10px] text-text-muted">
+                Serie histórica siempre en USD para que sea comparable en el tiempo, aunque la moneda base cambie.
+              </p>
+            </div>
             {isLoadingHistory ? (
-              <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+              <SkeletonPriceChart />
             ) : historyError ? (
-              <p className="text-xs font-medium text-red-500">{historyError}</p>
+              <div className="rounded-control border border-border-critical bg-semantic-critical/5 p-3.5">
+                <p className="text-xs font-medium text-semantic-critical">{historyError}</p>
+              </div>
             ) : (
               <PriceHistorySparkline entries={history} />
             )}
           </div>
 
-          <div>
-            <h4 className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500">
-              <Boxes className="h-4 w-4" /> Proveedores que lo ofrecen
-            </h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-text-primary">
+                <Boxes className="h-4 w-4" /> Proveedores que lo ofrecen
+                {suppliers.length > 0 && (
+                  <span className="ml-auto text-[10px] font-normal text-text-muted">
+                    {suppliers.length} {suppliers.length === 1 ? "proveedor" : "proveedores"}
+                  </span>
+                )}
+              </h4>
+            </div>
             {isLoadingDetail ? (
-              <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
-            ) : !detail?.suppliers || detail.suppliers.length === 0 ? (
+              <SkeletonSupplierList items={3} />
+            ) : suppliers.length === 0 ? (
               <EmptyState message="Ningún proveedor registrado tiene este producto vinculado todavía." icon={<Boxes className="h-7 w-7" />} className="py-6" />
             ) : (
-              <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-                {detail.suppliers.map((link) => (
-                  <div key={link.id} className="flex items-center justify-between px-4 py-2.5 text-xs">
-                    <div>
-                      <div className="font-bold text-slate-700">{link.supplier?.name ?? link.supplier_code}</div>
-                      <div className="font-mono text-[10px] text-slate-400">{link.supplier_code}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono font-black text-slate-800">
-                        {baseCurrency?.symbol ?? "$"}{convertFromUsd(link.last_quoted_price_usd).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              <>
+                <div className="space-y-2">
+                  {paginatedSuppliers.map((link) => (
+                    <div key={link.id} className="flex items-center justify-between gap-3 rounded-control border border-border-subtle bg-surface-sunken/40 px-4 py-3 text-xs">
+                      <div>
+                        <div className="font-bold text-text-primary">{link.supplier?.name ?? link.supplier_code}</div>
+                        <div className="font-mono text-[10px] text-text-muted">{link.supplier_code}</div>
                       </div>
-                      <div className="text-[10px] text-slate-400">{link.quote_count} cotización{link.quote_count !== 1 ? "es" : ""}</div>
+                      <div className="text-right">
+                        <div className="font-mono font-black text-text-primary">
+                          {baseCurrency?.symbol ?? "$"}{convertFromUsd(link.last_quoted_price_usd).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-[10px] text-text-muted">{link.quote_count} cotización{link.quote_count !== 1 ? "es" : ""}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Paginación */}
+                {totalSupplierPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+                    <div className="text-[10px] text-text-muted">
+                      Página {supplierPage + 1} de {totalSupplierPages}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={supplierPage === 0}
+                        onClick={() => setSupplierPage(Math.max(0, supplierPage - 1))}
+                        className="h-7 w-7 p-0"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={supplierPage >= totalSupplierPages - 1}
+                        onClick={() => setSupplierPage(Math.min(totalSupplierPages - 1, supplierPage + 1))}
+                        className="h-7 w-7 p-0"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
