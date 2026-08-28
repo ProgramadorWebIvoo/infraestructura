@@ -19,9 +19,17 @@ import { apiFetch } from "../../services/api";
 import { containerVariants, itemVariants, springs } from "../../animations";
 import TopBar from "./components/TopBar";
 import ProjectSummary from "./components/ProjectSummary";
-import MaterialsProposalTable from "./components/MaterialsProposalTable";
+import OrderCurrencySelector from "./components/OrderCurrencySelector";
+import MaterialsProposalCards from "./components/MaterialsProposalCards";
 import ProposalDetailsSection from "./components/ProposalDetailsSection";
-import { sanitize, type DurationUnit, type InvitationPublicInfo, type ItemRow } from "./types";
+import {
+  sanitize,
+  type DurationUnit,
+  type InvitationPublicInfo,
+  type ItemRow,
+  type PublicCurrency,
+  type PublicCatalogCategory,
+} from "./types";
 
 /**
  * Fondo compartido con LoginScreen/MaterialesProveedores — malla de
@@ -77,9 +85,16 @@ export default function PropuestaMaterialesPublica() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [items, setItems] = useState<ItemRow[]>([]);
+  const [currencies, setCurrencies] = useState<PublicCurrency[]>([]);
+  const [categories, setCategories] = useState<PublicCatalogCategory[]>([]);
+  // Sin precarga: el proveedor debe elegir explícitamente la moneda con la
+  // que cotiza TODO el pedido — no hay moneda por defecto (antes existía
+  // solo por línea y sin obligar al proveedor a declararla).
+  const [quoteCurrency, setQuoteCurrency] = useState("");
   const [estimatedDays, setEstimatedDays] = useState<number | "">("");
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("dias");
   const [advancePercent, setAdvancePercent] = useState<number | "">("");
+  const [laborCost, setLaborCost] = useState<number | "">("");
   const [generalNotes, setGeneralNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState("");
@@ -101,8 +116,24 @@ export default function PropuestaMaterialesPublica() {
             totalPrice: 0,
             notes: "",
             isCustom: false,
+            // Sin precarga: condición y garantía las declara el proveedor —
+            // conditionStatus queda "" (no "new") para que el Select los
+            // muestre vacíos y el proveedor los elija a propósito.
+            conditionStatus: "" as ItemRow["conditionStatus"],
+            warrantyDescription: "",
+            technicalSpecs: {},
           }))
         );
+
+        // Catálogos de referencia (moneda/categorías) — best-effort: si fallan,
+        // el formulario sigue funcionando en USD/sin categoría (comportamiento
+        // previo), no bloquean la carga de la propuesta en sí.
+        const [currenciesData, categoriesData] = await Promise.allSettled([
+          apiFetch<PublicCurrency[]>("/public/currencies"),
+          apiFetch<PublicCatalogCategory[]>("/public/catalog-categories"),
+        ]);
+        if (currenciesData.status === "fulfilled") setCurrencies(currenciesData.value);
+        if (categoriesData.status === "fulfilled") setCategories(categoriesData.value);
       } catch {
         setLoadError("No se pudo conectar con el servidor.");
       } finally {
@@ -113,7 +144,7 @@ export default function PropuestaMaterialesPublica() {
     load();
   }, [token]);
 
-  const updateItem = (index: number, field: keyof ItemRow, value: string | number) => {
+  const updateItem = (index: number, field: keyof ItemRow, value: ItemRow[keyof ItemRow]) => {
     setItems((prev) => {
       const next = [...prev];
       const row = { ...next[index], [field]: value };
@@ -123,6 +154,14 @@ export default function PropuestaMaterialesPublica() {
         row.totalPrice = parseFloat((uPrice * qty).toFixed(2));
       }
       next[index] = row;
+      return next;
+    });
+  };
+
+  const updateItemSpec = (index: number, specKey: string, value: string | number | boolean) => {
+    setItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], technicalSpecs: { ...next[index].technicalSpecs, [specKey]: value } };
       return next;
     });
   };
@@ -139,6 +178,9 @@ export default function PropuestaMaterialesPublica() {
         totalPrice: 0,
         notes: "",
         isCustom: true,
+        conditionStatus: "" as ItemRow["conditionStatus"],
+        warrantyDescription: "",
+        technicalSpecs: {},
       },
     ]);
   };
@@ -150,6 +192,11 @@ export default function PropuestaMaterialesPublica() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (!quoteCurrency) {
+      showToast("Selecciona la moneda con la que estás cotizando este pedido.", "warning");
+      return;
+    }
+
     // Strip incomplete custom rows silently
     const validItems = items.filter((i) => !i.isCustom || i.materialName.trim() !== "");
 
@@ -159,14 +206,35 @@ export default function PropuestaMaterialesPublica() {
       return;
     }
 
+    // Condición y garantía son obligatorias por línea (sin precarga) —
+    // solo se exigen en líneas que efectivamente van a enviarse (precio > 0
+    // o custom con nombre), no en materiales del proyecto que el proveedor
+    // decidió no cotizar (unitPrice sigue en 0).
+    const linesRequiringDetails = validItems.filter((i) => Number(i.unitPrice) > 0);
+    const missingDetails = linesRequiringDetails.find((i) => !i.conditionStatus || !i.warrantyDescription?.trim());
+    if (missingDetails) {
+      showToast(`Completa condición y garantía para "${missingDetails.materialName || "el material personalizado"}".`, "warning");
+      return;
+    }
+
+    // Valor y unidad de duración de garantía van juntos o ninguno — un
+    // valor numérico sin unidad no tiene sentido (¿12 qué? ¿días, meses?).
+    const missingWarrantyUnit = linesRequiringDetails.find((i) => Number(i.warrantyValue) > 0 && !i.warrantyUnit);
+    if (missingWarrantyUnit) {
+      showToast(`Selecciona la unidad de duración de garantía para "${missingWarrantyUnit.materialName || "el material personalizado"}".`, "warning");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const result = await apiFetch<{ id: string }>(`/public/invitations/${token}/proposal`, {
         method: "POST",
         body: JSON.stringify({
+          quoteCurrency,
           estimatedDays: estimatedDays !== "" ? Number(estimatedDays) : null,
           durationUnit: estimatedDays !== "" ? durationUnit : null,
           advancePercent: advancePercent !== "" ? Number(advancePercent) : null,
+          laborCost: laborCost !== "" ? Number(laborCost) : null,
           items: validItems.map((item) => ({
             materialName: sanitize(item.materialName).trim(),
             quantity: item.quantity === "" ? 0 : item.quantity,
@@ -174,6 +242,13 @@ export default function PropuestaMaterialesPublica() {
             unitPrice: item.unitPrice === "" ? 0 : item.unitPrice,
             totalPrice: item.totalPrice,
             notes: item.notes ? sanitize(item.notes).trim() : null,
+            conditionStatus: item.conditionStatus || "new",
+            catalogProductId: item.catalogProductId ?? null,
+            technicalSpecs: Object.keys(item.technicalSpecs ?? {}).length > 0 ? item.technicalSpecs : null,
+            warrantyDescription: item.warrantyDescription ? sanitize(item.warrantyDescription).trim() : "Sin garantía",
+            warrantyValue: item.warrantyValue ?? null,
+            warrantyUnit: item.warrantyUnit ?? null,
+            imagePath: item.imagePath ?? null,
           })),
           generalNotes: sanitize(generalNotes).trim() || null,
         }),
@@ -286,11 +361,17 @@ export default function PropuestaMaterialesPublica() {
             </motion.div>
           ) : (
             <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-6">
-              <MaterialsProposalTable
+              <OrderCurrencySelector currencies={currencies} value={quoteCurrency} onChange={setQuoteCurrency} />
+
+              <MaterialsProposalCards
+                token={token ?? ""}
                 items={items}
                 onUpdateItem={updateItem}
+                onUpdateItemSpec={updateItemSpec}
                 onAddCustomItem={addCustomItem}
                 onRemoveItem={removeItem}
+                categories={categories}
+                currencyCode={quoteCurrency}
               />
 
               <ProposalDetailsSection
@@ -300,6 +381,9 @@ export default function PropuestaMaterialesPublica() {
                 onDurationUnitChange={setDurationUnit}
                 advancePercent={advancePercent}
                 onAdvancePercentChange={setAdvancePercent}
+                laborCost={laborCost}
+                onLaborCostChange={setLaborCost}
+                currencyCode={quoteCurrency}
                 generalNotes={generalNotes}
                 onGeneralNotesChange={setGeneralNotes}
                 isSubmitting={isSubmitting}

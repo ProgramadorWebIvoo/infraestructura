@@ -176,7 +176,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           whileHover={canSubmit && !reduceMotion ? { scale: 1.012, y: -1 } : undefined}
           whileTap={canSubmit && !reduceMotion ? { scale: 0.985 } : undefined}
           transition={{ duration: 0.15, ease: "easeOut" }}
-          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 px-5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-shadow duration-200 hover:shadow-xl hover:shadow-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {canSubmit && !reduceMotion && (
             <motion.span

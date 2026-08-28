@@ -194,6 +194,19 @@ export interface SupplierMaterialProposalItem {
   unitPrice: number;
   totalPrice: number;
   notes?: string;
+  /** ISO 4217. Ausente = USD (comportamiento previo, sin cambios). */
+  quoteCurrency?: string;
+  conditionStatus?: "new" | "used" | "refurbished";
+  /** Producto ya existente en el catálogo maestro; ausente = producto personalizado. */
+  catalogProductId?: number;
+  /** Características técnicas declaradas, según el spec_schema de la categoría elegida. */
+  technicalSpecs?: Record<string, string | number | boolean>;
+  warrantyDescription?: string;
+  /** Valor+unidad van juntos o ninguno — sin garantía es warrantyValue/warrantyUnit undefined. */
+  warrantyValue?: number;
+  warrantyUnit?: "dias" | "semanas" | "meses";
+  /** Path devuelto por POST /public/invitations/{token}/proposal-image, subida antes del submit final. */
+  imagePath?: string;
 }
 
 export interface SupplierMaterialProposal {
@@ -203,10 +216,13 @@ export interface SupplierMaterialProposal {
   supplierName: string;
   supplierCompany?: string;
   supplierContact: string;
+  quoteCurrency?: string;
   items: SupplierMaterialProposalItem[];
   generalNotes?: string;
   estimatedDays?: number;
   durationUnit?: string;
   advancePercent?: number;
+  /** Opcional, a nivel de todo el pedido (no por línea/material). */
+  laborCost?: number;
   submittedAt: string;
 }

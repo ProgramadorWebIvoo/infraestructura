@@ -109,6 +109,11 @@ describe("ProveedoresRegistrados — modales mutuamente excluyentes", () => {
       </MemoryRouter>,
     );
 
+    // Default es vista de grid (GridView virtualizado no renderiza filas en
+    // JSDOM sin ResizeObserver/dimensiones reales) — se fuerza tabla para
+    // poder ubicar los botones de acción por aria-label.
+    fireEvent.click(screen.getByLabelText("Vista de tabla"));
+
     fireEvent.click(screen.getByLabelText("Actualizar evaluación de Constructora Acme"));
     expect(screen.getByText("Evaluación de proveedor")).toBeInTheDocument();
     expect(screen.queryByText("Propuesta de materiales")).not.toBeInTheDocument();
@@ -134,6 +139,7 @@ describe("ProveedoresRegistrados — modales mutuamente excluyentes", () => {
       </MemoryRouter>,
     );
 
+    fireEvent.click(screen.getByLabelText("Vista de tabla"));
     fireEvent.click(screen.getByLabelText("Actualizar evaluación de Constructora Acme"));
     fireEvent.click(screen.getByLabelText("Generar enlace de propuesta para Constructora Acme"));
 

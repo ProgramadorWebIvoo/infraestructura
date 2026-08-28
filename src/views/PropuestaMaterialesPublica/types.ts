@@ -21,11 +21,16 @@ export interface InvitationPublicInfo {
   project: ProjectPublicData;
 }
 
-export interface ItemRow extends Omit<SupplierMaterialProposalItem, "unitPrice" | "quantity"> {
+export interface ItemRow extends Omit<SupplierMaterialProposalItem, "unitPrice" | "quantity" | "technicalSpecs" | "conditionStatus"> {
   _id: string;
   isCustom: boolean;
   unitPrice: number | "";
   quantity: number | "";
+  technicalSpecs: Record<string, string | number | boolean>;
+  /** "" = sin seleccionar todavía — sin precarga, el proveedor debe elegirla a propósito. */
+  conditionStatus?: ConditionStatus | "";
+  /** Solo en memoria del formulario, para saber qué spec_schema mostrar — no se envía al backend. */
+  categoryId?: number | null;
 }
 
 export type DurationUnit = "dias" | "semanas" | "meses";
@@ -35,6 +40,44 @@ export const DURATION_UNITS: { value: DurationUnit; label: string; description: 
   { value: "semanas", label: "Semanas", description: "Plazo en semanas" },
   { value: "meses", label: "Meses", description: "Plazo en meses" },
 ];
+
+export type ConditionStatus = "new" | "used" | "refurbished";
+
+export const CONDITION_OPTIONS: { value: ConditionStatus; label: string }[] = [
+  { value: "new", label: "Nuevo" },
+  { value: "used", label: "Usado" },
+  { value: "refurbished", label: "Reacondicionado" },
+];
+
+export interface PublicCurrency {
+  code: string;
+  name: string;
+  symbol: string;
+  isBase: boolean;
+}
+
+export interface SpecSchemaField {
+  key: string;
+  label: string;
+  type: "text" | "number" | "boolean" | "select";
+  unit?: string;
+  required?: boolean;
+  options?: string[];
+}
+
+export interface PublicCatalogCategory {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  spec_schema: SpecSchemaField[] | null;
+}
+
+export interface CatalogProductSearchResult {
+  id: number;
+  name: string;
+  unit: string;
+  category_id: number | null;
+}
 
 /** Elimina etiquetas HTML/XML y patrones JS del string para prevenir XSS en renderizados posteriores. */
 export function sanitize(value: string): string {

@@ -20,6 +20,9 @@ interface ProposalDetailsSectionProps {
   onDurationUnitChange: (v: DurationUnit) => void;
   advancePercent: number | "";
   onAdvancePercentChange: (v: number | "") => void;
+  laborCost: number | "";
+  onLaborCostChange: (v: number | "") => void;
+  currencyCode: string;
   generalNotes: string;
   onGeneralNotesChange: (v: string) => void;
   isSubmitting: boolean;
@@ -32,6 +35,9 @@ export default function ProposalDetailsSection({
   onDurationUnitChange,
   advancePercent,
   onAdvancePercentChange,
+  laborCost,
+  onLaborCostChange,
+  currencyCode,
   generalNotes,
   onGeneralNotesChange,
   isSubmitting,
@@ -68,18 +74,18 @@ export default function ProposalDetailsSection({
         </div>
       </motion.div>
 
-      {/* Advance percent */}
+      {/* Advance percent + labor cost */}
       <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
         <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
           <HandCoins className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Anticipo requerido</h3>
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Anticipo y mano de obra</h3>
         </div>
         <p className="mb-4 text-xs font-medium text-slate-500">
-          Indique qué porcentaje de anticipo necesita para iniciar el pedido (déjelo vacío si no requiere anticipo).
+          Ambos campos son opcionales — déjelos vacíos si no requiere anticipo o no cotiza mano de obra por separado.
         </p>
-        <div className="flex max-w-[10rem] items-center gap-3">
-          <div className="flex-1">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Porcentaje (%)</label>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="w-32">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Anticipo (%)</label>
             <NumericInput
               value={advancePercent}
               onChange={(v) => onAdvancePercentChange(v === "" ? "" : Math.min(100, v))}
@@ -87,6 +93,12 @@ export default function ProposalDetailsSection({
               min={0}
               step="1"
             />
+          </div>
+          <div className="w-44">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Mano de obra ({currencyCode || "—"})
+            </label>
+            <NumericInput value={laborCost} onChange={onLaborCostChange} placeholder="0.00" min={0} />
           </div>
         </div>
       </motion.div>

@@ -50,7 +50,7 @@ export default function ContractorsSection({
         c.email.toLowerCase().includes(q),
     );
   }, [contractors, query]);
-  const { viewMode, viewToggle } = useTableViewMode("table");
+  const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
 
   const contractorColumns: Column<Contractor>[] = useMemo(() => [
@@ -65,7 +65,7 @@ export default function ContractorsSection({
       align: "center",
       sortable: true,
       render: (c) => (
-        <div className={`inline-flex items-center gap-1 rounded-lg border ${SEMANTIC_COLOR_MAP.warning.border200} bg-gradient-to-br ${SEMANTIC_COLOR_MAP.warning.bg50} to-warning-100/50 px-2.5 py-1 font-mono text-[11px] font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
+        <div className={`inline-flex items-center gap-1 rounded-lg border ${SEMANTIC_COLOR_MAP.warning.border200} bg-linear-to-br ${SEMANTIC_COLOR_MAP.warning.bg50} to-warning-100/50 px-2.5 py-1 font-mono text-[11px] font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
           <Star className={`h-3.5 w-3.5 fill-warning-400 ${SEMANTIC_COLOR_MAP.warning.icon500}`} />
           {c.rating.toFixed(1)}
         </div>

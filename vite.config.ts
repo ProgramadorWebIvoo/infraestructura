@@ -11,7 +11,13 @@ export default defineConfig(({mode}) => {
     `script-src 'self'${isDev ? " 'unsafe-inline'" : ''};`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
     `connect-src 'self' blob: https://infraestructuraback.ivoofix.com${isDev ? ' http://localhost:* ws://localhost:* http://10.20.16.247:* ws://10.20.16.247:*' : ''} https://sockjs-mt1.pusher.com wss://ws-mt1.pusher.com;`,
-    "img-src 'self' data: blob:;",
+    // Incluye el origen del backend: las imágenes de propuestas de
+    // proveedores (PropuestaMaterialesPublica) se sirven vía <img src=...>
+    // directo desde la API (GET /public/invitations/{token}/proposal-image/{path},
+    // no un blob local) — sin este origen acá, el navegador bloquea la carga
+    // silenciosamente (sin excepción JS) aunque connect-src sí lo permita,
+    // porque son directivas CSP independientes.
+    `img-src 'self' data: blob: https://infraestructuraback.ivoofix.com${isDev ? ' http://localhost:* http://10.20.16.247:*' : ''};`,
     "font-src 'self' https://fonts.gstatic.com;",
     "form-action 'self';",
     "base-uri 'self';",

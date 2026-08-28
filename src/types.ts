@@ -20,6 +20,7 @@ export type {
   SupplierMaterialProposalItem,
   SupplierMaterialProposal,
 } from "@ivoo/shared";
+import type { Contractor } from "@ivoo/shared";
 
 // ---------------------------------------------------------------------------
 // Dashboard ejecutivo de Presidencia (GET /api/dashboard/summary)
@@ -96,3 +97,121 @@ export interface DashboardSummary {
   };
   updatedAt?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Catálogo maestro (GET /api/catalog/products, /catalog-categories, /exchange-rates)
+// ---------------------------------------------------------------------------
+
+export interface CatalogSpecSchemaField {
+  key: string;
+  label: string;
+  type: "text" | "number" | "boolean" | "select";
+  unit?: string;
+  required?: boolean;
+  options?: string[];
+}
+
+export interface CatalogCategory {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  spec_schema: CatalogSpecSchemaField[] | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CatalogProductSupplierLink {
+  id: number;
+  catalog_product_id: number;
+  supplier_code: string;
+  last_quoted_at: string;
+  last_quoted_price_usd: number;
+  quote_count: number;
+  supplier?: Contractor;
+}
+
+export interface CatalogProduct {
+  id: number;
+  name: string;
+  unit: string;
+  estimated_unit_price: number;
+  is_active: boolean;
+  category_id: number | null;
+  normalized_specs: Record<string, string | number | boolean> | null;
+  is_custom_origin: boolean;
+  category?: CatalogCategory;
+  suppliers?: CatalogProductSupplierLink[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CatalogProductPriceHistoryEntry {
+  id: number;
+  catalog_product_id: number;
+  supplier_code: string;
+  price_usd: number;
+  original_currency: string;
+  original_price: number;
+  fx_rate_to_usd: number;
+  fx_rate_source: string;
+  quoted_at: string;
+}
+
+export interface PendingCustomProductLine {
+  id: number;
+  supplier_material_proposal_id: string;
+  catalog_product_id: number;
+  custom_product_name: string | null;
+  condition_status: string;
+  quote_currency: string;
+  unit_price: number;
+  unit_price_usd: number;
+  quantity: number;
+  unit: string;
+  created_at: string;
+  catalogProduct?: CatalogProduct;
+  proposal?: {
+    id: string;
+    supplier_name: string;
+    supplier_company: string | null;
+    project_id: string;
+    submitted_at: string;
+  };
+}
+
+export interface ExchangeRateEntry {
+  id: number;
+  currency_code: string;
+  rate_to_usd: number;
+  source: string;
+  effective_at: string;
+  currencyName?: string;
+}
+
+export interface AdminCurrency {
+  id: number;
+  code: string;
+  name: string;
+  symbol: string;
+  is_base: boolean;
+  is_active: boolean;
+}
+
+export interface BaseCurrency {
+  code: string;
+  name: string;
+  symbol: string;
+  /** null si la base cambió a una moneda sin tasa de cambio cargada todavía. */
+  rateToUsd: number | null;
+}
+
+interface LaravelPaginated<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export type CatalogProductsResponse = LaravelPaginated<CatalogProduct>;
+export type PendingCustomProductsResponse = LaravelPaginated<PendingCustomProductLine>;

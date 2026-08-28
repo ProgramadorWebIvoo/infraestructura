@@ -12,16 +12,20 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ExternalLink, Package, Star, Users } from "lucide-react";
-import type { Contractor, Project } from "../../types";
+import { ExternalLink, Package, PackageSearch, Star, Users } from "lucide-react";
+import type { CatalogProduct, Contractor, Project } from "../../types";
 import { useToast } from "../../components/UI/Toast";
 import { containerVariants, itemVariants } from "../../animations";
 import { useProveedores } from "../../hooks/useProveedores";
+import { useCatalogProducts } from "../../hooks/useCatalogProducts";
+import { useBaseCurrency } from "../../hooks/useBaseCurrency";
 import KpiPill from "../../components/UI/KpiPill";
 import Tabs from "../../components/UI/Tabs";
 import TabPanel from "../../components/UI/TabPanel";
 import ContractorsSection from "./components/ContractorsSection";
 import SupplierProposalsList from "./components/SupplierProposalsList";
+import CatalogSection from "./components/CatalogSection";
+import CatalogProductDetailModal from "./components/CatalogProductDetailModal";
 import RatingModal from "./components/RatingModal";
 import InviteModal from "./components/InviteModal";
 
@@ -33,7 +37,7 @@ interface ProveedoresRegistradosProps {
   isLoading?: boolean;
 }
 
-type TabKey = "contractors" | "proposals";
+type TabKey = "contractors" | "proposals" | "catalog";
 
 export default function ProveedoresRegistrados({
   contractors,
@@ -44,7 +48,10 @@ export default function ProveedoresRegistrados({
 }: ProveedoresRegistradosProps) {
   const { showToast } = useToast();
   const { proposals, isLoadingProposals, handleInviteSupplier } = useProveedores(authToken, showToast);
+  const { products, isLoadingProducts, categories } = useCatalogProducts(authToken, showToast);
+  const { baseCurrency, convertFromUsd } = useBaseCurrency(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("contractors");
+  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
 
   // Un solo estado discriminado en vez de dos independientes: evita que
   // rating e invite queden abiertos a la vez (dos modales superpuestos con
@@ -104,6 +111,7 @@ export default function ProveedoresRegistrados({
             tabs={[
               { key: "contractors", label: "Proveedores Registrados", count: contractors.length },
               { key: "proposals", label: "Propuestas de Materiales", count: proposals.length },
+              { key: "catalog", label: "Catálogo Maestro", count: products.length },
             ]}
           />
         </motion.div>
@@ -121,6 +129,16 @@ export default function ProveedoresRegistrados({
             {activeTab === "proposals" && (
               <SupplierProposalsList proposals={proposals} isLoading={isLoadingProposals} />
             )}
+            {activeTab === "catalog" && (
+              <CatalogSection
+                products={products}
+                categories={categories}
+                isLoading={isLoadingProducts}
+                onOpenProduct={setSelectedProduct}
+                baseCurrency={baseCurrency}
+                convertFromUsd={convertFromUsd}
+              />
+            )}
           </TabPanel>
         </motion.div>
       </motion.div>
@@ -136,6 +154,13 @@ export default function ProveedoresRegistrados({
         projects={projects}
         onClose={closeModal}
         onInvite={handleInviteSupplier}
+      />
+
+      <CatalogProductDetailModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        baseCurrency={baseCurrency}
+        convertFromUsd={convertFromUsd}
       />
     </>
   );
