@@ -28,6 +28,7 @@ import CatalogSection from "./components/CatalogSection";
 import CatalogProductDetailModal from "./components/CatalogProductDetailModal";
 import RatingModal from "./components/RatingModal";
 import InviteModal from "./components/InviteModal";
+import ContractorHistoryModal from "./components/ContractorHistoryModal";
 
 interface ProveedoresRegistradosProps {
   contractors: Contractor[];
@@ -57,7 +58,7 @@ export default function ProveedoresRegistrados({
   // rating e invite queden abiertos a la vez (dos modales superpuestos con
   // el mismo z-index) si el usuario clickea ambas acciones sin cerrar la
   // primera.
-  type ActiveModal = { type: "rating" | "invite"; contractor: Contractor } | null;
+  type ActiveModal = { type: "rating" | "invite" | "history"; contractor: Contractor } | null;
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
   const handleOpenEdit = useCallback((contractor: Contractor) => {
@@ -66,6 +67,10 @@ export default function ProveedoresRegistrados({
 
   const handleOpenInviteModal = useCallback((contractor: Contractor) => {
     setActiveModal({ type: "invite", contractor });
+  }, []);
+
+  const handleOpenHistory = useCallback((contractor: Contractor) => {
+    setActiveModal({ type: "history", contractor });
   }, []);
 
   const closeModal = useCallback(() => setActiveModal(null), []);
@@ -125,6 +130,7 @@ export default function ProveedoresRegistrados({
                 isLoading={isLoading}
                 onOpenEdit={handleOpenEdit}
                 onOpenInvite={handleOpenInviteModal}
+                onOpenHistory={handleOpenHistory}
               />
             )}
             {activeTab === "proposals" && (
@@ -156,6 +162,11 @@ export default function ProveedoresRegistrados({
         onClose={closeModal}
         onInvite={handleInviteSupplier}
         onFetchLatest={fetchLatestInvitation}
+      />
+
+      <ContractorHistoryModal
+        contractor={activeModal?.type === "history" ? activeModal.contractor : null}
+        onClose={closeModal}
       />
 
       <CatalogProductDetailModal

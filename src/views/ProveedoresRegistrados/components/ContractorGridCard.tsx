@@ -7,7 +7,7 @@
  * este archivo decide qué pintar dentro de cada tarjeta vía `renderCard`.
  */
 
-import { Link2, Mail, Pencil, Star } from "lucide-react";
+import { History, Link2, Mail, Pencil, Star } from "lucide-react";
 import IconActionButton from "../../../components/UI/IconActionButton";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import type { Contractor } from "../../../types";
@@ -15,9 +15,10 @@ import type { Contractor } from "../../../types";
 interface ContractorGridCardActions {
   onOpenEdit: (contractor: Contractor) => void;
   onOpenInvite: (contractor: Contractor) => void;
+  onOpenHistory: (contractor: Contractor) => void;
 }
 
-export function renderContractorGridCard(contractor: Contractor, { onOpenEdit, onOpenInvite }: ContractorGridCardActions) {
+export function renderContractorGridCard(contractor: Contractor, { onOpenEdit, onOpenInvite, onOpenHistory }: ContractorGridCardActions) {
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
@@ -39,6 +40,13 @@ export function renderContractorGridCard(contractor: Contractor, { onOpenEdit, o
       </div>
 
       <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+        <IconActionButton
+          label={`Ver histórico de ${contractor.name}`}
+          tooltip="Ver histórico"
+          onClick={() => onOpenHistory(contractor)}
+          tone="emerald"
+          icon={<History className="h-3.5 w-3.5" />}
+        />
         <IconActionButton
           label={`Actualizar evaluación de ${contractor.name}`}
           tooltip="Actualizar evaluación"

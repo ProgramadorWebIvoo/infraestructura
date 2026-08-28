@@ -99,6 +99,40 @@ export interface DashboardSummary {
 }
 
 // ---------------------------------------------------------------------------
+// Histórico de proveedor (GET /api/contractors/{code}/history)
+// ---------------------------------------------------------------------------
+
+export interface ContractorHistoryMonthEntry {
+  month: string; // 'YYYY-MM'
+  quoteCount: number;
+  avgPriceUsd: number | null;
+}
+
+export interface ContractorHistoryTopProduct {
+  catalogProductId: number;
+  productName: string;
+  quoteCount: number;
+  lastPriceUsd: number;
+  variationPercent: number;
+}
+
+export interface ContractorHistoryStats {
+  contractorCode: string;
+  contractorName: string | null;
+  rating: number | null;
+  totalQuoteCount: number;
+  distinctProductCount: number;
+  trendPercent: number | null;
+  periodMonths: number;
+}
+
+export interface ContractorHistory {
+  monthlySeries: ContractorHistoryMonthEntry[];
+  topProducts: ContractorHistoryTopProduct[];
+  stats: ContractorHistoryStats;
+}
+
+// ---------------------------------------------------------------------------
 // Catálogo maestro (GET /api/catalog/products, /catalog-categories, /exchange-rates)
 // ---------------------------------------------------------------------------
 

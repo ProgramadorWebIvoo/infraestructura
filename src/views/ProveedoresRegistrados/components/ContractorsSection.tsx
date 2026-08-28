@@ -11,7 +11,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link2, Mail, Pencil, SearchX, Star, Users } from "lucide-react";
+import { History, Link2, Mail, Pencil, SearchX, Star, Users } from "lucide-react";
 import { itemVariants } from "../../../animations";
 import Card from "../../../components/UI/Card";
 import TableToolbar from "../../../components/UI/TableToolbar";
@@ -30,6 +30,7 @@ interface ContractorsSectionProps {
   isLoading: boolean;
   onOpenEdit: (contractor: Contractor) => void;
   onOpenInvite: (contractor: Contractor) => void;
+  onOpenHistory: (contractor: Contractor) => void;
 }
 
 export default function ContractorsSection({
@@ -37,6 +38,7 @@ export default function ContractorsSection({
   isLoading,
   onOpenEdit,
   onOpenInvite,
+  onOpenHistory,
 }: ContractorsSectionProps) {
   const [query, setQuery] = useState("");
   const filteredContractors = useMemo(() => {
@@ -79,6 +81,13 @@ export default function ContractorsSection({
       render: (c) => (
         <div className="flex items-center justify-center gap-1.5">
           <IconActionButton
+            label={`Ver histórico de ${c.name}`}
+            tooltip="Ver histórico"
+            onClick={() => onOpenHistory(c)}
+            tone="emerald"
+            icon={<History className="h-3.5 w-3.5" />}
+          />
+          <IconActionButton
             label={`Actualizar evaluación de ${c.name}`}
             tooltip="Actualizar evaluación"
             onClick={() => onOpenEdit(c)}
@@ -95,7 +104,7 @@ export default function ContractorsSection({
         </div>
       ),
     },
-  ], [onOpenEdit, onOpenInvite]);
+  ], [onOpenEdit, onOpenInvite, onOpenHistory]);
 
   return (
     <Card accent="brand" fillHeight className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col">
@@ -137,7 +146,7 @@ export default function ContractorsSection({
             <GridView
               items={filteredContractors}
               rowKey={(c) => c.code}
-              renderCard={(c) => renderContractorGridCard(c, { onOpenEdit, onOpenInvite })}
+              renderCard={(c) => renderContractorGridCard(c, { onOpenEdit, onOpenInvite, onOpenHistory })}
               cardAccent={() => "brand"}
               emptyState={
                 <EmptyState
