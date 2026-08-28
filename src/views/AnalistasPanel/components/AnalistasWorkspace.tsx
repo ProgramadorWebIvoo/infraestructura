@@ -14,11 +14,14 @@
  */
 
 import { useMemo, useState } from "react";
+import React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Project, Contractor, Proposal, ProposalOrigin } from "../../../types";
+import type { Project, Contractor, Proposal, ProposalOrigin, SupplierMaterialProposal } from "../../../types";
 import {
   AlertTriangle,
   Award,
+  Bell,
+  Eye,
   FileSpreadsheet,
   Handshake,
   MessageSquareWarning,
@@ -42,7 +45,10 @@ import Tooltip from "../../../components/UI/Tooltip";
 import { renderAnalistasCard } from "./AnalistasGridCard";
 import RegisterProposalModal, { formatProposalDuration } from "./RegisterProposalModal";
 import RenegotiateProposalModal from "./RenegotiateProposalModal";
+import InspectProposalModal from "../../ProcuraPanel/components/InspectProposalModal";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
+import { useSupplierProposalsForProject } from "../../../hooks/useSupplierProposalsForProject";
+import { calculatePendingPortalProposals } from "../utils/portalProposalUtils";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { useToast } from "../../../components/UI/Toast";
@@ -76,6 +82,7 @@ interface AnalistasWorkspaceProps {
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
+  authToken: string;
 }
 
 export default function AnalistasWorkspace({
@@ -86,13 +93,28 @@ export default function AnalistasWorkspace({
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
+  authToken,
 }: AnalistasWorkspaceProps) {
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { fetchForProject } = useSupplierProposalsForProject(authToken);
+  const [portalProposalsByProject, setPortalProposalsByProject] = useState<Record<string, SupplierMaterialProposal[]>>({});
 
   const selectedProject = pendingLicitacion.find(p => p.id === selectedId) ?? null;
+
+  // Cargar propuestas del portal una sola vez al montar (para mostrar badges en grid)
+  React.useEffect(() => {
+    const loadSupplierProposals = async () => {
+      const result: Record<string, SupplierMaterialProposal[]> = {};
+      for (const project of pendingLicitacion) {
+        result[project.id] = await fetchForProject(project.id);
+      }
+      setPortalProposalsByProject(result);
+    };
+    loadSupplierProposals();
+  }, [pendingLicitacion, fetchForProject]);
 
   const visibleProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -209,7 +231,7 @@ export default function AnalistasWorkspace({
               <GridView
                 items={visibleProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderAnalistasCard(p)}
+                renderCard={(p) => renderAnalistasCard(p, portalProposalsByProject[p.id] ?? [])}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}
                 cardAccent={() => "success"}
@@ -229,6 +251,7 @@ export default function AnalistasWorkspace({
         <ExpedienteWorkspaceModal
           project={selectedProject}
           contractors={contractors}
+          pendingSupplierProposals={portalProposalsByProject[selectedProject.id] ?? []}
           onClose={() => setSelectedId("")}
           onAddProposal={onAddProposal}
           onRenegotiateProposal={onRenegotiateProposal}
@@ -236,6 +259,7 @@ export default function AnalistasWorkspace({
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}
           onComparativeSubmitted={() => setSelectedId("")}
+          authToken={authToken}
         />
       )}
     </>
@@ -246,6 +270,7 @@ export default function AnalistasWorkspace({
 function ExpedienteWorkspaceModal({
   project,
   contractors,
+  pendingSupplierProposals,
   onClose,
   onAddProposal,
   onRenegotiateProposal,
@@ -253,9 +278,11 @@ function ExpedienteWorkspaceModal({
   onSubmitComparative,
   onImportSupplierProposals,
   onComparativeSubmitted,
+  authToken,
 }: {
   project: Project;
   contractors: Contractor[];
+  pendingSupplierProposals: SupplierMaterialProposal[];
   onClose: () => void;
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
   onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
@@ -263,16 +290,19 @@ function ExpedienteWorkspaceModal({
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
   onComparativeSubmitted: () => void;
+  authToken: string;
 }) {
   const maxAdvancePercent = useMaxAdvancePercent();
   const { showToast } = useToast();
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [renegotiatingProposal, setRenegotiatingProposal] = useState<Proposal | null>(null);
+  const [inspectingProposal, setInspectingProposal] = useState<Proposal | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
   const proposals = project.proposals ?? [];
   const approvedBudget = project.approvedInvestmentAmount ?? 0;
+  const pendingPortalCount = calculatePendingPortalProposals(pendingSupplierProposals.length, proposals);
 
   const handleSubmit = () => {
     if (proposals.length === 0) {
@@ -355,10 +385,20 @@ function ExpedienteWorkspaceModal({
     {
       key: "actions",
       label: "",
-      width: "6rem",
+      width: "8rem",
       align: "center",
       render: (prop) => (
         <div className="flex items-center justify-center gap-1">
+          <Tooltip content="Inspeccionar detalle completo de la propuesta.">
+            <button
+              id={`btn-inspect-proposal-${prop.id}`}
+              onClick={() => setInspectingProposal(prop)}
+              className="text-slate-400 hover:bg-slate-50 hover:text-slate-600 p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer"
+              aria-label={`Inspeccionar propuesta de ${prop.contractorName}`}
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+          </Tooltip>
           <Tooltip content="Renegociar: reemplaza esta oferta por nuevas condiciones, conservando el registro original para auditoría.">
             <button
               id={`btn-renegotiate-proposal-${prop.id}`}
@@ -412,9 +452,16 @@ function ExpedienteWorkspaceModal({
         }
       >
         <div className="space-y-5">
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Techo de Inversión Aprobado</span>
-            <span className="font-mono text-slate-700 font-black">{formatCurrency(approvedBudget)}</span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Techo de Inversión Aprobado</span>
+              <span className="font-mono text-slate-700 font-black">{formatCurrency(approvedBudget)}</span>
+            </div>
+            {pendingPortalCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-danger-100 text-danger-700 whitespace-nowrap animate-pulse">
+                <AlertTriangle className="h-3 w-3" /> {pendingPortalCount} sin cargar
+              </span>
+            )}
           </div>
 
           {/* Resumen comparativo — solo aparece con al menos 1 propuesta cargada */}
@@ -472,6 +519,15 @@ function ExpedienteWorkspaceModal({
           proposal={renegotiatingProposal}
           onClose={() => setRenegotiatingProposal(null)}
           onRenegotiateProposal={onRenegotiateProposal}
+        />
+      )}
+
+      {inspectingProposal && (
+        <InspectProposalModal
+          project={project}
+          proposal={inspectingProposal}
+          authToken={authToken}
+          onClose={() => setInspectingProposal(null)}
         />
       )}
 

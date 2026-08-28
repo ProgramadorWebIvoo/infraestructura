@@ -87,7 +87,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.ANALISTAS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
-              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} isLoading={isLoadingApi} />
+              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} authToken={authToken} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

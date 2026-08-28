@@ -29,6 +29,7 @@ interface AnalistasPanelProps {
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
+  authToken: string;
   isLoading?: boolean;
 }
 
@@ -40,6 +41,7 @@ export default function AnalistasPanel({
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
+  authToken,
   isLoading = false,
 }: AnalistasPanelProps) {
   const pendingLicitacion = useMemo(
@@ -81,6 +83,7 @@ export default function AnalistasPanel({
           onRemoveProposal={onRemoveProposal}
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}
+          authToken={authToken}
         />
       </motion.div>
     </motion.div>

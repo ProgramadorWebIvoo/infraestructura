@@ -88,6 +88,7 @@ export default function ProveedoresRegistrados({
             <KpiPill icon={<Users className="h-3.5 w-3.5" />} label="Proveedores" value={contractors.length} accent="brand" />
             <KpiPill icon={<Star className="h-3.5 w-3.5" />} label="Rating Promedio" value={avgRating.toFixed(1)} accent="warning" />
             <KpiPill icon={<Package className="h-3.5 w-3.5" />} label="Propuestas Recibidas" value={proposals.length} accent="info" />
+            <KpiPill icon={<PackageSearch className="h-3.5 w-3.5" />} label="Proyectos Activos" value={new Set(proposals.map(p => p.projectId)).size} accent="info" />
           </div>
           <a
             id="link-open-public-provider-registration"

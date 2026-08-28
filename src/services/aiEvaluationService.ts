@@ -52,7 +52,7 @@ export interface AIEvaluationResult {
 /** Tipo de propuesta para enviar al backend (derivado de Proposal). */
 type AIEvaluationProposalPayload = Pick<Proposal,
   "id" | "contractorCode" | "contractorName" | "contractorRating" |
-  "materialCost" | "laborCost" | "totalCost" | "deliveryWeeks" |
+  "materialCost" | "quoteCurrency" | "laborCost" | "totalCost" | "deliveryWeeks" |
   "negotiatedAdvancePercent" | "description" |
   "materialItems" | "durationValue" | "durationUnit" | "origen" |
   "precioAnterior" | "precioNuevo" | "diferencia" | "motivo" |
@@ -112,6 +112,7 @@ export async function evaluateProposals(
       contractorName: p.contractorName,
       contractorRating: p.contractorRating,
       materialCost: p.materialCost,
+      quoteCurrency: p.quoteCurrency,
       laborCost: p.laborCost,
       totalCost: p.totalCost,
       deliveryWeeks: p.deliveryWeeks,

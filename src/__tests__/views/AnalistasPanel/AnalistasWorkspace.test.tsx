@@ -130,6 +130,7 @@ function renderWorkspace(props: Partial<React.ComponentProps<typeof AnalistasWor
         onRenegotiateProposal={vi.fn().mockResolvedValue(undefined)}
         onRemoveProposal={vi.fn()}
         onSubmitComparative={vi.fn()}
+        authToken="test-token"
         {...props}
       />
     </ToastProvider>,

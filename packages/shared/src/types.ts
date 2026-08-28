@@ -51,6 +51,15 @@ export interface ProposalMaterialItem {
   unitPrice: number;
   totalPrice: number;
   notes?: string;
+  /** Presentes solo en propuestas importadas del portal de proveedores
+   * (origen PORTAL-PROV) — ausentes en carga manual de Analistas. */
+  conditionStatus?: "new" | "used" | "refurbished";
+  technicalSpecs?: Record<string, string | number | boolean>;
+  warrantyDescription?: string;
+  warrantyValue?: number;
+  warrantyUnit?: "dias" | "semanas" | "meses";
+  /** Path relativo en storage, servido vía GET /supplier-proposal-images/{path}. */
+  imagePath?: string;
 }
 
 export type ProposalDurationUnit = "dias" | "semanas" | "meses";
@@ -64,6 +73,9 @@ export interface Proposal {
   /** Detalle línea por línea, igual al portal público del proveedor. Puede
    * faltar en propuestas antiguas cargadas antes de este campo. */
   materialItems?: ProposalMaterialItem[];
+  /** ISO 4217, solo presente en propuestas importadas del portal (origen
+   * PORTAL-PROV) — la carga manual siempre es en USD. */
+  quoteCurrency?: string;
   laborCost: number;
   totalCost: number;
   deliveryWeeks: number;

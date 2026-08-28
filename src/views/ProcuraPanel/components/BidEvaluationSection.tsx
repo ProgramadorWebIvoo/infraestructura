@@ -460,6 +460,7 @@ export default function BidEvaluationSection({
         <InspectProposalModal
           project={selectedProject}
           proposal={inspectingProposal}
+          authToken={authToken}
           onClose={() => setInspectingProposal(null)}
         />
       )}

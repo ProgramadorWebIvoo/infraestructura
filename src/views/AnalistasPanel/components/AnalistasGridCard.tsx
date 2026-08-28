@@ -7,21 +7,34 @@
  * ProcuraPanel/components/BidEvaluationGridCard.tsx.
  */
 
-import { MapPin, Trophy, Wallet } from "lucide-react";
-import type { Project } from "../../../types";
+import { AlertTriangle, MapPin, Trophy, Wallet } from "lucide-react";
+import type { Project, SupplierMaterialProposal } from "../../../types";
 import { formatCurrency } from "../../../utils";
+import { calculatePendingPortalProposals } from "../utils/portalProposalUtils";
 
-export function renderAnalistasCard(project: Project) {
+export function renderAnalistasCard(
+  project: Project,
+  portalProposals: SupplierMaterialProposal[] = []
+) {
   const proposals = project.proposals ?? [];
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
+  const pendingFromPortal = calculatePendingPortalProposals(portalProposals.length, proposals);
+  const hasPendingPortalProposals = pendingFromPortal > 0;
 
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
         <span className="font-mono font-bold text-[10px] text-emerald-700 whitespace-nowrap">{project.id}</span>
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 whitespace-nowrap">
-          {proposals.length} propuesta{proposals.length !== 1 ? "s" : ""}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {hasPendingPortalProposals && (
+            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-danger-100 text-danger-700 whitespace-nowrap animate-pulse">
+              <AlertTriangle className="h-2.5 w-2.5" /> {pendingFromPortal} sin cargar
+            </span>
+          )}
+          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 whitespace-nowrap">
+            {proposals.length} propuesta{proposals.length !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
 
       <div className="min-w-0">
