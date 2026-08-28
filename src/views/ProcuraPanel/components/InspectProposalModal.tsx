@@ -29,6 +29,13 @@ interface InspectProposalModalProps {
   onClose: () => void;
 }
 
+interface EnrichedProposalMaterialItem extends ProposalMaterialItem {
+  estimatedPriceUsd?: number;
+  estimatedPriceSource?: string;
+  variationPercent?: number;
+  variationDirection?: 'increase' | 'decrease' | 'stable';
+}
+
 const CONDITION_LABEL: Record<string, string> = {
   new: "Nuevo",
   used: "Usado",
@@ -102,7 +109,7 @@ function ProposalItemImage({ imagePath, authToken, alt, onExpand }: { imagePath:
   );
 }
 
-function ItemDetailBadges({ item, authToken, onExpandImage }: { item: ProposalMaterialItem; authToken: string; onExpandImage: (blobUrl: string, alt: string) => void }) {
+function ItemDetailBadges({ item, authToken, onExpandImage }: { item: EnrichedProposalMaterialItem; authToken: string; onExpandImage: (blobUrl: string, alt: string) => void }) {
   const hasEnrichedData = item.conditionStatus || item.warrantyDescription || item.imagePath;
   if (!hasEnrichedData) return null;
 
@@ -128,7 +135,7 @@ function ItemDetailBadges({ item, authToken, onExpandImage }: { item: ProposalMa
 }
 
 export default function InspectProposalModal({ project, proposal, authToken, onClose }: InspectProposalModalProps) {
-  const materialItems = proposal.materialItems ?? [];
+  const materialItems = (proposal.materialItems ?? []) as EnrichedProposalMaterialItem[];
   const isRenegotiation = proposal.origen === "RENEGOCIACION";
   const currency = proposal.quoteCurrency;
   const [expandedImage, setExpandedImage] = useState<{ blobUrl: string; alt: string } | null>(null);
@@ -218,6 +225,8 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                     <th className="px-3 py-2 text-center">Cant.</th>
                     <th className="px-3 py-2">Unidad</th>
                     <th className="px-3 py-2 text-right">Precio unit.</th>
+                    <th className="px-3 py-2 text-right">Est.</th>
+                    <th className="px-3 py-2 text-center">Var.</th>
                     <th className="px-3 py-2 text-right">Total</th>
                   </tr>
                 </thead>
@@ -232,6 +241,26 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       <td className="px-3 py-2 text-center font-mono font-bold text-slate-600 text-[11px] align-top">{item.quantity}</td>
                       <td className="px-3 py-2 text-slate-500 font-medium text-[11px] align-top">{item.unit}</td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600 align-top">{formatCurrency(item.unitPrice)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-500 align-top">
+                        {item.estimatedPriceUsd ? formatCurrency(item.estimatedPriceUsd) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-center align-top">
+                        {item.variationPercent != null ? (
+                          <span
+                            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap ${
+                              item.variationDirection === 'increase'
+                                ? 'bg-danger-100 text-danger-700'
+                                : item.variationDirection === 'decrease'
+                                ? 'bg-success-100 text-success-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {item.variationPercent > 0 ? '+' : ''}{item.variationPercent.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-300">—</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px] align-top">{formatCurrency(item.totalPrice)}</td>
                     </tr>
                   ))}

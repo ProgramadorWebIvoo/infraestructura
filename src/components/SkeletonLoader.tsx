@@ -283,15 +283,17 @@ export const SkeletonButton = memo(function SkeletonButton({ className = "" }: {
 /**
  * Skeleton de gráfico de precios (sparkline + rango + trending indicator).
  * Simula la estructura de PriceHistorySparkline en CatalogProductDetailModal.
+ * Altura fija para evitar layout shift cuando carga el contenido real.
  */
 export const SkeletonPriceChart = memo(function SkeletonPriceChart({ className = "" }: { className?: string }) {
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={`space-y-3 ${className}`} style={{ minHeight: '192px' }}>
       <div className="flex items-center justify-between">
         <SkeletonBlock className="h-3 w-24 rounded" />
         <SkeletonBlock className="h-4 w-16 rounded" />
       </div>
       <SkeletonBlock className="h-32 w-full rounded-xl" />
+      <SkeletonBlock className="h-2.5 w-32 rounded" />
     </div>
   );
 });
@@ -317,6 +319,7 @@ export const SkeletonSupplierLink = memo(function SkeletonSupplierLink({ classNa
 
 /**
  * Skeleton de lista de proveedores (N SkeletonSupplierLink en cascada).
+ * Altura fija para evitar layout shift.
  */
 export const SkeletonSupplierList = memo(function SkeletonSupplierList({
   items = 3,
@@ -325,8 +328,17 @@ export const SkeletonSupplierList = memo(function SkeletonSupplierList({
   items?: number;
   className?: string;
 }) {
+  const itemHeight = 64; // ~56px + gap
+  const minHeight = items * itemHeight;
+
   return (
-    <motion.div className={`space-y-2 ${className}`} variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div
+      className={`space-y-2 ${className}`}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      style={{ minHeight: `${minHeight}px` }}
+    >
       {Array.from({ length: items }).map((_, i) => (
         <motion.div key={i} variants={itemVariants}>
           <SkeletonSupplierLink />
@@ -351,10 +363,11 @@ export const SkeletonStatCard = memo(function SkeletonStatCard({ className = "" 
 
 /**
  * Skeleton de grid de stats (4 SkeletonStatCard en grid, sin animación de cascada).
+ * Altura fija para evitar layout shift.
  */
 export const SkeletonStatCardGrid = memo(function SkeletonStatCardGrid({ className = "" }: { className?: string }) {
   return (
-    <div className={`grid grid-cols-2 gap-3 sm:grid-cols-4 ${className}`}>
+    <div className={`grid grid-cols-2 gap-3 sm:grid-cols-4 ${className}`} style={{ minHeight: '96px' }}>
       {Array.from({ length: 4 }).map((_, i) => (
         <SkeletonStatCard key={i} />
       ))}

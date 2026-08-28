@@ -160,12 +160,12 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
           {/* Stats overview */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {/* Unit */}
-            <div className="p-3">
+            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Unidad</div>
               <div className="mt-1.5 text-sm font-black text-text-primary">{product.unit}</div>
             </div>
             {/* Reference price */}
-            <div className="p-3">
+            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Precio ref.</div>
               <div className="mt-1.5 font-mono text-sm font-black text-text-primary">
                 {baseCurrency?.symbol ?? "$"}{convertFromUsd(product.estimated_unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -173,12 +173,12 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
               <div className="text-[9px] text-text-muted">{baseCurrency?.code ?? "USD"}</div>
             </div>
             {/* Suppliers count */}
-            <div className="p-3">
+            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Proveedores</div>
               <div className="mt-1.5 text-sm font-black text-text-primary">{(detail ?? product).suppliers?.length ?? 0}</div>
             </div>
             {/* Status */}
-            <div className="p-3">
+            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Estado</div>
               <div className={`mt-1.5 text-sm font-black ${product.is_active ? "text-semantic-success" : "text-text-muted"}`}>
                 {product.is_active ? "Activo" : "Inactivo"}
