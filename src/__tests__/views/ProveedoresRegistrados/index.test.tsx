@@ -69,6 +69,10 @@ vi.mock("@/hooks/useProveedores", () => ({
     proposals: [],
     isLoadingProposals: false,
     handleInviteSupplier: vi.fn().mockResolvedValue({ token: "tok", projectTitle: "Obra 1" }),
+    // Sin enlace vigente cacheado por defecto — los tests que dependen de
+    // "Generar enlace único" siguen ejercitando el flujo de generación
+    // real (handleInviteSupplier) en vez de saltarse el paso 1.
+    fetchLatestInvitation: vi.fn().mockResolvedValue(null),
   }),
 }));
 
@@ -125,7 +129,7 @@ describe("ProveedoresRegistrados — modales mutuamente excluyentes", () => {
     expect(screen.getByText("Propuesta de materiales")).toBeInTheDocument();
   });
 
-  it("el select de obra es clickeable dentro del modal de invitación", () => {
+  it("el select de obra es clickeable dentro del modal de invitación", async () => {
     render(
       <MemoryRouter>
         <ToastProvider>
@@ -146,7 +150,7 @@ describe("ProveedoresRegistrados — modales mutuamente excluyentes", () => {
     const projectOption = screen.getByText("Obra 1");
     fireEvent.click(projectOption);
 
-    const generateButton = screen.getByRole("button", { name: /Generar enlace único/i });
+    const generateButton = await screen.findByRole("button", { name: /Generar enlace único/i });
     expect(generateButton).not.toBeDisabled();
   });
 });

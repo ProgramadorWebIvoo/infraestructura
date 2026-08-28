@@ -47,7 +47,7 @@ export default function ProveedoresRegistrados({
   isLoading = false,
 }: ProveedoresRegistradosProps) {
   const { showToast } = useToast();
-  const { proposals, isLoadingProposals, handleInviteSupplier } = useProveedores(authToken, showToast);
+  const { proposals, isLoadingProposals, handleInviteSupplier, fetchLatestInvitation } = useProveedores(authToken, showToast);
   const { products, isLoadingProducts, categories } = useCatalogProducts(authToken, showToast);
   const { baseCurrency, convertFromUsd } = useBaseCurrency(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("contractors");
@@ -154,6 +154,7 @@ export default function ProveedoresRegistrados({
         projects={projects}
         onClose={closeModal}
         onInvite={handleInviteSupplier}
+        onFetchLatest={fetchLatestInvitation}
       />
 
       <CatalogProductDetailModal

@@ -21,7 +21,7 @@ export interface InvitationPublicInfo {
   project: ProjectPublicData;
 }
 
-export interface ItemRow extends Omit<SupplierMaterialProposalItem, "unitPrice" | "quantity" | "technicalSpecs" | "conditionStatus"> {
+export interface ItemRow extends Omit<SupplierMaterialProposalItem, "unitPrice" | "quantity" | "technicalSpecs" | "conditionStatus" | "warrantyValue"> {
   _id: string;
   isCustom: boolean;
   unitPrice: number | "";
@@ -29,6 +29,8 @@ export interface ItemRow extends Omit<SupplierMaterialProposalItem, "unitPrice" 
   technicalSpecs: Record<string, string | number | boolean>;
   /** "" = sin seleccionar todavía — sin precarga, el proveedor debe elegirla a propósito. */
   conditionStatus?: ConditionStatus | "";
+  /** "" = campo no tocado (NumericInput no precargado) — distinto de 0, que es un valor real cargado. */
+  warrantyValue?: number | "";
   /** Solo en memoria del formulario, para saber qué spec_schema mostrar — no se envía al backend. */
   categoryId?: number | null;
 }

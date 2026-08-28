@@ -219,7 +219,10 @@ export default function PropuestaMaterialesPublica() {
 
     // Valor y unidad de duración de garantía van juntos o ninguno — un
     // valor numérico sin unidad no tiene sentido (¿12 qué? ¿días, meses?).
-    const missingWarrantyUnit = linesRequiringDetails.find((i) => Number(i.warrantyValue) > 0 && !i.warrantyUnit);
+    // `warrantyValue !== ""` (no `> 0`): el backend exige la unidad ante
+    // cualquier valor "presente" en el campo, incluido un 0 explícito, así
+    // que el guard del frontend debe usar el mismo criterio.
+    const missingWarrantyUnit = linesRequiringDetails.find((i) => i.warrantyValue !== "" && i.warrantyValue !== undefined && !i.warrantyUnit);
     if (missingWarrantyUnit) {
       showToast(`Selecciona la unidad de duración de garantía para "${missingWarrantyUnit.materialName || "el material personalizado"}".`, "warning");
       return;
@@ -246,8 +249,14 @@ export default function PropuestaMaterialesPublica() {
             catalogProductId: item.catalogProductId ?? null,
             technicalSpecs: Object.keys(item.technicalSpecs ?? {}).length > 0 ? item.technicalSpecs : null,
             warrantyDescription: item.warrantyDescription ? sanitize(item.warrantyDescription).trim() : "Sin garantía",
-            warrantyValue: item.warrantyValue ?? null,
-            warrantyUnit: item.warrantyUnit ?? null,
+            // `item.warrantyValue` default es "" (NumericInput no tocado) —
+            // "" ?? null NO lo convierte a null (?? solo reemplaza
+            // null/undefined), así que se enviaba como string vacío y el
+            // backend lo veía como "campo presente", disparando
+            // required_with:warrantyUnit sin que el usuario hubiera
+            // cargado ningún valor real.
+            warrantyValue: item.warrantyValue === "" ? null : item.warrantyValue,
+            warrantyUnit: item.warrantyUnit || null,
             imagePath: item.imagePath ?? null,
           })),
           generalNotes: sanitize(generalNotes).trim() || null,

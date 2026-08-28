@@ -20,6 +20,21 @@ import { usePolledFetch } from "./usePolledFetch";
 // (ej. plantillas de email, PDFs, dangerouslySetInnerHTML).
 const sanitize = (value: string) => DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
 
+export interface SupplierInvitationInfo {
+  token: string;
+  projectTitle: string;
+  expiresAt?: string;
+  /**
+   * Solo presente en la respuesta de fetchLatestInvitation() (GET
+   * /supplier-invitations/latest) — handleInviteSupplier() (POST, recién
+   * creado) no lo manda porque un enlace recién generado siempre es
+   * "active". Distingue POR QUÉ un enlace ya no es válido (used/expired/
+   * replaced) del caso "sigue vigente" (active), en vez de un genérico
+   * "ya no disponible" que no le dice al usuario qué pasó realmente.
+   */
+  status?: "active" | "used" | "expired" | "replaced";
+}
+
 export function useProveedores(authToken: string, showToast: ShowToast) {
   const { data: proposals, setData: setProposals, isLoading, refresh: loadProposals } =
     usePolledFetch<SupplierMaterialProposal>({
@@ -39,7 +54,7 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
       supplierName: string;
       supplierCompany: string | null;
       supplierContact: string;
-    }): Promise<{ token: string; projectTitle: string }> => {
+    }): Promise<SupplierInvitationInfo> => {
       try {
         const sanitizedPayload = {
           ...payload,
@@ -47,7 +62,7 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
           supplierCompany: payload.supplierCompany ? sanitize(payload.supplierCompany) : null,
           supplierContact: sanitize(payload.supplierContact),
         };
-        const data = await apiFetch<{ token: string; projectTitle: string }>("/supplier-invitations", {
+        const data = await apiFetch<SupplierInvitationInfo>("/supplier-invitations", {
           method: "POST",
           body: JSON.stringify(sanitizedPayload),
         });
@@ -62,10 +77,33 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
     [showToast],
   );
 
+  /**
+   * Consulta la invitación vigente más reciente para un proveedor+obra, sin
+   * crear una nueva — usado al abrir InviteModal para mostrar el enlace ya
+   * generado en vez de forzar a regenerar uno cada vez. `null` si no hay
+   * ninguna vigente (nunca se generó, o la última expiró/fue usada).
+   */
+  const fetchLatestInvitation = useCallback(
+    async (projectId: string, supplierContact: string): Promise<SupplierInvitationInfo | null> => {
+      try {
+        // apiFetch ya desenvuelve el `.data` de nivel superior (convención
+        // Laravel) — acá ese `.data` desenvuelto ES directamente el objeto
+        // (o null), no un wrapper adicional.
+        return await apiFetch<SupplierInvitationInfo | null>(
+          `/supplier-invitations/latest?project_id=${encodeURIComponent(projectId)}&supplierContact=${encodeURIComponent(supplierContact)}`,
+        );
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
   return {
     proposals,
     isLoadingProposals: isLoading,
     loadProposals,
     handleInviteSupplier,
+    fetchLatestInvitation,
   };
 }

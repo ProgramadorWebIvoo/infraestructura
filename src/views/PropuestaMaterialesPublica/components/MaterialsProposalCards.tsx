@@ -39,9 +39,13 @@ interface MaterialsProposalCardsProps {
   currencyCode: string;
 }
 
-/** Valor de duración de garantía cargado pero sin unidad — van juntos o ninguno. */
+/**
+ * Valor de duración de garantía cargado pero sin unidad — van juntos o
+ * ninguno. `warrantyValue !== ""` (no `> 0`): el backend exige la unidad
+ * ante cualquier valor "presente", incluido un 0 explícito.
+ */
 function isWarrantyDurationIncomplete(item: ItemRow): boolean {
-  return Number(item.warrantyValue) > 0 && !item.warrantyUnit;
+  return item.warrantyValue !== "" && item.warrantyValue !== undefined && !item.warrantyUnit;
 }
 
 /** Para el badge "Faltan datos" en la fila colapsada — solo molesta si el proveedor ya empezó a cotizar esta línea (precio cargado). */
@@ -440,13 +444,13 @@ function MaterialCard({
                 <div>
                   <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                     Unidad
-                    {Number(item.warrantyValue) > 0 && <RequiredMark filled={!!item.warrantyUnit} />}
+                    {item.warrantyValue !== "" && item.warrantyValue !== undefined && <RequiredMark filled={!!item.warrantyUnit} />}
                   </label>
                   <Select
                     value={item.warrantyUnit ?? ""}
                     onChange={(v) => onUpdateItem(index, "warrantyUnit", v as ItemRow["warrantyUnit"])}
                     options={[{ value: "", label: "—" }, ...DURATION_UNITS.map((u) => ({ value: u.value, label: u.label }))]}
-                    hasError={Number(item.warrantyValue) > 0 && !item.warrantyUnit}
+                    hasError={isWarrantyDurationIncomplete(item)}
                   />
                 </div>
               </div>
