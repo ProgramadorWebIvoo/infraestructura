@@ -9,7 +9,7 @@
  * entrega, notas) no cabe en una fila expandida sin saturar la lista.
  */
 
-import { Clock, FileSearch, HandCoins, Mail } from "lucide-react";
+import { Clock, FileSearch, HandCoins, Mail, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
 import type { SupplierMaterialProposal } from "../../../types";
@@ -98,42 +98,39 @@ export default function InspectSupplierProposalModal({ proposal, onClose }: Insp
           <div className="max-h-80 overflow-y-auto overflow-x-auto">
             <Table
               columns={[
-                { key: "materialName", label: "Material", render: (item) => <span className="font-semibold text-slate-800 text-[11px]">{item.materialName}</span> },
-                { key: "quantity", label: "Cantidad", align: "center", render: (item) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
-                { key: "unit", label: "Unidad", render: (item) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
-                { key: "unitPrice", label: "PROP (USD)", align: "right", render: (item) => <span className="font-mono font-bold text-slate-700 text-[11px]">${item.unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
-                // EST: Precio estimado (si está disponible)
-                ...(proposal.items.some(i => i.estimatedPriceDisplay) ? [{
-                  key: "estimatedPrice",
-                  label: "EST (USD)",
-                  align: "right" as const,
-                  render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{item.estimatedPriceDisplay || "—"}</span>
-                }] : []),
-                // VAR%: Variación con color badge
-                ...(proposal.items.some(i => i.variationLabel) ? [{
-                  key: "variation",
-                  label: "VAR%",
-                  align: "right" as const,
-                  render: (item: any) => (
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono font-bold text-slate-700 text-[11px]">{item.variationLabel || "—"}</span>
-                      {item.variationBadgeColor && (
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
-                          item.variationBadgeColor === 'danger' ? 'bg-red-100 text-red-700' :
-                          item.variationBadgeColor === 'success' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-slate-100 text-slate-600'
-                        }`}>
-                          {item.variationDirection === 'increase' ? '↑' : item.variationDirection === 'decrease' ? '↓' : '—'}
-                        </span>
-                      )}
-                    </div>
-                  )
-                }] : []),
-                { key: "totalPrice", label: "Total", align: "right", render: (item) => <span className="font-mono font-black text-indigo-700 text-[11px]">${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
-                { key: "notes", label: "Notas", render: (item) => <span className="text-slate-400 italic text-[11px]">{item.notes || "—"}</span> },
+                { key: "materialName", label: "Material", render: (item: any) => <span className="font-semibold text-slate-800 text-[11px]">{item.materialName}</span> },
+                { key: "quantity", label: "Cantidad", align: "center", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
+                { key: "unit", label: "Unidad", render: (item: any) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
+                { key: "unitPrice", label: "PROP (USD)", align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">${(item.unitPrice || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span> },
+                { key: "variation", label: "VAR%", align: "right", render: (item: any) => (
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="font-mono font-bold text-slate-700 text-[11px]">{item.variationLabel || "—"}</span>
+                    {item.variationDirection === 'increase' && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded">
+                        <TrendingUp className="h-3.5 w-3.5 text-red-600" />
+                        <span className="text-[9px] font-bold text-red-600">Aumento</span>
+                      </div>
+                    )}
+                    {item.variationDirection === 'decrease' && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 rounded">
+                        <TrendingDown className="h-3.5 w-3.5 text-emerald-600" />
+                        <span className="text-[9px] font-bold text-emerald-600">Baja</span>
+                      </div>
+                    )}
+                    {item.variationDirection === 'stable' && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded">
+                        <Minus className="h-3.5 w-3.5 text-slate-500" />
+                        <span className="text-[9px] font-bold text-slate-500">Estable</span>
+                      </div>
+                    )}
+                  </div>
+                ) },
+                { key: "totalPrice", label: "Total", align: "right", render: (item: any) => <span className="font-mono font-black text-indigo-700 text-[11px]">${(item.totalPrice || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                { key: "notes", label: "Notas", render: (item: any) => <span className="text-slate-400 italic text-[11px]">{item.notes || "—"}</span> },
               ]}
               data={proposal.items}
-              rowKey={(item) => `${item.materialName}-${item.unit}`}
+              rowKey={(item, index) => `${proposal.id}-${index}-${item.materialName}`}
               pageSize={20}
               footer={
                 <tr className="border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white">
