@@ -150,9 +150,15 @@ export default function Modal({
       {isOpen && (
         <motion.div
           data-testid="modal-backdrop"
-          initial={reduceMotion ? undefined : { opacity: 0, backdropFilter: "blur(0px)" }}
-          animate={reduceMotion ? undefined : { opacity: 1, backdropFilter: "blur(6px)" }}
-          exit={reduceMotion ? undefined : { opacity: 0, backdropFilter: "blur(0px)" }}
+          // Solo se anima `opacity`. Animar `backdropFilter` obliga al
+          // compositor a re-desenfocar todo lo que hay detrás del modal en
+          // CADA frame — es de las propiedades más caras que existen, y se
+          // notaba como tirones al abrir cualquier modal de la app. El blur
+          // ya lo aplica `backdrop-blur-md` de forma estática (una sola vez),
+          // así que animarlo además duplicaba el efecto y el costo.
+          initial={reduceMotion ? undefined : { opacity: 0 }}
+          animate={reduceMotion ? undefined : { opacity: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md"
           role="dialog"
