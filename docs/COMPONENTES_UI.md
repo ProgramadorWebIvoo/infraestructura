@@ -29,16 +29,19 @@ Tokens centralizados en `@theme` (`src/index.css`) — Tailwind v4, sin `tailwin
 
 - **Botones/acciones**: [Button](#button), [IconActionButton](#iconactionbutton)
 - **Feedback/alertas**: [AlertBanner](#alertbanner), [InfoBanner](#infobanner), [Toast](#toast--toastprovider--usetoast), [OfflineBanner](#offlinebanner), [FieldError](#fielderror)
-- **Diálogos/modales**: [Modal](#modal), [ConfirmDialog](#confirmdialog), [SelectModal](#selectmodal)
-- **Tablas/listados**: [Table](#table), [GridView](#gridview), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel), [ConfigAuditLogPanel](#configauditlogpanel)
-- **Formularios**: [NumericInput](#numericinput), [Select](#select), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [HintSignals](#hintsignals-requiredmark--helphint), [PasswordStrengthMeter](#passwordstrengthmeter)
-- **Badges/estado**: [StatusBadge](#statusbadge), [RoleBadge](#rolebadge)
-- **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [FilterBar](#filterbar-searchinput--selectfilter), [TableToolbar](#tabletoolbar)
-- **Navegación/shell**: [SidebarNav](#sidebarnav), [ConfigDropdown](#configdropdown), [MobileTopBar](#mobiletopbar), [SidebarTip](#sidebartip)
+- **Diálogos/modales**: [Modal](#modal), [ConfirmDialog](#confirmdialog), [SelectModal](#selectmodal), [DocumentPreviewModal](#documentpreviewmodal)
+- **Tablas/listados**: [Table](#table), [GridView](#gridview), [EmptyState](#emptystate), [AuditLogPanel](#auditlogpanel), [ConfigAuditLogPanel](#configauditlogpanel), [AuditLogValueDiff](#auditlogvaluediff)
+- **Formularios**: [NumericInput](#numericinput), [Select](#select), [TextField](#textfield), [FileDropZone](#filedropzone), [TagMultiSelect](#tagmultiselect), [RoleMultiSelect](#rolemultiselect), [SearchableSelectList](#searchableselectlist), [HintSignals](#hintsignals-requiredmark--helphint), [PasswordStrengthMeter](#passwordstrengthmeter)
+- **Badges/estado**: [StatusBadge](#statusbadge), [RoleBadge](#rolebadge), [ActiveBadge](#activebadge)
+- **Layout/estructura**: [Card](#card), [SectionHeader](#sectionheader), [KpiCard](#kpicard), [KpiPill](#kpipill), [FilterBar](#filterbar-searchinput--selectfilter), [TableToolbar](#tabletoolbar), [Tabs](#tabs) + [TabPanel](#tabpanel), [SegmentedControl](#segmentedcontrol), [Stepper](#stepper)
+- **Navegación/shell**: [SidebarNav](#sidebarnav), [ConfigDropdown](#configdropdown), [MobileTopBar](#mobiletopbar), [SidebarTip](#sidebartip), [SidebarCollapseHint](#sidebarcollapsehint)
 - **Notificaciones internas**: [NotificationBell](#notificationbell), [NotificationList](#notificationlist), [NotificationsProvider](#notificationsprovider--usenotifications)
 - **Tooltips**: [Tooltip](#tooltip), [SidebarTip](#sidebartip) (solo sidebar colapsado)
 - **Popovers (click, contenido interactivo)**: [VersionHistoryPopover](#versionhistorypopover)
 - **Exportación**: [ExportButton](#exportbutton)
+- **Documentos de proyecto**: [ProjectDocumentsList](#projectdocumentslist), [DocumentPreviewModal](#documentpreviewmodal)
+- **Carga genérica**: [Spinner](#spinner)
+- **Providers de datos compartidos**: [PublicSettingsProvider](#publicsettingsprovider), [NotificationsProvider](#notificationsprovider--usenotifications)
 - **Helpers no-componente**: [alertStyles.ts](#alertstylests), [sidebarNavClasses.ts](#sidebarnavclassests), [colorTokens.ts](#colortokensts)
 - **Design tokens / animación**: ver [sección Design Tokens](#design-tokens) arriba y `springs` en `src/animations.ts`.
 
@@ -232,6 +235,16 @@ Especialización de `AuditLogPanel` para `ConfigAuditLogRecord` (`useConfigAudit
 
 ---
 
+## AuditLogValueDiff
+
+**Path**: `src/components/UI/AuditLogValueDiff.tsx`
+
+Renderiza el cambio `oldValue → newValue` de una entrada de auditoría, detectando automáticamente 3 formas: escalar simple (string/number/boolean, "viejo → nuevo" con wrap), lista JSON (diff de tags añadidos/quitados, ej. acciones de `TagMultiSelect`), u objeto JSON (solo los campos que cambiaron, con label vía `FIELD_LABELS` interno y un identificador estable como `code` mostrado aparte).
+
+- **Props**: `oldValue: string | null`, `newValue: string | null`
+- **Cuándo usarlo**: dentro de `renderEntry` de `AuditLogPanel`/`ConfigAuditLogPanel` para mostrar el detalle de un cambio — no reimplementar el diff a mano ni mostrar JSON crudo.
+- **Convenciones**: colores fijos `danger` (antes, tachado)/`success` (después, bold) de `SEMANTIC_COLOR_MAP`; `FIELD_LABELS` es un mapa interno pequeño (`name`,`symbol`,`is_active`,`is_base`) — extenderlo ahí si aparece un campo nuevo auditado como objeto.
+
 ## NumericInput
 
 **Path**: `src/components/UI/NumericInput.tsx`
@@ -251,6 +264,16 @@ Especialización de `AuditLogPanel` para `ConfigAuditLogRecord` (`useConfigAudit
 - **Props**: `value: string`, `onChange: (value: string) => void`, `options: SelectOption[]` (`{value,label}`), `id?`, `accent?: SemanticColor` (default `"info"`), `size?: "sm"|"md"` (default `"md"`), `icon?: ReactNode` (ícono inset a la izquierda, ajusta padding automáticamente), `hasError?`, `disabled?`, `required?`, `ariaLabel?`, `title?`, `className?`
 - **Cuándo usarlo**: cualquier `<select>` de la app — reemplaza por completo el patrón de escribir un `<select>` a mano con clases propias.
 - **Convenciones**: consume `SEMANTIC_COLOR_MAP` para el color de foco (`accent`) vía un mapa estático de clases (nunca interpolar `focus:ring-${accent}-200` directamente — Tailwind v4 no puede purgar/generar clases dinámicas construidas en runtime); consume `fieldErrorClasses` de `FieldError.tsx` para el estado `hasError`; `size="sm"` para selects inline en filas de tabla/tarjeta; `icon` para selects con ícono de contexto (ej. `Shield` en selector de rol de `UserFormModal`).
+
+## TextField
+
+**Path**: `src/components/UI/TextField.tsx`
+
+Campo de texto (`input`/`textarea`) con label, error y contador de caracteres integrados — fuente única para el patrón label+control.
+
+- **Props**: `id`, `label`, `value: string`, `onChange`, `as?: "input"|"textarea"` (default `"input"`), `placeholder?`, `error?`, `required?`, `disabled?`, `rows?` (default 3), `maxLength?`, `showCounter?`, `accent?: SemanticColor` (default `"brand"`), `icon?: ReactNode`, `className?`
+- **Cuándo usarlo**: cualquier campo de texto libre/textarea con label — reemplaza escribir `<label>`+`<input>` a mano.
+- **Convenciones**: `required` se refleja como `RequiredMark` (indicador dinámico) + `aria-required` — deliberadamente NO el atributo HTML `required` nativo (dispararía validación del navegador en vez de dejar `error` como única fuente de verdad); reusa `FieldError`/`fieldErrorClasses`; mismo vocabulario `accent` que `NumericInput`.
 
 ## FileDropZone
 
@@ -281,6 +304,16 @@ Wrapper de `TagMultiSelect` específico para roles, con etiquetas legibles.
 - **Props**: `roles: string[]`, `value: string[]`, `onChange`, `disabled?`, `className?`
 - **Cuándo usarlo**: selectores de rol/permiso en la matriz de notificaciones (CONFIG APP).
 - **Convenciones**: mapea roles vía `roleLabel` de `constants/roles`; delgado, sin estilo propio.
+
+## SearchableSelectList
+
+**Path**: `src/components/UI/SearchableSelectList.tsx`
+
+Lista de selección única con búsqueda — barra lateral animada (`layoutId`) + check circular con spring en la fila seleccionada. Genérico sobre `T`, misma filosofía que `Table`/`GridView` (el consumidor decide qué renderizar por fila).
+
+- **Props**: `items: T[]`, `rowKey: (item)=>string`, `getSearchText: (item)=>string`, `renderItem: (item,isSelected)=>ReactNode`, `selectedKey: string|null`, `onSelect`, `searchPlaceholder`, `searchAriaLabel`, `layoutIdNamespace` (evita colisión con otra instancia en la misma vista), `emptyMessage`, `emptySearchMessage`, `noun`/`nounPlural` (contador), `selectedLabel?: (item)=>string`, `className?`, `maxHeight?`
+- **Cuándo usarlo**: elegir 1 opción de una lista mediana con más contexto por fila (título+subtítulo) que un `<select>` — ej. selector de obra en `InviteModal` (Proveedores). Para catálogos grandes tipo tabla con columnas, usar [`SelectModal`](#selectmodal) en su lugar.
+- **Convenciones**: filtrado client-side; no impone estructura de fila (`renderItem` es libre, igual que `Column.render` de `Table`).
 
 ## HintSignals (RequiredMark + HelpHint)
 
@@ -366,6 +399,16 @@ Tarjeta de estadística de dashboard: ícono, label, value/sub o children person
 - **Cuándo usarlo**: grillas de KPIs/métricas en dashboards (Presidencia, Finanzas, etc.).
 - **Convenciones**: `onInspect` muestra un botón de lupa en hover; variante `dark` es una tarjeta slate-900; color del borde izquierdo personalizable vía clase Tailwind (`borderAccent`/`accent`) — casi todas las vistas lo pasan explícito para diferenciar KPIs entre sí; el default (sin pasar nada) usa `SEMANTIC_COLOR_MAP.brand` (`colorTokens.ts`). Radio `rounded-container`; padding `p-5` (`--spacing-card-padding-compact`) intencionalmente más denso que `Card` (`p-6`) porque suele ir en grilla de 3-4 columnas.
 
+## KpiPill
+
+**Path**: `src/components/UI/KpiPill.tsx`
+
+Variante compacta de `KpiCard`: ícono + label + valor en una sola fila tipo pill, para cuando el KPI es contexto secundario (ej. debajo de una barra de tabs) y la card grande sería demasiado peso visual.
+
+- **Props**: `icon: ReactNode`, `label: string`, `value: string | number`, `accent?: SemanticColor` (default `"brand"`)
+- **Cuándo usarlo**: KPIs secundarios/contextuales fuera de una grilla de dashboard — para KPIs principales usar [`KpiCard`](#kpicard).
+- **Convenciones**: si `value` es numérico, anima count-up/down (Motion `animate` sobre un `useMotionValue`) con flash de color breve (`success` si sube, `neutral` si baja) al cambiar — útil para KPIs recalculados en vivo sobre datos que cambian tras acciones del usuario. Valores string se muestran estáticos.
+
 ## FilterBar (SearchInput + SelectFilter)
 
 **Path**: `src/components/UI/FilterBar.tsx`
@@ -385,6 +428,47 @@ Barra de herramientas para tablas de configuración: `SearchInput` + filtro `Sel
 - **Props**: `searchId`, `searchValue`, `onSearchChange`, `searchPlaceholder`, `searchAriaLabel`, `filter?: {id,value,onChange,ariaLabel,options}` (omitido si la vista no necesita un `SelectFilter` adicional), `countIcon: ReactNode`, `filteredCount: number`, `totalCount: number`, `noun: string`, `nounPlural: string`
 - **Cuándo usarlo**: inmediatamente antes de un `Table` en cualquier panel de catálogo/configuración que tenga búsqueda + contador de resultados filtrados/totales. Si la vista necesita más de un filtro adicional, rango de fechas, o botones de exportación en la misma barra (ej. `MasterTableSection`/`AuditLogSection` de Presidencia), esas necesidades no encajan en esta abstracción de props fijas — se deja la barra manual en esos casos en vez de forzar un `extra?: ReactNode` de escape que devaluaría la abstracción.
 - **Convenciones**: compone `SearchInput`/`SelectFilter` de `FilterBar.tsx`; el chip contador usa el mismo patrón `motion.span` con `springs.snappy` (`key={filteredCount}`, scale+fade al cambiar) que ya usaban las 3 vistas por separado; `filteredCount !== totalCount` muestra la fracción (`"3 / 12"`), si coinciden solo el total (`"12"`).
+
+## Tabs
+
+**Path**: `src/components/UI/Tabs.tsx`
+
+Selector de pestañas controlado, con indicador deslizante animado (`layoutId` de Motion). Distinto de [`SegmentedControl`](#segmentedcontrol): `Tabs` tiene semántica ARIA `tablist`/`tab` real y está pensado para pares con `TabPanel`.
+
+- **Props**: `tabs: TabDefinition[]` (`{key,label,count?,showDot?}`), `activeKey`, `onChange`, `layoutId?` (namespace, evita colisión con otro `<Tabs>` en la misma página), `ariaLabel`, `fullWidth?` (default `false`, compacto `w-fit`)
+- **Cuándo usarlo**: selector de pestañas de una vista — **siempre junto a `TabPanel`** para el contenido, nunca sin él (ver patrón completo abajo).
+- **Patrón completo de 3 piezas** (ver `InfraestructuraMantenimientoPanel/index.tsx`): 1) `<Tabs activeKey onChange>` controlado por `useState` del padre; 2) `<TabPanel activeKey={activeTab}>` envolviendo el contenido de la tab activa; 3) el ancestro que contiene todo necesita **altura real** (`height`, no `maxHeight`) si alguna tab usa `<Table fillViewport>` — con `maxHeight` el contenedor colapsa a `auto` y la tabla pierde su scroll interno. No agregar `overflow-y-auto` "por si acaso" en ese ancestro: causa parpadeo de scrollbar en ciertos zooms, cada tabla ya maneja su propio scroll vía `fillViewport`.
+- **Convenciones**: `showDot` en un `TabDefinition` pone un punto rojo pulsante (avisar contenido pendiente en tab no activa); `count` muestra un chip numérico.
+
+## TabPanel
+
+**Path**: `src/components/UI/TabPanel.tsx`
+
+Contenedor animado para el contenido de la tab activa — pareja obligatoria de `Tabs` (que no sabe qué contenido corresponde a cada tab).
+
+- **Props**: `activeKey: string` (cambia el `key` interno, dispara la transición), `children`, `className?`
+- **Cuándo usarlo**: envolver el contenido de cada tab en un sistema `Tabs` — no reescribir el `motion.div` de transición a mano.
+- **Convenciones**: sin `mode="wait"` (evita duplicar el tiempo percibido esperando el exit); sin animación de exit (un exit con `position:absolute` en un padre flex pierde el alto calculado); duración fija corta 120ms `easeOut` (no spring — un spring de ~300-400ms se siente con inercia de más para un cambio de tab).
+
+## SegmentedControl
+
+**Path**: `src/components/UI/SegmentedControl.tsx`
+
+Control de opciones excluyentes, genérico sobre `T extends string`: variante `"pill"` (tabs compactas sin semántica ARIA de tablist) o `"card"` (bloques grandes ícono+descripción, `radiogroup` accesible).
+
+- **Props**: `options: SegmentedOption<T>[]` (`{value,label,description?,icon?,accent?}`), `value: T`, `onChange`, `variant?: "pill"|"card"` (default `"pill"`), `accent?: SemanticColor` (default `"brand"`), `ariaLabel?` (requerido en `variant="card"`), `id?`
+- **Cuándo usarlo**: elegir entre 2-4 opciones excluyentes con estilo de botón/tarjeta — no un sistema completo de tabs con contenido asociado (eso es [`Tabs`](#tabs)). Ejemplos reales: tipo de requerimiento, condición nuevo/usado, tabs catálogo/personalizado.
+- **Convenciones**: cada opción puede sobreescribir el `accent` global vía `opt.accent`; `variant="card"` arma el grid de columnas automáticamente según `options.length` (1 a 4).
+
+## Stepper
+
+**Path**: `src/components/UI/Stepper.tsx`
+
+Indicador de pasos horizontal para formularios tipo wizard — puro y controlado por props, sin lógica de validación de negocio (eso vive en el hook del wizard consumidor, ej. `useRequestWizard`).
+
+- **Props**: `steps: StepDefinition[]` (`{id,label,description?}`), `currentIndex: number`, `furthestVisitedIndex: number` (habilita click para retroceder), `onStepClick: (index)=>void`, `ariaLabel?` (default "Pasos")
+- **Cuándo usarlo**: cualquier flujo tipo wizard de varios pasos con navegación hacia atrás permitida hasta lo ya visitado.
+- **Convenciones**: paso completado = check verde; actual = círculo brand con escala; solo pasos con `index <= furthestVisitedIndex` (y distintos del actual) son clickeables.
 
 ---
 
@@ -427,6 +511,16 @@ Tooltip basado en portal específico para el rail colapsado del sidebar.
 - **Props**: `label: ReactNode`, `disabled?: boolean`, `children: ReactElement` (hijo único, clonado)
 - **Cuándo usarlo**: exclusivo del sidebar; para tooltips de propósito general usar [`Tooltip`](#tooltip) en su lugar.
 - **Convenciones**: portal a `document.body` (escapa el recorte de `overflow-y-auto`/`transform-gpu`); clona ref+handlers sobre el hijo vía `Children.only`; `memo`izado; posicionamiento solo a la derecha (sin prop `placement`, a diferencia de `Tooltip`).
+
+## SidebarCollapseHint
+
+**Path**: `src/components/UI/SidebarCollapseHint.tsx`
+
+Aviso flotante de "primera vez" que señala el botón de colapsar/expandir el sidebar — se dispara una sola vez por navegador (persistido en `localStorage`), se auto-oculta a los 6s o al primer clic en cualquier lado.
+
+- **Props**: `anchorRef: RefObject<HTMLElement|null>` (el botón de colapso, se posiciona relativo a él), `enabled: boolean` (debe coincidir con la disponibilidad real del botón, oculto en mobile)
+- **Cuándo usarlo**: exclusivo de `SidebarNav`, no genérico — es un patrón de onboarding puntual, no un tooltip reusable.
+- **Convenciones**: portal a `document.body` (mismo motivo que `SidebarTip`: el aside usa `transform-gpu`/`overflow-y-auto`, un `fixed` anidado quedaría recortado); delay de aparición 1200ms.
 
 ---
 
@@ -483,6 +577,46 @@ Popover flotante controlado por **click** (no hover), con contenido interactivo 
 - **Convenciones**: tema oscuro fijo (`bg-slate-800/95`, `text-slate-100`, mismo look que `Tooltip`); portal a `document.body`; el estado `isOpen` es controlado por el consumidor (no maneja su propio toggle); cierra con click fuera del popover Y del `anchorRef`, o con tecla ESC. Usado hoy en `ProjectDocumentsList.tsx` (`src/components/UI/`) para el historial de versiones (`V1`, `V2`...) de un documento, siempre con `placement="bottom"` (el único valor ejercitado hasta ahora; `"top"` es soportado pero sin consumidor real todavía).
 
 ---
+
+## Spinner
+
+**Path**: `src/components/UI/Spinner.tsx`
+
+SVG de carga circular animado, sin opinión de color (hereda `currentColor`).
+
+- **Props**: `size?: "xs"|"sm"|"md"|"lg"|"xl"` (default `"md"`), `className?`, `data-testid?`, `aria-hidden?`
+- **Cuándo usarlo**: cualquier estado de carga inline — dentro de `Button` (`isLoading`), `IconActionButton` (`isBusy`), tablas, modales, etc.
+- **Convenciones**: color vía `text-*` en `className` (usa `currentColor`); es el primitivo que consumen `Button`/`IconActionButton`/`AuditLogPanel`/`DocumentPreviewModal` — no crear otro SVG de loading.
+
+## DocumentPreviewModal
+
+**Path**: `src/components/UI/DocumentPreviewModal.tsx`
+
+Previsualizador de un `ProjectDocument` dentro de un `Modal`: PDF vía `pdfjs-dist` (canvas, zoom, paginación), imágenes vía `<img>`, CSV con parser mínimo propio (tabla), y mensaje de "no disponible" para el resto (DWG/DXF sin soporte de render en navegador).
+
+- **Props**: `isOpen`, `onClose`, `projectId`, `document: ProjectDocument | null`, `authToken`, `onDownload: (doc)=>void`
+- **Cuándo usarlo**: botón "Vista previa" sobre cualquier documento de proyecto — no abrir el archivo en una pestaña nueva ni reimplementar el render de PDF/imagen a mano.
+- **Convenciones**: detecta el tipo por `mimeType`, con fallback a la extensión del nombre de archivo (`finfo` a veces detecta DWG/DXF/CSV como tipos genéricos); compone `Modal`+`Button`+`Spinner`.
+
+## ProjectDocumentsList
+
+**Path**: `src/components/UI/ProjectDocumentsList.tsx`
+
+Listado de los documentos (planos/hojas de cálculo/fotos) de un proyecto, agrupado por `documentGroupId` — cada documento lógico es una fila con su versión vigente; versiones anteriores viven en un acordeón inline expandible por fila (no listadas sueltas como filas independientes).
+
+- **Props**: `project: Project`, `onDownload`, `onPreview`, `onDelete?` (si se provee, cada fila muestra eliminar/deshacer), `markedForDeletion?: Set<number>`, `auditLogs?: AuditLog[]` (infiere motivo de rechazo de versiones antiguas por proximidad temporal), `mode?: "view"|"manage"` (default `"view"`; `"manage"` habilita "Nueva versión" por fila, usado solo en el wizard de Infraestructura)
+- **Cuándo usarlo**: cualquier vista que liste los documentos adjuntos de un proyecto (Procura, Cierre de Obra, wizard de Infraestructura) — no reimplementar el agrupamiento por versión a mano.
+- **Convenciones**: usa `VersionHistoryPopover` para el historial expandible; resuelve color/ícono por tipo de archivo vía `SEMANTIC_COLOR_MAP`.
+
+## PublicSettingsProvider
+
+**Path**: `src/components/UI/PublicSettingsProvider.tsx`
+
+Provider de contexto que hace UN fetch de `GET /settings` por sesión (gateado, sin revalidación automática) y lo comparte en memoria — reemplaza que cada hook de settings (`usePollingSettings`, `useMaxAdvancePercent`, `useBudgetSemaphore`) hiciera su propio fetch independiente del mismo endpoint.
+
+- **API**: `PublicSettingsProvider({ children })` (montar una vez en la app); los hooks públicos (`usePollingSettings`/`useMaxAdvancePercent`/`useBudgetSemaphore`) siguen siendo la superficie que el resto de la app usa — ahora son proyecciones puras sobre este contexto, sin fetch propio.
+- **Cuándo usarlo**: no se consume directo normalmente — se monta una vez en `App.tsx`; para leer un setting específico usar el hook correspondiente (`usePollingSettings` etc.), no este provider.
+- **Convenciones**: trade-off deliberado — si un SUPERADMIN cambia un umbral en CONFIG APP, otros usuarios lo ven recién en su próximo login/refresh (no hay revalidación automática, evita repetir el volumen de requests que esto vino a eliminar). Vive en `UI/` (no en `hooks/`) porque expone JSX, igual criterio que `NotificationsProvider`.
 
 ## ExportButton
 
