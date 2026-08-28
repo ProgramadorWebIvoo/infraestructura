@@ -101,7 +101,34 @@ export default function InspectSupplierProposalModal({ proposal, onClose }: Insp
                 { key: "materialName", label: "Material", render: (item) => <span className="font-semibold text-slate-800 text-[11px]">{item.materialName}</span> },
                 { key: "quantity", label: "Cantidad", align: "center", render: (item) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
                 { key: "unit", label: "Unidad", render: (item) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
-                { key: "unitPrice", label: "Precio unit.", align: "right", render: (item) => <span className="font-mono font-bold text-slate-700 text-[11px]">${item.unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                { key: "unitPrice", label: "PROP (USD)", align: "right", render: (item) => <span className="font-mono font-bold text-slate-700 text-[11px]">${item.unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                // EST: Precio estimado (si está disponible)
+                ...(proposal.items.some(i => i.estimatedPriceDisplay) ? [{
+                  key: "estimatedPrice",
+                  label: "EST (USD)",
+                  align: "right" as const,
+                  render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{item.estimatedPriceDisplay || "—"}</span>
+                }] : []),
+                // VAR%: Variación con color badge
+                ...(proposal.items.some(i => i.variationLabel) ? [{
+                  key: "variation",
+                  label: "VAR%",
+                  align: "right" as const,
+                  render: (item: any) => (
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="font-mono font-bold text-slate-700 text-[11px]">{item.variationLabel || "—"}</span>
+                      {item.variationBadgeColor && (
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
+                          item.variationBadgeColor === 'danger' ? 'bg-red-100 text-red-700' :
+                          item.variationBadgeColor === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {item.variationDirection === 'increase' ? '↑' : item.variationDirection === 'decrease' ? '↓' : '—'}
+                        </span>
+                      )}
+                    </div>
+                  )
+                }] : []),
                 { key: "totalPrice", label: "Total", align: "right", render: (item) => <span className="font-mono font-black text-indigo-700 text-[11px]">${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
                 { key: "notes", label: "Notas", render: (item) => <span className="text-slate-400 italic text-[11px]">{item.notes || "—"}</span> },
               ]}
