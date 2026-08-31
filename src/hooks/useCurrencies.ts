@@ -21,6 +21,8 @@ export interface CurrencyRecord {
   symbol: string;
   is_base: boolean;
   is_active: boolean;
+  /** Moneda oficial del BCV (EUR, USD) — estructuralmente inmutable: solo is_active es editable, no se puede renombrar ni eliminar. */
+  is_official: boolean;
   created_at: string;
   updated_at: string;
 }

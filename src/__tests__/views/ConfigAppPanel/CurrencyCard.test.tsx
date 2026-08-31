@@ -16,6 +16,7 @@ function makeCurrency(overrides: Partial<CurrencyRecord> = {}): CurrencyRecord {
     symbol: "$",
     is_base: true,
     is_active: true,
+    is_official: false,
     created_at: "2026-08-12T00:00:00.000000Z",
     updated_at: "2026-08-12T00:00:00.000000Z",
     ...overrides,
@@ -56,6 +57,7 @@ describe("CurrencyCard", () => {
     renderCard([]);
     expect(screen.getByText("Moneda")).toBeInTheDocument();
     expect(screen.queryByText("USD")).not.toBeInTheDocument();
+    expect(screen.getByText("Sin monedas personalizadas agregadas todavía.")).toBeInTheDocument();
   });
 
   it("renderiza una moneda con su badge de Base y Activa", () => {
@@ -247,5 +249,32 @@ describe("CurrencyCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Eliminar EUR" }));
 
     await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith("no se pudo eliminar", "error"));
+  });
+
+  // ── Monedas oficiales BCV (is_official) ──────────────────────────────────
+
+  it("agrupa una moneda oficial bajo 'Monedas oficiales BCV' con badge BCV, sin Editar ni Eliminar", () => {
+    renderCard([makeCurrency({ id: 2, code: "EUR", name: "Euro", is_base: false, is_active: true, is_official: true })]);
+
+    expect(screen.getByText("Monedas oficiales BCV")).toBeInTheDocument();
+    expect(screen.getByText("BCV")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar EUR" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Eliminar EUR" })).not.toBeInTheDocument();
+  });
+
+  it("permite activar/desactivar una moneda oficial no-base", async () => {
+    handlers.onUpdate.mockResolvedValueOnce(undefined);
+    renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: true, is_official: true })]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Desactivar EUR" }));
+
+    await waitFor(() => expect(handlers.onUpdate).toHaveBeenCalledWith(2, { is_active: false }));
+  });
+
+  it("no agrupa monedas custom bajo 'Monedas oficiales BCV'", () => {
+    renderCard([makeCurrency({ id: 2, code: "GBP", name: "Libra", is_base: false, is_active: true, is_official: false })]);
+
+    expect(screen.queryByText("Monedas oficiales BCV")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar GBP" })).toBeInTheDocument();
   });
 });

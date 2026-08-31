@@ -64,7 +64,8 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
  * globales de TODA la configuración, no de la sección que se esté mirando.
  */
 const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
-  { key: "negocio", title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "__currencies__", "fiscal"] },
+  { key: "negocio", title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "fiscal"] },
+  { key: "monedas", title: "Monedas", groups: ["__currencies__"] },
   { key: "notificaciones", title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
   { key: "aplicacion", title: "Aplicación", groups: ["app"] },
 ];
