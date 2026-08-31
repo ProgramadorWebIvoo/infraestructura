@@ -14,14 +14,13 @@ import { itemVariants } from "../../../animations";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import Button from "../../../components/UI/Button";
-import Table from "../../../components/UI/Table";
+import { Table, type Column } from "../../../components/UI/Table";
 import EmptyState from "../../../components/UI/EmptyState";
 import { useToast } from "../../../components/UI/Toast";
 import { getErrorMessage } from "../../../services/logger";
+import Select from "../../../components/UI/Select";
 import type { ExchangeRateRecord } from "../../../hooks/useExchangeRates";
 import type { CurrencyRecord } from "../../../hooks/useCurrencies";
-import type { Column } from "../../../components/UI/Table";
-import Select from "../../../components/UI/Select";
 
 interface ExchangeRateHistoryPanelProps {
   rates: ExchangeRateRecord[];
