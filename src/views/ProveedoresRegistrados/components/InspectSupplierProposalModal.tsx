@@ -10,9 +10,11 @@
  */
 
 import React, { useMemo } from "react";
-import { Clock, FileSearch, HandCoins, Mail, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Clock, FileSearch, HandCoins, Mail } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
+import SummaryStat from "../../../components/UI/SummaryStat";
+import VariationBadge from "../../../components/UI/VariationBadge";
 import type { SupplierMaterialProposal } from "../../../types";
 
 interface InspectSupplierProposalModalProps {
@@ -37,24 +39,24 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
       title={proposal.supplierCompany ? `${proposal.supplierName} · ${proposal.supplierCompany}` : proposal.supplierName}
       infoLine={`${proposal.projectTitleSnapshot} — propuesta ${proposal.id}`}
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Resumen */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Total Oferta" value={`$${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`} emphasize />
+          <SummaryStat label="Total Oferta" value={`$${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`} emphasize tone="indigo" />
           <SummaryStat label="Materiales" value={String(proposal.items.length)} />
           <SummaryStat label="Enviado" value={proposal.submittedAt} />
           <SummaryStat label="Obra" value={proposal.projectId} />
         </div>
 
-        <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-3.5 space-y-2">
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="block text-[9px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Proveedor</span>
+              <span className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Proveedor</span>
               <p className="font-semibold text-slate-700">{proposal.supplierName}</p>
               {proposal.supplierCompany && <p className="text-slate-500">{proposal.supplierCompany}</p>}
             </div>
             <div>
-              <span className="block text-[9px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Contacto</span>
+              <span className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Contacto</span>
               <p className="font-semibold text-slate-700 flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5 text-slate-400" />
                 {proposal.supplierContact}
@@ -85,7 +87,7 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
 
           {proposal.generalNotes && (
             <div className="pt-2 border-t border-indigo-100">
-              <span className="block text-[9px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Observaciones generales</span>
+              <span className="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Observaciones generales</span>
               <p className="text-xs text-slate-600">{proposal.generalNotes}</p>
             </div>
           )}
@@ -93,8 +95,8 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
 
         {/* Detalle de materiales cotizados */}
         <div className="rounded-lg border border-slate-200 overflow-hidden">
-          <div className="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200">
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Detalle de Materiales Cotizados</span>
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Detalle de Materiales Cotizados</span>
           </div>
           <div className="max-h-80 overflow-y-auto overflow-x-auto">
             <Table
@@ -147,16 +149,5 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
     </Modal>
   );
 }
-
-const SummaryStat = React.memo(
-  function SummaryStat({ label, value, emphasize = false }: { label: string; value: string; emphasize?: boolean }) {
-    return (
-      <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
-        <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</span>
-        <span className={`font-mono font-black ${emphasize ? "text-sm text-indigo-700" : "text-xs text-slate-700"}`}>{value}</span>
-      </div>
-    );
-  }
-);
 
 export default React.memo(InspectSupplierProposalModalComponent);

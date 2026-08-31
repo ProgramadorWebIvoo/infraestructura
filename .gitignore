@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+.mcp.json
+CLAUDE.md
+graphify-out

@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
+import SummaryStat from "../../../components/UI/SummaryStat";
 import type { Project, Proposal, ProposalMaterialItem } from "../../../types";
 import { apiDownload } from "../../../services/api";
 import { formatCurrency } from "../../../utils";
@@ -299,27 +300,5 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
       </Modal>
     )}
     </>
-  );
-}
-
-function SummaryStat({
-  label,
-  value,
-  emphasize = false,
-  compact = false,
-  tone,
-}: {
-  label: string;
-  value: string;
-  emphasize?: boolean;
-  compact?: boolean;
-  tone?: "success" | "danger";
-}) {
-  const toneClass = tone === "success" ? "text-success-700" : tone === "danger" ? "text-danger-700" : emphasize ? "text-emerald-700" : "text-slate-700";
-  return (
-    <div className={`rounded-lg border border-slate-100 bg-slate-50 ${compact ? "px-2.5 py-2" : "px-3 py-2.5"}`}>
-      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</span>
-      <span className={`font-mono font-black ${emphasize ? "text-sm" : "text-xs"} ${toneClass}`}>{value}</span>
-    </div>
   );
 }

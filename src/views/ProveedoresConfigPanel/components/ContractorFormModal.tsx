@@ -12,10 +12,8 @@ import Select from "../../../components/UI/Select";
 import NumericInput from "../../../components/UI/NumericInput";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
-import { isValidEmail, isValidPhone, joinRif, splitRif, RIF_TYPES } from "../../../utils/validators";
+import { isValidEmail, isValidPhone, joinRif, splitRif } from "../../../utils/validators";
 import { STATUS_OPTIONS, type ContractorForm } from "../types";
-
-const RIF_TYPE_OPTIONS = RIF_TYPES.map((t) => ({ value: t, label: t }));
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const inputClass =
@@ -49,10 +47,10 @@ export default function ContractorFormModal({
   const emailFormatInvalid = hasEmail && !isValidEmail(form.email);
   const phoneFormatInvalid = hasPhone && !isValidPhone(form.phone);
 
-  // El usuario solo tipea la letra (selector) y los 9 dígitos — nunca
-  // guiones. form.rif guarda el string completo ("J-12345678-9") que
-  // espera el backend; se reconstruye a partir de estas dos partes.
-  const { type: rifType, digits: rifDigits } = splitRif(form.rif);
+  // El usuario solo tipea los 9 dígitos — la "J-" es fija (todo proveedor es
+  // persona jurídica). form.rif guarda el string completo ("J-12345678-9")
+  // que espera el backend; se reconstruye a partir de los dígitos.
+  const { digits: rifDigits } = splitRif(form.rif);
   const rifDigitsComplete = rifDigits.length === 9;
   const rifError = !rifDigitsComplete ? `Faltan ${9 - rifDigits.length} dígitos.` : undefined;
 
@@ -116,28 +114,23 @@ export default function ContractorFormModal({
           />
         </div>
 
-        {/* RIF — siempre obligatorio, sin excepción. El usuario solo elige la
-            letra y tipea los 9 dígitos; los guiones los arma joinRif(). */}
+        {/* RIF — siempre obligatorio, sin excepción. Prefijo "J-" fijo (todo
+            proveedor es persona jurídica): el usuario solo tipea los 9
+            dígitos, joinRif() arma el string completo. */}
         <div>
           <label htmlFor="contractor-rif-digits" className={labelClass}>
             RIF <RequiredMark filled={rifDigitsComplete} />
           </label>
-          <div className="flex gap-2">
-            <div className="w-20 shrink-0">
-              <Select
-                id="contractor-rif-type"
-                value={rifType}
-                onChange={(v) => onFormChange({ ...form, rif: joinRif(v as typeof rifType, rifDigits) })}
-                options={RIF_TYPE_OPTIONS}
-                accent="info"
-              />
-            </div>
+          <div className="flex items-stretch gap-2">
+            <span className="flex shrink-0 items-center rounded-control border border-border-default bg-surface-sunken/60 px-3 font-mono text-xs font-black text-text-tertiary">
+              J-
+            </span>
             <input
               id="contractor-rif-digits"
               type="text"
               inputMode="numeric"
               value={rifDigits}
-              onChange={(e) => onFormChange({ ...form, rif: joinRif(rifType, e.target.value) })}
+              onChange={(e) => onFormChange({ ...form, rif: joinRif(e.target.value) })}
               maxLength={9}
               placeholder="123456789"
               aria-invalid={!!rifError}

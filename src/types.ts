@@ -116,12 +116,45 @@ export interface ContractorHistoryTopProduct {
   variationPercent: number;
 }
 
+export interface ContractorHistoryCustomProduct {
+  catalogProductId: number;
+  productName: string;
+  quoteCount: number;
+  firstPriceUsd: number;
+  lastPriceUsd: number;
+  variationPercent: number;
+  firstQuotedAt: string;
+  lastQuotedAt: string;
+}
+
+/**
+ * Deliberadamente SIN montos de costo/pago — ver nota en
+ * ContractorHistoryService (backend), es una decisión explícita pendiente
+ * de planificar como fase separada, no un olvido.
+ */
+export interface ContractorHistoryProject {
+  projectId: string;
+  projectTitle: string;
+  projectType: string;
+  projectStatus: string;
+  projectLocation: string;
+  proposalId: string;
+  fechaOferta: string | null;
+  origen: string;
+  isAwarded: boolean;
+  isSuperseded: boolean;
+  isWithdrawn: boolean;
+}
+
 export interface ContractorHistoryStats {
   contractorCode: string;
   contractorName: string | null;
   rating: number | null;
   totalQuoteCount: number;
   distinctProductCount: number;
+  customProductCount: number;
+  totalProjectsBidOn: number;
+  awardedProjectCount: number;
   trendPercent: number | null;
   periodMonths: number;
 }
@@ -129,6 +162,8 @@ export interface ContractorHistoryStats {
 export interface ContractorHistory {
   monthlySeries: ContractorHistoryMonthEntry[];
   topProducts: ContractorHistoryTopProduct[];
+  customProducts: ContractorHistoryCustomProduct[];
+  projects: ContractorHistoryProject[];
   stats: ContractorHistoryStats;
 }
 

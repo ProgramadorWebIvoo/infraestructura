@@ -17,7 +17,7 @@ import { apiFetch } from "../../../services/api";
 import { getErrorMessage } from "../../../services/logger";
 import { useToast } from "../../../components/UI/Toast";
 import { RequiredMark } from "../../../components/UI/HintSignals";
-import { isValidEmail, joinRif, RIF_TYPES, type RifType } from "../../../utils/validators";
+import { isValidEmail, joinRif } from "../../../utils/validators";
 import { containerVariants, itemVariants, springs } from "../../../animations";
 
 interface RegistrationFormProps {
@@ -45,11 +45,10 @@ const MAX_CONTACT_LENGTH = 254;
 export default function RegistrationForm({ onAddContractor }: RegistrationFormProps) {
   const { showToast } = useToast();
   const [name, setName] = useState("");
-  // El usuario solo elige la letra (selector) y tipea los 9 dígitos — nunca
-  // guiones. rif = joinRif(rifType, rifDigits) es lo que se envía al backend.
-  const [rifType, setRifType] = useState<RifType>("J");
+  // Prefijo "J-" fijo (todo proveedor es persona jurídica) — el usuario
+  // solo tipea los 9 dígitos. rif = joinRif(rifDigits) es lo que se envía.
   const [rifDigits, setRifDigits] = useState("");
-  const rif = joinRif(rifType, rifDigits);
+  const rif = joinRif(rifDigits);
   const [specialty, setSpecialty] = useState("");
   const [contact, setContact] = useState("");
   const [submittedCode, setSubmittedCode] = useState("");
@@ -98,7 +97,6 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
       onAddContractor(contractor);
       setSubmittedCode(contractor.code);
       setName("");
-      setRifType("J");
       setRifDigits("");
       setSpecialty("");
       setContact("");
@@ -200,17 +198,9 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
             RIF <RequiredMark filled={rifDigits.length === 9} />
           </label>
           <div className="flex gap-2">
-            <select
-              id="public-provider-rif-type"
-              value={rifType}
-              onChange={(event) => setRifType(event.target.value as RifType)}
-              aria-label="Tipo de RIF"
-              className="rounded-xl border border-slate-200 bg-white px-2.5 py-3 text-sm font-bold text-slate-800 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-            >
-              {RIF_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+            <span className="flex shrink-0 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 font-mono text-sm font-black text-slate-500">
+              J-
+            </span>
             <input
               id="public-provider-rif-digits"
               type="text"

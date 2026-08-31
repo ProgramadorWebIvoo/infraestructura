@@ -57,14 +57,16 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
   const changePercent = first > 0 ? ((last - first) / first) * 100 : 0;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold text-text-muted">
           ${min.toLocaleString("en-US", { minimumFractionDigits: 2 })} — ${max.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </span>
-        <span className={`inline-flex items-center gap-1 text-xs font-black ${changePercent >= 0 ? "text-semantic-success" : "text-semantic-critical"}`}>
-          <TrendingUp className={`h-3.5 w-3.5 ${changePercent < 0 ? "rotate-180" : ""}`} />
-          {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(1)}%
+        <span className={`inline-flex items-center gap-1.5 text-xs font-black ${changePercent >= 0 ? "text-text-primary" : "text-text-primary"}`}>
+          <TrendingUp className={`h-4 w-4 ${changePercent >= 0 ? "text-semantic-success" : "text-semantic-critical"} ${changePercent < 0 ? "rotate-180" : ""}`} />
+          <span className={changePercent >= 0 ? "text-semantic-success" : "text-semantic-critical"}>
+            {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(1)}%
+          </span>
         </span>
       </div>
 
@@ -98,7 +100,7 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
         ))}
       </svg>
         
-      <p className="text-[10px] text-text-muted italic">Pasa el cursor sobre los puntos para ver detalles</p>
+      <p className="text-[10px] text-text-muted italic">💡 Pasa el cursor sobre los puntos para ver detalles de cada cotización</p>
     </div>
   );
 }
@@ -160,27 +162,27 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
           {/* Stats overview */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {/* Unit */}
-            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-3.5">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Unidad</div>
-              <div className="mt-1.5 text-sm font-black text-text-primary">{product.unit}</div>
+              <div className="mt-2 text-sm font-black text-text-primary">{product.unit}</div>
             </div>
             {/* Reference price */}
-            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-3.5">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Precio ref.</div>
-              <div className="mt-1.5 font-mono text-sm font-black text-text-primary">
+              <div className="mt-2 font-mono text-sm font-black text-text-primary">
                 {baseCurrency?.symbol ?? "$"}{convertFromUsd(product.estimated_unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
               <div className="text-[9px] text-text-muted">{baseCurrency?.code ?? "USD"}</div>
             </div>
             {/* Suppliers count */}
-            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-3.5">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Proveedores</div>
-              <div className="mt-1.5 text-sm font-black text-text-primary">{(detail ?? product).suppliers?.length ?? 0}</div>
+              <div className="mt-2 text-sm font-black text-text-primary">{(detail ?? product).suppliers?.length ?? 0}</div>
             </div>
             {/* Status */}
-            <div className="rounded-lg border border-border-subtle bg-surface-sunken/40 p-3">
+            <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-3.5">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Estado</div>
-              <div className={`mt-1.5 text-sm font-black ${product.is_active ? "text-semantic-success" : "text-text-muted"}`}>
+              <div className={`mt-2 text-sm font-black ${product.is_active ? "text-semantic-success" : "text-text-muted"}`}>
                 {product.is_active ? "Activo" : "Inactivo"}
               </div>
             </div>
@@ -192,14 +194,14 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
                 <TrendingUp className="h-4 w-4" /> Histórico de precios
               </h4>
               <p className="text-[10px] text-text-muted">
-                Serie histórica siempre en USD para que sea comparable en el tiempo, aunque la moneda base cambie.
+                Serie histórica siempre en <strong>USD</strong> para que sea comparable en el tiempo, aunque la moneda base cambie.
               </p>
             </div>
             {isLoadingHistory ? (
               <SkeletonPriceChart />
             ) : historyError ? (
-              <div className="rounded-control border border-border-critical bg-semantic-critical/5 p-3.5">
-                <p className="text-xs font-medium text-semantic-critical">{historyError}</p>
+              <div className="rounded-control border border-danger-200 bg-danger-50 p-3.5">
+                <p className="text-xs font-medium text-danger-700">{historyError}</p>
               </div>
             ) : (
               <PriceHistorySparkline entries={history} />
@@ -223,9 +225,9 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
               <EmptyState message="Ningún proveedor registrado tiene este producto vinculado todavía." icon={<Boxes className="h-7 w-7" />} className="py-6" />
             ) : (
               <>
-                <div className="divide-y divide-border-subtle">
+                <div className="divide-y divide-border-subtle rounded-control border border-border-subtle bg-surface-sunken/30 overflow-hidden">
                   {paginatedSuppliers.map((link) => (
-                    <div key={link.id} className="flex items-center justify-between gap-3 py-2.5 text-xs">
+                    <div key={link.id} className="flex items-center justify-between gap-3 px-3.5 py-3 text-xs hover:bg-surface-sunken/60 transition-colors">
                       <div>
                         <div className="font-bold text-text-primary">{link.supplier?.name ?? link.supplier_code}</div>
                         <div className="font-mono text-[10px] text-text-muted">{link.supplier_code}</div>
@@ -242,9 +244,9 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
 
                 {/* Paginación */}
                 {totalSupplierPages > 1 && (
-                  <div className="flex items-center justify-between py-2.5 border-t border-border-subtle">
-                    <div className="text-[10px] text-text-muted">
-                      Página {supplierPage + 1} de {totalSupplierPages}
+                  <div className="flex items-center justify-between gap-3 px-3.5 py-3 border-t border-border-subtle bg-surface-sunken/20">
+                    <div className="text-[10px] font-medium text-text-muted">
+                      Página <span className="font-bold text-text-primary">{supplierPage + 1}</span> de <span className="font-bold text-text-primary">{totalSupplierPages}</span>
                     </div>
                     <div className="flex gap-1.5">
                       <Button
@@ -252,18 +254,18 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
                         size="sm"
                         disabled={supplierPage === 0}
                         onClick={() => setSupplierPage(Math.max(0, supplierPage - 1))}
-                        className="h-6 w-6 p-0"
+                        className="h-7 w-7 p-0"
                       >
-                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         disabled={supplierPage >= totalSupplierPages - 1}
                         onClick={() => setSupplierPage(Math.min(totalSupplierPages - 1, supplierPage + 1))}
-                        className="h-6 w-6 p-0"
+                        className="h-7 w-7 p-0"
                       >
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

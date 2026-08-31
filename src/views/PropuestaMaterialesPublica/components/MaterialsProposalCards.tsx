@@ -15,7 +15,9 @@ import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "
 import { AlertCircle, Camera, ChevronDown, Loader2, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
 import NumericInput from "../../../components/UI/NumericInput";
 import Select from "../../../components/UI/Select";
+import TextField from "../../../components/UI/TextField";
 import { RequiredMark, HelpHint } from "../../../components/UI/HintSignals";
+import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { itemVariants, springs } from "../../../animations";
 import { apiFetch, getApiBaseUrl } from "../../../services/api";
 import {
@@ -98,6 +100,7 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
   const [query, setQuery] = useState(item.materialName);
   const [results, setResults] = useState<CatalogProductSearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const warningColor = SEMANTIC_COLOR_MAP.warning;
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -116,9 +119,9 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
   }, [query]);
 
   return (
-    <div className="relative">
+    <div className="space-y-2">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-amber-400" />
+        <Search className={`pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${warningColor.icon400}`} />
         <input
           type="text"
           value={query}
@@ -131,7 +134,7 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
           onBlur={() => setTimeout(() => setIsOpen(false), 150)}
           placeholder="Buscar en catálogo o escribir nombre nuevo *"
           maxLength={220}
-          className="w-full rounded-lg border border-amber-200 py-2 pl-8 pr-2.5 text-sm font-bold text-slate-800 outline-hidden transition-shadow duration-150 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+          className={`w-full rounded-control border py-2.5 pl-9 pr-3.5 text-sm font-medium text-text-primary outline-hidden transition-shadow duration-150 ${warningColor.border100} focus:${warningColor.text600} focus:ring-1 focus:ring-offset-0`}
         />
       </div>
       <AnimatePresence>
@@ -141,7 +144,7 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={springs.snappy}
-            className="absolute z-20 mt-1 w-full max-h-40 overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+            className={`absolute z-20 mt-1 w-full max-h-40 overflow-auto rounded-control border ${warningColor.border100} bg-surface py-1 shadow-md`}
           >
             {results.map((p) => (
               <li key={p.id}>
@@ -153,9 +156,9 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
                     setIsOpen(false);
                     onSelect(p);
                   }}
-                  className="w-full cursor-pointer px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-amber-50"
+                  className={`w-full cursor-pointer px-3.5 py-2 text-left text-xs font-medium text-text-primary transition-colors hover:${warningColor.bg50}`}
                 >
-                  {p.name} <span className="text-slate-400">({p.unit})</span>
+                  {p.name} <span className="text-text-muted">({p.unit})</span>
                 </button>
               </li>
             ))}
@@ -163,7 +166,7 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
         )}
       </AnimatePresence>
       {item.catalogProductId && (
-        <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+        <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.success.text700}`}>
           <ShieldCheck className="h-3 w-3" /> Vinculado a catálogo
         </span>
       )}
@@ -195,17 +198,17 @@ function ImageUploader({ token, item, onUploaded }: { token: string; item: ItemR
     : null;
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
+    <div className="flex items-start gap-3">
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-control border border-dashed border-border-subtle bg-surface-sunken/50">
         {isUploading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
         ) : previewUrl ? (
           <img src={previewUrl} alt={item.materialName || "Material"} className="h-full w-full object-cover" />
         ) : (
-          <Camera className="h-5 w-5 text-slate-300" />
+          <Camera className="h-5 w-5 text-text-muted/50" />
         )}
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <input
           ref={inputRef}
           type="file"
@@ -221,21 +224,21 @@ function ImageUploader({ token, item, onUploaded }: { token: string; item: ItemR
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-control border border-border-default px-3 py-2 text-[11px] font-bold text-text-primary transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Camera className="h-3 w-3" />
+          <Camera className="h-3.5 w-3.5" />
           {item.imagePath ? "Cambiar imagen" : "Agregar imagen"}
         </button>
         {item.imagePath && (
           <button
             type="button"
             onClick={() => onUploaded(null)}
-            className="inline-flex cursor-pointer items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600"
+            className="inline-flex cursor-pointer items-center gap-1 text-[10px] font-bold text-semantic-critical hover:text-semantic-critical/80"
           >
             <X className="h-3 w-3" /> Quitar
           </button>
         )}
-        <span className="text-[9px] text-slate-400">Opcional — JPG, PNG o WEBP, máx. 5MB</span>
+        <span className="text-[9px] text-text-muted">Opcional — JPG, PNG o WEBP, máx. 5MB</span>
       </div>
     </div>
   );
@@ -267,6 +270,9 @@ function MaterialCard({
   // un vistazo cuáles faltan completar, sin necesidad de abrirlas todas.
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const customColor = SEMANTIC_COLOR_MAP.warning;
+  const dangerColor = SEMANTIC_COLOR_MAP.danger;
+
   return (
     <motion.div
       layout
@@ -275,19 +281,19 @@ function MaterialCard({
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       className={`overflow-hidden rounded-2xl border transition-colors duration-200 ${
-        item.isCustom ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-white"
-      } ${missing ? "ring-2 ring-red-200" : ""}`}
+        item.isCustom ? `${customColor.border100} ${customColor.bg50}` : "border-border-default bg-surface"
+      } ${missing ? `ring-2 ${dangerColor.border100}` : ""}`}
     >
       <button
         type="button"
         onClick={() => setIsExpanded((v) => !v)}
         className="flex w-full cursor-pointer items-center justify-between gap-3 p-5 text-left"
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <RequiredMark filled={complete} className="shrink-0" />
           <div className="min-w-0 flex-1">
             {item.isCustom && !isExpanded ? (
-              <h4 className="truncate text-sm font-black text-slate-800">{item.materialName || "Material personalizado (sin nombre)"}</h4>
+              <h4 className="truncate text-sm font-black text-text-primary">{item.materialName || "Material personalizado (sin nombre)"}</h4>
             ) : item.isCustom ? (
               <div onClick={(e) => e.stopPropagation()}>
                 <CatalogProductPicker
@@ -305,19 +311,19 @@ function MaterialCard({
                 />
               </div>
             ) : (
-              <h4 className="truncate text-sm font-black text-slate-800">{item.materialName}</h4>
+              <h4 className="truncate text-sm font-black text-text-primary">{item.materialName}</h4>
             )}
-            <div className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+            <div className="mt-1 flex items-center gap-2 text-[11px] font-medium text-text-muted">
               <span>
                 {item.quantity} {item.unit}
               </span>
               {item.totalPrice > 0 && (
-                <span className="font-mono font-bold text-sky-600">
+                <span className="font-mono font-bold text-text-primary">
                   {currencyCode} {item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </span>
               )}
               {missing && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-red-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-danger-600">
                   <AlertCircle className="h-2.5 w-2.5" /> Faltan datos
                 </span>
               )}
@@ -335,13 +341,13 @@ function MaterialCard({
               }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="cursor-pointer rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
+              className="cursor-pointer rounded-lg p-1.5 text-text-muted transition-colors hover:bg-danger-50 hover:text-danger-600"
               aria-label="Eliminar material"
             >
               <Trash2 className="h-4 w-4" />
             </motion.span>
           )}
-          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-4 w-4 text-text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
         </div>
       </button>
 
@@ -353,19 +359,19 @@ function MaterialCard({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <div className="border-t border-slate-100 px-5 pb-5 pt-4">
+            <div className="border-t border-border-subtle px-5 pb-5 pt-4">
               {/* Fila 1: cantidad/unidad/precio/total */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Cantidad</label>
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Cantidad</label>
                   {item.isCustom ? (
                     <NumericInput value={item.quantity === 0 ? "" : item.quantity} onChange={(v) => onUpdateItem(index, "quantity", v)} placeholder="0" />
                   ) : (
-                    <div className="rounded-control border border-slate-100 bg-slate-50 px-3.5 py-3 font-mono text-sm font-bold text-slate-600">{item.quantity}</div>
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken px-3.5 py-2.5 font-mono text-sm font-bold text-text-primary">{item.quantity}</div>
                   )}
                 </div>
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Unidad</label>
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Unidad</label>
                   {item.isCustom ? (
                     <input
                       type="text"
@@ -373,35 +379,35 @@ function MaterialCard({
                       onChange={(e) => onUpdateItem(index, "unit", sanitize(e.target.value))}
                       placeholder="Und."
                       maxLength={60}
-                      className="w-full rounded-control border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-700 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                      className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100"
                     />
                   ) : (
-                    <div className="rounded-control border border-slate-100 bg-slate-50 px-3.5 py-3 text-sm font-medium text-slate-600">{item.unit}</div>
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken px-3.5 py-2.5 text-sm font-medium text-text-primary">{item.unit}</div>
                   )}
                 </div>
                 <div>
-                  <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                     Precio unitario ({currencyCode}) <RequiredMark filled={Number(item.unitPrice) > 0} />
                   </label>
                   <NumericInput
                     value={item.unitPrice === 0 ? "" : item.unitPrice}
                     onChange={(v) => onUpdateItem(index, "unitPrice", v)}
                     placeholder="0.00"
-                    className={Number(item.unitPrice) <= 0 ? "border-red-300" : ""}
+                    className={Number(item.unitPrice) <= 0 ? `border-${SEMANTIC_COLOR_MAP.danger.border200.split('-').pop()}` : ""}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</label>
-                  <div className="rounded-control border border-slate-100 bg-slate-50 px-3.5 py-3 text-right font-mono text-sm font-black text-sky-700">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Total</label>
+                  <div className="rounded-control border border-border-subtle bg-surface-sunken px-3.5 py-2.5 text-right font-mono text-sm font-black text-text-primary">
                     {item.totalPrice > 0 ? `${currencyCode} ${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}
                   </div>
                 </div>
               </div>
 
               {/* Fila 2: condición/garantía */}
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                     Condición <RequiredMark filled={!!item.conditionStatus} />
                   </label>
                   <Select
@@ -412,7 +418,7 @@ function MaterialCard({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                     Garantía <RequiredMark filled={!!item.warrantyDescription?.trim()} />
                     <HelpHint content="Describa la garantía que ofrece para este material — si no ofrece ninguna, indíquelo explícitamente (ej: 'Sin garantía')." />
                   </label>
@@ -422,17 +428,17 @@ function MaterialCard({
                     onChange={(e) => onUpdateItem(index, "warrantyDescription", sanitize(e.target.value))}
                     placeholder="Ej: 12 meses de fábrica, sin garantía..."
                     maxLength={255}
-                    className={`w-full rounded-control border px-3.5 py-3 text-sm font-medium text-slate-700 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${
-                      !item.warrantyDescription?.trim() ? "border-red-300" : "border-slate-200"
+                    className={`w-full rounded-control border px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100 ${
+                      !item.warrantyDescription?.trim() ? `border-${SEMANTIC_COLOR_MAP.danger.border200.split('-').pop()}` : "border-border-default"
                     }`}
                   />
                 </div>
               </div>
 
               {/* Duración de la garantía — opcional, valor + unidad juntos */}
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:w-1/2 sm:pr-1.5">
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:w-1/2 sm:pr-1.5">
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Duración de garantía (opcional)</label>
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Duración de garantía (opcional)</label>
                   <NumericInput
                     value={item.warrantyValue ?? ""}
                     onChange={(v) => onUpdateItem(index, "warrantyValue", v)}
@@ -442,7 +448,7 @@ function MaterialCard({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                     Unidad
                     {item.warrantyValue !== "" && item.warrantyValue !== undefined && <RequiredMark filled={!!item.warrantyUnit} />}
                   </label>
@@ -456,34 +462,34 @@ function MaterialCard({
               </div>
 
               {/* Fila 3: notas + imagen */}
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Notas (opcional)</label>
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Notas (opcional)</label>
                   <input
                     type="text"
                     value={item.notes ?? ""}
                     onChange={(e) => onUpdateItem(index, "notes", sanitize(e.target.value))}
                     placeholder="Marca, plazo de entrega..."
                     maxLength={500}
-                    className="w-full rounded-control border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-700 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                    className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Imagen del producto</label>
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Imagen del producto</label>
                   <ImageUploader token={token} item={item} onUploaded={(path) => onUpdateItem(index, "imagePath", path as ItemRow["imagePath"])} />
                 </div>
               </div>
 
               {/* Specs técnicas de la categoría */}
               {category?.spec_schema && category.spec_schema.length > 0 && (
-                <div className="mt-4 border-t border-slate-200 pt-4">
-                  <h5 className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                <div className="mt-5 border-t border-border-subtle pt-4">
+                  <h5 className="mb-3 text-[10px] font-black uppercase tracking-wider text-text-muted">
                     Características técnicas — {category.name}
                   </h5>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {category.spec_schema.map((field) => (
                       <div key={field.key}>
-                        <label className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                           {field.label} {field.unit ? `(${field.unit})` : ""}
                           {field.required && (
                             <RequiredMark
@@ -514,7 +520,7 @@ function MaterialCard({
                             value={(item.technicalSpecs?.[field.key] as string) ?? ""}
                             onChange={(e) => onUpdateItemSpec(index, field.key, sanitize(e.target.value))}
                             maxLength={120}
-                            className="w-full rounded-control border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-700 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                            className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100"
                           />
                         )}
                       </div>
@@ -545,11 +551,14 @@ export default function MaterialsProposalCards({
   const customItems = items.filter((i) => i.isCustom);
   const categoryFor = (item: ItemRow) => categories.find((c) => c.id === item.categoryId);
 
+  const infoColor = SEMANTIC_COLOR_MAP.info;
+  const warningColor = SEMANTIC_COLOR_MAP.warning;
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-        <h3 className="text-sm font-black uppercase tracking-wider text-white">Materiales requeridos por el proyecto</h3>
-        <p className="mt-1 text-xs font-medium text-slate-300">
+    <div className="space-y-5">
+      <div className={`rounded-2xl border ${infoColor.border100} ${infoColor.bg50} p-4`}>
+        <h3 className={`text-sm font-black uppercase tracking-wider ${infoColor.text700}`}>Materiales requeridos por el proyecto</h3>
+        <p className={`mt-2 text-xs font-medium ${infoColor.text600}`}>
           Ingrese el precio unitario que puede ofrecer para cada material, en {currencyCode || "la moneda seleccionada"}.
           Condición y garantía son obligatorias para todo material con precio cargado. Puede dejar en 0 los que no provee.
         </p>
@@ -575,15 +584,15 @@ export default function MaterialsProposalCards({
         </AnimatePresence>
       </motion.div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-amber-400/30 bg-amber-400/10 px-5 py-3">
-        <span className="text-xs font-black uppercase tracking-wider text-amber-300">Materiales adicionales — agregados por usted</span>
+      <div className={`flex items-center justify-between rounded-2xl border ${warningColor.border100} ${warningColor.bg50} px-5 py-3`}>
+        <span className={`text-xs font-black uppercase tracking-wider ${warningColor.text700}`}>Materiales adicionales — agregados por usted</span>
         <motion.button
           type="button"
           onClick={onAddCustomItem}
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.94 }}
           transition={springs.snappy}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-black text-white transition-colors hover:bg-amber-600"
+          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r ${warningColor.gradientFrom} ${warningColor.gradientTo} px-3 py-2 text-xs font-black text-white transition-colors ${warningColor.gradientFromHover} ${warningColor.gradientToHover}`}
         >
           <Plus className="h-3.5 w-3.5" />
           Agregar material
@@ -611,9 +620,9 @@ export default function MaterialsProposalCards({
         </AnimatePresence>
       </motion.div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
-        <span className="text-xs font-black uppercase tracking-wider text-slate-300">Total estimado de la propuesta</span>
-        <span className="font-mono text-lg font-black text-sky-400">
+      <div className={`flex items-center justify-between rounded-2xl border ${infoColor.border100} ${infoColor.bg50} px-5 py-4`}>
+        <span className={`text-xs font-black uppercase tracking-wider ${infoColor.text700}`}>Total estimado de la propuesta</span>
+        <span className={`font-mono text-lg font-black ${infoColor.text700}`}>
           <AnimatedTotal value={grandTotal} currencyCode={currencyCode || "—"} />
         </span>
       </div>
