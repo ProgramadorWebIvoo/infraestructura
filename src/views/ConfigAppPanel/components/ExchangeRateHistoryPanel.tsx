@@ -3,21 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Panel histórico de tasas de cambio BCV sincronizadas automáticamente.
- * Muestra histórico de tasas USD/EUR, permite sync manual, y auditoría de fuente.
+ * Reutiliza componentes genéricos: Table, EmptyState, SectionHeader.
+ * Aplica reglas de diseño UI: whitespace, jerarquía visual, luz desde arriba.
  */
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { RefreshCw, TrendingUp, AlertCircle } from "lucide-react";
+import { motion } from "motion/react";
+import { RefreshCw, TrendingUp } from "lucide-react";
 import { itemVariants } from "../../../animations";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import Button from "../../../components/UI/Button";
-import { SkeletonCatalogRow, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
+import Table from "../../../components/UI/Table";
+import EmptyState from "../../../components/UI/EmptyState";
 import { useToast } from "../../../components/UI/Toast";
 import { getErrorMessage } from "../../../services/logger";
 import type { ExchangeRateRecord } from "../../../hooks/useExchangeRates";
 import type { CurrencyRecord } from "../../../hooks/useCurrencies";
+import type { Column } from "../../../components/UI/Table";
 import Select from "../../../components/UI/Select";
 
 interface ExchangeRateHistoryPanelProps {
@@ -28,14 +31,9 @@ interface ExchangeRateHistoryPanelProps {
   currencies?: CurrencyRecord[];
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  DOLARVZLA_API: "DolarVZLA API",
-  BCV_SCRAPING: "BCV Scraping",
-};
-
-const SOURCE_CLASSES: Record<string, string> = {
-  DOLARVZLA_API: "bg-sky-100/50 text-sky-700",
-  BCV_SCRAPING: "bg-emerald-100/50 text-emerald-700",
+const SOURCE_BADGE_CLASSES: Record<string, string> = {
+  DOLARVZLA_API: "bg-sky-100/60 text-sky-700 font-semibold",
+  BCV_SCRAPING: "bg-emerald-100/60 text-emerald-700 font-semibold",
 };
 
 export default function ExchangeRateHistoryPanel({
@@ -77,130 +75,115 @@ export default function ExchangeRateHistoryPanel({
     }
   };
 
+  // Columnas para el componente Table genérico
+  const columns: Column<ExchangeRateRecord>[] = [
+    {
+      key: "effective_at",
+      label: "Fecha",
+      width: "20%",
+      render: (row) =>
+        new Date(row.effective_at).toLocaleDateString("es-VE", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }),
+    },
+    {
+      key: "rate_to_usd",
+      label: "Tasa",
+      align: "right",
+      width: "20%",
+      className: "font-semibold text-sky-600",
+      render: (row) => row.rate_to_usd.toFixed(4),
+    },
+    {
+      key: "source",
+      label: "Fuente",
+      align: "center",
+      width: "25%",
+      render: (row) => (
+        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold ${SOURCE_BADGE_CLASSES[row.source] || "bg-gray-100 text-gray-700"}`}>
+          {row.source === "DOLARVZLA_API" ? "DolarVZLA API" : row.source === "BCV_SCRAPING" ? "BCV Scraping" : row.source}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <motion.div variants={itemVariants}>
       <Card>
-        <SectionHeader
-          icon={<TrendingUp className="h-5 w-5" />}
-          title="Histórico de Tasas"
-          description="Sincronización diaria (Lunes-Viernes @ 10:00 AM VE). Obtenidas de DolarVZLA API con fallback a scraping BCV."
-          color="sky"
-          actions={
-            <Button
-              size="sm"
-              variant="primary"
-              colorScheme="sky"
-              isLoading={isSyncing}
-              icon={<RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />}
-              onClick={handleSync}
-            >
-              {isSyncing ? "Sincronizando..." : "Sincronizar Ahora"}
-            </Button>
-          }
-        />
+        <div className="space-y-6">
+          {/* Encabezado con acción */}
+          <SectionHeader
+            icon={<TrendingUp className="h-5 w-5" />}
+            title="Histórico de Tasas"
+            description="Sincronización automática Lunes-Viernes @ 10:00 AM VE. Fuente: DolarVZLA API con fallback a BCV scraping."
+            color="sky"
+            actions={
+              <Button
+                size="sm"
+                variant="primary"
+                colorScheme="sky"
+                isLoading={isSyncing}
+                icon={<RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />}
+                onClick={handleSync}
+              >
+                {isSyncing ? "Sincronizando..." : "Sincronizar Ahora"}
+              </Button>
+            }
+          />
 
-        {isLoading ? (
-          <SkeletonGroup className="space-y-2">
-            <SkeletonGroupItem>
-              <SkeletonCatalogRow />
-            </SkeletonGroupItem>
-            <SkeletonGroupItem>
-              <SkeletonCatalogRow />
-            </SkeletonGroupItem>
-            <SkeletonGroupItem>
-              <SkeletonCatalogRow />
-            </SkeletonGroupItem>
-          </SkeletonGroup>
-        ) : (
-          <div className="space-y-4">
-            {/* Filtro por moneda */}
-            <div className="flex items-center gap-3">
-              <label className="text-[10px] font-bold text-text-tertiary uppercase">Moneda:</label>
-              <Select
-                value={selectedCurrency}
-                onChange={setSelectedCurrency}
-                options={officialCurrenciesWithRates.map(c => ({
-                  value: c.code,
-                  label: `${c.code} - ${c.symbol}`,
-                }))}
-                className="w-40"
-                disabled={officialCurrenciesWithRates.length === 0}
-              />
-              <span className="text-[10px] text-text-muted">{filteredRates.length} registros</span>
+          {/* Filtro por moneda — separado visualmente */}
+          {!isLoading && filteredRates.length > 0 && (
+            <div className="flex items-center gap-4 px-1 py-2">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase whitespace-nowrap">
+                Moneda
+              </label>
+              <div className="flex items-center gap-2 flex-1 max-w-xs">
+                <Select
+                  value={selectedCurrency}
+                  onChange={setSelectedCurrency}
+                  options={officialCurrenciesWithRates.map(c => ({
+                    value: c.code,
+                    label: `${c.code} – ${c.symbol}`,
+                  }))}
+                  className="flex-1"
+                  disabled={officialCurrenciesWithRates.length === 0}
+                />
+                <span className="text-[10px] text-text-muted font-semibold">{filteredRates.length} registros</span>
+              </div>
             </div>
+          )}
 
-            {/* Tabla o estado vacío */}
-            {filteredRates.length === 0 ? (
-              <div className="flex items-center justify-center py-6 px-4 rounded-control bg-surface-sunken/30">
-                <div className="text-center">
-                  <AlertCircle className="h-6 w-6 mx-auto mb-2 text-amber-600" />
-                  <p className="text-xs text-text-secondary">
-                    No hay registros de tasas para <strong>{selectedCurrency}</strong>. Ejecuta una sincronización manual.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border-subtle">
-                      <th className="text-left py-2 px-3 font-semibold text-text-muted">Fecha</th>
-                      <th className="text-right py-2 px-3 font-semibold text-text-muted">Tasa</th>
-                      <th className="text-center py-2 px-3 font-semibold text-text-muted">Fuente</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <AnimatePresence>
-                      {filteredRates.slice(0, 20).map((rate, idx) => {
-                        const formattedDate = new Date(rate.effective_at).toLocaleDateString("es-VE", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        });
+          {/* Tabla reutilizable o EmptyState */}
+          {officialCurrenciesWithRates.length === 0 ? (
+            <EmptyState
+              icon={<TrendingUp className="h-12 w-12" />}
+              title="Sin tasas registradas"
+              description="Ejecuta una sincronización manual para obtener las tasas de cambio BCV."
+            />
+          ) : (
+            <Table<ExchangeRateRecord>
+              columns={columns}
+              data={filteredRates}
+              rowKey={(r) => r.id}
+              isLoading={isLoading}
+              emptyMessage="No hay registros de tasas para esta moneda. Ejecuta una sincronización manual."
+              pageSize={20}
+              maxHeight="24rem"
+            />
+          )}
 
-                        return (
-                          <motion.tr
-                            key={rate.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className="border-b border-border-subtle hover:bg-surface-sunken/30 transition-colors"
-                          >
-                            <td className="py-2 px-3 text-text-primary">{formattedDate}</td>
-                            <td className="py-2 px-3 text-right font-semibold text-sky-600">{rate.rate_to_usd.toFixed(4)}</td>
-                            <td className="py-2 px-3 text-center">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${SOURCE_CLASSES[rate.source] || "bg-gray-100 text-gray-700"}`}>
-                                {SOURCE_LABELS[rate.source] || rate.source}
-                              </span>
-                            </td>
-                          </motion.tr>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-
-                {filteredRates.length > 20 && (
-                  <div className="text-center py-3 text-[10px] text-text-muted">
-                    Mostrando 20 de {filteredRates.length} registros
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Info footer */}
-            {filteredRates.length > 0 && (
-              <div className="flex items-start gap-2 px-3 py-2 rounded-control bg-surface-sunken/30 text-[10px] text-text-secondary">
-                <RefreshCw className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                <span>
-                  La sincronización se ejecuta automáticamente de <strong>lunes a viernes a las 10:00 AM VE</strong>. Si falla la API, se utiliza
-                  scraping de BCV como respaldo.
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+          {/* Info contextual — bajo la tabla */}
+          {filteredRates.length > 0 && (
+            <div className="border-t border-border-subtle pt-4 text-[10px] text-text-secondary leading-relaxed">
+              <p>
+                Las tasas se sincronizan automáticamente de <strong>lunes a viernes a las 10:00 AM VE</strong>. Si la API de DolarVZLA falla, se utiliza
+                scraping de BCV como respaldo.
+              </p>
+            </div>
+          )}
+        </div>
       </Card>
     </motion.div>
   );
