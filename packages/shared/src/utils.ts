@@ -20,8 +20,14 @@ export function delay(ms: number) {
 // Formato monetario
 // ---------------------------------------------------------------------------
 
+/** Trunca (nunca redondea) a `decimals` decimales — los montos monetarios de esta app nunca se redondean. */
+export function truncateToDecimals(amount: number, decimals = 2): number {
+  const factor = 10 ** decimals;
+  return Math.trunc(amount * factor) / factor;
+}
+
 export function formatCurrency(amount: number, currency = "USD"): string {
-  return amount.toLocaleString("en-US", {
+  return truncateToDecimals(amount, 2).toLocaleString("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
@@ -31,7 +37,7 @@ export function formatCurrency(amount: number, currency = "USD"): string {
 
 /** Versión sin símbolo de moneda (solo número formateado). */
 export function formatNumber(amount: number): string {
-  return amount.toLocaleString("en-US", { minimumFractionDigits: 2 });
+  return truncateToDecimals(amount, 2).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ---------------------------------------------------------------------------

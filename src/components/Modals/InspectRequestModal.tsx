@@ -11,6 +11,8 @@ import type { Project } from "../../types";
 import Modal from "../UI/Modal";
 import StatusBadge from "../UI/StatusBadge";
 import { formatCurrency } from "../../utils";
+import { useCurrencyConversion } from "../../hooks/useCurrencyConversion";
+import BsAmount from "../UI/BsAmount";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -27,6 +29,8 @@ interface InspectRequestModalProps {
 // ---------------------------------------------------------------------------
 
 export default function InspectRequestModal({ isOpen, project, onClose }: InspectRequestModalProps) {
+  const { convert, hasRates, isLoading: ratesLoading } = useCurrencyConversion();
+
   return (
     <Modal
       isOpen={isOpen}
@@ -34,7 +38,7 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
       badge="Expediente • Petición de Obra"
       title={project?.title ?? ""}
       infoLine={project ? `${project.id} • ${project.type === "INFRAESTRUCTURA" ? "Infraestructura" : "Mantenimiento"}` : undefined}
-      maxWidth="max-w-lg"
+      maxWidth="max-w-2xl"
       icon={<FileText className="h-5 w-5" />}
       iconColor="sky"
       footer={
@@ -119,8 +123,14 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
                       <tr key={m.id} className="bg-white">
                         <td className="py-2 px-3 font-semibold text-slate-800">{m.name}</td>
                         <td className="py-2 px-3 text-center font-mono text-slate-600">{m.quantity} {m.unit}</td>
-                        <td className="py-2 px-3 text-right font-mono text-slate-500">{formatCurrency(m.estimatedUnitPrice)}</td>
-                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">{formatCurrency(m.quantity * m.estimatedUnitPrice)}</td>
+                        <td className="py-2 px-3 text-right font-mono text-slate-500">
+                          {formatCurrency(m.estimatedUnitPrice)}
+                          <BsAmount amount={m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
+                          {formatCurrency(m.quantity * m.estimatedUnitPrice)}
+                          <BsAmount amount={m.quantity * m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -134,6 +144,7 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-black text-sky-700 text-sm">
                         {formatCurrency(project.estimatedTotal)}
+                        <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
                       </td>
                     </tr>
                   </tfoot>

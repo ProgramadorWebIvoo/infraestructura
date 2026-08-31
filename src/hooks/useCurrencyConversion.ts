@@ -8,8 +8,14 @@
  */
 
 import { useCallback, useMemo } from "react";
+import { truncateToDecimals } from "@ivoo/shared";
 import { useExchangeRates } from "./useExchangeRates";
 import { useAuth } from "./useAuth";
+
+/** Formatea un monto en Bs.: separador de miles ".", decimales ",", siempre 2 decimales, truncado (no redondeado). */
+export function formatBs(value: number): string {
+  return truncateToDecimals(value, 2).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 export interface UseCurrencyConversionReturn {
   /** Tasas por moneda: "USD" → 794.99, "EUR" → 862.15, etc. */

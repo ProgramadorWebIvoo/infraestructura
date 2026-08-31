@@ -16,6 +16,7 @@ import EmptyState from "../../../components/UI/EmptyState";
 import { useToast } from "../../../components/UI/Toast";
 import { getErrorMessage } from "../../../services/logger";
 import type { ExchangeRateRecord } from "../../../hooks/useExchangeRates";
+import { formatBs } from "../../../hooks/useCurrencyConversion";
 
 interface ExchangeRateHistoryModalProps {
   isOpen: boolean;
@@ -80,7 +81,7 @@ export default function ExchangeRateHistoryModal({
       align: "right",
       width: "30%",
       className: "font-semibold text-sky-600",
-      render: (row) => row.rate_to_usd.toFixed(4),
+      render: (row) => formatBs(row.rate_to_usd),
     },
     {
       key: "source",

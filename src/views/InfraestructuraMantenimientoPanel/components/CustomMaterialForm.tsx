@@ -7,12 +7,14 @@
  */
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import { Plus } from "lucide-react";
 import type { MaterialItem } from "../../../types";
 import TextField from "../../../components/UI/TextField";
 import NumericInput from "../../../components/UI/NumericInput";
 import Button from "../../../components/UI/Button";
 import { useToast } from "../../../components/UI/Toast";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 
 interface CustomMaterialFormProps {
   onAdd: (material: Omit<MaterialItem, "id">) => void;
@@ -23,6 +25,7 @@ export default function CustomMaterialForm({ onAdd }: CustomMaterialFormProps) {
   const [unit, setUnit] = useState("Unidad");
   const [price, setPrice] = useState<number | "">(1.0);
   const [qty, setQty] = useState<number | "">(1);
+  const { convert, hasRates, isLoading: ratesLoading } = useCurrencyConversion();
   const [error, setError] = useState("");
   const { showToast } = useToast();
 
@@ -84,6 +87,19 @@ export default function CustomMaterialForm({ onAdd }: CustomMaterialFormProps) {
           accent="success"
           className="rounded-lg"
         />
+        {ratesLoading && !hasRates && typeof price === "number" && price > 0 && (
+          <div className="mt-1.5 h-3 w-24 rounded skeleton-shimmer" />
+        )}
+        {hasRates && typeof price === "number" && price > 0 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="mt-1.5 text-[10px] font-mono font-semibold text-slate-500"
+          >
+            ≈ Bs. {formatBs(convert(price, "USD"))}
+          </motion.p>
+        )}
       </div>
 
       <div>

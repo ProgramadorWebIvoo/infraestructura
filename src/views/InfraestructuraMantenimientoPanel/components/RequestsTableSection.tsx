@@ -27,6 +27,8 @@ import { renderRequestCard } from "./RequestGridCard";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 interface RequestsTableSectionProps {
   projects: Project[];
@@ -50,6 +52,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
   const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const visibleProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -108,10 +111,15 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
     {
       key: "estimatedTotal",
       label: "Total (Est)",
-      width: "7.5rem",
+      width: "8.5rem",
       align: "right",
       sortable: true,
-      render: (p) => <span className="font-mono font-bold text-slate-800 whitespace-nowrap">{formatCurrency(p.estimatedTotal)}</span>,
+      render: (p) => (
+        <div className="text-right whitespace-nowrap">
+          <div className="font-mono font-bold text-slate-800">{formatCurrency(p.estimatedTotal)}</div>
+          <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
     },
     {
       key: "actions",
@@ -180,7 +188,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
             <GridView
               items={visibleProjects}
               rowKey={(p) => p.id}
-              renderCard={(p) => renderRequestCard(p, setInspectedRequest)}
+              renderCard={(p) => renderRequestCard(p, setInspectedRequest, convert, hasRates, isLoadingRates)}
               onSelect={(p) => setInspectedRequest(p)}
               emptyState={
                 <EmptyState

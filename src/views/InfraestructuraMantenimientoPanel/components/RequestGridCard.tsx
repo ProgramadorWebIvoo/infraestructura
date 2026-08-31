@@ -13,6 +13,7 @@ import type { Project } from "../../../types";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { formatCurrency } from "../../../utils";
+import BsAmount from "../../../components/UI/BsAmount";
 
 function TypeBadge({ type }: { type: Project["type"] }) {
   const c = SEMANTIC_COLOR_MAP[type === "INFRAESTRUCTURA" ? "brand" : "neutral"];
@@ -23,7 +24,13 @@ function TypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export function renderRequestCard(project: Project, onInspect: (p: Project) => void) {
+export function renderRequestCard(
+  project: Project,
+  onInspect: (p: Project) => void,
+  convert?: (amount: number, fromCode: string) => number,
+  hasRates?: boolean,
+  isLoadingRates?: boolean,
+) {
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
@@ -54,7 +61,12 @@ export function renderRequestCard(project: Project, onInspect: (p: Project) => v
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
         <StatusBadge code={project.status} className="text-[9px]" />
-        <span className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</span>
+        <div className="text-right">
+          <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</div>
+          {convert && (
+            <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
+          )}
+        </div>
       </div>
     </div>
   );

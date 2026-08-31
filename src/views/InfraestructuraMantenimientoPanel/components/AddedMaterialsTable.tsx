@@ -16,6 +16,8 @@ import type { MaterialItem } from "../../../types";
 import { Table } from "../../../components/UI/Table";
 import EmptyState from "../../../components/UI/EmptyState";
 import { formatCurrency } from "../../../utils";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 interface AddedMaterialsTableProps {
   materials: Omit<MaterialItem, "id">[];
@@ -26,6 +28,8 @@ interface AddedMaterialsTableProps {
 }
 
 export default function AddedMaterialsTable({ materials, onRemove, onEditRequest, reviewedIndexes, subtotal }: AddedMaterialsTableProps) {
+  const { convert, hasRates, isLoading: ratesLoading } = useCurrencyConversion();
+
   return (
     <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
       <Table
@@ -46,8 +50,28 @@ export default function AddedMaterialsTable({ materials, onRemove, onEditRequest
             ),
           },
           { key: "quantity", label: "Cantidad", align: "center", render: (m) => <span className="text-slate-600 font-medium">{m.quantity} {m.unit}</span> },
-          { key: "estimatedUnitPrice", label: "Precio Unit. (Est)", align: "right", render: (m) => <span className="font-mono text-slate-500 font-semibold">{formatCurrency(m.estimatedUnitPrice)}</span> },
-          { key: "total", label: "Total (Est)", align: "right", render: (m) => <span className="font-mono font-bold text-slate-900">{formatCurrency(m.quantity * m.estimatedUnitPrice)}</span> },
+          {
+            key: "estimatedUnitPrice",
+            label: "Precio Unit. (Est)",
+            align: "right",
+            render: (m) => (
+              <div>
+                <span className="font-mono text-slate-500 font-semibold">{formatCurrency(m.estimatedUnitPrice)}</span>
+                <BsAmount amount={m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+              </div>
+            ),
+          },
+          {
+            key: "total",
+            label: "Total (Est)",
+            align: "right",
+            render: (m) => (
+              <div>
+                <span className="font-mono font-bold text-slate-900">{formatCurrency(m.quantity * m.estimatedUnitPrice)}</span>
+                <BsAmount amount={m.quantity * m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+              </div>
+            ),
+          },
           {
             key: "actions",
             label: "Acciones",
@@ -93,7 +117,10 @@ export default function AddedMaterialsTable({ materials, onRemove, onEditRequest
         footer={materials.length > 0 ? (
           <tr>
             <td colSpan={3} className="py-3.5 px-4 text-right text-slate-500 uppercase tracking-wider text-[9px] font-bold">Costo Estimado Materiales:</td>
-            <td className="py-3.5 px-4 text-right font-mono text-emerald-700 text-sm font-black">{formatCurrency(subtotal)}</td>
+            <td className="py-3.5 px-4 text-right font-mono text-emerald-700 text-sm font-black">
+              {formatCurrency(subtotal)}
+              <BsAmount amount={subtotal} convert={convert} hasRates={hasRates} isLoading={ratesLoading} className="text-emerald-600" />
+            </td>
             <td />
           </tr>
         ) : undefined}
