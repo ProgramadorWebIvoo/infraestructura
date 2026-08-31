@@ -21,6 +21,8 @@ import { HelpHint, RequiredMark } from "../../../components/UI/HintSignals";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { formatCurrency, formatNumber } from "../../../utils";
 import { DURATION_UNITS } from "./RegisterProposalModal";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 interface MaterialItemRow extends ProposalMaterialItem {
   _id: string;
@@ -42,6 +44,7 @@ interface RenegotiateProposalModalProps {
 
 export default function RenegotiateProposalModal({ project, proposal, onClose, onRenegotiateProposal }: RenegotiateProposalModalProps) {
   const maxAdvancePercent = useMaxAdvancePercent();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const buildMaterialRows = (): MaterialItemRow[] =>
     (proposal.materialItems ?? []).length > 0
@@ -157,20 +160,25 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Anterior</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-600">
               {formatCurrency(proposal.totalCost)}
+              <BsAmount amount={proposal.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
           <div>
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Nuevo</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-700">
               {formatCurrency(newTotal)}
+              <BsAmount amount={newTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
           <div>
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia</span>
-            <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold flex items-center gap-1.5">
-              <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
-              <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia))}</span>
-              <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
+            <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold">
+              <div className="flex items-center gap-1.5">
+                <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
+                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia))}</span>
+                <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
+              </div>
+              <BsAmount amount={Math.abs(diferencia)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
         </div>
@@ -261,7 +269,12 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                         />
                       </td>
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px]">
-                        {row.totalPrice > 0 ? formatCurrency(row.totalPrice) : "—"}
+                        {row.totalPrice > 0 ? (
+                          <>
+                            {formatCurrency(row.totalPrice)}
+                            <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
+                          </>
+                        ) : "—"}
                       </td>
                       <td className="px-3 py-2 text-center">
                         {row.isCustom && (
@@ -284,7 +297,10 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                   <td colSpan={4} className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-500">
                     Total materiales:
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">{formatCurrency(materialCostTotal)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
+                    {formatCurrency(materialCostTotal)}
+                    <BsAmount amount={materialCostTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
+                  </td>
                   <td />
                 </tr>
               </tfoot>
@@ -298,6 +314,9 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
               Costo Mano de Obra ($)
             </label>
             <NumericInput id="renegotiate-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
+            {hasRates && typeof laborCost === "number" && laborCost > 0 && (
+              <p className="mt-1.5 text-[10px] font-mono font-semibold text-slate-500">≈ Bs. {formatBs(convert(laborCost, "USD"))}</p>
+            )}
           </div>
 
           <div>
@@ -362,6 +381,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
           <p className="flex items-center gap-1 text-[9px] font-bold text-amber-600">
             <Wallet className="h-3 w-3 shrink-0" />
             Supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}
+            <BsAmount amount={budgetExcess} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" className="text-amber-600/70" />
           </p>
         )}
 

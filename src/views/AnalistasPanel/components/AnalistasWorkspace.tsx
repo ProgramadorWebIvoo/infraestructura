@@ -54,6 +54,8 @@ import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { useToast } from "../../../components/UI/Toast";
 import { viewSwitchVariants } from "../../../animations";
 import { formatCurrency, formatNumber } from "../../../utils";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 const ORIGIN_BADGE: Record<ProposalOrigin, { label: string; className: string }> = {
   MANUAL: { label: "Manual", className: "bg-slate-100 text-slate-600 border-slate-200" },
@@ -100,6 +102,7 @@ export default function AnalistasWorkspace({
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
   const { fetchForProject } = useSupplierProposalsForProject(authToken);
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const [portalProposalsByProject, setPortalProposalsByProject] = useState<Record<string, SupplierMaterialProposal[]>>({});
 
   const selectedProject = pendingLicitacion.find(p => p.id === selectedId) ?? null;
@@ -127,7 +130,7 @@ export default function AnalistasWorkspace({
     );
   }, [pendingLicitacion, query]);
 
-  const columns: Column<Project>[] = [
+  const columns: Column<Project>[] = useMemo(() => [
     {
       key: "id",
       label: "ID",
@@ -149,10 +152,15 @@ export default function AnalistasWorkspace({
     {
       key: "approvedInvestmentAmount",
       label: "Techo Aprobado",
-      width: "9rem",
+      width: "10rem",
       align: "right",
       sortable: true,
-      render: (p) => <span className="font-mono font-bold text-slate-600 whitespace-nowrap">{formatCurrency(p.approvedInvestmentAmount ?? 0)}</span>,
+      render: (p) => (
+        <div className="text-right whitespace-nowrap">
+          <div className="font-mono font-bold text-slate-600">{formatCurrency(p.approvedInvestmentAmount ?? 0)}</div>
+          <BsAmount amount={p.approvedInvestmentAmount ?? 0} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
     },
     {
       key: "proposals",
@@ -165,7 +173,7 @@ export default function AnalistasWorkspace({
     {
       key: "best",
       label: "Mejor Oferta",
-      width: "9rem",
+      width: "9.5rem",
       align: "right",
       sortValue: (p) => {
         const proposals = p.proposals ?? [];
@@ -175,10 +183,16 @@ export default function AnalistasWorkspace({
       render: (p) => {
         const proposals = p.proposals ?? [];
         const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
-        return <span className="font-mono font-black text-emerald-700 whitespace-nowrap">{best ? formatCurrency(best.totalCost) : "—"}</span>;
+        if (!best) return <span className="font-mono font-black text-emerald-700 whitespace-nowrap">—</span>;
+        return (
+          <div className="text-right whitespace-nowrap">
+            <div className="font-mono font-black text-emerald-700">{formatCurrency(best.totalCost)}</div>
+            <BsAmount amount={best.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+          </div>
+        );
       },
     },
-  ];
+  ], [convert, hasRates, isLoadingRates]);
 
   return (
     <>
@@ -231,7 +245,7 @@ export default function AnalistasWorkspace({
               <GridView
                 items={visibleProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderAnalistasCard(p, portalProposalsByProject[p.id] ?? [])}
+                renderCard={(p) => renderAnalistasCard(p, portalProposalsByProject[p.id] ?? [], convert, hasRates, isLoadingRates)}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}
                 cardAccent={() => "success"}
@@ -294,6 +308,7 @@ function ExpedienteWorkspaceModal({
 }) {
   const maxAdvancePercent = useMaxAdvancePercent();
   const { showToast } = useToast();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [renegotiatingProposal, setRenegotiatingProposal] = useState<Proposal | null>(null);
@@ -349,17 +364,42 @@ function ExpedienteWorkspaceModal({
         return prop.motivo ? <Tooltip content={prop.motivo}>{badgeEl}</Tooltip> : badgeEl;
       },
     },
-    { key: "materialCost", label: "Materiales", width: "7rem", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">{formatCurrency(prop.materialCost)}</span> },
-    { key: "laborCost", label: "Mano de Obra", width: "7rem", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">{formatCurrency(prop.laborCost)}</span> },
+    {
+      key: "materialCost",
+      label: "Materiales",
+      width: "7.5rem",
+      align: "right",
+      render: (prop) => (
+        <div>
+          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
+          <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
+    },
+    {
+      key: "laborCost",
+      label: "Mano de Obra",
+      width: "7.5rem",
+      align: "right",
+      render: (prop) => (
+        <div>
+          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
+          <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
+    },
     {
       key: "totalCost",
       label: "Costo Total",
-      width: "8rem",
+      width: "8.5rem",
       align: "right",
       render: (prop) => (
-        <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-emerald-700" : "text-slate-700"}`}>
-          {formatCurrency(prop.totalCost)}
-        </span>
+        <div>
+          <span className={`font-mono font-black text-sm block ${prop.id === best?.id ? "text-emerald-700" : "text-slate-700"}`}>
+            {formatCurrency(prop.totalCost)}
+          </span>
+          <BsAmount amount={prop.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
       ),
     },
     { key: "deliveryWeeks", label: "Plazo", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{formatProposalDuration(prop)}</span> },
@@ -456,6 +496,7 @@ function ExpedienteWorkspaceModal({
             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
               <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Techo de Inversión Aprobado</span>
               <span className="font-mono text-slate-700 font-black">{formatCurrency(approvedBudget)}</span>
+              <BsAmount amount={approvedBudget} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
             </div>
             {pendingPortalCount > 0 && (
               <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-danger-100 text-danger-700 whitespace-nowrap animate-pulse">

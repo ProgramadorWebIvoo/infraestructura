@@ -33,7 +33,7 @@ import { formatCurrency } from "../../../utils";
 import { ProjectStatus } from "../../../types";
 import type { Project, Proposal } from "../../../types";
 import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface BidEvaluationSectionProps {
@@ -115,11 +115,7 @@ function BidEvaluationDetail({
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
           <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Inversión Autorizada</span>
           <span className="font-mono text-slate-700 font-black">{formatCurrency(project.approvedInvestmentAmount ?? 0)}</span>
-          {hasRates && (
-            <span className="font-mono text-slate-400 text-[10px]">
-              (Bs. {formatBs(convert(project.approvedInvestmentAmount ?? 0, "USD"))})
-            </span>
-          )}
+          <BsAmount amount={project.approvedInvestmentAmount ?? 0} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
         </div>
 
         {/* Resumen comparativo */}
@@ -236,8 +232,8 @@ function BidEvaluationDetail({
                         {prop.negotiatedAdvancePercent}%
                       </span>
                       <div className="text-[9px] text-slate-400 mt-1 font-semibold">
-                        ({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))}
-                        {hasRates && ` · Bs. ${formatBs(convert(prop.totalCost * (prop.negotiatedAdvancePercent / 100), "USD"))}`})
+                        ({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))})
+                        <BsAmount amount={prop.totalCost * (prop.negotiatedAdvancePercent / 100)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                       </div>
                       {exceedsMax && (
                         <div className="text-[8px] text-warning-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>

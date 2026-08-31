@@ -25,6 +25,8 @@ import TabPanel from "../../../components/UI/TabPanel";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { useToast } from "../../../components/UI/Toast";
 import { formatCurrency, formatNumber } from "../../../utils";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 export const DURATION_UNITS: { value: ProposalDurationUnit; label: string }[] = [
   { value: "dias", label: "Días" },
@@ -82,6 +84,7 @@ export default function RegisterProposalModal({
 }: RegisterProposalModalProps) {
   const { showToast } = useToast();
   const maxAdvancePercent = useMaxAdvancePercent();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const [modalTab, setModalTab] = useState<"portal" | "manual">(onImportSupplierProposals ? "portal" : "manual");
   const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
@@ -391,7 +394,12 @@ export default function RegisterProposalModal({
                                 />
                               </td>
                               <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px]">
-                                {row.totalPrice > 0 ? formatCurrency(row.totalPrice) : "—"}
+                                {row.totalPrice > 0 ? (
+                                  <>
+                                    {formatCurrency(row.totalPrice)}
+                                    <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
+                                  </>
+                                ) : "—"}
                               </td>
                               <td className="px-3 py-2 text-center">
                                 {row.isCustom && (
@@ -414,7 +422,10 @@ export default function RegisterProposalModal({
                           <td colSpan={4} className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-500">
                             Total materiales:
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">{formatCurrency(materialCostTotal)}</td>
+                          <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
+                            {formatCurrency(materialCostTotal)}
+                            <BsAmount amount={materialCostTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
+                          </td>
                           <td />
                         </tr>
                       </tfoot>
@@ -429,6 +440,9 @@ export default function RegisterProposalModal({
                       <HelpHint content="Puede dejarse en 0 cuando el proveedor no cobra mano de obra por separado (ya incluida en materiales o autoinstalación)." />
                     </label>
                     <NumericInput id="analistas-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
+                    {hasRates && typeof laborCost === "number" && laborCost > 0 && (
+                      <p className="mt-1.5 text-[10px] font-mono font-semibold text-slate-500">≈ Bs. {formatBs(convert(laborCost, "USD"))}</p>
+                    )}
                   </div>
 
                   <div>
@@ -479,6 +493,7 @@ export default function RegisterProposalModal({
                   <p className="flex items-center gap-1 text-[9px] font-bold text-amber-600">
                     <Wallet className="h-3 w-3 shrink-0" />
                     Supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}
+                    <BsAmount amount={budgetExcess} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" className="text-amber-600/70" />
                   </p>
                 )}
 
@@ -508,6 +523,7 @@ export default function RegisterProposalModal({
                     <span className={`font-mono text-sm font-black ${exceedsBudget ? "text-amber-700" : "text-emerald-700"}`}>
                       ${formatNumber(newTotal)}
                     </span>
+                    <BsAmount amount={newTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                   </div>
                   <Button
                     id="btn-analistas-add-bid"

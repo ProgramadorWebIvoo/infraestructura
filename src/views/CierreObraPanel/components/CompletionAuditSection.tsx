@@ -28,7 +28,7 @@ import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import { renderAuditCard } from "./AuditGridCard";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface CompletionAuditSectionProps {
@@ -250,11 +250,7 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
                 <Banknote className={`h-3.5 w-3.5 ${warning.icon500} shrink-0`} />
                 <span>
                   Anticipo liberado: <strong className={`font-mono ${warning.text700}`}>{formatCurrency(detailProject.advancePaidAmount)}</strong>
-                  {hasRates && (
-                    <span className="ml-1 text-slate-400 font-mono">
-                      (Bs. {formatBs(convert(detailProject.advancePaidAmount, "USD"))})
-                    </span>
-                  )}
+                  <BsAmount amount={detailProject.advancePaidAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                 </span>
                 {detailProject.advancePaidDate && (
                   <span className="ml-auto inline-flex items-center gap-1 text-slate-400 font-mono">

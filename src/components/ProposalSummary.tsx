@@ -15,10 +15,12 @@ import { motion } from "motion/react";
 import { Clock, Star, Trophy, Wallet } from "lucide-react";
 import { containerVariants, itemVariants, springs } from "../animations";
 import { formatCurrency } from "../utils";
+import { useCurrencyConversion, formatBs } from "../hooks/useCurrencyConversion";
 import type { Project } from "../types";
 
 export default function ProposalSummary({ project }: { project: Project }) {
   const proposals = project.proposals ?? [];
+  const { convert, hasRates } = useCurrencyConversion();
   if (proposals.length === 0) return null;
 
   const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
@@ -52,6 +54,11 @@ export default function ProposalSummary({ project }: { project: Project }) {
         <div className="relative mt-1.5 font-mono font-black text-success-800 text-2xl tracking-tight">
           {formatCurrency(best.totalCost)}
         </div>
+        {hasRates && (
+          <div className="relative text-[10px] font-mono font-semibold text-success-600/70 -mt-1">
+            Bs. {formatBs(convert(best.totalCost, "USD"))}
+          </div>
+        )}
         <div className="relative text-xs text-slate-600 font-bold truncate mt-0.5" title={best.contractorName}>{best.contractorName}</div>
         {authorized > 0 && (
           <div className="relative mt-3 space-y-1">
@@ -78,6 +85,11 @@ export default function ProposalSummary({ project }: { project: Project }) {
         <div className={`mt-1 font-mono font-black text-sm ${savings >= 0 ? "text-info-700" : "text-danger-700"}`}>
           {formatCurrency(Math.abs(savings))}
         </div>
+        {hasRates && (
+          <div className={`text-[9px] font-mono ${savings >= 0 ? "text-info-500/70" : "text-danger-500/70"}`}>
+            Bs. {formatBs(convert(Math.abs(savings), "USD"))}
+          </div>
+        )}
         <div className="text-[10px] text-slate-500 font-medium">vs {formatCurrency(authorized)} autorizado</div>
       </motion.div>
 
