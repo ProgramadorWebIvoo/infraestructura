@@ -33,6 +33,8 @@ import { formatCurrency } from "../../../utils";
 import { ProjectStatus } from "../../../types";
 import type { Project, Proposal } from "../../../types";
 import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 interface BidEvaluationSectionProps {
   projects: Project[];
@@ -51,6 +53,9 @@ function BidEvaluationDetail({
   onInspect,
   levelOf,
   maxAdvancePercent,
+  convert,
+  hasRates,
+  isLoadingRates,
 }: {
   project: Project;
   onClose: () => void;
@@ -60,6 +65,9 @@ function BidEvaluationDetail({
   onInspect: (proposal: Proposal) => void;
   levelOf: (pct: number) => SemaphoreLevel;
   maxAdvancePercent: number;
+  convert: (amount: number, fromCode: string) => number;
+  hasRates: boolean;
+  isLoadingRates: boolean;
 }) {
   const proposals = project.proposals ?? [];
   const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
@@ -107,6 +115,11 @@ function BidEvaluationDetail({
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
           <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Inversión Autorizada</span>
           <span className="font-mono text-slate-700 font-black">{formatCurrency(project.approvedInvestmentAmount ?? 0)}</span>
+          {hasRates && (
+            <span className="font-mono text-slate-400 text-[10px]">
+              (Bs. {formatBs(convert(project.approvedInvestmentAmount ?? 0, "USD"))})
+            </span>
+          )}
         </div>
 
         {/* Resumen comparativo */}
@@ -135,23 +148,48 @@ function BidEvaluationDetail({
                   </div>
                 ),
               },
-              { key: "materialCost", label: "Materiales", width: "7rem", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">{formatCurrency(prop.materialCost)}</span> },
-              { key: "laborCost", label: "Mano de Obra", width: "7rem", align: "right", render: (prop) => <span className="font-mono font-medium text-slate-600">{formatCurrency(prop.laborCost)}</span> },
+              {
+                key: "materialCost",
+                label: "Materiales",
+                width: "7.5rem",
+                align: "right",
+                render: (prop) => (
+                  <div>
+                    <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
+                    <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                  </div>
+                ),
+              },
+              {
+                key: "laborCost",
+                label: "Mano de Obra",
+                width: "7.5rem",
+                align: "right",
+                render: (prop) => (
+                  <div>
+                    <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
+                    <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                  </div>
+                ),
+              },
               {
                 key: "totalCost",
                 label: "Costo Total",
-                width: "8.5rem",
+                width: "9rem",
                 align: "right",
                 render: (prop) => (
-                  <div className="flex items-center justify-end gap-1.5">
-                    <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
-                      {formatCurrency(prop.totalCost)}
-                    </span>
-                    {prop.id === best?.id && (
-                      <span className="text-[8px] font-black uppercase tracking-wider bg-success-100 text-success-800 px-1.5 py-0.5 rounded-md border border-success-200">
-                        Mejor
+                  <div>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
+                        {formatCurrency(prop.totalCost)}
                       </span>
-                    )}
+                      {prop.id === best?.id && (
+                        <span className="text-[8px] font-black uppercase tracking-wider bg-success-100 text-success-800 px-1.5 py-0.5 rounded-md border border-success-200">
+                          Mejor
+                        </span>
+                      )}
+                    </div>
+                    <BsAmount amount={prop.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                   </div>
                 ),
               },
@@ -197,7 +235,10 @@ function BidEvaluationDetail({
                         {exceedsMax && <AlertTriangle className="h-3 w-3" />}
                         {prop.negotiatedAdvancePercent}%
                       </span>
-                      <div className="text-[9px] text-slate-400 mt-1 font-semibold">({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))})</div>
+                      <div className="text-[9px] text-slate-400 mt-1 font-semibold">
+                        ({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))}
+                        {hasRates && ` · Bs. ${formatBs(convert(prop.totalCost * (prop.negotiatedAdvancePercent / 100), "USD"))}`})
+                      </div>
                       {exceedsMax && (
                         <div className="text-[8px] text-warning-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>
                       )}
@@ -270,6 +311,7 @@ export default function BidEvaluationSection({
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const [rejectingProject, setRejectingProject] = useState<Project | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -329,7 +371,7 @@ export default function BidEvaluationSection({
     );
   }, [pendingContractSelection, query]);
 
-  const columns: Column<Project>[] = [
+  const columns: Column<Project>[] = useMemo(() => [
     {
       key: "id",
       label: "ID",
@@ -369,10 +411,16 @@ export default function BidEvaluationSection({
       render: (p) => {
         const proposals = p.proposals ?? [];
         const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
-        return <span className="font-mono font-black text-success-700 whitespace-nowrap">{best ? formatCurrency(best.totalCost) : "—"}</span>;
+        if (!best) return <span className="font-mono font-black text-success-700 whitespace-nowrap">—</span>;
+        return (
+          <div className="text-right whitespace-nowrap">
+            <div className="font-mono font-black text-success-700">{formatCurrency(best.totalCost)}</div>
+            <BsAmount amount={best.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+          </div>
+        );
       },
     },
-  ];
+  ], [convert, hasRates, isLoadingRates]);
 
   return (
     <>
@@ -425,7 +473,7 @@ export default function BidEvaluationSection({
               <GridView
                 items={visibleProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderBidEvaluationCard(p)}
+                renderCard={(p) => renderBidEvaluationCard(p, convert, hasRates, isLoadingRates)}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}
                 cardAccent={() => "success"}
@@ -452,6 +500,9 @@ export default function BidEvaluationSection({
           onInspect={setInspectingProposal}
           levelOf={levelOf}
           maxAdvancePercent={maxAdvancePercent}
+          convert={convert}
+          hasRates={hasRates}
+          isLoadingRates={isLoadingRates}
         />
       )}
 

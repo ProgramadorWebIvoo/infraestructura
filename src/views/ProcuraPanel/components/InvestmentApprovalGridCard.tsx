@@ -11,6 +11,7 @@
 import { MapPin } from "lucide-react";
 import type { Project } from "../../../types";
 import { formatNumber } from "../../../utils";
+import BsAmount from "../../../components/UI/BsAmount";
 
 function TypeBadge({ type }: { type: Project["type"] }) {
   return (
@@ -20,7 +21,12 @@ function TypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export function renderInvestmentApprovalCard(project: Project) {
+export function renderInvestmentApprovalCard(
+  project: Project,
+  convert?: (amount: number, fromCode: string) => number,
+  hasRates?: boolean,
+  isLoadingRates?: boolean,
+) {
   return (
     <div className="p-3.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -34,7 +40,12 @@ export function renderInvestmentApprovalCard(project: Project) {
       </div>
       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
         <span className="text-[10px] font-mono font-bold text-slate-400">{project.createdDate}</span>
-        <span className="font-mono font-bold text-brand-700">${formatNumber(project.estimatedTotal)}</span>
+        <div className="text-right">
+          <div className="font-mono font-bold text-brand-700">${formatNumber(project.estimatedTotal)}</div>
+          {convert && (
+            <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
+          )}
+        </div>
       </div>
     </div>
   );

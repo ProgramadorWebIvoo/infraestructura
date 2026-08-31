@@ -11,8 +11,14 @@
 import { MapPin, Trophy } from "lucide-react";
 import type { Project } from "../../../types";
 import { formatCurrency } from "../../../utils";
+import BsAmount from "../../../components/UI/BsAmount";
 
-export function renderBidEvaluationCard(project: Project) {
+export function renderBidEvaluationCard(
+  project: Project,
+  convert?: (amount: number, fromCode: string) => number,
+  hasRates?: boolean,
+  isLoadingRates?: boolean,
+) {
   const proposals = project.proposals ?? [];
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
 
@@ -38,7 +44,12 @@ export function renderBidEvaluationCard(project: Project) {
           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-success-700">
             <Trophy className="h-3 w-3 shrink-0" /> Mejor oferta
           </span>
-          <span className="font-mono font-black text-success-700 text-[11px] whitespace-nowrap">{formatCurrency(best.totalCost)}</span>
+          <div className="text-right">
+            <div className="font-mono font-black text-success-700 text-[11px] whitespace-nowrap">{formatCurrency(best.totalCost)}</div>
+            {convert && (
+              <BsAmount amount={best.totalCost} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
+            )}
+          </div>
         </div>
       )}
     </div>

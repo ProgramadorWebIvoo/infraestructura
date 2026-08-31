@@ -35,6 +35,8 @@ import { viewSwitchVariants, springs } from "../../../animations";
 import { formatNumber } from "../../../utils";
 import { ProjectStatus } from "../../../types";
 import type { Project, ProjectDocument } from "../../../types";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 const WIZARD_STEPS: StepDefinition[] = [
   { id: "revisar", label: "Revisar", description: "Expediente y evaluación IA" },
@@ -58,6 +60,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const pendingInvestmentApproval = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE),
@@ -75,7 +78,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
     );
   }, [pendingInvestmentApproval, query]);
 
-  const columns: Column<Project>[] = [
+  const columns: Column<Project>[] = useMemo(() => [
     {
       key: "id",
       label: "ID",
@@ -115,12 +118,17 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
     {
       key: "estimatedTotal",
       label: "Total (Est)",
-      width: "8rem",
+      width: "9rem",
       align: "right",
       sortable: true,
-      render: (p) => <span className="font-mono font-bold text-slate-800 whitespace-nowrap">${formatNumber(p.estimatedTotal)}</span>,
+      render: (p) => (
+        <div className="text-right whitespace-nowrap">
+          <div className="font-mono font-bold text-slate-800">${formatNumber(p.estimatedTotal)}</div>
+          <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
     },
-  ];
+  ], [convert, hasRates, isLoadingRates]);
   const activeReviewProject = pendingInvestmentApproval.find(p => p.id === selectedReviewId);
 
   const handleDownload = async (doc: ProjectDocument) => {
@@ -216,7 +224,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
             <GridView
               items={visibleProjects}
               rowKey={(p) => p.id}
-              renderCard={(p) => renderInvestmentApprovalCard(p)}
+              renderCard={(p) => renderInvestmentApprovalCard(p, convert, hasRates, isLoadingRates)}
               onSelect={(p) => openReview(p)}
               selectedKey={selectedReviewId}
               cardAccent={() => "brand"}
@@ -300,7 +308,10 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                     <div className="p-4 bg-gradient-to-br from-brand-50/40 to-white rounded-xl text-xs space-y-2 border border-brand-100/60 font-medium">
                       <div className="flex justify-between items-center">
                         <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
-                        <span className="font-mono font-bold text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                        <span className="text-right">
+                          <span className="font-mono font-bold text-brand-700 block">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                          <BsAmount amount={activeReviewProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 text-slate-500">
                         <MapPin className="h-3.5 w-3.5 text-slate-400" />
@@ -339,7 +350,10 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Cierre de Obra</span>
-                        <span className="font-mono font-black text-brand-700">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                        <span className="text-right">
+                          <span className="font-mono font-black text-brand-700 block">${formatNumber(activeReviewProject.estimatedTotal)}</span>
+                          <BsAmount amount={activeReviewProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                        </span>
                       </div>
                       {activeReviewProject.dossierAiSuggestedAmount != null && (
                         <div className="flex items-center justify-between gap-2">
@@ -347,7 +361,10 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                             Sugerido por IA (referencial)
                             <HelpHint content="Monto propuesto por la evaluación IA del expediente en Cierre de Obra. Es solo referencia — nunca autocompleta este formulario." />
                           </span>
-                          <span className="font-mono font-black text-slate-500">${formatNumber(activeReviewProject.dossierAiSuggestedAmount)}</span>
+                          <span className="text-right">
+                            <span className="font-mono font-black text-slate-500 block">${formatNumber(activeReviewProject.dossierAiSuggestedAmount)}</span>
+                            <BsAmount amount={activeReviewProject.dossierAiSuggestedAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                          </span>
                         </div>
                       )}
                     </div>
@@ -364,6 +381,11 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                         placeholder="0.00"
                         className="focus:ring-brand-500"
                       />
+                      {hasRates && typeof approvedAmount === "number" && approvedAmount > 0 && (
+                        <p className="mt-1.5 text-[10px] font-mono font-semibold text-slate-500">
+                          ≈ Bs. {formatBs(convert(approvedAmount, "USD"))}
+                        </p>
+                      )}
                     </div>
 
                     <div>
