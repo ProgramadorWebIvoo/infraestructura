@@ -175,32 +175,28 @@ export default function Modal({
           >
             {/* ── Header ── */}
             {(title || icon || badge) && (
-              <div className="relative shrink-0 overflow-hidden border-b border-border-inverted bg-surface-inverted p-5 text-text-inverted">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_140%_at_0%_0%,rgba(255,255,255,0.06),transparent_60%)]"
-                />
-                <div className="relative flex items-center justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
+              <div className="shrink-0 border-b border-border-subtle bg-surface px-6 py-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-start gap-3">
                     {icon && (
                       <div
                         data-testid="modal-icon"
-                        className={`${iconStyle.bg} ${iconStyle.text} shrink-0 rounded-control p-2 ring-1 ring-white/10`}
+                        className={`${iconStyle.bg} ${iconStyle.text} mt-0.5 shrink-0 rounded-control p-2`}
                       >
                         {icon}
                       </div>
                     )}
                     <div className="min-w-0">
                       {badge && (
-                        <span className="block truncate text-[10px] font-mono font-bold uppercase tracking-wide text-amber-400">
+                        <span className="block truncate text-[10px] font-mono font-bold uppercase tracking-wide text-amber-600">
                           {badge}
                         </span>
                       )}
                       {title && (
-                        <h3 className="text-md truncate font-brand font-black tracking-tight">{title}</h3>
+                        <h3 className="text-lg font-bold text-text-primary">{title}</h3>
                       )}
                       {infoLine && (
-                        <p className="mt-0.5 truncate font-mono text-[11px] text-text-muted">{infoLine}</p>
+                        <p className="mt-0.5 truncate text-sm text-text-secondary">{infoLine}</p>
                       )}
                     </div>
                   </div>
@@ -210,7 +206,7 @@ export default function Modal({
                       aria-label="Cerrar"
                       onClick={onClose}
                       disabled={closeDisabled}
-                      className="ml-3 shrink-0 cursor-pointer rounded-full p-1 text-text-muted transition-all duration-150 hover:bg-border-inverted hover:text-text-inverted active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="ml-3 shrink-0 cursor-pointer rounded p-1 text-text-secondary transition-colors hover:bg-surface-sunken hover:text-text-primary active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <X className="h-5 w-5" />
                     </button>

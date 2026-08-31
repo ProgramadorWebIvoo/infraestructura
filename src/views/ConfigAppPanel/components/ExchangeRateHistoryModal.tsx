@@ -4,11 +4,11 @@
  *
  * Modal para ver el histórico de tasas de una moneda específica.
  * Abierto desde el botón de acción en CurrencyRow para monedas oficiales.
+ * Reutiliza el componente Modal genérico mejorado.
  */
 
-import { RefreshCw, TrendingUp, X } from "lucide-react";
-import { motion } from "motion/react";
-import { useState, useMemo } from "react";
+import { RefreshCw, TrendingUp } from "lucide-react";
+import { useMemo } from "react";
 import Modal from "../../../components/UI/Modal";
 import Button from "../../../components/UI/Button";
 import { Table, type Column } from "../../../components/UI/Table";
@@ -96,25 +96,16 @@ export default function ExchangeRateHistoryModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-        {/* Encabezado del modal */}
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h2 className="text-lg font-bold text-text-primary">Histórico de Tasas</h2>
-            <p className="text-sm text-text-secondary">
-              {currencyCode} – {currencyName}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-surface-sunken rounded transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5 text-text-secondary" />
-          </button>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Histórico de Tasas"
+      infoLine={`${currencyCode} – ${currencyName}`}
+      icon={<TrendingUp className="h-5 w-5" />}
+      iconColor="sky"
+      maxWidth="max-w-lg"
+    >
+      <div className="space-y-6">
         {/* Botón de sincronización */}
         <div className="flex gap-2">
           <Button
@@ -127,9 +118,7 @@ export default function ExchangeRateHistoryModal({
           >
             {isSyncing ? "Sincronizando..." : "Sincronizar Ahora"}
           </Button>
-          <span className="text-xs text-text-muted self-center">
-            {filteredRates.length} registros
-          </span>
+          <span className="text-xs text-text-muted self-center">{filteredRates.length} registros</span>
         </div>
 
         {/* Tabla o estado vacío */}
@@ -160,7 +149,7 @@ export default function ExchangeRateHistoryModal({
             </p>
           </div>
         )}
-      </motion.div>
+      </div>
     </Modal>
   );
 }
