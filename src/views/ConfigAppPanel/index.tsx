@@ -45,7 +45,7 @@ import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
-import ExchangeRateHistoryPanel from "./components/ExchangeRateHistoryPanel";
+import ExchangeRateHistoryModal from "./components/ExchangeRateHistoryModal";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
@@ -213,6 +213,8 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   });
 
   const [savingAll, setSavingAll] = useState(false);
+  const [exchangeRateModalOpen, setExchangeRateModalOpen] = useState(false);
+  const [selectedCurrencyForModal, setSelectedCurrencyForModal] = useState<string>("");
 
   const hasSettingsFor = (group: string) => settings[group]?.length > 0;
   const hasPendingChanges = settingsDraft.dirtyKeys.length > 0 || rulesDraft.dirtyKeys.length > 0;
@@ -349,23 +351,19 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                     silencedChannelsFor={silencedChannelsFor}
                   />
                 ) : group === "__currencies__" ? (
-                  <div key={group} className="space-y-6">
-                    <CurrencyCard
-                      currencies={currencies}
-                      isLoading={isLoadingCurrencies}
-                      onAdd={handleAddCurrency}
-                      onUpdate={handleUpdateCurrency}
-                      onSetBase={handleSetBaseCurrency}
-                      onDelete={handleDeleteCurrency}
-                    />
-                    <ExchangeRateHistoryPanel
-                      rates={rates}
-                      isLoading={isLoadingRates}
-                      isSyncing={isSyncing}
-                      onSyncNow={syncNow}
-                      currencies={currencies}
-                    />
-                  </div>
+                  <CurrencyCard
+                    key={group}
+                    currencies={currencies}
+                    isLoading={isLoadingCurrencies}
+                    onAdd={handleAddCurrency}
+                    onUpdate={handleUpdateCurrency}
+                    onSetBase={handleSetBaseCurrency}
+                    onDelete={handleDeleteCurrency}
+                    onViewExchangeRates={(code) => {
+                      setSelectedCurrencyForModal(code);
+                      setExchangeRateModalOpen(true);
+                    }}
+                  />
                 ) : (
                   <SettingGroupCard
                     key={group}
@@ -382,6 +380,18 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             </div>
           </TabPanel>
         </div>
+
+        {/* Modal de histórico de tasas */}
+        <ExchangeRateHistoryModal
+          isOpen={exchangeRateModalOpen}
+          onClose={() => setExchangeRateModalOpen(false)}
+          currencyCode={selectedCurrencyForModal}
+          currencyName={currencies.find(c => c.code === selectedCurrencyForModal)?.name || ""}
+          rates={rates}
+          isLoading={isLoadingRates}
+          isSyncing={isSyncing}
+          onSyncNow={syncNow}
+        />
 
         {isSuperadmin && (
           <ConfigAuditLogPanel

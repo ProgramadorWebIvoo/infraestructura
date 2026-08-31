@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Coins, Star, CheckCircle, XCircle, Pencil, Trash2, Plus, X, Check, Landmark } from "lucide-react";
+import { Coins, Star, CheckCircle, XCircle, Pencil, Trash2, Plus, X, Check, Landmark, TrendingUp } from "lucide-react";
 import { itemVariants, bannerVariants } from "../../../animations";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
@@ -30,9 +30,10 @@ interface CurrencyCardProps {
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
   onSetBase: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  onViewExchangeRates?: (currencyCode: string) => void;
 }
 
-export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, onSetBase, onDelete }: CurrencyCardProps) {
+export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, onSetBase, onDelete, onViewExchangeRates }: CurrencyCardProps) {
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -203,6 +204,7 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                         onSetBase={onSetBase}
                         onUpdate={onUpdate}
                         onDelete={onDelete}
+                        onViewExchangeRates={onViewExchangeRates}
                       />
                     ))}
                   </AnimatePresence>
@@ -262,6 +264,7 @@ interface CurrencyRowProps {
   onSetBase: (id: number) => Promise<void>;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  onViewExchangeRates?: (currencyCode: string) => void;
 }
 
 /** Fila de moneda — comportamiento idéntico para oficiales/custom salvo qué botones se muestran (una oficial nunca expone editar/eliminar). */
@@ -280,6 +283,7 @@ function CurrencyRow({
   onSetBase,
   onUpdate,
   onDelete,
+  onViewExchangeRates,
 }: CurrencyRowProps) {
   const isEditing = editingId === currency.id;
 
@@ -341,6 +345,17 @@ function CurrencyRow({
         </span>
       </div>
       <div className="flex items-center gap-1.5">
+        {/* Botón de histórico de tasas para monedas oficiales */}
+        {currency.is_official && onViewExchangeRates && (
+          <IconActionButton
+            label={`Ver histórico de ${currency.code}`}
+            tooltip="Ver histórico de tasas"
+            onClick={() => onViewExchangeRates(currency.code)}
+            tone="sky"
+            icon={<TrendingUp className="h-3.5 w-3.5" />}
+          />
+        )}
+
         {/* Moneda oficial BCV: nunca editable/eliminable — solo activar/desactivar (salvo si es la base, ver abajo). */}
         {!currency.is_official && (
           isEditing ? (
