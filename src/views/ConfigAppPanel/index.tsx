@@ -39,11 +39,13 @@ import { useConfigAuditLogs } from "../../hooks/useConfigAuditLogs";
 import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
 import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
 import { useCurrencies, type CurrencyRecord } from "../../hooks/useCurrencies";
+import { useExchangeRates } from "../../hooks/useExchangeRates";
 import { useDraftState } from "../../hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
+import ExchangeRateHistoryPanel from "./components/ExchangeRateHistoryPanel";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
@@ -114,6 +116,13 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     setBaseCurrency,
     deleteCurrency,
   } = useCurrencies(authToken, isSuperadmin);
+
+  const {
+    rates,
+    isLoading: isLoadingRates,
+    isSyncing,
+    syncNow,
+  } = useExchangeRates(authToken, isSuperadmin);
 
   const handleAddCurrency = async (input: { code: string; name: string; symbol: string }) => {
     const created = await addCurrency(input);
@@ -340,15 +349,23 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                     silencedChannelsFor={silencedChannelsFor}
                   />
                 ) : group === "__currencies__" ? (
-                  <CurrencyCard
-                    key={group}
-                    currencies={currencies}
-                    isLoading={isLoadingCurrencies}
-                    onAdd={handleAddCurrency}
-                    onUpdate={handleUpdateCurrency}
-                    onSetBase={handleSetBaseCurrency}
-                    onDelete={handleDeleteCurrency}
-                  />
+                  <div key={group} className="space-y-6">
+                    <CurrencyCard
+                      currencies={currencies}
+                      isLoading={isLoadingCurrencies}
+                      onAdd={handleAddCurrency}
+                      onUpdate={handleUpdateCurrency}
+                      onSetBase={handleSetBaseCurrency}
+                      onDelete={handleDeleteCurrency}
+                    />
+                    <ExchangeRateHistoryPanel
+                      rates={rates}
+                      isLoading={isLoadingRates}
+                      isSyncing={isSyncing}
+                      onSyncNow={syncNow}
+                      currencies={currencies}
+                    />
+                  </div>
                 ) : (
                   <SettingGroupCard
                     key={group}
