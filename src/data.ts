@@ -10,6 +10,7 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
   {
     code: "CON-301",
     name: "Constructora Andes C.A.",
+    rif: "J-30012345-1",
     specialty: "Obras Civiles y Estructuras",
     rating: 4.8,
     email: "contacto@constandes.com",
@@ -17,6 +18,7 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
   {
     code: "CON-302",
     name: "Sistemas Eléctricos Voltio, S.A.",
+    rif: "J-30023456-2",
     specialty: "Alta Tensión e Iluminación",
     rating: 4.5,
     email: "proyectos@voltiosa.com",
@@ -24,6 +26,7 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
   {
     code: "CON-303",
     name: "Mantenimiento Integral Express",
+    rif: "J-30034567-3",
     specialty: "Pintura, Drywall y Acabados",
     rating: 4.2,
     email: "gerencia@mantexpress.net",
@@ -31,6 +34,7 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
   {
     code: "CON-304",
     name: "Tuberías y Soldaduras Occidente",
+    rif: "J-30045678-4",
     specialty: "Sistemas de Enfriamiento e Hidráulicos",
     rating: 4.7,
     email: "ventas@tuboccidente.com",
@@ -38,6 +42,7 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
   {
     code: "CON-305",
     name: "Soluciones de Climatización Termo-Control",
+    rif: "J-30056789-5",
     specialty: "Aire Acondicionado y Ventilación",
     rating: 4.6,
     email: "soporte@termocontrol.ve",

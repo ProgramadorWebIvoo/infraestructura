@@ -24,7 +24,7 @@ import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
-import { isValidEmail, isValidPhone } from "../../utils/validators";
+import { isValidEmail, isValidPhone, isValidRif } from "../../utils/validators";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
@@ -126,6 +126,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
     setEditingCode(c.code);
     setForm({
       name: c.name,
+      rif: c.rif,
       specialty: c.specialty,
       email: c.email,
       phone: c.phone ?? "",
@@ -142,8 +143,13 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.specialty.trim()) {
+    if (!form.name.trim() || !form.rif.trim() || !form.specialty.trim()) {
       showToast("Completa todos los campos obligatorios.", "error");
+      return;
+    }
+
+    if (!isValidRif(form.rif)) {
+      showToast("Ingresa un RIF válido (ej: J-12345678-9).", "error");
       return;
     }
 
@@ -169,6 +175,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
     try {
       const payload = {
         name: form.name.trim(),
+        rif: form.rif.trim().toUpperCase(),
         specialty: form.specialty.trim(),
         email: hasEmail ? form.email.trim() : null,
         phone: hasPhone ? form.phone.trim() : null,

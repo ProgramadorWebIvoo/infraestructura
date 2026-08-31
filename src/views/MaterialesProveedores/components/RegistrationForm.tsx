@@ -14,9 +14,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { Contractor } from "../../../types";
 import { CheckCircle2, Loader2, Mail, Send, UserRound } from "lucide-react";
 import { apiFetch } from "../../../services/api";
+import { getErrorMessage } from "../../../services/logger";
 import { useToast } from "../../../components/UI/Toast";
 import { RequiredMark } from "../../../components/UI/HintSignals";
-import { isValidEmail } from "../../../utils/validators";
+import { isValidEmail, joinRif, RIF_TYPES, type RifType } from "../../../utils/validators";
 import { containerVariants, itemVariants, springs } from "../../../animations";
 
 interface RegistrationFormProps {
@@ -44,14 +45,20 @@ const MAX_CONTACT_LENGTH = 254;
 export default function RegistrationForm({ onAddContractor }: RegistrationFormProps) {
   const { showToast } = useToast();
   const [name, setName] = useState("");
+  // El usuario solo elige la letra (selector) y tipea los 9 dígitos — nunca
+  // guiones. rif = joinRif(rifType, rifDigits) es lo que se envía al backend.
+  const [rifType, setRifType] = useState<RifType>("J");
+  const [rifDigits, setRifDigits] = useState("");
+  const rif = joinRif(rifType, rifDigits);
   const [specialty, setSpecialty] = useState("");
   const [contact, setContact] = useState("");
   const [submittedCode, setSubmittedCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estados de validación por campo (para feedback visual)
-  const [touched, setTouched] = useState({ name: false, specialty: false, contact: false });
+  const [touched, setTouched] = useState({ name: false, rif: false, specialty: false, contact: false });
   const nameError = touched.name && !sanitize(name);
+  const rifError = touched.rif && rifDigits.length !== 9;
   const specialtyError = touched.specialty && !sanitize(specialty);
   const contactError = touched.contact && !isValidEmail(sanitize(contact));
 
@@ -62,9 +69,9 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
     const cleanSpecialty = sanitize(specialty);
     const cleanContact = sanitize(contact);
 
-    if (!cleanName || !cleanSpecialty || !cleanContact) {
+    if (!cleanName || rifDigits.length !== 9 || !cleanSpecialty || !cleanContact) {
       showToast("Completa todos los campos para registrar el proveedor.", "warning");
-      setTouched({ name: true, specialty: true, contact: true });
+      setTouched({ name: true, rif: true, specialty: true, contact: true });
       return;
     }
 
@@ -81,6 +88,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
         method: "POST",
         body: JSON.stringify({
           name: cleanName,
+          rif,
           specialty: cleanSpecialty,
           email: cleanContact,
           // rating: no se envía desde el portal público; el backend asigna valor por defecto
@@ -90,11 +98,13 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
       onAddContractor(contractor);
       setSubmittedCode(contractor.code);
       setName("");
+      setRifType("J");
+      setRifDigits("");
       setSpecialty("");
       setContact("");
-      setTouched({ name: false, specialty: false, contact: false });
-    } catch {
-      showToast("No se pudo registrar el proveedor en este momento. Intenta nuevamente.", "error");
+      setTouched({ name: false, rif: false, specialty: false, contact: false });
+    } catch (err) {
+      showToast(getErrorMessage(err, "No se pudo registrar el proveedor en este momento. Intenta nuevamente."), "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +151,14 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
         )}
       </AnimatePresence>
 
-      <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-4">
+      {/* noValidate: la validación nativa del navegador (atributo `required`,
+          `type="email"`) muestra sus mensajes en el idioma del NAVEGADOR, no
+          de la página (el `lang="es"` del documento no la afecta) — con un
+          navegador en inglés, el usuario veía "Please fill out this field"
+          en vez de nuestros mensajes en español. La validación real ya la
+          hace handleSubmit con toasts en español; `required`/`aria-required`
+          se conservan solo por semántica de accesibilidad. */}
+      <motion.form variants={itemVariants} onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
           <label
             htmlFor="public-provider-name"
@@ -171,6 +188,52 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
           {nameError && (
             <p id="public-provider-name-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
               El nombre de la empresa es obligatorio.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="public-provider-rif-digits"
+            className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500"
+          >
+            RIF <RequiredMark filled={rifDigits.length === 9} />
+          </label>
+          <div className="flex gap-2">
+            <select
+              id="public-provider-rif-type"
+              value={rifType}
+              onChange={(event) => setRifType(event.target.value as RifType)}
+              aria-label="Tipo de RIF"
+              className="rounded-xl border border-slate-200 bg-white px-2.5 py-3 text-sm font-bold text-slate-800 outline-hidden focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            >
+              {RIF_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <input
+              id="public-provider-rif-digits"
+              type="text"
+              inputMode="numeric"
+              required
+              maxLength={9}
+              value={rifDigits}
+              onChange={(event) => setRifDigits(event.target.value.replace(/\D/g, "").slice(0, 9))}
+              onBlur={() => setTouched((prev) => ({ ...prev, rif: true }))}
+              placeholder="123456789"
+              aria-required="true"
+              aria-invalid={rifError || undefined}
+              aria-describedby={rifError ? "public-provider-rif-error" : undefined}
+              className={`w-full rounded-xl border bg-white px-3.5 py-3 font-mono text-sm font-semibold text-slate-800 outline-hidden transition-all duration-200 placeholder:text-slate-300 focus:ring-2 focus:ring-sky-100 ${
+                rifError
+                  ? "border-rose-300 focus:border-rose-400"
+                  : "border-slate-200 focus:border-sky-400"
+              }`}
+            />
+          </div>
+          {rifError && (
+            <p id="public-provider-rif-error" className="mt-1 text-[11px] font-medium text-rose-500" role="alert">
+              El RIF debe tener 9 dígitos.
             </p>
           )}
         </div>

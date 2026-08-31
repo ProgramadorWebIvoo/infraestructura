@@ -154,7 +154,7 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
       icon={<History className="h-5 w-5" />}
       iconColor="emerald"
       title={contractor?.name}
-      infoLine={`${contractor?.code} — Histórico de últimos 12 meses`}
+      infoLine={`${contractor?.code} · RIF ${contractor?.rif ?? "—"} — Histórico de últimos 12 meses`}
     >
       {contractor && (
         <div className="space-y-6">

@@ -86,6 +86,7 @@ function stubContainerSize(width: number, height: number) {
 
 const makeContractor = (over: Partial<Contractor> & { code: string }): Contractor => ({
   name: "Constructora ABC",
+  rif: "J-00200002-2",
   specialty: "Electricidad",
   rating: 4.5,
   email: "contacto@constructoraabc.test",

@@ -20,6 +20,7 @@ function createMockContractor(overrides: Partial<Contractor> = {}): Contractor {
   return {
     code: "CON-001",
     name: "Test Contractor",
+    rif: "J-00100001-1",
     specialty: "General",
     rating: 4.0,
     email: "test@test.com",

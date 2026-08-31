@@ -52,6 +52,10 @@ export default function ContractorDetailModal({ contractor, onClose }: Contracto
             </span>
           </DetailField>
 
+          <DetailField label="RIF">
+            <span className="font-mono text-xs">{contractor.rif}</span>
+          </DetailField>
+
           <DetailField label="Origen">
             <span className={`inline-block rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${sourceSemantic.border100} ${sourceSemantic.bg50} ${sourceSemantic.text700}`}>
               {source.label}

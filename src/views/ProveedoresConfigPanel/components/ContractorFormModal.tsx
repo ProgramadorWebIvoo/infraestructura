@@ -12,8 +12,10 @@ import Select from "../../../components/UI/Select";
 import NumericInput from "../../../components/UI/NumericInput";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
-import { isValidEmail, isValidPhone } from "../../../utils/validators";
+import { isValidEmail, isValidPhone, joinRif, splitRif, RIF_TYPES } from "../../../utils/validators";
 import { STATUS_OPTIONS, type ContractorForm } from "../types";
+
+const RIF_TYPE_OPTIONS = RIF_TYPES.map((t) => ({ value: t, label: t }));
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const inputClass =
@@ -46,6 +48,13 @@ export default function ContractorFormModal({
 
   const emailFormatInvalid = hasEmail && !isValidEmail(form.email);
   const phoneFormatInvalid = hasPhone && !isValidPhone(form.phone);
+
+  // El usuario solo tipea la letra (selector) y los 9 dígitos — nunca
+  // guiones. form.rif guarda el string completo ("J-12345678-9") que
+  // espera el backend; se reconstruye a partir de estas dos partes.
+  const { type: rifType, digits: rifDigits } = splitRif(form.rif);
+  const rifDigitsComplete = rifDigits.length === 9;
+  const rifError = !rifDigitsComplete ? `Faltan ${9 - rifDigits.length} dígitos.` : undefined;
 
   // El error de "falta contacto" se marca en ambos campos a la vez (ninguno
   // es individualmente responsable), pero el de formato es por campo — así
@@ -105,6 +114,38 @@ export default function ContractorFormModal({
             placeholder="Ej: Construcciones del Sur S.A."
             className={inputClass}
           />
+        </div>
+
+        {/* RIF — siempre obligatorio, sin excepción. El usuario solo elige la
+            letra y tipea los 9 dígitos; los guiones los arma joinRif(). */}
+        <div>
+          <label htmlFor="contractor-rif-digits" className={labelClass}>
+            RIF <RequiredMark filled={rifDigitsComplete} />
+          </label>
+          <div className="flex gap-2">
+            <div className="w-20 shrink-0">
+              <Select
+                id="contractor-rif-type"
+                value={rifType}
+                onChange={(v) => onFormChange({ ...form, rif: joinRif(v as typeof rifType, rifDigits) })}
+                options={RIF_TYPE_OPTIONS}
+                accent="info"
+              />
+            </div>
+            <input
+              id="contractor-rif-digits"
+              type="text"
+              inputMode="numeric"
+              value={rifDigits}
+              onChange={(e) => onFormChange({ ...form, rif: joinRif(rifType, e.target.value) })}
+              maxLength={9}
+              placeholder="123456789"
+              aria-invalid={!!rifError}
+              aria-describedby={rifError ? "contractor-rif-error" : undefined}
+              className={`${inputClass} font-mono ${fieldErrorClasses(!!rifError)}`}
+            />
+          </div>
+          <FieldError message={rifError} />
         </div>
 
         {/* Specialty */}

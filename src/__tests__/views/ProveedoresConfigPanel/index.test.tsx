@@ -83,6 +83,7 @@ vi.mock("@/hooks/useConfigAuditLogs", () => ({
 const CONTRACTOR: ConfigContractor = {
   code: "PRV-001",
   name: "Construcciones del Sur S.A.",
+  rif: "J-12345678-9",
   specialty: "Obra civil",
   rating: 4.5,
   email: "contacto@constructora.com",
@@ -125,6 +126,7 @@ describe("ProveedoresConfigPanel (integración)", () => {
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText(/Nombre \/ Empresa/), { target: { value: "Eléctricos Andinos" } });
+    fireEvent.change(screen.getByLabelText(/^RIF/), { target: { value: "J-11122233-4" } });
     fireEvent.change(screen.getByLabelText(/Especialidad/), { target: { value: "Instalaciones eléctricas" } });
     fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: "contacto@electricos.com" } });
 

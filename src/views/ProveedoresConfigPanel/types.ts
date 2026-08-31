@@ -8,6 +8,7 @@ import type { SemanticColor } from "../../components/UI/colorTokens";
 export interface ConfigContractor {
   code: string;
   name: string;
+  rif: string;
   specialty: string;
   rating: number;
   email: string;
@@ -20,6 +21,7 @@ export interface ConfigContractor {
 
 export type ContractorForm = {
   name: string;
+  rif: string;
   specialty: string;
   email: string;
   phone: string;
@@ -29,6 +31,7 @@ export type ContractorForm = {
 
 export const EMPTY_FORM: ContractorForm = {
   name: "",
+  rif: "",
   specialty: "",
   email: "",
   phone: "",

@@ -172,6 +172,7 @@ export interface Project {
 export interface Contractor {
   code: string;
   name: string;
+  rif: string;
   specialty: string;
   rating: number;
   email: string;
