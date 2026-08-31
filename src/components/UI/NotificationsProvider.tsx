@@ -50,7 +50,7 @@
  * que esta detección siguiera funcionando).
  */
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AppNotification } from "../../types";
 import type { AuthUser } from "../../hooks/useAuth";
 import { apiFetch } from "../../services/api";
@@ -229,16 +229,23 @@ function useNotificationsSource(authToken: string, authUser: AuthUser): UseNotif
     }
   }, [authToken, notifications]);
 
-  return {
-    notifications,
-    unreadCount,
-    isLoading,
-    refresh: () => load(),
-    markRead,
-    markAllRead,
-    deleteNotification,
-    deleteAllNotifications,
-  };
+  // Memoizado: este value es el de un Context.Provider que envuelve toda la
+  // app autenticada — sin memo, un objeto nuevo en cada render (aunque nada
+  // relevante haya cambiado) se propaga como "cambio" a cada useNotifications()
+  // consumidor en cualquier vista.
+  return useMemo(
+    () => ({
+      notifications,
+      unreadCount,
+      isLoading,
+      refresh: load,
+      markRead,
+      markAllRead,
+      deleteNotification,
+      deleteAllNotifications,
+    }),
+    [notifications, unreadCount, isLoading, load, markRead, markAllRead, deleteNotification, deleteAllNotifications],
+  );
 }
 
 const NotificationsContext = createContext<UseNotificationsResult | null>(null);

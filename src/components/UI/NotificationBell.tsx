@@ -11,7 +11,7 @@
  * posicionamiento absoluto del dropdown.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, X } from "lucide-react";
 import { useNotifications } from "./NotificationsProvider";
@@ -56,7 +56,7 @@ interface NotificationBellProps {
   align?: "right" | "left-start";
 }
 
-export default function NotificationBell({ variant = "dark", align = "right" }: NotificationBellProps) {
+function NotificationBell({ variant = "dark", align = "right" }: NotificationBellProps) {
   const { notifications, unreadCount, markRead, markAllRead, deleteNotification, deleteAllNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -233,3 +233,5 @@ export default function NotificationBell({ variant = "dark", align = "right" }: 
     </div>
   );
 }
+
+export default memo(NotificationBell);

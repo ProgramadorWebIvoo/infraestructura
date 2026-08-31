@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Menu } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
@@ -8,7 +9,7 @@ interface MobileTopBarProps {
   onMenuClick: () => void;
 }
 
-export default function MobileTopBar({ user, activeRole, onMenuClick }: MobileTopBarProps) {
+function MobileTopBar({ user, activeRole, onMenuClick }: MobileTopBarProps) {
   return (
     <header className="bg-surface-inverted text-white border-b border-slate-800/60 shadow-sm relative overflow-hidden lg:hidden">
       {/* Atmospheric light — matching sidebar header */}
@@ -44,3 +45,5 @@ export default function MobileTopBar({ user, activeRole, onMenuClick }: MobileTo
     </header>
   );
 }
+
+export default memo(MobileTopBar);

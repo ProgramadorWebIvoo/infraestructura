@@ -207,7 +207,9 @@ function AppRoutes() {
 
   // ---- Logout compuesto (limpia auth + datos) ----
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const handleLogout = async () => {
+  // useCallback: se pasa como onLogout a SidebarNav (memo()) — sin referencia
+  // estable, ese memo no evita el re-render en cada cambio de ruta/proyectos.
+  const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
     // Beat mínimo para que LoggingOutScreen no sea un flash ilegible cuando
     // /logout resuelve casi instantáneo (localhost, red rápida) — el logout
@@ -220,7 +222,7 @@ function AppRoutes() {
     navigate(ROUTES.HOME);
     showToast("Sesión cerrada.", "info");
     setIsLoggingOut(false);
-  };
+  }, [authLogout, resetData, resetContractors, resetCatalog, navigate, showToast]);
 
   // ---- Login wrapper con toast de bienvenida ----
   const handleLoginWithToast = useCallback(async (email: string, password: string) => {

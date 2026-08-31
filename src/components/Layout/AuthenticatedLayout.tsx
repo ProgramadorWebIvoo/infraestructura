@@ -99,6 +99,7 @@ export default function AuthenticatedLayout({
 
   const handleOnToggleCollapsed = useCallback(() => setIsSidebarCollapsed((prev) => !prev), []);
   const handleCloseMobileSidebar = useCallback(() => setIsMobileSidebarOpen(false), []);
+  const handleOpenMobileSidebar = useCallback(() => setIsMobileSidebarOpen(true), []);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isSidebarCollapsed ? "1" : "0");
@@ -126,7 +127,7 @@ export default function AuthenticatedLayout({
           <MobileTopBar
             user={user}
             activeRole={activeRole}
-            onMenuClick={() => setIsMobileSidebarOpen(true)}
+            onMenuClick={handleOpenMobileSidebar}
           />
 
           {/* Exchange Rates Badge — visible for PROCURA, ANALISTAS, FINANZAS, ADMIN, SUPERADMIN */}

@@ -68,7 +68,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
       .sort((a, b) => (b.createdDate || "").localeCompare(a.createdDate || "") || a.id.localeCompare(b.id));
   }, [projects, stageKey, query]);
 
-  const columns: Column<Project>[] = [
+  const columns: Column<Project>[] = useMemo(() => [
     {
       key: "id",
       label: "ID",
@@ -142,7 +142,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
         </button>
       ),
     },
-  ];
+  ], [convert, hasRates, isLoadingRates]);
 
   return (
     <Card hoverable={false} accent="neutral" fillHeight className="p-0 overflow-hidden">

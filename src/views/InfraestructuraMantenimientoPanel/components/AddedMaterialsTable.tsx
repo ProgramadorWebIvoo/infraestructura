@@ -11,13 +11,16 @@
  * hace notorio que existe un paso opcional-pero-recomendado sin completar.
  */
 
+import { useMemo } from "react";
 import { Package, Pencil, Trash2 } from "lucide-react";
 import type { MaterialItem } from "../../../types";
-import { Table } from "../../../components/UI/Table";
+import { Table, type Column } from "../../../components/UI/Table";
 import EmptyState from "../../../components/UI/EmptyState";
 import { formatCurrency } from "../../../utils";
 import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
+
+type MaterialRow = Omit<MaterialItem, "id">;
 
 interface AddedMaterialsTableProps {
   materials: Omit<MaterialItem, "id">[];
@@ -30,10 +33,7 @@ interface AddedMaterialsTableProps {
 export default function AddedMaterialsTable({ materials, onRemove, onEditRequest, reviewedIndexes, subtotal }: AddedMaterialsTableProps) {
   const { convert, hasRates, isLoading: ratesLoading } = useCurrencyConversion();
 
-  return (
-    <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
-      <Table
-        columns={[
+  const columns: Column<MaterialRow>[] = useMemo(() => [
           {
             key: "name",
             label: "Material / Servicio",
@@ -102,7 +102,12 @@ export default function AddedMaterialsTable({ materials, onRemove, onEditRequest
               </div>
             ),
           },
-        ]}
+  ], [convert, hasRates, ratesLoading, reviewedIndexes, onEditRequest, onRemove]);
+
+  return (
+    <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
+      <Table
+        columns={columns}
         data={materials}
         rowKey={(_m, index) => index}
         rowHoverClass="hover:bg-emerald-50/40 transition-colors"

@@ -23,7 +23,7 @@
  * son proyecciones puras sobre este contexto compartido, sin fetch propio.
  */
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "../../services/api";
 import { logError } from "../../services/logger";
 import { useAuth } from "../../hooks/useAuth";
@@ -69,8 +69,14 @@ export function PublicSettingsProvider({ children }: { children: ReactNode }) {
     };
   }, [authToken, hasLoaded]);
 
+  // Memoizado: este value es el de un Context.Provider que envuelve TODA la
+  // app (incluso las rutas públicas, ver App.tsx) — un objeto literal inline
+  // es nuevo en cada render aunque settings/isLoading no hayan cambiado,
+  // propagándose como "cambio" a cada usePublicSettings() consumidor.
+  const value = useMemo(() => ({ settings, isLoading }), [settings, isLoading]);
+
   return (
-    <PublicSettingsContext.Provider value={{ settings, isLoading }}>
+    <PublicSettingsContext.Provider value={value}>
       {children}
     </PublicSettingsContext.Provider>
   );

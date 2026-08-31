@@ -11,7 +11,7 @@
  * un rol o ruta nueva no requiere un deploy del frontend para tomar efecto.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../services/api";
 import { logError } from "../services/logger";
 
@@ -48,17 +48,27 @@ export function useRoleAccess(role: string | undefined) {
     };
   }, [activeRole]);
 
-  const canAccess = (path: string) => {
-    if (!activeRole) return false;
-    // Denegar por defecto: un rol no reconocido (o mientras cargan los
-    // permisos) no hereda las rutas de ningún otro rol.
-    return (roleAccess[activeRole] ?? []).includes(path);
-  };
+  // useCallback: canAccess se pasa como prop a SidebarNav (memo()) — sin
+  // referencia estable, ese memo no tiene efecto real porque la prop
+  // "cambia" en cada render de AppRoutes aunque roleAccess/activeRole sigan
+  // siendo los mismos.
+  const canAccess = useCallback(
+    (path: string) => {
+      if (!activeRole) return false;
+      // Denegar por defecto: un rol no reconocido (o mientras cargan los
+      // permisos) no hereda las rutas de ningún otro rol.
+      return (roleAccess[activeRole] ?? []).includes(path);
+    },
+    [activeRole, roleAccess],
+  );
 
-  const firstAllowedRoute = (r: string | undefined): string | null => {
-    if (!r) return null;
-    return roleAccess[r]?.[0] ?? null;
-  };
+  const firstAllowedRoute = useCallback(
+    (r: string | undefined): string | null => {
+      if (!r) return null;
+      return roleAccess[r]?.[0] ?? null;
+    },
+    [roleAccess],
+  );
 
   return { activeRole, canAccess, firstAllowedRoute, isLoadingPermissions };
 }

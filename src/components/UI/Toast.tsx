@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { Bell, X } from "lucide-react";
 import { ALERT_ICONS, ALERT_STYLES, type AlertType } from "./alertStyles";
 
@@ -168,8 +168,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     timersRef.current.set(id, timer);
   }, [dismiss]);
 
+  // Memoizado: value={{ showToast }} inline es un objeto nuevo en cada
+  // render de ToastProvider (ej. cada vez que se muestra/oculta un toast) —
+  // este Provider envuelve TODA la app, así que sin memo cualquier render
+  // suyo se propaga como "cambio" a cada useToast() consumidor del árbol.
+  const value = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
 
       <div

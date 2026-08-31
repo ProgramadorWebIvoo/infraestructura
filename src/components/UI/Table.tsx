@@ -3,7 +3,7 @@
 // footer, scroll containers, sorting, pagination
 
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { SkeletonBlock } from "../SkeletonLoader";
 import { itemVariants } from "../../animations";
@@ -90,6 +90,116 @@ export interface TableProps<T> {
   selectedRowKey?: string | number;
   selectedRowClass?: string;
 }
+
+// ─── Sort icon (extraído del cuerpo de Table: definir un componente ahí
+// dentro le da una identidad de tipo nueva en cada render, forzando a React
+// a desmontar/remontar en vez de solo actualizar props) ───
+
+const SortIcon = memo(function SortIcon({ sortable, active, dir }: { sortable?: boolean; active: boolean; dir: "asc" | "desc" }) {
+  if (!sortable) return null;
+  if (!active) return <ChevronsUpDown className="h-3 w-3 ml-1 shrink-0 opacity-40" />;
+  return dir === "asc" ? (
+    <ChevronUp className="h-3 w-3 ml-1 shrink-0" />
+  ) : (
+    <ChevronDown className="h-3 w-3 ml-1 shrink-0" />
+  );
+});
+
+// ─── Pagination bar (mismo motivo: extraída para no perder su identidad de
+// tipo en cada render de Table) ───
+
+interface PaginationBarProps {
+  paginationEnabled: boolean;
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  fromItem: number;
+  toItem: number;
+  onGoToPage: (page: number) => void;
+}
+
+const PaginationBar = memo(function PaginationBar({
+  paginationEnabled,
+  totalItems,
+  totalPages,
+  currentPage,
+  fromItem,
+  toItem,
+  onGoToPage,
+}: PaginationBarProps) {
+  if (!paginationEnabled || totalItems === 0) return null;
+
+  const pages: (number | "ellipsis")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (currentPage > 3) pages.push("ellipsis");
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+      pages.push(i);
+    }
+    if (currentPage < totalPages - 2) pages.push("ellipsis");
+    pages.push(totalPages);
+  }
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/30 text-xs shrink-0">
+      {/* Info */}
+      <span className="text-slate-500 font-medium hidden sm:inline">
+        Mostrando <span className="font-bold text-slate-700">{fromItem}</span>
+        {" — "}
+        <span className="font-bold text-slate-700">{toItem}</span>
+        {" de "}
+        <span className="font-bold text-slate-700">{totalItems}</span>
+        {" registros"}
+      </span>
+
+      {/* Controls */}
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onGoToPage(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          aria-label="Página anterior"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        {pages.map((p, i) =>
+          p === "ellipsis" ? (
+            <span key={`e${i}`} className="px-1 text-slate-300 font-mono">
+              ...
+            </span>
+          ) : (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onGoToPage(p)}
+              className={`cursor-pointer min-w-[28px] h-7 px-2 rounded-control text-[11px] font-bold transition-colors ${
+                p === currentPage
+                  ? "bg-sky-500 text-white shadow-sm shadow-sky-500/20"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              }`}
+            >
+              {p}
+            </button>
+          ),
+        )}
+
+        <button
+          type="button"
+          onClick={() => onGoToPage(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          aria-label="Página siguiente"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+});
 
 // ─── Component ───
 
@@ -199,16 +309,6 @@ export function Table<T>({
 
   // ── Render helpers ──
 
-  const SortIcon = ({ column }: { column: Column<T> }) => {
-    if (!column.sortable) return null;
-    if (sortColumn !== column.key) return <ChevronsUpDown className="h-3 w-3 ml-1 shrink-0 opacity-40" />;
-    return sortDir === "asc" ? (
-      <ChevronUp className="h-3 w-3 ml-1 shrink-0" />
-    ) : (
-      <ChevronDown className="h-3 w-3 ml-1 shrink-0" />
-    );
-  };
-
   const thAlign = (col: Column<T>) =>
     col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left";
 
@@ -218,84 +318,6 @@ export function Table<T>({
   // ── Skeleton rows ──
 
   const skeletonRowCount = paginationEnabled ? Math.min(limit, loadingRows) : loadingRows;
-
-  // ── Pagination controls ──
-
-  const PaginationBar = () => {
-    if (!paginationEnabled || sortedData.length === 0) return null;
-
-    // Build page numbers to display
-    const pages: (number | "ellipsis")[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("ellipsis");
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-        pages.push(i);
-      }
-      if (currentPage < totalPages - 2) pages.push("ellipsis");
-      pages.push(totalPages);
-    }
-
-    return (
-      <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/30 text-xs shrink-0">
-        {/* Info */}
-        <span className="text-slate-500 font-medium hidden sm:inline">
-          Mostrando <span className="font-bold text-slate-700">{fromItem}</span>
-          {" — "}
-          <span className="font-bold text-slate-700">{toItem}</span>
-          {" de "}
-          <span className="font-bold text-slate-700">{sortedData.length}</span>
-          {" registros"}
-        </span>
-
-        {/* Controls */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            aria-label="Página anterior"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-
-          {pages.map((p, i) =>
-            p === "ellipsis" ? (
-              <span key={`e${i}`} className="px-1 text-slate-300 font-mono">
-                ...
-              </span>
-            ) : (
-              <button
-                key={p}
-                type="button"
-                onClick={() => goToPage(p)}
-                className={`cursor-pointer min-w-[28px] h-7 px-2 rounded-control text-[11px] font-bold transition-colors ${
-                  p === currentPage
-                    ? "bg-sky-500 text-white shadow-sm shadow-sky-500/20"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                }`}
-              >
-                {p}
-              </button>
-            ),
-          )}
-
-          <button
-            type="button"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            aria-label="Página siguiente"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   // ── Main render ──
 
@@ -341,7 +363,7 @@ export function Table<T>({
                     >
                   <span className="inline-flex items-center">
                     {col.label}
-                    <SortIcon column={col} />
+                    <SortIcon sortable={col.sortable} active={sortColumn === col.key} dir={sortDir} />
                   </span>
                 </th>
               ))}
@@ -397,7 +419,7 @@ export function Table<T>({
                 initial="hidden"
                 animate="visible"
                 exit={{ opacity: 0 }}
-                variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
+                variants={{ visible: { transition: { staggerChildren: 0.02 } } }}
                 className="divide-y divide-slate-100"
               >
                 {/*
@@ -418,10 +440,8 @@ export function Table<T>({
                     return (
                       <motion.tr
                         key={key}
-                        layout
                         variants={itemVariants}
                         exit={{ opacity: 0, transition: { duration: 0.12 } }}
-                        transition={{ layout: { type: "spring", stiffness: 380, damping: 32 } }}
                         className={`group ${alternating ? (index % 2 === 0 ? "bg-white" : "bg-slate-50/40") : "bg-white"} ${onRowClick ? `cursor-pointer ${rowHoverClass}` : ""} ${isSelected ? selectedRowClass : ""} transition-colors duration-100`}
                         onClick={() => onRowClick?.(row, index)}
                         onDoubleClick={() => onRowDoubleClick?.(row, index)}
@@ -476,7 +496,15 @@ export function Table<T>({
         </table>
       </div>
 
-      <PaginationBar />
+      <PaginationBar
+        paginationEnabled={paginationEnabled}
+        totalItems={sortedData.length}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        fromItem={fromItem}
+        toItem={toItem}
+        onGoToPage={goToPage}
+      />
     </div>
   );
 }
