@@ -12,8 +12,14 @@ import { Layers, MapPin } from "lucide-react";
 import type { Project } from "../../../types";
 import { formatNumber } from "../../../utils";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
+import BsAmount from "../../../components/UI/BsAmount";
 
-export function renderTechnicalReviewCard(project: Project) {
+export function renderTechnicalReviewCard(
+  project: Project,
+  convert?: (amount: number, fromCode: string) => number,
+  hasRates?: boolean,
+  isLoadingRates?: boolean,
+) {
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
@@ -37,7 +43,12 @@ export function renderTechnicalReviewCard(project: Project) {
             {project.materials.length}
           </span>
         </div>
-        <span className="font-mono font-bold text-[11px] text-slate-800 whitespace-nowrap">${formatNumber(project.estimatedTotal)}</span>
+        <div className="text-right">
+          <div className="font-mono font-bold text-[11px] text-slate-800 whitespace-nowrap">${formatNumber(project.estimatedTotal)}</div>
+          {convert && (
+            <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -14,8 +14,14 @@ import { ProjectStatus } from "../../../types";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import { formatCurrency } from "../../../utils";
+import BsAmount from "../../../components/UI/BsAmount";
 
-export function renderAuditCard(project: Project) {
+export function renderAuditCard(
+  project: Project,
+  convert?: (amount: number, fromCode: string) => number,
+  hasRates?: boolean,
+  isLoadingRates?: boolean,
+) {
   const isUnderAudit = project.status === ProjectStatus.VERIFICANDO_FINALIZACION;
 
   return (
@@ -39,7 +45,12 @@ export function renderAuditCard(project: Project) {
           label={isUnderAudit ? "Paso 2 de 2 · Auditoría" : "Paso 1 de 2 · En Curso"}
           className="text-[9px]"
         />
-        <span className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</span>
+        <div className="text-right">
+          <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</div>
+          {convert && (
+            <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
+          )}
+        </div>
       </div>
     </div>
   );

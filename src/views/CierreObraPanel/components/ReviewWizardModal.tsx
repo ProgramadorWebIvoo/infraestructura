@@ -43,6 +43,8 @@ import { formatNumber } from "../../../utils";
 import { downloadProjectDocument } from "../../../services/api";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { springs } from "../../../animations";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
+import BsAmount from "../../../components/UI/BsAmount";
 
 const WIZARD_STEPS: StepDefinition[] = [
   { id: "revisar", label: "Revisar", description: "Inversión y materiales" },
@@ -69,6 +71,7 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
 
   const brand = SEMANTIC_COLOR_MAP.brand;
   const activeDocuments = project?.documents ?? [];
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const resetWizard = () => {
     setStepIndex(0);
@@ -218,7 +221,10 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                       <Calculator className={`h-3.5 w-3.5 ${brand.icon500}`} />
                       Detalles de Inversión Propuesta:
                     </span>
-                    <span className={`font-mono ${brand.text600} font-black`}>${formatNumber(project.estimatedTotal)}</span>
+                    <span className="text-right">
+                      <span className={`font-mono ${brand.text600} font-black block`}>${formatNumber(project.estimatedTotal)}</span>
+                      <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                    </span>
                   </h5>
                   <p className="text-slate-600 leading-relaxed italic border-l-2 border-brand-200 pl-3">&quot;{project.description}&quot;</p>
 
@@ -285,7 +291,10 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Inversión Propuesta</span>
-                    <span className={`font-mono font-black ${brand.text600}`}>${formatNumber(project.estimatedTotal)}</span>
+                    <span className="text-right">
+                      <span className={`font-mono font-black ${brand.text600} block`}>${formatNumber(project.estimatedTotal)}</span>
+                      <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Adjuntos revisados</span>
