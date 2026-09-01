@@ -184,9 +184,15 @@ export default function AnalistasWorkspace({
         const proposals = p.proposals ?? [];
         const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
         if (!best) return <span className="font-mono font-black text-emerald-700 whitespace-nowrap">—</span>;
+        const hasOriginal = best.totalCostOriginal != null && best.quoteCurrency;
         return (
           <div className="text-right whitespace-nowrap">
             <div className="font-mono font-black text-emerald-700">{formatCurrency(best.totalCost)}</div>
+            {hasOriginal && (
+              <div className="text-[9px] text-slate-500 font-medium">
+                orig: {formatCurrency(best.totalCostOriginal!, best.quoteCurrency!)}
+              </div>
+            )}
             <BsAmount amount={best.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
           </div>
         );

@@ -112,6 +112,7 @@ export default function RegisterProposalModal({
   const [description, setDescription] = useState("");
   const [fechaOferta, setFechaOferta] = useState(todayISODate());
   const [motivoAnticipoExcedido, setMotivoAnticipoExcedido] = useState("");
+  const [quoteCurrency, setQuoteCurrency] = useState("USD");
   const [pendingProposal, setPendingProposal] = useState<Omit<Proposal, "id"> | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -187,6 +188,7 @@ export default function RegisterProposalModal({
       description: description.trim() || `Propuesta para trabajos de ${project.title}. Incluye materiales e instalación certificada.`,
       origen: "MANUAL",
       fechaOferta,
+      ...(quoteCurrency !== "USD" ? { quoteCurrency } : {}),
       ...(motivoFilled ? { motivoAnticipoExcedido: motivoAnticipoExcedido.trim() } : {}),
     };
 
@@ -267,8 +269,8 @@ export default function RegisterProposalModal({
               </div>
             ) : (
               <form onSubmit={handleAddProposal} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
                     <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                       Proveedor / Contratista
                       <RequiredMark filled={!!contractorCode} />
@@ -292,6 +294,21 @@ export default function RegisterProposalModal({
                   </div>
 
                   <div>
+                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Moneda Cotización
+                    </label>
+                    <Select
+                      value={quoteCurrency}
+                      onChange={setQuoteCurrency}
+                      options={[
+                        { value: "USD", label: "USD ($)" },
+                        { value: "EUR", label: "EUR (€)" },
+                      ]}
+                      size="md"
+                    />
+                  </div>
+
+                  <div className="md:col-span-3">
                     <label htmlFor="analistas-fecha-oferta" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                       Fecha de la Oferta
                       <RequiredMark filled={fechaOferta.trim().length > 0} />
@@ -398,8 +415,8 @@ export default function RegisterProposalModal({
                               <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px]">
                                 {row.totalPrice > 0 ? (
                                   <>
-                                    {formatCurrency(row.totalPrice)}
-                                    <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
+                                    {formatCurrency(row.totalPrice, quoteCurrency)}
+                                    <BsAmount amount={row.totalPrice} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
                                   </>
                                 ) : "—"}
                               </td>
@@ -425,8 +442,8 @@ export default function RegisterProposalModal({
                             Total materiales:
                           </td>
                           <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                            {formatCurrency(materialCostTotal)}
-                            <BsAmount amount={materialCostTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
+                            {formatCurrency(materialCostTotal, quoteCurrency)}
+                            <BsAmount amount={materialCostTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
                           </td>
                           <td />
                         </tr>
@@ -523,9 +540,9 @@ export default function RegisterProposalModal({
                   <div className="text-xs font-bold text-slate-700">
                     Costo Total Oferta:{" "}
                     <span className={`font-mono text-sm font-black ${exceedsBudget ? "text-amber-700" : "text-emerald-700"}`}>
-                      ${formatNumber(newTotal)}
+                      {formatCurrency(newTotal, quoteCurrency)}
                     </span>
-                    <BsAmount amount={newTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
+                    <BsAmount amount={newTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                   </div>
                   <Button
                     id="btn-analistas-add-bid"

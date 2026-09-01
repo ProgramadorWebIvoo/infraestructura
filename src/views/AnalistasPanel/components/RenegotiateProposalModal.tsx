@@ -69,6 +69,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
   const [advancePercent, setAdvancePercent] = useState<number | "">(proposal.negotiatedAdvancePercent);
   const [description, setDescription] = useState(proposal.description);
   const [fechaOferta, setFechaOferta] = useState(todayISODate());
+  const [quoteCurrency, setQuoteCurrency] = useState(proposal.quoteCurrency ?? "USD");
   const [motivo, setMotivo] = useState("");
   const [motivoAnticipoExcedido, setMotivoAnticipoExcedido] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,6 +136,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
         fechaOferta,
         motivo: motivo.trim(),
         ...(motivoAnticipoFilled ? { motivoAnticipoExcedido: motivoAnticipoExcedido.trim() } : {}),
+        ...(quoteCurrency !== proposal.quoteCurrency ? { quoteCurrency } : {}),
       });
       onClose();
     } catch {
@@ -161,15 +163,24 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
           <div>
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Anterior</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-600">
-              {formatCurrency(proposal.totalCost)}
-              <BsAmount amount={proposal.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+              {proposal.totalCostOriginal != null && proposal.quoteCurrency ? (
+                <>
+                  {formatCurrency(proposal.totalCostOriginal, proposal.quoteCurrency)}
+                  <BsAmount amount={proposal.totalCostOriginal} fromCode={proposal.quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                </>
+              ) : (
+                <>
+                  {formatCurrency(proposal.totalCost)}
+                  <BsAmount amount={proposal.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                </>
+              )}
             </div>
           </div>
           <div>
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Nuevo</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-700">
-              {formatCurrency(newTotal)}
-              <BsAmount amount={newTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+              {formatCurrency(newTotal, quoteCurrency)}
+              <BsAmount amount={newTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
           <div>
@@ -300,8 +311,8 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                     Total materiales:
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                    {formatCurrency(materialCostTotal)}
-                    <BsAmount amount={materialCostTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
+                    {formatCurrency(materialCostTotal, quoteCurrency)}
+                    <BsAmount amount={materialCostTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
                   </td>
                   <td />
                 </tr>
@@ -349,21 +360,38 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
           </div>
         </div>
 
-        <div>
-          <label htmlFor="renegotiate-fecha-oferta" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Fecha de la Renegociación
-            <RequiredMark filled={fechaOferta.trim().length > 0} />
-            <HelpHint content={`Debe ser igual o posterior a la fecha de la oferta original (${minFechaOferta}).`} />
-          </label>
-          <input
-            id="renegotiate-fecha-oferta"
-            type="date"
-            value={fechaOferta}
-            onChange={(e) => setFechaOferta(e.target.value)}
-            min={minFechaOferta}
-            max={todayISODate()}
-            className="w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 focus:ring-brand-500 bg-surface font-mono font-bold text-text-secondary"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="renegotiate-fecha-oferta" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Fecha de la Renegociación
+              <RequiredMark filled={fechaOferta.trim().length > 0} />
+              <HelpHint content={`Debe ser igual o posterior a la fecha de la oferta original (${minFechaOferta}).`} />
+            </label>
+            <input
+              id="renegotiate-fecha-oferta"
+              type="date"
+              value={fechaOferta}
+              onChange={(e) => setFechaOferta(e.target.value)}
+              min={minFechaOferta}
+              max={todayISODate()}
+              className="w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 focus:ring-brand-500 bg-surface font-mono font-bold text-text-secondary"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Moneda Cotización
+            </label>
+            <Select
+              value={quoteCurrency}
+              onChange={setQuoteCurrency}
+              options={[
+                { value: "USD", label: "USD ($)" },
+                { value: "EUR", label: "EUR (€)" },
+              ]}
+              size="md"
+            />
+          </div>
         </div>
 
         <div>

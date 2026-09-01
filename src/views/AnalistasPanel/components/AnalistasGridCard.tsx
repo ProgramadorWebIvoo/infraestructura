@@ -68,6 +68,11 @@ export function renderAnalistasCard(
           </span>
           <div className="text-right">
             <div className="font-mono font-black text-emerald-700 text-[11px] whitespace-nowrap">{formatCurrency(best.totalCost)}</div>
+            {best.totalCostOriginal != null && best.quoteCurrency && (
+              <div className="text-[9px] text-slate-500 font-medium">
+                orig: {formatCurrency(best.totalCostOriginal, best.quoteCurrency)}
+              </div>
+            )}
             {convert && (
               <BsAmount amount={best.totalCost} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
             )}
