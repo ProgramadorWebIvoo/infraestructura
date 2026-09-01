@@ -1,3 +1,4 @@
+import { formatCurrency } from "@ivoo/shared";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,7 +20,7 @@ import TableToolbar from "../../../components/UI/TableToolbar";
 import EmptyState from "../../../components/UI/EmptyState";
 import { Table, type Column } from "../../../components/UI/Table";
 import { useContainerRows } from "../../../hooks/useContainerRows";
-import type { BaseCurrency, CatalogCategory, CatalogProduct } from "../../../types";
+import type { CatalogCategory, CatalogProduct } from "../../../types";
 import type { SelectOption } from "../../../components/UI/FilterBar";
 
 interface CatalogSectionProps {
@@ -27,11 +28,9 @@ interface CatalogSectionProps {
   categories: CatalogCategory[];
   isLoading: boolean;
   onOpenProduct: (product: CatalogProduct) => void;
-  baseCurrency: BaseCurrency | null;
-  convertFromUsd: (amountUsd: number) => number;
 }
 
-export default function CatalogSection({ products, categories, isLoading, onOpenProduct, baseCurrency, convertFromUsd }: CatalogSectionProps) {
+export default function CatalogSection({ products, categories, isLoading, onOpenProduct }: CatalogSectionProps) {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const { containerRef, rows: pageSize } = useContainerRows();
@@ -80,13 +79,13 @@ export default function CatalogSection({ products, categories, isLoading, onOpen
     { key: "unit", label: "Unidad", width: "6rem" },
     {
       key: "estimated_unit_price",
-      label: `Precio ref. (${baseCurrency?.code ?? "USD"})`,
+      label: "Precio ref. (USD)",
       width: "9rem",
       align: "right",
       sortable: true,
       render: (p) => (
         <span className="font-mono font-bold text-slate-700">
-          {baseCurrency?.symbol ?? "$"}{convertFromUsd(p.estimated_unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          {formatCurrency(p.estimated_unit_price)}
         </span>
       ),
     },
@@ -114,7 +113,7 @@ export default function CatalogSection({ products, categories, isLoading, onOpen
         </span>
       ),
     },
-  ], [baseCurrency, convertFromUsd]);
+  ], []);
 
   return (
     <Card accent="info" fillHeight className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col">

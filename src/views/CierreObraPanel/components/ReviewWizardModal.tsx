@@ -27,6 +27,7 @@ import {
   Upload,
   XCircle,
 } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import type { Project, ProjectDocument } from "../../../types";
 import { useToast } from "../../../components/UI/Toast";
 import EmptyState from "../../../components/UI/EmptyState";
@@ -42,7 +43,7 @@ import { AttachmentsSummary, MaterialDetailRow, ProjectTypeBadge } from "./Techn
 import { downloadProjectDocument } from "../../../services/api";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import { springs } from "../../../animations";
-import { useCurrencyConversion, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 const WIZARD_STEPS: StepDefinition[] = [
@@ -67,10 +68,10 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
   const [cierreNotes, setCierreNotes] = useState("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const brand = SEMANTIC_COLOR_MAP.brand;
   const activeDocuments = project?.documents ?? [];
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
 
   const resetWizard = () => {
     setStepIndex(0);
@@ -221,7 +222,7 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                       Detalles de Inversión Propuesta:
                     </span>
                     <span className="text-right">
-                      <span className={`font-mono ${brand.text600} font-black block`}>{formatBaseCurrency(project.estimatedTotal, baseCurrency)}</span>
+                      <span className={`font-mono ${brand.text600} font-black block`}>{formatCurrency(project.estimatedTotal)}</span>
                       <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                     </span>
                   </h5>
@@ -291,7 +292,7 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Inversión Propuesta</span>
                     <span className="text-right">
-                      <span className={`font-mono font-black ${brand.text600} block`}>{formatBaseCurrency(project.estimatedTotal, baseCurrency)}</span>
+                      <span className={`font-mono font-black ${brand.text600} block`}>{formatCurrency(project.estimatedTotal)}</span>
                       <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                     </span>
                   </div>

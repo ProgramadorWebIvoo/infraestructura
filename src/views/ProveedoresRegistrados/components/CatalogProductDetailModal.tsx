@@ -1,3 +1,4 @@
+import { formatCurrency } from "@ivoo/shared";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -15,15 +16,13 @@ import EmptyState from "../../../components/UI/EmptyState";
 import Button from "../../../components/UI/Button";
 import { SkeletonPriceChart, SkeletonSupplierList } from "../../../components/SkeletonLoader";
 import { apiFetch } from "../../../services/api";
-import type { BaseCurrency, CatalogProduct, CatalogProductPriceHistoryEntry } from "../../../types";
+import type { CatalogProduct, CatalogProductPriceHistoryEntry } from "../../../types";
 import { getErrorMessage } from "../../../services/logger";
 import Tooltip from "@/components/UI/Tooltip";
 
 interface CatalogProductDetailModalProps {
   product: CatalogProduct | null;
   onClose: () => void;
-  baseCurrency: BaseCurrency | null;
-  convertFromUsd: (amountUsd: number) => number;
 }
 
 function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistoryEntry[] }) {
@@ -105,7 +104,7 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
   );
 }
 
-export default function CatalogProductDetailModal({ product, onClose, baseCurrency, convertFromUsd }: CatalogProductDetailModalProps) {
+export default function CatalogProductDetailModal({ product, onClose }: CatalogProductDetailModalProps) {
   const [history, setHistory] = useState<CatalogProductPriceHistoryEntry[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -170,9 +169,9 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
             <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-3.5">
               <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Precio ref.</div>
               <div className="mt-2 font-mono text-sm font-black text-text-primary">
-                {baseCurrency?.symbol ?? "$"}{convertFromUsd(product.estimated_unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                {formatCurrency((detail ?? product).estimated_unit_price)}
               </div>
-              <div className="text-[9px] text-text-muted">{baseCurrency?.code ?? "USD"}</div>
+              <div className="text-[9px] text-text-muted">USD</div>
             </div>
             {/* Suppliers count */}
             <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-3.5">
@@ -234,7 +233,7 @@ export default function CatalogProductDetailModal({ product, onClose, baseCurren
                       </div>
                       <div className="text-right">
                         <div className="font-mono font-black text-text-primary">
-                          {baseCurrency?.symbol ?? "$"}{convertFromUsd(link.last_quoted_price_usd).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          {formatCurrency((detail ?? product).estimated_unit_price)}
                         </div>
                         <div className="text-[10px] text-text-muted">{link.quote_count} cotización{link.quote_count !== 1 ? "es" : ""}</div>
                       </div>

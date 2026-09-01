@@ -113,7 +113,6 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     isLoading: isLoadingCurrencies,
     addCurrency,
     updateCurrency,
-    setBaseCurrency,
     deleteCurrency,
   } = useCurrencies(authToken, isSuperadmin);
 
@@ -131,11 +130,6 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   const handleUpdateCurrency = async (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => {
     const updated = await updateCurrency(id, input);
-    if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
-  };
-
-  const handleSetBaseCurrency = async (id: number) => {
-    const updated = await setBaseCurrency(id);
     if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
   };
 
@@ -357,7 +351,6 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                     isLoading={isLoadingCurrencies}
                     onAdd={handleAddCurrency}
                     onUpdate={handleUpdateCurrency}
-                    onSetBase={handleSetBaseCurrency}
                     onDelete={handleDeleteCurrency}
                     onViewExchangeRates={(code) => {
                       setSelectedCurrencyForModal(code);

@@ -64,6 +64,19 @@ export interface ProposalMaterialItem {
 
 export type ProposalDurationUnit = "dias" | "semanas" | "meses";
 
+export interface ProposalAuditSnapshot {
+  /** Timestamp exacto de fijación de la tasa (ISO 8601). */
+  rateSnapshotAt?: string | null;
+  /** Fuente de la tasa: "BCV", "MANUAL", "SISTEMA", etc. */
+  rateSource?: string | null;
+  /** Tasa EUR/Bs vigente al momento del snapshot (solo si quoteCurrency=EUR). */
+  rateEurToBs?: number | null;
+  /** Tasa USD/Bs vigente al momento del snapshot. */
+  rateUsdToBs?: number | null;
+  /** Monto calculado en Bs (quoteCurrency x rateEurToBs o rateUsdToBs). */
+  amountInBs?: number | null;
+}
+
 export interface Proposal {
   id: string;
   contractorCode: string;
@@ -93,6 +106,8 @@ export interface Proposal {
   fxRateToBase?: number | null;
   /** Moneda base vigente en el momento del import — puede diferir de la base actual si esta cambió después. */
   baseCurrencyAtImport?: string | null;
+  /** Snapshot auditable de tasas y fechas de fijación. */
+  auditSnapshot?: ProposalAuditSnapshot | null;
   laborCost: number;
   totalCost: number;
   deliveryWeeks: number;

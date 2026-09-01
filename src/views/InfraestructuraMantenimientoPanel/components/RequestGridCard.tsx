@@ -9,6 +9,7 @@
  */
 
 import { Eye, MapPin } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import type { Project } from "../../../types";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
@@ -23,15 +24,12 @@ function TypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-import type { BaseCurrency } from "../../../types";
-
 export function renderRequestCard(
   project: Project,
   onInspect: (p: Project) => void,
   convert?: (amount: number, fromCode: string) => number,
   hasRates?: boolean,
   isLoadingRates?: boolean,
-  baseCurrency?: BaseCurrency | null,
 ) {
   return (
     <div className="p-3.5 space-y-2.5">
@@ -64,7 +62,7 @@ export function renderRequestCard(
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
         <StatusBadge code={project.status} className="text-[9px]" />
         <div className="text-right">
-          <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{baseCurrency?.symbol ?? "$"}{(project.estimatedTotal / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</div>
           {convert && (
             <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
           )}

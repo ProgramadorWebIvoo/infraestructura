@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Coins, Star, CheckCircle, XCircle, Pencil, Trash2, Plus, X, Check, Landmark, TrendingUp } from "lucide-react";
+import { Coins, CheckCircle, XCircle, Pencil, Trash2, Plus, X, Check, Landmark, TrendingUp } from "lucide-react";
 import { itemVariants, bannerVariants } from "../../../animations";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
@@ -28,12 +28,11 @@ interface CurrencyCardProps {
   isLoading: boolean;
   onAdd: (input: { code: string; name: string; symbol: string }) => Promise<void>;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
-  onSetBase: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   onViewExchangeRates?: (currencyCode: string) => void;
 }
 
-export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, onSetBase, onDelete, onViewExchangeRates }: CurrencyCardProps) {
+export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, onDelete, onViewExchangeRates }: CurrencyCardProps) {
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -201,7 +200,6 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                         cancelEdit={cancelEdit}
                         saveEdit={saveEdit}
                         run={run}
-                        onSetBase={onSetBase}
                         onUpdate={onUpdate}
                         onDelete={onDelete}
                         onViewExchangeRates={onViewExchangeRates}
@@ -233,7 +231,6 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                         cancelEdit={cancelEdit}
                         saveEdit={saveEdit}
                         run={run}
-                        onSetBase={onSetBase}
                         onUpdate={onUpdate}
                         onDelete={onDelete}
                       />
@@ -261,7 +258,6 @@ interface CurrencyRowProps {
   cancelEdit: () => void;
   saveEdit: (id: number) => void;
   run: (id: number, action: () => Promise<void>) => void;
-  onSetBase: (id: number) => Promise<void>;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   onViewExchangeRates?: (currencyCode: string) => void;
@@ -280,7 +276,6 @@ function CurrencyRow({
   cancelEdit,
   saveEdit,
   run,
-  onSetBase,
   onUpdate,
   onDelete,
   onViewExchangeRates,
@@ -294,9 +289,7 @@ function CurrencyRow({
       animate="visible"
       exit={{ opacity: 0, x: -12, scale: 0.98, transition: { duration: 0.15 } }}
       whileHover={{ scale: 1.01 }}
-      className={`flex items-center justify-between gap-3 rounded-control border p-3 transition-colors ${
-        currency.is_base ? `${SEMANTIC_COLOR_MAP.warning.border100} ${SEMANTIC_COLOR_MAP.warning.bg50}/50` : "border-border-subtle"
-      }`}
+      className="flex items-center justify-between gap-3 rounded-control border border-border-subtle p-3 transition-colors"
     >
       <div className="flex items-center gap-3">
         <span className={`rounded-control border ${SEMANTIC_COLOR_MAP.brand.border100} ${SEMANTIC_COLOR_MAP.brand.bg50}/80 px-2 py-0.5 font-mono text-[10px] font-bold ${SEMANTIC_COLOR_MAP.brand.text600}`}>
@@ -325,12 +318,6 @@ function CurrencyRow({
           <span className={`inline-flex items-center gap-1 rounded-pill border ${SEMANTIC_COLOR_MAP.info.border100} ${SEMANTIC_COLOR_MAP.info.bg50} px-2.5 py-0.5 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.info.text700}`}>
             <Landmark className="h-3 w-3" />
             BCV
-          </span>
-        )}
-        {currency.is_base && (
-          <span className={`inline-flex items-center gap-1 rounded-pill border ${SEMANTIC_COLOR_MAP.warning.border100} ${SEMANTIC_COLOR_MAP.warning.bg50} px-2.5 py-0.5 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.warning.text700}`}>
-            <Star className="h-3 w-3" />
-            Base
           </span>
         )}
         <span
@@ -387,17 +374,7 @@ function CurrencyRow({
             />
           )
         )}
-        {!isEditing && !currency.is_base && currency.is_active && (
-          <IconActionButton
-            label={`Fijar ${currency.code} como base`}
-            tooltip="Fijar como base"
-            onClick={() => run(currency.id, () => onSetBase(currency.id))}
-            isBusy={busyId === currency.id}
-            tone="amber"
-            icon={<Star className="h-3.5 w-3.5" />}
-          />
-        )}
-        {!isEditing && !currency.is_base && (
+        {!isEditing && (
           <IconActionButton
             label={currency.is_active ? `Desactivar ${currency.code}` : `Activar ${currency.code}`}
             tooltip={currency.is_active ? "Desactivar moneda" : "Activar moneda"}
@@ -407,7 +384,7 @@ function CurrencyRow({
             icon={currency.is_active ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
           />
         )}
-        {!currency.is_official && !isEditing && !currency.is_base && (
+        {!currency.is_official && !isEditing && (
           <IconActionButton
             label={`Eliminar ${currency.code}`}
             tooltip="Eliminar moneda"

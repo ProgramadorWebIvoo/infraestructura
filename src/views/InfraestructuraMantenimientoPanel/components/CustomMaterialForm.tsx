@@ -25,7 +25,7 @@ export default function CustomMaterialForm({ onAdd }: CustomMaterialFormProps) {
   const [unit, setUnit] = useState("Unidad");
   const [price, setPrice] = useState<number | "">(1.0);
   const [qty, setQty] = useState<number | "">(1);
-  const { convert, hasRates, isLoading: ratesLoading, baseCurrency } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: ratesLoading } = useCurrencyConversion();
   const [error, setError] = useState("");
   const { showToast } = useToast();
 
@@ -76,7 +76,7 @@ export default function CustomMaterialForm({ onAdd }: CustomMaterialFormProps) {
       />
       <div>
         <label htmlFor="custom-mat-price" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-          Costo Estimado ({baseCurrency?.symbol ?? "$"})
+          Costo Estimado ($)
         </label>
         <NumericInput
           id="custom-mat-price"

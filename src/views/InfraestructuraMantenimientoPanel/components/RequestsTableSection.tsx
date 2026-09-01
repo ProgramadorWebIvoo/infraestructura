@@ -11,6 +11,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Eye, ListChecks, SearchX } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import type { Project } from "../../../types";
 import Card from "../../../components/UI/Card";
 import InspectRequestModal from "../../../components/Modals/InspectRequestModal";
@@ -51,7 +52,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
   const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
   const { containerRef, rows: pageSize } = useContainerRows();
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const visibleProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -115,7 +116,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
       sortable: true,
       render: (p) => (
         <div className="text-right whitespace-nowrap">
-          <div className="font-mono font-bold text-slate-800">{baseCurrency?.symbol ?? "$"}{(p.estimatedTotal / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="font-mono font-bold text-slate-800">{formatCurrency(p.estimatedTotal)}</div>
           <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -141,7 +142,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
         </button>
       ),
     },
-  ], [convert, hasRates, isLoadingRates]);
+  ], []);
 
   return (
     <Card hoverable={false} accent="neutral" fillHeight className="p-0 overflow-hidden">
@@ -187,7 +188,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
             <GridView
               items={visibleProjects}
               rowKey={(p) => p.id}
-              renderCard={(p) => renderRequestCard(p, setInspectedRequest, convert, hasRates, isLoadingRates, baseCurrency)}
+              renderCard={(p) => renderRequestCard(p, setInspectedRequest, convert, hasRates, isLoadingRates)}
               onSelect={(p) => setInspectedRequest(p)}
               emptyState={
                 <EmptyState

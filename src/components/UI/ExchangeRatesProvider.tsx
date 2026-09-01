@@ -20,25 +20,20 @@
  */
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import type { BaseCurrency } from "../../types";
 import { useExchangeRates, type ExchangeRateRecord } from "../../hooks/useExchangeRates";
-import { useBaseCurrency } from "../../hooks/useBaseCurrency";
 
 interface ExchangeRatesContextValue {
   rates: ExchangeRateRecord[];
   isLoading: boolean;
   hasLoaded: boolean;
-  baseCurrency: BaseCurrency | null;
-  isLoadingBaseCurrency: boolean;
 }
 
 const ExchangeRatesContext = createContext<ExchangeRatesContextValue | null>(null);
 
 export function ExchangeRatesProvider({ authToken, children }: { authToken: string; children: ReactNode }) {
   const { rates, isLoading, hasLoaded } = useExchangeRates(authToken, !!authToken);
-  const { baseCurrency, isLoadingBaseCurrency } = useBaseCurrency(authToken);
 
-  const value = useMemo(() => ({ rates, isLoading, hasLoaded, baseCurrency, isLoadingBaseCurrency }), [rates, isLoading, hasLoaded, baseCurrency, isLoadingBaseCurrency]);
+  const value = useMemo(() => ({ rates, isLoading, hasLoaded }), [rates, isLoading, hasLoaded]);
 
   return <ExchangeRatesContext.Provider value={value}>{children}</ExchangeRatesContext.Provider>;
 }

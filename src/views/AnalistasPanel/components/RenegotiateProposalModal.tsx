@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -13,15 +14,16 @@
 import { useState } from "react";
 import type { Project, Proposal, ProposalMaterialItem, ProposalDurationUnit } from "../../../types";
 import { AlertTriangle, ArrowRight, MessageSquareWarning, Plus, Trash2, Wallet } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import Modal from "../../../components/UI/Modal";
 import NumericInput from "../../../components/UI/NumericInput";
 import Select from "../../../components/UI/Select";
 import Button from "../../../components/UI/Button";
 import { HelpHint, RequiredMark } from "../../../components/UI/HintSignals";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import { formatNumber } from "../../../utils";
 import { DURATION_UNITS } from "./RegisterProposalModal";
-import { useCurrencyConversion, formatBs, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface MaterialItemRow extends ProposalMaterialItem {
@@ -44,7 +46,7 @@ interface RenegotiateProposalModalProps {
 
 export default function RenegotiateProposalModal({ project, proposal, onClose, onRenegotiateProposal }: RenegotiateProposalModalProps) {
   const maxAdvancePercent = useMaxAdvancePercent();
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const buildMaterialRows = (): MaterialItemRow[] =>
     (proposal.materialItems ?? []).length > 0
@@ -159,14 +161,14 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
           <div>
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Anterior</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-600">
-              {formatBaseCurrency(proposal.totalCost, baseCurrency)}
+              {formatCurrency(proposal.totalCost)}
               <BsAmount amount={proposal.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
           <div>
             <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Nuevo</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-700">
-              {formatBaseCurrency(newTotal, baseCurrency)}
+              {formatCurrency(newTotal)}
               <BsAmount amount={newTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
@@ -175,7 +177,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold">
               <div className="flex items-center gap-1.5">
                 <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
-                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatBaseCurrency(Math.abs(diferencia), baseCurrency)}</span>
+                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia))}</span>
                 <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
               </div>
               <BsAmount amount={Math.abs(diferencia)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
@@ -271,7 +273,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px]">
                         {row.totalPrice > 0 ? (
                           <>
-                            {formatBaseCurrency(row.totalPrice, baseCurrency)}
+                            {formatCurrency(row.totalPrice)}
                             <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
                           </>
                         ) : "—"}
@@ -298,7 +300,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                     Total materiales:
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                    {formatBaseCurrency(materialCostTotal, baseCurrency)}
+                    {formatCurrency(materialCostTotal)}
                     <BsAmount amount={materialCostTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
                   </td>
                   <td />

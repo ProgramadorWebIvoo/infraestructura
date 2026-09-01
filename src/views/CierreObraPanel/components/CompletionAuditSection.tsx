@@ -9,6 +9,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, Banknote, CalendarDays, HardHat, HelpCircle, MapPin } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import { ProjectStatus } from "../../../types";
 import type { Project } from "../../../types";
 import Card from "../../../components/UI/Card";
@@ -27,7 +28,7 @@ import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import { renderAuditCard } from "./AuditGridCard";
-import { useCurrencyConversion, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface CompletionAuditSectionProps {
@@ -46,7 +47,7 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
   const [confirmVerifyProject, setConfirmVerifyProject] = useState<Project | null>(null);
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const allPendingCompletionVerify = useMemo(
     () => projects.filter(
@@ -118,12 +119,12 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
       sortable: true,
       render: (p) => (
         <div className="text-right whitespace-nowrap">
-          <div className="font-mono font-bold text-slate-800">{formatBaseCurrency(p.estimatedTotal, baseCurrency)}</div>
+          <div className="font-mono font-bold text-slate-800">{formatCurrency(p.estimatedTotal)}</div>
           <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
     },
-  ], [convert, hasRates, isLoadingRates, baseCurrency]);
+  ], []);
 
   return (
     <>
@@ -176,7 +177,7 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
                 <GridView
                   items={pendingCompletionVerify}
                   rowKey={(p) => p.id}
-                  renderCard={(p) => renderAuditCard(p, convert, hasRates, isLoadingRates, baseCurrency)}
+                  renderCard={(p) => renderAuditCard(p, convert, hasRates, isLoadingRates)}
                   onSelect={(p) => setDetailProjectId(p.id)}
                   selectedKey={detailProjectId}
                   emptyState={<EmptyState message="No hay obras que coincidan con la búsqueda." />}
@@ -239,7 +240,7 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
                 <div className="flex items-center gap-1.5 text-slate-400 text-[9px] font-bold uppercase tracking-wider">
                   <Banknote className="h-3 w-3" /> Total (Est)
                 </div>
-                <span className="font-mono font-bold text-slate-700">{formatBaseCurrency(detailProject.estimatedTotal, baseCurrency)}</span>
+                <span className="font-mono font-bold text-slate-700">{formatCurrency(detailProject.estimatedTotal)}</span>
                 <BsAmount amount={detailProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
               </div>
             </div>
@@ -248,7 +249,7 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
               <div className={`${warning.bg50}/60 border ${warning.border100} rounded-lg px-3 py-2 text-[10px] text-slate-600 font-medium flex items-center gap-2 flex-wrap`}>
                 <Banknote className={`h-3.5 w-3.5 ${warning.icon500} shrink-0`} />
                 <span>
-                  Anticipo liberado: <strong className={`font-mono ${warning.text700}`}>{formatBaseCurrency(detailProject.advancePaidAmount, baseCurrency)}</strong>
+                  Anticipo liberado: <strong className={`font-mono ${warning.text700}`}>{formatCurrency(detailProject.advancePaidAmount)}</strong>
                   <BsAmount amount={detailProject.advancePaidAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                 </span>
                 {detailProject.advancePaidDate && (

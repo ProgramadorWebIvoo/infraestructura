@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,9 +13,11 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, CheckSquare, MapPin, SearchX, TrendingUp } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import Button from "../../../components/UI/Button";
 import { useToast } from "../../../components/UI/Toast";
 import { downloadProjectDocument } from "../../../services/api";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
 import NumericInput from "../../../components/UI/NumericInput";
@@ -34,7 +37,6 @@ import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { viewSwitchVariants, springs } from "../../../animations";
 import { ProjectStatus } from "../../../types";
 import type { Project, ProjectDocument } from "../../../types";
-import { useCurrencyConversion, formatBs, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 const WIZARD_STEPS: StepDefinition[] = [
@@ -59,7 +61,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const pendingInvestmentApproval = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE),
@@ -122,7 +124,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
       sortable: true,
       render: (p) => (
         <div className="text-right whitespace-nowrap">
-          <div className="font-mono font-bold text-slate-800">{formatBaseCurrency(p.estimatedTotal, baseCurrency)}</div>
+          <div className="font-mono font-bold text-slate-800">{formatCurrency(p.estimatedTotal)}</div>
           <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -223,7 +225,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
             <GridView
               items={visibleProjects}
               rowKey={(p) => p.id}
-              renderCard={(p) => renderInvestmentApprovalCard(p, convert, hasRates, isLoadingRates, baseCurrency)}
+              renderCard={(p) => renderInvestmentApprovalCard(p, convert, hasRates, isLoadingRates)}
               onSelect={(p) => openReview(p)}
               selectedKey={selectedReviewId}
               cardAccent={() => "brand"}
@@ -308,7 +310,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                       <div className="flex justify-between items-center">
                         <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
                         <span className="text-right">
-                          <span className="font-mono font-bold text-brand-700 block">{formatBaseCurrency(activeReviewProject.estimatedTotal, baseCurrency)}</span>
+                          <span className="font-mono font-bold text-brand-700 block">{formatCurrency(activeReviewProject.estimatedTotal)}</span>
                           <BsAmount amount={activeReviewProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                         </span>
                       </div>
@@ -350,7 +352,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Cierre de Obra</span>
                         <span className="text-right">
-                          <span className="font-mono font-black text-brand-700 block">{formatBaseCurrency(activeReviewProject.estimatedTotal, baseCurrency)}</span>
+                          <span className="font-mono font-black text-brand-700 block">{formatCurrency(activeReviewProject.estimatedTotal)}</span>
                           <BsAmount amount={activeReviewProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                         </span>
                       </div>
@@ -361,7 +363,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                             <HelpHint content="Monto propuesto por la evaluación IA del expediente en Cierre de Obra. Es solo referencia — nunca autocompleta este formulario." />
                           </span>
                           <span className="text-right">
-                            <span className="font-mono font-black text-slate-500 block">{formatBaseCurrency(activeReviewProject.dossierAiSuggestedAmount ?? 0, baseCurrency)}</span>
+                            <span className="font-mono font-black text-slate-500 block">{formatCurrency(activeReviewProject.dossierAiSuggestedAmount ?? 0)}</span>
                             <BsAmount amount={activeReviewProject.dossierAiSuggestedAmount ?? 0} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                           </span>
                         </div>

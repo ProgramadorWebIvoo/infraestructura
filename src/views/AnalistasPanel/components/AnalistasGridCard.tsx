@@ -8,7 +8,8 @@
  */
 
 import { AlertTriangle, MapPin, Trophy, Wallet } from "lucide-react";
-import type { Project, SupplierMaterialProposal, BaseCurrency } from "../../../types";
+import { formatCurrency } from "@ivoo/shared";
+import type { Project, SupplierMaterialProposal } from "../../../types";
 import { calculatePendingPortalProposals } from "../utils/portalProposalUtils";
 import BsAmount from "../../../components/UI/BsAmount";
 
@@ -18,9 +19,7 @@ export function renderAnalistasCard(
   convert?: (amount: number, fromCode: string) => number,
   hasRates?: boolean,
   isLoadingRates?: boolean,
-  baseCurrency?: BaseCurrency | null,
 ) {
-  const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const proposals = project.proposals ?? [];
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
   const pendingFromPortal = calculatePendingPortalProposals(portalProposals.length, proposals);
@@ -55,7 +54,7 @@ export function renderAnalistasCard(
           <Wallet className="h-3 w-3 shrink-0" /> Techo aprobado
         </span>
         <div className="text-right">
-          <div className="font-mono font-bold text-slate-600 text-[11px] whitespace-nowrap">{fmtBase(project.approvedInvestmentAmount ?? 0)}</div>
+          <div className="font-mono font-bold text-slate-600 text-[11px] whitespace-nowrap">{formatCurrency(project.approvedInvestmentAmount ?? 0)}</div>
           {convert && (
             <BsAmount amount={project.approvedInvestmentAmount ?? 0} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
           )}
@@ -68,7 +67,7 @@ export function renderAnalistasCard(
             <Trophy className="h-3 w-3 shrink-0" /> Mejor oferta
           </span>
           <div className="text-right">
-            <div className="font-mono font-black text-emerald-700 text-[11px] whitespace-nowrap">{fmtBase(best.totalCost)}</div>
+            <div className="font-mono font-black text-emerald-700 text-[11px] whitespace-nowrap">{formatCurrency(best.totalCost)}</div>
             {convert && (
               <BsAmount amount={best.totalCost} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
             )}

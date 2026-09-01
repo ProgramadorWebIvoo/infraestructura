@@ -1,3 +1,4 @@
+import { formatCurrency } from "@ivoo/shared";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -23,7 +24,7 @@ import { AlertTriangle, RefreshCw, Sparkles, Wallet } from "lucide-react";
 import Button from "./UI/Button";
 import { containerVariants, itemVariants } from "../animations";
 import { motion } from "motion/react";
-import { useCurrencyConversion, formatBaseCurrency } from "../hooks/useCurrencyConversion";
+import { useCurrencyConversion } from "../hooks/useCurrencyConversion";
 import type { Project } from "../types";
 
 interface DossierEvaluationSummaryProps {
@@ -64,7 +65,6 @@ const COMPLETENESS_FACTORS: { key: "documentation" | "budgetConsistency" | "reje
  * que fue diseñada.
  */
 export default function DossierEvaluationSummary({ project, onReevaluate, showSuggestedAmount = false }: DossierEvaluationSummaryProps) {
-  const { baseCurrency } = useCurrencyConversion();
   const score = project.dossierAiScore ?? 0;
   const c = scoreClasses(score);
   const alerts = project.dossierAiAlerts ?? [];
@@ -107,7 +107,7 @@ export default function DossierEvaluationSummary({ project, onReevaluate, showSu
                 <Wallet className="h-3.5 w-3.5 shrink-0" />
                 Monto sugerido por IA
               </span>
-              <span className="font-mono font-black text-brand-800">{formatBaseCurrency(project.dossierAiSuggestedAmount ?? 0, baseCurrency)}</span>
+              <span className="font-mono font-black text-brand-800">{formatCurrency(project.dossierAiSuggestedAmount ?? 0)}</span>
             </motion.div>
           )}
 

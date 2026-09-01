@@ -18,7 +18,6 @@ import { useToast } from "../../components/UI/Toast";
 import { containerVariants, itemVariants } from "../../animations";
 import { useProveedores } from "../../hooks/useProveedores";
 import { useCatalogProducts } from "../../hooks/useCatalogProducts";
-import { useBaseCurrency } from "../../hooks/useBaseCurrency";
 import KpiPill from "../../components/UI/KpiPill";
 import Tabs from "../../components/UI/Tabs";
 import TabPanel from "../../components/UI/TabPanel";
@@ -50,7 +49,6 @@ export default function ProveedoresRegistrados({
   const { showToast } = useToast();
   const { proposals, isLoadingProposals, handleInviteSupplier, fetchLatestInvitation } = useProveedores(authToken, showToast);
   const { products, isLoadingProducts, categories } = useCatalogProducts(authToken, showToast);
-  const { baseCurrency, convertFromUsd } = useBaseCurrency(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("contractors");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
 
@@ -142,8 +140,6 @@ export default function ProveedoresRegistrados({
                 categories={categories}
                 isLoading={isLoadingProducts}
                 onOpenProduct={setSelectedProduct}
-                baseCurrency={baseCurrency}
-                convertFromUsd={convertFromUsd}
               />
             )}
           </TabPanel>
@@ -172,8 +168,6 @@ export default function ProveedoresRegistrados({
       <CatalogProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        baseCurrency={baseCurrency}
-        convertFromUsd={convertFromUsd}
       />
     </>
   );

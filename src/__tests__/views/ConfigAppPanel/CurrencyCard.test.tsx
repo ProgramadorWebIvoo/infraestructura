@@ -27,7 +27,6 @@ describe("CurrencyCard", () => {
   const handlers = {
     onAdd: vi.fn(),
     onUpdate: vi.fn(),
-    onSetBase: vi.fn(),
     onDelete: vi.fn(),
   };
 
@@ -42,7 +41,6 @@ describe("CurrencyCard", () => {
         isLoading={isLoading}
         onAdd={overrides.onAdd ?? handlers.onAdd}
         onUpdate={overrides.onUpdate ?? handlers.onUpdate}
-        onSetBase={overrides.onSetBase ?? handlers.onSetBase}
         onDelete={overrides.onDelete ?? handlers.onDelete}
       />,
     );
@@ -60,18 +58,16 @@ describe("CurrencyCard", () => {
     expect(screen.getByText("Sin monedas personalizadas agregadas todavía.")).toBeInTheDocument();
   });
 
-  it("renderiza una moneda con su badge de Base y Activa", () => {
+  it("renderiza una moneda con su badge de Activa", () => {
     renderCard([makeCurrency()]);
     expect(screen.getByText("USD")).toBeInTheDocument();
     expect(screen.getByText("Dólar")).toBeInTheDocument();
-    expect(screen.getByText("Base")).toBeInTheDocument();
     expect(screen.getByText("Activa")).toBeInTheDocument();
   });
 
-  it("renderiza una moneda no-base e inactiva sin el badge Base", () => {
+  it("renderiza una moneda inactiva sin el badge de base", () => {
     renderCard([makeCurrency({ id: 2, code: "EUR", name: "Euro", is_base: false, is_active: false })]);
     expect(screen.getByText("EUR")).toBeInTheDocument();
-    expect(screen.queryByText("Base")).not.toBeInTheDocument();
     expect(screen.getByText("Inactiva")).toBeInTheDocument();
   });
 
@@ -192,50 +188,29 @@ describe("CurrencyCard", () => {
     expect(handlers.onUpdate).not.toHaveBeenCalled();
   });
 
-  // ── Activar/desactivar, fijar como base, eliminar ────────────────────────
+  // ── Activar/desactivar, eliminar ──────────────────────────────────────────
 
-  it("fija una moneda no-base y activa como base", async () => {
-    handlers.onSetBase.mockResolvedValueOnce(undefined);
-    renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: true })]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Fijar EUR como base" }));
-
-    await waitFor(() => expect(handlers.onSetBase).toHaveBeenCalledWith(2));
-  });
-
-  it("no muestra el botón de fijar-como-base para una moneda inactiva", () => {
-    renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: false })]);
-    expect(screen.queryByRole("button", { name: "Fijar EUR como base" })).not.toBeInTheDocument();
-  });
-
-  it("no muestra ninguna acción de gestión para la moneda base (salvo Editar)", () => {
-    renderCard([makeCurrency({ is_base: true })]);
-    expect(screen.queryByRole("button", { name: "Desactivar USD" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Eliminar USD" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Editar USD" })).toBeInTheDocument();
-  });
-
-  it("desactiva una moneda activa no-base", async () => {
+  it("desactiva una moneda activa", async () => {
     handlers.onUpdate.mockResolvedValueOnce(undefined);
-    renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: true })]);
+    renderCard([makeCurrency({ id: 2, code: "EUR", is_active: true })]);
 
     fireEvent.click(screen.getByRole("button", { name: "Desactivar EUR" }));
 
     await waitFor(() => expect(handlers.onUpdate).toHaveBeenCalledWith(2, { is_active: false }));
   });
 
-  it("activa una moneda inactiva no-base", async () => {
+  it("activa una moneda inactiva", async () => {
     handlers.onUpdate.mockResolvedValueOnce(undefined);
-    renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: false })]);
+    renderCard([makeCurrency({ id: 2, code: "EUR", is_active: false })]);
 
     fireEvent.click(screen.getByRole("button", { name: "Activar EUR" }));
 
     await waitFor(() => expect(handlers.onUpdate).toHaveBeenCalledWith(2, { is_active: true }));
   });
 
-  it("elimina una moneda no-base", async () => {
+  it("elimina una moneda personalizada", async () => {
     handlers.onDelete.mockResolvedValueOnce(undefined);
-    renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: true })]);
+    renderCard([makeCurrency({ id: 2, code: "EUR", is_active: true, is_official: false })]);
 
     fireEvent.click(screen.getByRole("button", { name: "Eliminar EUR" }));
 

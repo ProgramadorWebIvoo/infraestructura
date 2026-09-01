@@ -81,18 +81,6 @@ export function useCurrencies(authToken: string, enabled: boolean) {
     [authToken],
   );
 
-  const setBaseCurrency = useCallback(
-    async (id: number): Promise<CurrencyMutationResponse> => {
-      const updated = await apiFetch<CurrencyMutationResponse>(`/currencies/${id}/set-base`, {
-        method: "POST",
-        token: authToken,
-      });
-      setCurrencies(prev => prev.map(c => ({ ...c, is_base: c.id === id })));
-      return updated;
-    },
-    [authToken],
-  );
-
   const deleteCurrency = useCallback(
     async (id: number): Promise<{ auditLog?: ConfigAuditLogRecord }> => {
       const result = await apiFetch<{ auditLog?: ConfigAuditLogRecord }>(`/currencies/${id}`, {
@@ -105,5 +93,5 @@ export function useCurrencies(authToken: string, enabled: boolean) {
     [authToken],
   );
 
-  return { currencies, isLoading, addCurrency, updateCurrency, setBaseCurrency, deleteCurrency };
+  return { currencies, isLoading, addCurrency, updateCurrency, deleteCurrency };
 }

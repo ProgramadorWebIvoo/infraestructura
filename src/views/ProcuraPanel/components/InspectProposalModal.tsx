@@ -15,19 +15,20 @@
  */
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ArrowRightLeft, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck, Info } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import Modal from "../../../components/UI/Modal";
 import SummaryStat from "../../../components/UI/SummaryStat";
+import Tooltip from "../../../components/UI/Tooltip";
 import type { Project, Proposal, ProposalMaterialItem } from "../../../types";
 import { apiDownload } from "../../../services/api";
-import { formatCurrency } from "../../../utils";
 import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
-import { useCurrencyConversion, formatBs, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface InspectProposalModalProps {
   project: Project;
-  proposal: Proposal;
+  proposal: Proposal & { auditSnapshot?: { rateSnapshotAt?: string | null; rateSource?: string | null; rateEurToBs?: number | null; rateUsdToBs?: number | null; amountInBs?: number | null; } | null; };
   authToken: string;
   onClose: () => void;
 }
@@ -142,7 +143,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const isRenegotiation = proposal.origen === "RENEGOCIACION";
   const currency = proposal.quoteCurrency;
   const [expandedImage, setExpandedImage] = useState<{ blobUrl: string; alt: string } | null>(null);
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, "USD"))}` : undefined);
 
   // El backend solo puebla estos campos cuando realmente convirtió (moneda
@@ -169,9 +170,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
       <div className="space-y-4">
         {/* Resumen de costos */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Materiales" value={formatBaseCurrency(proposal.materialCost, baseCurrency)} subValue={bsOf(proposal.materialCost)} />
-          <SummaryStat label="Mano de Obra" value={formatBaseCurrency(proposal.laborCost, baseCurrency)} subValue={bsOf(proposal.laborCost)} />
-          <SummaryStat label="Total" value={formatBaseCurrency(proposal.totalCost, baseCurrency)} subValue={bsOf(proposal.totalCost)} emphasize />
+          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOf(proposal.materialCost)} />
+          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOf(proposal.laborCost)} />
+          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOf(proposal.totalCost)} emphasize />
           <SummaryStat label="Plazo" value={formatProposalDuration(proposal)} />
         </div>
 
@@ -187,10 +188,42 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
             convirtió, sin que haya que ir a la base de datos a auditarlo. */}
         {wasConverted && (
           <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3.5 space-y-2.5">
-            <span className="flex items-center gap-1.5 text-[9px] font-bold text-amber-700 uppercase tracking-wider">
-              <ArrowRightLeft className="h-3 w-3" />
-              Cotizada en {currency} · convertida a {proposal.baseCurrencyAtImport}
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-amber-700 uppercase tracking-wider">
+                <ArrowRightLeft className="h-3 w-3" />
+                Cotizada en {currency} · convertida a {proposal.baseCurrencyAtImport}
+              </span>
+              {proposal.auditSnapshot && (
+                <Tooltip
+                  content={
+                    <div className="text-xs space-y-1">
+                      <div><strong>Snapshot Auditable</strong></div>
+                      <div className="border-t border-slate-300 pt-1 mt-1">
+                        {proposal.auditSnapshot.rateSource && (
+                          <div>Fuente: {proposal.auditSnapshot.rateSource}</div>
+                        )}
+                        {proposal.auditSnapshot.rateSnapshotAt && (
+                          <div>Fecha: {new Date(proposal.auditSnapshot.rateSnapshotAt).toLocaleString("es-VE")}</div>
+                        )}
+                        {proposal.auditSnapshot.rateUsdToBs && (
+                          <div>Tasa USD/Bs: {proposal.auditSnapshot.rateUsdToBs.toFixed(4)}</div>
+                        )}
+                        {proposal.auditSnapshot.rateEurToBs && (
+                          <div>Tasa EUR/Bs: {proposal.auditSnapshot.rateEurToBs.toFixed(4)}</div>
+                        )}
+                        {proposal.auditSnapshot.amountInBs && (
+                          <div>Monto en Bs: Bs. {proposal.auditSnapshot.amountInBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        )}
+                      </div>
+                    </div>
+                  }
+                >
+                  <button className="p-0.5 rounded hover:bg-amber-100 transition-colors">
+                    <Info className="h-3.5 w-3.5 text-amber-600" />
+                  </button>
+                </Tooltip>
+              )}
+            </div>
 
             <div className="grid grid-cols-3 gap-3">
               <SummaryStat
@@ -236,11 +269,11 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
               Origen: Renegociación
             </span>
             <div className="grid grid-cols-3 gap-3">
-              <SummaryStat label="Precio Anterior" value={proposal.precioAnterior != null ? formatBaseCurrency(proposal.precioAnterior, baseCurrency) : "—"} subValue={proposal.precioAnterior != null ? bsOf(proposal.precioAnterior) : undefined} compact />
-              <SummaryStat label="Precio Nuevo" value={proposal.precioNuevo != null ? formatBaseCurrency(proposal.precioNuevo, baseCurrency) : "—"} subValue={proposal.precioNuevo != null ? bsOf(proposal.precioNuevo) : undefined} compact />
+              <SummaryStat label="Precio Anterior" value={proposal.precioAnterior != null ? formatCurrency(proposal.precioAnterior) : "—"} subValue={proposal.precioAnterior != null ? bsOf(proposal.precioAnterior) : undefined} compact />
+              <SummaryStat label="Precio Nuevo" value={proposal.precioNuevo != null ? formatCurrency(proposal.precioNuevo) : "—"} subValue={proposal.precioNuevo != null ? bsOf(proposal.precioNuevo) : undefined} compact />
               <SummaryStat
                 label="Diferencia"
-                value={proposal.diferencia != null ? `${proposal.diferencia > 0 ? "+" : ""}${formatBaseCurrency(proposal.diferencia, baseCurrency)}` : "—"}
+                value={proposal.diferencia != null ? `${proposal.diferencia > 0 ? "+" : ""}${formatCurrency(proposal.diferencia)}` : "—"}
                 subValue={proposal.diferencia != null ? bsOf(proposal.diferencia) : undefined}
                 compact
                 tone={proposal.diferencia != null ? (proposal.diferencia > 0 ? "danger" : "success") : undefined}
@@ -298,11 +331,11 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       <td className="px-3 py-2 text-center font-mono font-bold text-slate-600 text-[11px] align-top">{item.quantity}</td>
                       <td className="px-3 py-2 text-slate-500 font-medium text-[11px] align-top">{item.unit}</td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600 align-top">
-                        {formatBaseCurrency(item.unitPrice, baseCurrency)}
+                        {formatCurrency(item.unitPrice)}
                         <BsAmount amount={item.unitPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-500 align-top">
-                        {item.estimatedPriceUsd ? formatBaseCurrency(item.estimatedPriceUsd, baseCurrency) : "—"}
+                        {item.estimatedPriceUsd ? formatCurrency(item.estimatedPriceUsd) : "—"}
                       </td>
                       <td className="px-3 py-2 text-center align-top">
                         {item.variationPercent != null ? (
@@ -322,7 +355,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                         )}
                       </td>
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px] align-top">
-                        {formatBaseCurrency(item.totalPrice, baseCurrency)}
+                        {formatCurrency(item.totalPrice)}
                         <BsAmount amount={item.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
                       </td>
                     </tr>
@@ -334,7 +367,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       Total materiales:
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                      {formatBaseCurrency(proposal.materialCost, baseCurrency)}
+                      {formatCurrency(proposal.materialCost)}
                       <BsAmount amount={proposal.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
                     </td>
                   </tr>

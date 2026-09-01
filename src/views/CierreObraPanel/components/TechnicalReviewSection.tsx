@@ -14,6 +14,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Calculator, CheckCircle2, MapPin, SearchX } from "lucide-react";
+import { formatCurrency } from "@ivoo/shared";
 import type { Project } from "../../../types";
 import { ProjectStatus } from "../../../types";
 import Card from "../../../components/UI/Card";
@@ -25,7 +26,7 @@ import GridView from "../../../components/UI/GridView/GridView";
 import { renderTechnicalReviewCard } from "./TechnicalReviewGridCard";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode } from "../../../hooks/useTableViewMode";
-import { useCurrencyConversion, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 import { viewSwitchVariants } from "../../../animations";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
@@ -52,6 +53,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [query, setQuery] = useState("");
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const pendingReview = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.CREADO),
@@ -71,7 +73,6 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
 
   const activeProject = pendingReview.find(p => p.id === selectedProjectId);
   const brand = SEMANTIC_COLOR_MAP.brand;
-  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
 
   const columns: Column<Project>[] = useMemo(() => [
     {
@@ -124,7 +125,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
       sortable: true,
       render: (p) => (
         <div className="text-right whitespace-nowrap">
-          <div className="font-mono font-bold text-slate-800">{formatBaseCurrency(p.estimatedTotal, baseCurrency)}</div>
+          <div className="font-mono font-bold text-slate-800">{formatCurrency(p.estimatedTotal)}</div>
           <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -191,7 +192,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
                 <GridView
                   items={visibleProjects}
                   rowKey={(p) => p.id}
-                  renderCard={(p) => renderTechnicalReviewCard(p, convert, hasRates, isLoadingRates, baseCurrency)}
+                  renderCard={(p) => renderTechnicalReviewCard(p, convert, hasRates, isLoadingRates)}
                   onSelect={(p) => setSelectedProjectId(p.id)}
                   selectedKey={selectedProjectId}
                   cardAccent={() => "brand"}
