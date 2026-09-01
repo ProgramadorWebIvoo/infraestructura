@@ -22,13 +22,14 @@
  */
 
 import { useEffect, useState, type ReactNode } from "react";
-import { History, TrendingUp, TrendingDown, Minus, Boxes, Sparkles, Briefcase, Trophy, type LucideIcon } from "lucide-react";
+import { History, TrendingUp, TrendingDown, Minus, Boxes, Sparkles, Briefcase, Trophy, AlertCircle, type LucideIcon } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import EmptyState from "../../../components/UI/EmptyState";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import SummaryStat from "../../../components/UI/SummaryStat";
 import Tabs from "../../../components/UI/Tabs";
 import TabPanel from "../../../components/UI/TabPanel";
+import Tooltip from "../../../components/UI/Tooltip";
 import { SkeletonPriceChart, SkeletonStatCardGrid } from "../../../components/SkeletonLoader";
 import { apiFetch } from "../../../services/api";
 import type { Contractor, ContractorHistory } from "../../../types";
@@ -274,6 +275,16 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                         history?.monthlySeries.some(s => s.hasMultipleCurrencies)
                           ? "Promedio de precios en USD por mes (incluye conversiones de EUR y otras monedas según tasa BCV vigente)."
                           : "Promedio de precios cotizados en USD por mes, sobre todas las líneas de propuestas de este proveedor."
+                      }
+                      badge={
+                        history?.monthlySeries.some(s => s.hasMultipleCurrencies) ? (
+                          <Tooltip content="Este histórico incluye cotizaciones en múltiples monedas. Todas están convertidas a USD usando las tasas BCV vigentes en el momento de la cotización. Pasa el cursor sobre los puntos del gráfico para ver detalles de conversión.">
+                            <span className="rounded-full bg-info-100 px-2 py-1 text-[9px] font-bold text-info-700 cursor-help flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              Con conversiones
+                            </span>
+                          </Tooltip>
+                        ) : undefined
                       }
                     />
                     {isLoading ? <SkeletonPriceChart /> : history ? <MonthlySeriesChart series={history.monthlySeries} /> : null}

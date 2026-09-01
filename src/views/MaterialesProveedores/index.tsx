@@ -107,19 +107,8 @@ export default function RegistroProveedoresPublico({
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-lg shadow-sky-500/25 ring-1 ring-white/12 ring-inset">
-              <Building2 className="h-5 w-5 stroke-[2.5]" />
-            </div>
-            <div>
-              <h1 className="text-base font-black tracking-tight">IVOO Registro de Proveedores</h1>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Portal público</p>
-            </div>
-          </div>
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-bold text-emerald-200 shadow-[0_0_12px_-4px_#34d399] sm:flex">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Registro seguro
-          </div>
+          {/* ACA IRA EL LOGO DE IVOO */}
+          IVOO Gestión
         </motion.div>
       </header>
 
@@ -130,13 +119,6 @@ export default function RegistroProveedoresPublico({
           animate={reduceMotion ? undefined : "show"}
           className="space-y-7"
         >
-          <motion.div
-            variants={heroItem}
-            className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-sky-200"
-          >
-            <Sparkles className="h-3 w-3" strokeWidth={2.5} />
-            Base de datos IVOO
-          </motion.div>
 
           <div className="space-y-4">
             <motion.h2 variants={heroItem} className="max-w-xl text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl">

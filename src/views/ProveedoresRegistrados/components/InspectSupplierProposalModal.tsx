@@ -10,11 +10,12 @@
  */
 
 import React, { useMemo } from "react";
-import { Clock, FileSearch, HandCoins, Mail } from "lucide-react";
+import { Clock, FileSearch, HandCoins, Mail, HelpCircle } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
 import SummaryStat from "../../../components/UI/SummaryStat";
 import VariationBadge from "../../../components/UI/VariationBadge";
+import Tooltip from "../../../components/UI/Tooltip";
 import { formatCurrency } from "../../../utils";
 import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import type { SupplierMaterialProposal } from "../../../types";
@@ -104,8 +105,12 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
 
         {/* Detalle de materiales cotizados */}
         <div className="rounded-lg border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Detalle de Materiales Cotizados</span>
+            <span className="text-[10px] text-slate-600">
+              Cotización en <strong>{currency}</strong>
+              {currency !== 'USD' && ' (convertida a USD para análisis)'}
+            </span>
           </div>
           <div className="max-h-80 overflow-y-auto overflow-x-auto">
             <Table
@@ -114,10 +119,21 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
                 { key: "quantity", label: "Cantidad", align: "center", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
                 { key: "unit", label: "Unidad", render: (item: any) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
                 { key: "unitPrice", label: `PROP (${currency})`, align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{formatCurrency(item.unitPrice || 0, currency)}</span> },
-                { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span> },
+                { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => (
+                  <Tooltip content="EST = Precio estimado (promedio histórico 6 meses). Vacío si sin cotizaciones previas.">
+                    <div className="flex items-center gap-1 justify-end cursor-help">
+                      <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span>
+                      <HelpCircle className="h-3 w-3 text-slate-400" />
+                    </div>
+                  </Tooltip>
+                ) },
                 { key: "variation", label: "VAR%", align: "right", render: (item: any) => (
                   item.variationDirection && item.variationLabel ? (
-                    <VariationBadge label={item.variationLabel} direction={item.variationDirection} />
+                    <Tooltip content="VAR% = ((PROP - EST) / EST) × 100. Rango estable: ±5%">
+                      <div className="cursor-help">
+                        <VariationBadge label={item.variationLabel} direction={item.variationDirection} />
+                      </div>
+                    </Tooltip>
                   ) : (
                     <span className="text-slate-400 text-[11px]">—</span>
                   )
