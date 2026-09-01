@@ -11,7 +11,7 @@
  * posicionamiento absoluto del dropdown.
  */
 
-import { memo, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, X } from "lucide-react";
 import { useNotifications } from "./NotificationsProvider";
@@ -56,7 +56,14 @@ interface NotificationBellProps {
   align?: "right" | "left-start";
 }
 
-function NotificationBell({ variant = "dark", align = "right" }: NotificationBellProps) {
+/**
+ * Sin `memo()` a propósito: sus props (variant/align) son literales estáticas,
+ * así que memoizar no evita ningún re-render real — el único que importa
+ * viene del contexto de notificaciones, que `memo` no bloquea de todos modos.
+ * A cambio sí rompía los tests que mockean `useNotifications` (con props
+ * iguales, memo omite el render y el componente nunca ve el mock nuevo).
+ */
+export default function NotificationBell({ variant = "dark", align = "right" }: NotificationBellProps) {
   const { notifications, unreadCount, markRead, markAllRead, deleteNotification, deleteAllNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -234,4 +241,3 @@ function NotificationBell({ variant = "dark", align = "right" }: NotificationBel
   );
 }
 
-export default memo(NotificationBell);

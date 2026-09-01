@@ -8,6 +8,7 @@
  */
 
 import { Package, TrendingUp } from "lucide-react";
+import { formatCurrency } from "../../../utils";
 
 interface ProjectProposalSummary {
   projectId: string;
@@ -47,7 +48,7 @@ export function renderProjectGridCard(project: ProjectProposalSummary) {
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Monto Total</span>
             <p className="text-sm font-black text-emerald-700">
-              ${project.totalAmount.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+              {formatCurrency(project.totalAmount)}
             </p>
           </div>
         </div>

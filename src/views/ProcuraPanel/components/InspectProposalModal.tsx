@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import SummaryStat from "../../../components/UI/SummaryStat";
 import type { Project, Proposal, ProposalMaterialItem } from "../../../types";
@@ -145,6 +145,15 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, "USD"))}` : undefined);
 
+  // El backend solo puebla estos campos cuando realmente convirtió (moneda
+  // del proveedor ≠ moneda base al importar) — ver SupplierProposalImportService.
+  const wasConverted =
+    proposal.baseCurrencyAtImport != null &&
+    proposal.fxRateToBase != null &&
+    proposal.totalCostOriginal != null &&
+    proposal.materialCostOriginal != null &&
+    proposal.laborCostOriginal != null;
+
   return (
     <>
     <Modal
@@ -171,7 +180,49 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
           <SummaryStat label="Fecha de la Oferta" value={proposal.fechaOferta} />
         </div>
 
-        {currency && currency !== "USD" && (
+        {/* Trazabilidad de conversión de moneda — solo cuando el proveedor
+            cotizó en una moneda distinta a la base y el sistema convirtió al
+            importar. Los montos de arriba están en la moneda base; acá queda
+            registrado exactamente qué ofertó el proveedor y con qué tasa se
+            convirtió, sin que haya que ir a la base de datos a auditarlo. */}
+        {wasConverted && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3.5 space-y-2.5">
+            <span className="flex items-center gap-1.5 text-[9px] font-bold text-amber-700 uppercase tracking-wider">
+              <ArrowRightLeft className="h-3 w-3" />
+              Cotizada en {currency} · convertida a {proposal.baseCurrencyAtImport}
+            </span>
+
+            <div className="grid grid-cols-3 gap-3">
+              <SummaryStat
+                label={`Materiales (${currency})`}
+                value={formatCurrency(proposal.materialCostOriginal!, currency!)}
+                compact
+              />
+              <SummaryStat
+                label={`Mano de Obra (${currency})`}
+                value={formatCurrency(proposal.laborCostOriginal!, currency!)}
+                compact
+              />
+              <SummaryStat
+                label={`Total (${currency})`}
+                value={formatCurrency(proposal.totalCostOriginal!, currency!)}
+                compact
+                tone="indigo"
+              />
+            </div>
+
+            <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
+              Tasa aplicada al importar:{" "}
+              <strong className="font-mono text-amber-700">
+                1 {currency} = {proposal.fxRateToBase!.toFixed(4)} {proposal.baseCurrencyAtImport}
+              </strong>
+              . Los montos del resumen superior ya están convertidos a {proposal.baseCurrencyAtImport} para
+              poder compararlos contra el resto de las ofertas.
+            </p>
+          </div>
+        )}
+
+        {currency && !wasConverted && currency !== "USD" && (
           <p className="text-[10px] text-slate-400 font-medium">
             El proveedor cotizó esta propuesta en <span className="font-bold text-slate-600">{currency}</span> a través del portal público.
           </p>

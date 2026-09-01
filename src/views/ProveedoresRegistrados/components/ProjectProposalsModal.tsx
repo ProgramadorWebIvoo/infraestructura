@@ -13,6 +13,8 @@ import { Table, type Column } from "../../../components/UI/Table";
 import TableToolbar from "../../../components/UI/TableToolbar";
 import EmptyState from "../../../components/UI/EmptyState";
 import InspectSupplierProposalModal from "./InspectSupplierProposalModal";
+import { formatCurrency } from "../../../utils";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import type { SupplierMaterialProposal } from "../../../types";
 
 interface ProjectProposalsModalProps {
@@ -35,6 +37,7 @@ export default function ProjectProposalsModal({
 }: ProjectProposalsModalProps) {
   const [proposalSearch, setProposalSearch] = useState("");
   const [inspectingProposal, setInspectingProposal] = useState<SupplierMaterialProposal | null>(null);
+  const { convert, hasRates } = useCurrencyConversion();
 
   const projectProposals = useMemo(
     () => proposals.filter((p) => p.projectId === projectId),
@@ -102,15 +105,25 @@ export default function ProjectProposalsModal({
         width: "9rem",
         align: "right",
         sortValue: (p) => proposalTotal(p),
-        render: (p) => (
-          <span className="font-mono text-sm font-black text-indigo-700">
-            ${proposalTotal(p).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-          </span>
-        ),
+        // Cada propuesta trae su propia moneda de cotización (una por pedido)
+        // — no asumir USD, un proveedor pudo cotizar en EUR.
+        render: (p) => {
+          const currency = p.quoteCurrency ?? "USD";
+          const total = proposalTotal(p);
+          return (
+            <div className="text-right whitespace-nowrap">
+              <div className="font-mono text-sm font-black text-indigo-700">{formatCurrency(total, currency)}</div>
+              <div className="font-mono text-[9px] font-semibold text-slate-400">
+                {currency}
+                {hasRates && ` · Bs. ${formatBs(convert(total, currency))}`}
+              </div>
+            </div>
+          );
+        },
       },
       { key: "chevron", label: "", width: "2rem", align: "center", render: () => <ChevronRight className="h-4 w-4 text-slate-300" /> },
     ],
-    []
+    [convert, hasRates]
   );
 
   return (

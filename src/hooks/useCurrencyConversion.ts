@@ -9,8 +9,7 @@
 
 import { useCallback, useMemo } from "react";
 import { truncateToDecimals } from "@ivoo/shared";
-import { useExchangeRates } from "./useExchangeRates";
-import { useAuth } from "./useAuth";
+import { useExchangeRatesContext } from "../components/UI/ExchangeRatesProvider";
 
 /** Formatea un monto en Bs.: separador de miles ".", decimales ",", siempre 2 decimales, truncado (no redondeado). */
 export function formatBs(value: number): string {
@@ -18,10 +17,18 @@ export function formatBs(value: number): string {
 }
 
 export interface UseCurrencyConversionReturn {
-  /** Tasas por moneda: "USD" → 794.99, "EUR" → 862.15, etc. */
+  /** Tasas BCV por moneda (bolívares por unidad): "USD" → 794.99, "EUR" → 862.15, etc. */
   rates: Record<string, number>;
   /** Convierte amount de cualquier moneda a Bs. */
   convert: (amount: number, fromCode: string) => number;
+  /**
+   * Convierte entre dos monedas cualquiera usando el bolívar como pivote —
+   * equivalente en frontend de `ExchangeRate::rateBetween()` del backend.
+   * Necesario para comparar/sumar montos cotizados en monedas distintas
+   * (ej. sumar una oferta en EUR con otra en USD): multiplicar por la tasa
+   * BCV de una sola moneda da bolívares, no la otra moneda.
+   */
+  convertBetween: (amount: number, fromCode: string, toCode: string) => number;
   /** Obtiene la tasa de una moneda específica, null si no existe */
   getRate: (code: string) => number | null;
   /** Si está cargando tasas */
@@ -31,8 +38,13 @@ export interface UseCurrencyConversionReturn {
 }
 
 export function useCurrencyConversion(): UseCurrencyConversionReturn {
-  const { authToken } = useAuth();
-  const { rates: exchangeRates, isLoading } = useExchangeRates(authToken || "", !!authToken);
+  // Lee del contexto compartido (un solo fetch por sesión, ver
+  // ExchangeRatesProvider) en vez de montar su propio useAuth+useExchangeRates
+  // por cada componente que muestre un monto. Fuera del provider degrada a
+  // "sin tasas" sin romper el render.
+  const context = useExchangeRatesContext();
+  const exchangeRates = context?.rates ?? [];
+  const isLoading = context?.isLoading ?? false;
 
   // Construir mapa de tasas por moneda (ej: "USD" → 794.99)
   const rates = useMemo(() => {
@@ -61,6 +73,21 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
     [rates],
   );
 
+  // Convertir entre dos monedas cualquiera (pivote: bolívar)
+  const convertBetween = useCallback(
+    (amount: number, fromCode: string, toCode: string): number => {
+      if (fromCode === toCode) return amount;
+      const fromRate = rates[fromCode];
+      const toRate = rates[toCode];
+      if (!fromRate || !toRate) {
+        console.warn(`useCurrencyConversion: falta tasa para ${fromCode} o ${toCode}, devolviendo 0`);
+        return 0;
+      }
+      return (amount * fromRate) / toRate;
+    },
+    [rates],
+  );
+
   // Obtener tasa de una moneda específica
   const getRate = useCallback(
     (code: string): number | null => {
@@ -72,6 +99,7 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
   return {
     rates,
     convert,
+    convertBetween,
     getRate,
     isLoading,
     hasRates: Object.keys(rates).length > 0,

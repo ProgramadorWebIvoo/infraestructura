@@ -8,8 +8,7 @@
  * Patrón: KpiPill (minimalista, material, SEMANTIC_COLOR_MAP).
  */
 
-import { useExchangeRates } from "../hooks/useExchangeRates";
-import { useAuth } from "../hooks/useAuth";
+import { useExchangeRatesContext } from "./UI/ExchangeRatesProvider";
 import { formatBs } from "../hooks/useCurrencyConversion";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -22,8 +21,9 @@ interface ExchangeRatesBadgeProps {
 const VISIBLE_ROLES = ["PROCURA", "ANALISTAS", "FINANZAS", "ADMIN", "SUPERADMIN"];
 
 export default function ExchangeRatesBadge({ userRole }: ExchangeRatesBadgeProps) {
-  const { authToken } = useAuth();
-  const { rates, hasLoaded } = useExchangeRates(authToken || "", !!authToken);
+  const context = useExchangeRatesContext();
+  const rates = context?.rates ?? [];
+  const hasLoaded = context?.hasLoaded ?? false;
 
   const shouldDisplay = userRole && VISIBLE_ROLES.includes(userRole);
 

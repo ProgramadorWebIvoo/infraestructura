@@ -76,6 +76,23 @@ export interface Proposal {
   /** ISO 4217, solo presente en propuestas importadas del portal (origen
    * PORTAL-PROV) — la carga manual siempre es en USD. */
   quoteCurrency?: string;
+  /**
+   * Trazabilidad de conversión de moneda — todos null cuando la propuesta
+   * ya estaba en la moneda base al importar (incluye carga manual). Cuando
+   * el proveedor cotizó en otra moneda, materialCost/laborCost/totalCost de
+   * arriba SIEMPRE están ya convertidos a la moneda base vigente; estos
+   * campos preservan el monto ORIGINAL con el que el proveedor cotizó
+   * realmente y la tasa exacta usada, para trazabilidad total y reversible
+   * (nunca se pierde el dato original, y el histórico sigue siendo
+   * interpretable aunque la moneda base cambie más adelante).
+   */
+  materialCostOriginal?: number | null;
+  laborCostOriginal?: number | null;
+  totalCostOriginal?: number | null;
+  /** Tasa usada para convertir quoteCurrency -> baseCurrencyAtImport. */
+  fxRateToBase?: number | null;
+  /** Moneda base vigente en el momento del import — puede diferir de la base actual si esta cambió después. */
+  baseCurrencyAtImport?: string | null;
   laborCost: number;
   totalCost: number;
   deliveryWeeks: number;

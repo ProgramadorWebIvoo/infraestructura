@@ -23,7 +23,12 @@ import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { renderProjectGridCard } from "./ProjectGridCard";
 import ProjectProposalsModal from "./ProjectProposalsModal";
+import { formatCurrency } from "../../../utils";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import type { SupplierMaterialProposal } from "../../../types";
+
+/** Moneda en la que se expresan los totales agregados de esta vista. */
+const DISPLAY_CURRENCY = "USD";
 
 interface SupplierProposalsListProps {
   proposals: SupplierMaterialProposal[];
@@ -43,6 +48,7 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
   const [selectedProject, setSelectedProject] = useState<ProjectProposalSummary | null>(null);
   const { viewMode, viewToggle } = useTableViewMode("table");
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, convertBetween, hasRates } = useCurrencyConversion();
 
   const projectProposalsSummary = useMemo(() => {
     const projectMap = new Map<string, { title: string; proposals: SupplierMaterialProposal[] }>();
@@ -58,10 +64,16 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
     });
 
     return Array.from(projectMap.entries()).map(([projectId, data]) => {
-      const totalAmount = data.proposals.reduce(
-        (sum, p) => sum + p.items.reduce((itemSum, i) => itemSum + i.totalPrice, 0),
-        0
-      );
+      // Cada propuesta puede venir en una moneda distinta (una por pedido):
+      // hay que llevarlas todas a una moneda común ANTES de sumar, o el
+      // total mezcla unidades (1000 USD + 900 EUR ≠ 1900 de nada).
+      const totalAmount = data.proposals.reduce((sum, p) => {
+        const proposalTotal = p.items.reduce((itemSum, i) => itemSum + i.totalPrice, 0);
+        const currency = p.quoteCurrency ?? DISPLAY_CURRENCY;
+        return sum + (currency === DISPLAY_CURRENCY || !hasRates
+          ? proposalTotal
+          : convertBetween(proposalTotal, currency, DISPLAY_CURRENCY));
+      }, 0);
       const latestDate = data.proposals
         .map((p) => new Date(p.submittedAt).getTime())
         .reduce((max, current) => (current > max ? current : max), 0);
@@ -74,7 +86,7 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
         latestProposalDate: new Date(latestDate).toLocaleDateString("es-ES"),
       };
     });
-  }, [proposals]);
+  }, [proposals, convertBetween, hasRates]);
 
   const filteredProjects = useMemo(
     () =>
@@ -124,9 +136,16 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
         sortable: true,
         sortValue: (p) => p.totalAmount,
         render: (p) => (
-          <span className="font-mono text-sm font-black text-emerald-700">
-            ${p.totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-          </span>
+          <div className="text-right whitespace-nowrap">
+            <div className="font-mono text-sm font-black text-emerald-700">
+              {formatCurrency(p.totalAmount, DISPLAY_CURRENCY)}
+            </div>
+            {hasRates && (
+              <div className="font-mono text-[9px] font-semibold text-slate-400">
+                Bs. {formatBs(convert(p.totalAmount, DISPLAY_CURRENCY))}
+              </div>
+            )}
+          </div>
         ),
       },
       {
@@ -137,7 +156,7 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
       },
       { key: "chevron", label: "", width: "2rem", align: "center", render: () => <ChevronRight className="h-4 w-4 text-slate-300" /> },
     ],
-    []
+    [convert, hasRates]
   );
 
   return (

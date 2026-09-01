@@ -29,6 +29,7 @@ import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
 import { NotificationsProvider } from "./components/UI/NotificationsProvider";
 import { PublicSettingsProvider } from "./components/UI/PublicSettingsProvider";
+import { ExchangeRatesProvider } from "./components/UI/ExchangeRatesProvider";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -283,6 +284,10 @@ function AppRoutes() {
   const fallbackRoute = firstAllowedRoute(authUser.role) as string;
   return (
     <NotificationsProvider authToken={authToken} authUser={authUser}>
+      {/* Un solo fetch de tasas para toda la sesión autenticada — las vistas
+          consumen vía useCurrencyConversion(), sin instanciar su propio
+          fetch/auth por componente (ver ExchangeRatesProvider). */}
+      <ExchangeRatesProvider authToken={authToken}>
       <AuthenticatedRoutes
         user={authUser}
         activeRole={activeRole ?? ""}
@@ -319,6 +324,7 @@ function AppRoutes() {
         authToken={authToken}
         location={location}
       />
+      </ExchangeRatesProvider>
     </NotificationsProvider>
   );
 }

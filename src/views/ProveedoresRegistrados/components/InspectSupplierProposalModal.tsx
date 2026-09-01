@@ -10,11 +10,13 @@
  */
 
 import React, { useMemo } from "react";
-import { Clock, FileSearch, HandCoins, Mail } from "lucide-react";
+import { Clock, FileSearch, HandCoins, Mail, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
 import SummaryStat from "../../../components/UI/SummaryStat";
 import VariationBadge from "../../../components/UI/VariationBadge";
+import { formatCurrency } from "../../../utils";
+import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 import type { SupplierMaterialProposal } from "../../../types";
 
 interface InspectSupplierProposalModalProps {
@@ -27,6 +29,13 @@ const proposalTotal = (p: SupplierMaterialProposal) =>
 
 function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSupplierProposalModalProps) {
   const total = useMemo(() => proposalTotal(proposal), [proposal]);
+  // Los montos de esta propuesta están en la moneda que eligió el proveedor
+  // al cotizar (una sola por pedido), NO necesariamente en USD — antes se
+  // rotulaban y formateaban como dólares de forma fija, mostrando euros
+  // etiquetados como USD.
+  const currency = proposal.quoteCurrency ?? "USD";
+  const { convert, hasRates } = useCurrencyConversion();
+  const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, currency))}` : undefined);
 
   return (
     <Modal
@@ -42,7 +51,7 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
       <div className="space-y-5">
         {/* Resumen */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Total Oferta" value={`$${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`} emphasize tone="indigo" />
+          <SummaryStat label={`Total Oferta (${currency})`} value={formatCurrency(total, currency)} subValue={bsOf(total)} emphasize tone="indigo" />
           <SummaryStat label="Materiales" value={String(proposal.items.length)} />
           <SummaryStat label="Enviado" value={proposal.submittedAt} />
           <SummaryStat label="Obra" value={proposal.projectId} />
@@ -104,7 +113,7 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
                 { key: "materialName", label: "Material", render: (item: any) => <span className="font-semibold text-slate-800 text-[11px]">{item.materialName}</span> },
                 { key: "quantity", label: "Cantidad", align: "center", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
                 { key: "unit", label: "Unidad", render: (item: any) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
-                { key: "unitPrice", label: "PROP (USD)", align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">${(item.unitPrice || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                { key: "unitPrice", label: `PROP (${currency})`, align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{formatCurrency(item.unitPrice || 0, currency)}</span> },
                 { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span> },
                 { key: "variation", label: "VAR%", align: "right", render: (item: any) => (
                   <div className="flex items-center justify-end gap-2">
@@ -129,7 +138,12 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
                     )}
                   </div>
                 ) },
-                { key: "totalPrice", label: "Total", align: "right", render: (item: any) => <span className="font-mono font-black text-indigo-700 text-[11px]">${(item.totalPrice || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+                { key: "totalPrice", label: `Total (${currency})`, align: "right", render: (item: any) => (
+                  <div>
+                    <span className="font-mono font-black text-indigo-700 text-[11px] block">{formatCurrency(item.totalPrice || 0, currency)}</span>
+                    {hasRates && <span className="font-mono text-[9px] text-slate-400">Bs. {formatBs(convert(item.totalPrice || 0, currency))}</span>}
+                  </div>
+                ) },
                 { key: "notes", label: "Notas", render: (item: any) => <span className="text-slate-400 italic text-[11px]">{item.notes || "—"}</span> },
               ]}
               data={proposal.items}
@@ -138,7 +152,10 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
               footer={
                 <tr className="border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-white">
                   <td colSpan={4} className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-600">Total propuesta:</td>
-                  <td className="px-4 py-3 text-right font-mono text-sm font-black text-indigo-700">${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  <td className="px-4 py-3 text-right font-mono text-sm font-black text-indigo-700">
+                    {formatCurrency(total, currency)}
+                    {hasRates && <span className="block font-mono text-[9px] font-semibold text-slate-400">Bs. {formatBs(convert(total, currency))}</span>}
+                  </td>
                   <td />
                 </tr>
               }
