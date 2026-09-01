@@ -9,8 +9,7 @@
  */
 
 import { MapPin, Trophy } from "lucide-react";
-import type { Project } from "../../../types";
-import { formatCurrency } from "../../../utils";
+import type { Project, BaseCurrency } from "../../../types";
 import BsAmount from "../../../components/UI/BsAmount";
 
 export function renderBidEvaluationCard(
@@ -18,7 +17,9 @@ export function renderBidEvaluationCard(
   convert?: (amount: number, fromCode: string) => number,
   hasRates?: boolean,
   isLoadingRates?: boolean,
+  baseCurrency?: BaseCurrency | null,
 ) {
+  const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const proposals = project.proposals ?? [];
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
 
@@ -45,7 +46,7 @@ export function renderBidEvaluationCard(
             <Trophy className="h-3 w-3 shrink-0" /> Mejor oferta
           </span>
           <div className="text-right">
-            <div className="font-mono font-black text-success-700 text-[11px] whitespace-nowrap">{formatCurrency(best.totalCost)}</div>
+            <div className="font-mono font-black text-success-700 text-[11px] whitespace-nowrap">{fmtBase(best.totalCost)}</div>
             {convert && (
               <BsAmount amount={best.totalCost} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
             )}

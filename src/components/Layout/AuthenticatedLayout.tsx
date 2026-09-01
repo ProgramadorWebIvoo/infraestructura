@@ -16,7 +16,6 @@ import SidebarNav from "../UI/SidebarNav";
 import MobileTopBar from "../UI/MobileTopBar";
 import OfflineBanner from "../UI/OfflineBanner";
 import ErrorBoundary from "../ErrorBoundary";
-import ExchangeRatesBadge from "../ExchangeRatesBadge";
 import type { Project } from "../../types";
 
 // ---------------------------------------------------------------------------
@@ -129,11 +128,6 @@ export default function AuthenticatedLayout({
             activeRole={activeRole}
             onMenuClick={handleOpenMobileSidebar}
           />
-
-          {/* Exchange Rates Badge — visible for PROCURA, ANALISTAS, FINANZAS, ADMIN, SUPERADMIN */}
-          <div className="px-6 pt-4">
-            <ExchangeRatesBadge userRole={activeRole} />
-          </div>
 
           {/* Main Workspace Body */}
           <main className="flex-1 max-w-8xl mx-auto w-full py-6 space-y-6 px-6">

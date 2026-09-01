@@ -24,8 +24,8 @@ import Tabs from "../../../components/UI/Tabs";
 import TabPanel from "../../../components/UI/TabPanel";
 import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { useToast } from "../../../components/UI/Toast";
-import { formatCurrency, formatNumber } from "../../../utils";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import { formatNumber } from "../../../utils";
+import { useCurrencyConversion, formatBs, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 export const DURATION_UNITS: { value: ProposalDurationUnit; label: string }[] = [
@@ -84,7 +84,7 @@ export default function RegisterProposalModal({
 }: RegisterProposalModalProps) {
   const { showToast } = useToast();
   const maxAdvancePercent = useMaxAdvancePercent();
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
 
   const [modalTab, setModalTab] = useState<"portal" | "manual">(onImportSupplierProposals ? "portal" : "manual");
   const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
@@ -396,7 +396,7 @@ export default function RegisterProposalModal({
                               <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px]">
                                 {row.totalPrice > 0 ? (
                                   <>
-                                    {formatCurrency(row.totalPrice)}
+                                    {formatBaseCurrency(row.totalPrice, baseCurrency)}
                                     <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
                                   </>
                                 ) : "—"}
@@ -423,7 +423,7 @@ export default function RegisterProposalModal({
                             Total materiales:
                           </td>
                           <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                            {formatCurrency(materialCostTotal)}
+                            {formatBaseCurrency(materialCostTotal, baseCurrency)}
                             <BsAmount amount={materialCostTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
                           </td>
                           <td />

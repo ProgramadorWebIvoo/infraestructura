@@ -21,7 +21,6 @@ import { Table, type Column } from "../../../components/UI/Table";
 import Button from "../../../components/UI/Button";
 import NumericInput from "../../../components/UI/NumericInput";
 import FieldError from "../../../components/UI/FieldError";
-import { formatCurrency } from "../../../utils";
 import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
 
 interface CatalogMaterial {
@@ -46,7 +45,7 @@ export default function MaterialChecklistModal({
   const [selections, setSelections] = useState<Map<number, number | "">>(new Map());
   const [search, setSearch] = useState("");
   const [touchedInvalid, setTouchedInvalid] = useState<Set<number>>(new Set());
-  const { convert, hasRates, isLoading: ratesLoading } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: ratesLoading, baseCurrency } = useCurrencyConversion();
 
   const filtered = useMemo(() => {
     const items = materialsCatalog.map((mat, index) => ({ ...mat, index }));
@@ -137,7 +136,7 @@ export default function MaterialChecklistModal({
         <div className="min-w-0">
           <div className="font-bold text-slate-800 truncate">{m.name}</div>
           <div className="text-[11px] text-slate-400 truncate font-medium">
-            {m.unit} · {formatCurrency(m.estimatedUnitPrice)}
+            {m.unit} · {baseCurrency?.symbol ?? "$"}{(m.estimatedUnitPrice / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             {ratesLoading && !hasRates && <span className="inline-block ml-1.5 h-2.5 w-12 rounded skeleton-shimmer align-middle" />}
             {hasRates && <span className="text-slate-500 font-semibold"> · Bs. {formatBs(convert(m.estimatedUnitPrice, "USD"))}</span>}
           </div>

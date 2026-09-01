@@ -29,11 +29,10 @@ import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode } from "../../../hooks/useTableViewMode";
 import { viewSwitchVariants } from "../../../animations";
-import { formatCurrency } from "../../../utils";
 import { ProjectStatus } from "../../../types";
-import type { Project, Proposal } from "../../../types";
+import type { Project, Proposal, BaseCurrency } from "../../../types";
 import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
-import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface BidEvaluationSectionProps {
@@ -56,6 +55,7 @@ function BidEvaluationDetail({
   convert,
   hasRates,
   isLoadingRates,
+  baseCurrency,
 }: {
   project: Project;
   onClose: () => void;
@@ -68,6 +68,7 @@ function BidEvaluationDetail({
   convert: (amount: number, fromCode: string) => number;
   hasRates: boolean;
   isLoadingRates: boolean;
+  baseCurrency: BaseCurrency | null;
 }) {
   const proposals = project.proposals ?? [];
   const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
@@ -114,7 +115,7 @@ function BidEvaluationDetail({
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
           <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Inversión Autorizada</span>
-          <span className="font-mono text-slate-700 font-black">{formatCurrency(project.approvedInvestmentAmount ?? 0)}</span>
+          <span className="font-mono text-slate-700 font-black">{formatBaseCurrency(project.approvedInvestmentAmount ?? 0, baseCurrency)}</span>
           <BsAmount amount={project.approvedInvestmentAmount ?? 0} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
         </div>
 
@@ -151,7 +152,7 @@ function BidEvaluationDetail({
                 align: "right",
                 render: (prop) => (
                   <div>
-                    <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
+                    <span className="font-mono font-medium text-slate-600 block">{formatBaseCurrency(prop.materialCost, baseCurrency)}</span>
                     <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                   </div>
                 ),
@@ -163,7 +164,7 @@ function BidEvaluationDetail({
                 align: "right",
                 render: (prop) => (
                   <div>
-                    <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
+                    <span className="font-mono font-medium text-slate-600 block">{formatBaseCurrency(prop.laborCost, baseCurrency)}</span>
                     <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                   </div>
                 ),
@@ -177,7 +178,7 @@ function BidEvaluationDetail({
                   <div>
                     <div className="flex items-center justify-end gap-1.5">
                       <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
-                        {formatCurrency(prop.totalCost)}
+                        {formatBaseCurrency(prop.totalCost, baseCurrency)}
                       </span>
                       {prop.id === best?.id && (
                         <span className="text-[8px] font-black uppercase tracking-wider bg-success-100 text-success-800 px-1.5 py-0.5 rounded-md border border-success-200">
@@ -232,7 +233,7 @@ function BidEvaluationDetail({
                         {prop.negotiatedAdvancePercent}%
                       </span>
                       <div className="text-[9px] text-slate-400 mt-1 font-semibold">
-                        ({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))})
+                        ({formatBaseCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100), baseCurrency)})
                         <BsAmount amount={prop.totalCost * (prop.negotiatedAdvancePercent / 100)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                       </div>
                       {exceedsMax && (
@@ -307,7 +308,7 @@ export default function BidEvaluationSection({
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
 
   const [rejectingProject, setRejectingProject] = useState<Project | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -410,13 +411,13 @@ export default function BidEvaluationSection({
         if (!best) return <span className="font-mono font-black text-success-700 whitespace-nowrap">—</span>;
         return (
           <div className="text-right whitespace-nowrap">
-            <div className="font-mono font-black text-success-700">{formatCurrency(best.totalCost)}</div>
+            <div className="font-mono font-black text-success-700">{formatBaseCurrency(best.totalCost, baseCurrency)}</div>
             <BsAmount amount={best.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
           </div>
         );
       },
     },
-  ], [convert, hasRates, isLoadingRates]);
+  ], [convert, hasRates, isLoadingRates, baseCurrency]);
 
   return (
     <>
@@ -469,7 +470,7 @@ export default function BidEvaluationSection({
               <GridView
                 items={visibleProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderBidEvaluationCard(p, convert, hasRates, isLoadingRates)}
+                renderCard={(p) => renderBidEvaluationCard(p, convert, hasRates, isLoadingRates, baseCurrency)}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}
                 cardAccent={() => "success"}
@@ -499,6 +500,7 @@ export default function BidEvaluationSection({
           convert={convert}
           hasRates={hasRates}
           isLoadingRates={isLoadingRates}
+          baseCurrency={baseCurrency}
         />
       )}
 

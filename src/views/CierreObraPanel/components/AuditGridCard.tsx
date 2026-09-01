@@ -9,11 +9,10 @@
  */
 
 import { MapPin } from "lucide-react";
-import type { Project } from "../../../types";
+import type { Project, BaseCurrency } from "../../../types";
 import { ProjectStatus } from "../../../types";
 import StatusBadge from "../../../components/UI/StatusBadge";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import { formatCurrency } from "../../../utils";
 import BsAmount from "../../../components/UI/BsAmount";
 
 export function renderAuditCard(
@@ -21,8 +20,10 @@ export function renderAuditCard(
   convert?: (amount: number, fromCode: string) => number,
   hasRates?: boolean,
   isLoadingRates?: boolean,
+  baseCurrency?: BaseCurrency | null,
 ) {
   const isUnderAudit = project.status === ProjectStatus.VERIFICANDO_FINALIZACION;
+  const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="p-3.5 space-y-2.5">
@@ -46,7 +47,7 @@ export function renderAuditCard(
           className="text-[9px]"
         />
         <div className="text-right">
-          <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</div>
+          <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{fmtBase(project.estimatedTotal)}</div>
           {convert && (
             <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
           )}

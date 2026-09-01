@@ -23,10 +23,9 @@ import TableToolbar from "../../../components/UI/TableToolbar";
 import { Table, type Column } from "../../../components/UI/Table";
 import GridView from "../../../components/UI/GridView/GridView";
 import { renderTechnicalReviewCard } from "./TechnicalReviewGridCard";
-import { formatNumber } from "../../../utils";
 import { useContainerRows } from "../../../hooks/useContainerRows";
 import { useTableViewMode } from "../../../hooks/useTableViewMode";
-import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 import { viewSwitchVariants } from "../../../animations";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
@@ -72,7 +71,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
 
   const activeProject = pendingReview.find(p => p.id === selectedProjectId);
   const brand = SEMANTIC_COLOR_MAP.brand;
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
 
   const columns: Column<Project>[] = useMemo(() => [
     {
@@ -125,7 +124,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
       sortable: true,
       render: (p) => (
         <div className="text-right whitespace-nowrap">
-          <div className="font-mono font-bold text-slate-800">${formatNumber(p.estimatedTotal)}</div>
+          <div className="font-mono font-bold text-slate-800">{formatBaseCurrency(p.estimatedTotal, baseCurrency)}</div>
           <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -192,7 +191,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
                 <GridView
                   items={visibleProjects}
                   rowKey={(p) => p.id}
-                  renderCard={(p) => renderTechnicalReviewCard(p, convert, hasRates, isLoadingRates)}
+                  renderCard={(p) => renderTechnicalReviewCard(p, convert, hasRates, isLoadingRates, baseCurrency)}
                   onSelect={(p) => setSelectedProjectId(p.id)}
                   selectedKey={selectedProjectId}
                   cardAccent={() => "brand"}

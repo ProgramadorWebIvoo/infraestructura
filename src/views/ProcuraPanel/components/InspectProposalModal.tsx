@@ -22,7 +22,7 @@ import type { Project, Proposal, ProposalMaterialItem } from "../../../types";
 import { apiDownload } from "../../../services/api";
 import { formatCurrency } from "../../../utils";
 import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import { useCurrencyConversion, formatBs, formatBaseCurrency } from "../../../hooks/useCurrencyConversion";
 import BsAmount from "../../../components/UI/BsAmount";
 
 interface InspectProposalModalProps {
@@ -142,7 +142,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const isRenegotiation = proposal.origen === "RENEGOCIACION";
   const currency = proposal.quoteCurrency;
   const [expandedImage, setExpandedImage] = useState<{ blobUrl: string; alt: string } | null>(null);
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, baseCurrency } = useCurrencyConversion();
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, "USD"))}` : undefined);
 
   // El backend solo puebla estos campos cuando realmente convirtió (moneda
@@ -169,9 +169,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
       <div className="space-y-4">
         {/* Resumen de costos */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOf(proposal.materialCost)} />
-          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOf(proposal.laborCost)} />
-          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOf(proposal.totalCost)} emphasize />
+          <SummaryStat label="Materiales" value={formatBaseCurrency(proposal.materialCost, baseCurrency)} subValue={bsOf(proposal.materialCost)} />
+          <SummaryStat label="Mano de Obra" value={formatBaseCurrency(proposal.laborCost, baseCurrency)} subValue={bsOf(proposal.laborCost)} />
+          <SummaryStat label="Total" value={formatBaseCurrency(proposal.totalCost, baseCurrency)} subValue={bsOf(proposal.totalCost)} emphasize />
           <SummaryStat label="Plazo" value={formatProposalDuration(proposal)} />
         </div>
 
@@ -236,11 +236,11 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
               Origen: Renegociación
             </span>
             <div className="grid grid-cols-3 gap-3">
-              <SummaryStat label="Precio Anterior" value={proposal.precioAnterior != null ? formatCurrency(proposal.precioAnterior) : "—"} subValue={proposal.precioAnterior != null ? bsOf(proposal.precioAnterior) : undefined} compact />
-              <SummaryStat label="Precio Nuevo" value={proposal.precioNuevo != null ? formatCurrency(proposal.precioNuevo) : "—"} subValue={proposal.precioNuevo != null ? bsOf(proposal.precioNuevo) : undefined} compact />
+              <SummaryStat label="Precio Anterior" value={proposal.precioAnterior != null ? formatBaseCurrency(proposal.precioAnterior, baseCurrency) : "—"} subValue={proposal.precioAnterior != null ? bsOf(proposal.precioAnterior) : undefined} compact />
+              <SummaryStat label="Precio Nuevo" value={proposal.precioNuevo != null ? formatBaseCurrency(proposal.precioNuevo, baseCurrency) : "—"} subValue={proposal.precioNuevo != null ? bsOf(proposal.precioNuevo) : undefined} compact />
               <SummaryStat
                 label="Diferencia"
-                value={proposal.diferencia != null ? `${proposal.diferencia > 0 ? "+" : ""}${formatCurrency(proposal.diferencia)}` : "—"}
+                value={proposal.diferencia != null ? `${proposal.diferencia > 0 ? "+" : ""}${formatBaseCurrency(proposal.diferencia, baseCurrency)}` : "—"}
                 subValue={proposal.diferencia != null ? bsOf(proposal.diferencia) : undefined}
                 compact
                 tone={proposal.diferencia != null ? (proposal.diferencia > 0 ? "danger" : "success") : undefined}
@@ -298,11 +298,11 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       <td className="px-3 py-2 text-center font-mono font-bold text-slate-600 text-[11px] align-top">{item.quantity}</td>
                       <td className="px-3 py-2 text-slate-500 font-medium text-[11px] align-top">{item.unit}</td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600 align-top">
-                        {formatCurrency(item.unitPrice)}
+                        {formatBaseCurrency(item.unitPrice, baseCurrency)}
                         <BsAmount amount={item.unitPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-500 align-top">
-                        {item.estimatedPriceUsd ? formatCurrency(item.estimatedPriceUsd) : "—"}
+                        {item.estimatedPriceUsd ? formatBaseCurrency(item.estimatedPriceUsd, baseCurrency) : "—"}
                       </td>
                       <td className="px-3 py-2 text-center align-top">
                         {item.variationPercent != null ? (
@@ -322,7 +322,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                         )}
                       </td>
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px] align-top">
-                        {formatCurrency(item.totalPrice)}
+                        {formatBaseCurrency(item.totalPrice, baseCurrency)}
                         <BsAmount amount={item.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
                       </td>
                     </tr>
@@ -334,7 +334,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       Total materiales:
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                      {formatCurrency(proposal.materialCost)}
+                      {formatBaseCurrency(proposal.materialCost, baseCurrency)}
                       <BsAmount amount={proposal.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
                     </td>
                   </tr>

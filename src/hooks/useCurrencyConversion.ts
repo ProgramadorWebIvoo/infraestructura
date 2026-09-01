@@ -9,11 +9,26 @@
 
 import { useCallback, useMemo } from "react";
 import { truncateToDecimals } from "@ivoo/shared";
+import type { BaseCurrency } from "../types";
 import { useExchangeRatesContext } from "../components/UI/ExchangeRatesProvider";
 
 /** Formatea un monto en Bs.: separador de miles ".", decimales ",", siempre 2 decimales, truncado (no redondeado). */
 export function formatBs(value: number): string {
   return truncateToDecimals(value, 2).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Formatea un monto guardado en USD en la moneda base vigente (símbolo +
+ * valor convertido) — reemplazo de `formatCurrency()` (que siempre mostraba
+ * "$") en todo punto de la UI donde se muestra el monto principal (no el
+ * equivalente en Bs., que sigue siendo `BsAmount`/`formatBs`). Sin
+ * `baseCurrency` cargado (aún cargando, o fuera del provider) degrada a "$"
+ * y al monto en USD tal cual, igual que el `formatCurrency` que reemplaza.
+ */
+export function formatBaseCurrency(amountUsd: number, baseCurrency: BaseCurrency | null): string {
+  const symbol = baseCurrency?.symbol ?? "$";
+  const rate = baseCurrency?.rateToUsd ?? 1;
+  return `${symbol}${(amountUsd / rate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export interface UseCurrencyConversionReturn {
@@ -35,6 +50,10 @@ export interface UseCurrencyConversionReturn {
   isLoading: boolean;
   /** Si hay tasas disponibles */
   hasRates: boolean;
+  /** Moneda base actual */
+  baseCurrency: BaseCurrency | null;
+  /** Si está cargando la moneda base */
+  isLoadingBaseCurrency: boolean;
 }
 
 export function useCurrencyConversion(): UseCurrencyConversionReturn {
@@ -45,6 +64,8 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
   const context = useExchangeRatesContext();
   const exchangeRates = context?.rates ?? [];
   const isLoading = context?.isLoading ?? false;
+  const baseCurrency = context?.baseCurrency ?? null;
+  const isLoadingBaseCurrency = context?.isLoadingBaseCurrency ?? false;
 
   // Construir mapa de tasas por moneda (ej: "USD" → 794.99)
   const rates = useMemo(() => {
@@ -103,5 +124,7 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
     getRate,
     isLoading,
     hasRates: Object.keys(rates).length > 0,
+    baseCurrency,
+    isLoadingBaseCurrency,
   };
 }

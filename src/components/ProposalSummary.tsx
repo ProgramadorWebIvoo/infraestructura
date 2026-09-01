@@ -14,13 +14,12 @@
 import { motion } from "motion/react";
 import { Clock, Star, Trophy, Wallet } from "lucide-react";
 import { containerVariants, itemVariants, springs } from "../animations";
-import { formatCurrency } from "../utils";
-import { useCurrencyConversion, formatBs } from "../hooks/useCurrencyConversion";
+import { useCurrencyConversion, formatBs, formatBaseCurrency } from "../hooks/useCurrencyConversion";
 import type { Project } from "../types";
 
 export default function ProposalSummary({ project }: { project: Project }) {
   const proposals = project.proposals ?? [];
-  const { convert, hasRates } = useCurrencyConversion();
+  const { convert, hasRates, baseCurrency } = useCurrencyConversion();
   if (proposals.length === 0) return null;
 
   const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
@@ -52,7 +51,7 @@ export default function ProposalSummary({ project }: { project: Project }) {
           )}
         </div>
         <div className="relative mt-1.5 font-mono font-black text-success-800 text-2xl tracking-tight">
-          {formatCurrency(best.totalCost)}
+          {formatBaseCurrency(best.totalCost, baseCurrency)}
         </div>
         {hasRates && (
           <div className="relative text-[10px] font-mono font-semibold text-success-600/70 -mt-1">
@@ -72,7 +71,7 @@ export default function ProposalSummary({ project }: { project: Project }) {
             </div>
             <div className="flex justify-between text-[9px] font-mono font-bold text-slate-400">
               <span>{bestPctOfAuthorized.toFixed(0)}% del autorizado</span>
-              <span>{formatCurrency(authorized)}</span>
+              <span>{formatBaseCurrency(authorized, baseCurrency)}</span>
             </div>
           </div>
         )}
@@ -83,14 +82,14 @@ export default function ProposalSummary({ project }: { project: Project }) {
           <Wallet className="h-3 w-3" /> {savings >= 0 ? "Ahorro" : "Sobre Presupuesto"}
         </div>
         <div className={`mt-1 font-mono font-black text-sm ${savings >= 0 ? "text-info-700" : "text-danger-700"}`}>
-          {formatCurrency(Math.abs(savings))}
+          {formatBaseCurrency(Math.abs(savings), baseCurrency)}
         </div>
         {hasRates && (
           <div className={`text-[9px] font-mono ${savings >= 0 ? "text-info-500/70" : "text-danger-500/70"}`}>
             Bs. {formatBs(convert(Math.abs(savings), "USD"))}
           </div>
         )}
-        <div className="text-[10px] text-slate-500 font-medium">vs {formatCurrency(authorized)} autorizado</div>
+        <div className="text-[10px] text-slate-500 font-medium">vs {formatBaseCurrency(authorized, baseCurrency)} autorizado</div>
       </motion.div>
 
       <motion.div variants={itemVariants} className="rounded-xl border border-neutral-100 bg-neutral-50/40 p-3">

@@ -32,6 +32,7 @@ import SidebarTip from "./SidebarTip";
 import SidebarCollapseHint from "./SidebarCollapseHint";
 import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
+import ExchangeRatesSidebarSection from "./ExchangeRatesSidebarSection";
 import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
 import { getUserInitials } from "../../utils";
 
@@ -315,6 +316,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
           {/* ── Configuration Dropdown ────────────────────────────────────── */}
           {canAccess("/usuarios") && <ConfigDropdown isCollapsed={effectiveCollapsed} onClose={onClose} />}
         </nav>
+
+        {/* ── Exchange Rates Section ───────────────────────────────────────── */}
+        <ExchangeRatesSidebarSection userRole={activeRole} isCollapsed={effectiveCollapsed} />
 
         {/* ── Sidebar Footer ──────────────────────────────────────────────── */}
         <div className={`border-t border-slate-800/80 shrink-0 space-y-2 ${effectiveCollapsed ? "p-2" : "p-4"}`}>

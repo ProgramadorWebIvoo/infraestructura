@@ -45,6 +45,9 @@ export default function ExchangeRatesBadge({ userRole }: ExchangeRatesBadgeProps
   const c = SEMANTIC_COLOR_MAP.brand;
   const hasRates = latestRates.usd || latestRates.eur;
 
+  // Las tasas del backend ya son finales (USD→Bs. y EUR→Bs.), no necesitan conversión
+  const eurToBs = latestRates.eur?.rate_to_usd ?? 1;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -4 }}
@@ -103,7 +106,7 @@ export default function ExchangeRatesBadge({ userRole }: ExchangeRatesBadgeProps
               <div className="flex items-baseline gap-1">
                 <span className="text-xs font-bold text-text-secondary">€</span>
                 <span className={`text-xs font-black font-mono ${c.text700}`}>
-                  {formatBs(latestRates.eur.rate_to_usd)}
+                  {formatBs(eurToBs)}
                 </span>
                 <span className="text-[9px] font-semibold text-text-tertiary">Bs.</span>
               </div>

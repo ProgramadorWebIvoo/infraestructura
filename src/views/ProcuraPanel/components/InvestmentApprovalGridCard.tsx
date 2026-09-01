@@ -9,8 +9,7 @@
  */
 
 import { MapPin } from "lucide-react";
-import type { Project } from "../../../types";
-import { formatNumber } from "../../../utils";
+import type { Project, BaseCurrency } from "../../../types";
 import BsAmount from "../../../components/UI/BsAmount";
 
 function TypeBadge({ type }: { type: Project["type"] }) {
@@ -26,7 +25,9 @@ export function renderInvestmentApprovalCard(
   convert?: (amount: number, fromCode: string) => number,
   hasRates?: boolean,
   isLoadingRates?: boolean,
+  baseCurrency?: BaseCurrency | null,
 ) {
+  const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
     <div className="p-3.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -41,7 +42,7 @@ export function renderInvestmentApprovalCard(
       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
         <span className="text-[10px] font-mono font-bold text-slate-400">{project.createdDate}</span>
         <div className="text-right">
-          <div className="font-mono font-bold text-brand-700">${formatNumber(project.estimatedTotal)}</div>
+          <div className="font-mono font-bold text-brand-700">{fmtBase(project.estimatedTotal)}</div>
           {convert && (
             <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
           )}
