@@ -42,6 +42,10 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
   const max = Math.max(...prices);
   const range = max - min || 1;
 
+  // Detectar si hay múltiples monedas
+  const currencies = [...new Set(entries.map((e) => e.original_currency ?? "USD"))];
+  const hasMultipleCurrencies = currencies.length > 1;
+
   const points = entries.map((e, i) => {
     const x = padding + (i / (entries.length - 1)) * (width - padding * 2);
     const y = height - padding - ((e.price_usd - min) / range) * (height - padding * 2);
@@ -57,10 +61,17 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold text-text-muted">
-          ${min.toLocaleString("en-US", { minimumFractionDigits: 2 })} — ${max.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <span className="text-[11px] font-bold text-text-muted">
+            ${min.toLocaleString("en-US", { minimumFractionDigits: 2 })} — ${max.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </span>
+          {hasMultipleCurrencies && (
+            <div className="text-[9px] text-text-muted font-medium mt-0.5">
+              Incluye conversiones ({currencies.join(", ")})
+            </div>
+          )}
+        </div>
         <span className={`inline-flex items-center gap-1.5 text-xs font-black ${changePercent >= 0 ? "text-text-primary" : "text-text-primary"}`}>
           <TrendingUp className={`h-4 w-4 ${changePercent >= 0 ? "text-semantic-success" : "text-semantic-critical"} ${changePercent < 0 ? "rotate-180" : ""}`} />
           <span className={changePercent >= 0 ? "text-semantic-success" : "text-semantic-critical"}>
@@ -83,20 +94,24 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
         </defs>
         <path d={areaPath} fill="url(#price-history-fill)" />
         <path d={path} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {points.map((p) => (
-          <Tooltip content={`$${p.entry.price_usd.toFixed(2)} — ${new Date(p.entry.quoted_at).toLocaleDateString("es-VE")} (${p.entry.supplier_code})`}>
-            <circle
-              key={p.entry.id}
-              cx={p.x}
-              cy={p.y}
-              r="3.5"
-              fill="var(--color-accent-primary)"
-              className="cursor-help"
-              style={{ opacity: 0.85 }}
-            >
-            </circle>
-          </Tooltip>
-        ))}
+        {points.map((p) => {
+          const currency = p.entry.original_currency ?? "USD";
+          const tooltipText = currency !== "USD"
+            ? `${p.entry.original_price.toFixed(2)} ${currency} = $${p.entry.price_usd.toFixed(2)} — ${new Date(p.entry.quoted_at).toLocaleDateString("es-VE")} (${p.entry.supplier_code})`
+            : `$${p.entry.price_usd.toFixed(2)} — ${new Date(p.entry.quoted_at).toLocaleDateString("es-VE")} (${p.entry.supplier_code})`;
+          return (
+            <Tooltip key={p.entry.id} content={tooltipText}>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="3.5"
+                fill="var(--color-accent-primary)"
+                className="cursor-help"
+                style={{ opacity: 0.85 }}
+              />
+            </Tooltip>
+          );
+        })}
       </svg>
         
       <p className="text-[10px] text-text-muted italic">💡 Pasa el cursor sobre los puntos para ver detalles de cada cotización</p>
@@ -193,7 +208,7 @@ export default function CatalogProductDetailModal({ product, onClose }: CatalogP
                 <TrendingUp className="h-4 w-4" /> Histórico de precios
               </h4>
               <p className="text-[10px] text-text-muted">
-                Serie histórica siempre en <strong>USD</strong> para que sea comparable en el tiempo, aunque la moneda base cambie.
+                Serie histórica en <strong>USD</strong> para comparabilidad. Cuando hay cotizaciones en otras monedas (EUR, etc.), se convierten a USD según tasa BCV vigente en el momento.
               </p>
             </div>
             {isLoadingHistory ? (

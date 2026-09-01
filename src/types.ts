@@ -106,6 +106,7 @@ export interface ContractorHistoryMonthEntry {
   month: string; // 'YYYY-MM'
   quoteCount: number;
   avgPriceUsd: number | null;
+  hasMultipleCurrencies?: boolean; // Indica si hay múltiples monedas en el período
 }
 
 export interface ContractorHistoryTopProduct {
@@ -113,6 +114,7 @@ export interface ContractorHistoryTopProduct {
   productName: string;
   quoteCount: number;
   lastPriceUsd: number;
+  lastCurrency?: string; // Moneda original de la última cotización
   variationPercent: number;
 }
 
@@ -122,6 +124,7 @@ export interface ContractorHistoryCustomProduct {
   quoteCount: number;
   firstPriceUsd: number;
   lastPriceUsd: number;
+  lastCurrency?: string; // Moneda original de la última cotización
   variationPercent: number;
   firstQuotedAt: string;
   lastQuotedAt: string;

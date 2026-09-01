@@ -168,7 +168,7 @@ function VariationBadge({ percent }: { percent: number }) {
   );
 }
 
-function ProductRow({ name, meta, priceLabel, variationPercent }: { name: string; meta: string; priceLabel: string; variationPercent: number }) {
+function ProductRow({ name, meta, priceLabel, variationPercent, currency }: { name: string; meta: string; priceLabel: string; variationPercent: number; currency?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3 text-xs">
       <div className="min-w-0">
@@ -176,7 +176,12 @@ function ProductRow({ name, meta, priceLabel, variationPercent }: { name: string
         <div className="mt-0.5 text-[11px] text-text-muted">{meta}</div>
       </div>
       <div className="flex shrink-0 items-center gap-2 text-right">
-        <div className="font-mono font-black text-text-primary">{priceLabel}</div>
+        <div className="flex flex-col items-end">
+          <div className="font-mono font-black text-text-primary">{priceLabel}</div>
+          {currency && currency !== 'USD' && (
+            <div className="text-[10px] text-text-muted font-medium">{currency}</div>
+          )}
+        </div>
         <VariationBadge percent={variationPercent} />
       </div>
     </div>
@@ -265,7 +270,11 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                     <SectionHeading
                       icon={TrendingUp}
                       title="Precio promedio mensual"
-                      description="Promedio de precios cotizados en USD por mes, sobre todas las líneas de propuestas de este proveedor."
+                      description={
+                        history?.monthlySeries.some(s => s.hasMultipleCurrencies)
+                          ? "Promedio de precios en USD por mes (incluye conversiones de EUR y otras monedas según tasa BCV vigente)."
+                          : "Promedio de precios cotizados en USD por mes, sobre todas las líneas de propuestas de este proveedor."
+                      }
                     />
                     {isLoading ? <SkeletonPriceChart /> : history ? <MonthlySeriesChart series={history.monthlySeries} /> : null}
                   </div>
@@ -288,6 +297,7 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                               meta={`${p.quoteCount} cotización${p.quoteCount !== 1 ? "es" : ""}`}
                               priceLabel={formatUsd(p.lastPriceUsd)}
                               variationPercent={p.variationPercent}
+                              currency={p.lastCurrency}
                             />
                           ))}
                         </div>
@@ -318,6 +328,7 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                               meta={`${p.quoteCount} cotización${p.quoteCount !== 1 ? "es" : ""} · desde ${formatUsd(p.firstPriceUsd)}`}
                               priceLabel={formatUsd(p.lastPriceUsd)}
                               variationPercent={p.variationPercent}
+                              currency={p.lastCurrency}
                             />
                           ))}
                         </div>
