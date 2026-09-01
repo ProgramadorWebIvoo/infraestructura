@@ -46,7 +46,7 @@ interface RenegotiateProposalModalProps {
 
 export default function RenegotiateProposalModal({ project, proposal, onClose, onRenegotiateProposal }: RenegotiateProposalModalProps) {
   const maxAdvancePercent = useMaxAdvancePercent();
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, convertBetween, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const buildMaterialRows = (): MaterialItemRow[] =>
     (proposal.materialItems ?? []).length > 0
@@ -77,10 +77,15 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
   const motivoFilled = motivo.trim().length > 0;
   const materialCostTotal = materialRows.reduce((sum, r) => sum + r.totalPrice, 0);
   const newTotal = materialCostTotal + (Number(laborCost) || 0);
+
+  // Convertir ambos precios a USD para comparación correcta
+  const priceAnteriorUSD = proposal.totalCostOriginal != null && proposal.quoteCurrency ? convertBetween(proposal.totalCostOriginal, proposal.quoteCurrency, "USD") : proposal.totalCost;
+  const priceNuevoUSD = quoteCurrency !== "USD" ? convertBetween(newTotal, quoteCurrency, "USD") : newTotal;
+  const diferencia = priceNuevoUSD - priceAnteriorUSD;
+
   const approvedBudget = project.approvedInvestmentAmount ?? 0;
-  const exceedsBudget = approvedBudget > 0 && newTotal > approvedBudget;
-  const budgetExcess = newTotal - approvedBudget;
-  const diferencia = newTotal - proposal.totalCost;
+  const exceedsBudget = approvedBudget > 0 && priceNuevoUSD > approvedBudget;
+  const budgetExcess = priceNuevoUSD - approvedBudget;
   const minFechaOferta = proposal.fechaOferta;
   const exceedsAdvance = advancePercent !== "" && advancePercent > maxAdvancePercent;
   const motivoAnticipoRequired = exceedsAdvance;
@@ -123,11 +128,12 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
 
     setIsSubmitting(true);
     try {
+      const materialCostUSD = quoteCurrency !== "USD" ? convertBetween(materialCostTotal, quoteCurrency, "USD") : materialCostTotal;
       await onRenegotiateProposal(project.id, proposal.id, {
-        materialCost: materialCostTotal,
+        materialCost: materialCostUSD,
         materialItems,
         laborCost: laborCostNum,
-        totalCost: newTotal,
+        totalCost: priceNuevoUSD,
         deliveryWeeks,
         durationValue: durationValueNum,
         durationUnit,
@@ -161,11 +167,15 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
         {/* Precio anterior — solo lectura, tomado directamente del registro que se reemplaza */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-lg bg-warning-50/50 border border-warning-100">
           <div>
-            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Anterior</span>
+            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Precio Anterior
+              {proposal.quoteCurrency && <span className="ml-1 text-slate-400 font-normal">({proposal.quoteCurrency})</span>}
+            </span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-600">
               {proposal.totalCostOriginal != null && proposal.quoteCurrency ? (
                 <>
                   {formatCurrency(proposal.totalCostOriginal, proposal.quoteCurrency)}
+                  {proposal.quoteCurrency !== "USD" && <span className="text-slate-400 font-medium ml-1">= {formatCurrency(priceAnteriorUSD)}</span>}
                   <BsAmount amount={proposal.totalCostOriginal} fromCode={proposal.quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                 </>
               ) : (
@@ -177,18 +187,22 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             </div>
           </div>
           <div>
-            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Precio Nuevo</span>
+            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Precio Nuevo
+              {quoteCurrency && <span className="ml-1 text-slate-400 font-normal">({quoteCurrency})</span>}
+            </span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-700">
               {formatCurrency(newTotal, quoteCurrency)}
+              {quoteCurrency !== "USD" && <span className="text-slate-400 font-medium ml-1">= {formatCurrency(priceNuevoUSD)}</span>}
               <BsAmount amount={newTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
           <div>
-            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia</span>
+            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia (USD)</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold">
               <div className="flex items-center gap-1.5">
                 <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
-                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia))}</span>
+                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia), "USD")}</span>
                 <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
               </div>
               <BsAmount amount={Math.abs(diferencia)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
