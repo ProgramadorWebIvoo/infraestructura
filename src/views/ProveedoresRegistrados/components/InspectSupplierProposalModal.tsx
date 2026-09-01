@@ -10,7 +10,7 @@
  */
 
 import React, { useMemo } from "react";
-import { Clock, FileSearch, HandCoins, Mail, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { Clock, FileSearch, HandCoins, Mail } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
 import { Table } from "../../../components/UI/Table";
 import SummaryStat from "../../../components/UI/SummaryStat";
@@ -116,27 +116,11 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
                 { key: "unitPrice", label: `PROP (${currency})`, align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{formatCurrency(item.unitPrice || 0, currency)}</span> },
                 { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span> },
                 { key: "variation", label: "VAR%", align: "right", render: (item: any) => (
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="font-mono font-bold text-slate-700 text-[11px]">{item.variationLabel || "—"}</span>
-                    {item.variationDirection === 'increase' && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded">
-                        <TrendingUp className="h-3.5 w-3.5 text-red-600" />
-                        <span className="text-[9px] font-bold text-red-600">Aumento</span>
-                      </div>
-                    )}
-                    {item.variationDirection === 'decrease' && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 rounded">
-                        <TrendingDown className="h-3.5 w-3.5 text-emerald-600" />
-                        <span className="text-[9px] font-bold text-emerald-600">Baja</span>
-                      </div>
-                    )}
-                    {item.variationDirection === 'stable' && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded">
-                        <Minus className="h-3.5 w-3.5 text-slate-500" />
-                        <span className="text-[9px] font-bold text-slate-500">Estable</span>
-                      </div>
-                    )}
-                  </div>
+                  item.variationDirection && item.variationLabel ? (
+                    <VariationBadge label={item.variationLabel} direction={item.variationDirection} />
+                  ) : (
+                    <span className="text-slate-400 text-[11px]">—</span>
+                  )
                 ) },
                 { key: "totalPrice", label: `Total (${currency})`, align: "right", render: (item: any) => (
                   <div>
