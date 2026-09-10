@@ -8,9 +8,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent, waitFor, type RenderResult } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 import UsuariosPanel from "@/views/UsuariosPanel";
 import type { UserRecord } from "@/hooks/useUsuarios";
+
+// UsuariosPanel usa useUsuarios() → usePolledFetch(), que requiere un
+// QueryClient en contexto (ver App.tsx). Un client nuevo por render evita
+// que la caché de un test se filtre al siguiente.
+function render(ui: ReactElement): RenderResult {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 vi.mock("motion/react", () => ({
   useReducedMotion: () => false,

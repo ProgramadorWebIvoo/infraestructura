@@ -72,6 +72,169 @@ function BidEvaluationDetail({
   const proposals = project.proposals ?? [];
   const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
 
+  // useMemo: columns es dependencia del useMemo de sorting interno de
+  // Table.tsx — sin memoizar, cualquier render de este modal (ej. hover en
+  // un botón) re-renderiza toda la tabla comparativa sin necesidad.
+  const columns = useMemo<Column<Proposal>[]>(() => [
+    {
+      key: "contractor",
+      label: "Contratista (Código)",
+      width: "13rem",
+      render: (prop) => (
+        <div className="flex items-center gap-2">
+          {prop.id === best?.id && (
+            <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-success-100 text-success-600" aria-hidden="true">
+              <Trophy className="h-3.5 w-3.5" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <div className="font-bold text-slate-800 text-[12px] truncate">{prop.contractorName}</div>
+            <div className="font-mono text-[9px] text-success-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
+            <div className="text-[10px] text-slate-400 mt-1 max-w-xs truncate font-medium" title={prop.description}>{prop.description}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "materialCost",
+      label: "Materiales",
+      width: "7.5rem",
+      align: "right",
+      render: (prop) => (
+        <div>
+          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
+          <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
+    },
+    {
+      key: "laborCost",
+      label: "Mano de Obra",
+      width: "7.5rem",
+      align: "right",
+      render: (prop) => (
+        <div>
+          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
+          <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
+    },
+    {
+      key: "totalCost",
+      label: "Costo Total",
+      width: "9rem",
+      align: "right",
+      render: (prop) => (
+        <div>
+          <div className="flex items-center justify-end gap-1.5">
+            <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
+              {formatCurrency(prop.totalCost)}
+            </span>
+            {prop.id === best?.id && (
+              <span className="text-[8px] font-black uppercase tracking-wider bg-success-100 text-success-800 px-1.5 py-0.5 rounded-md border border-success-200">
+                Mejor
+              </span>
+            )}
+          </div>
+          <BsAmount amount={prop.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+        </div>
+      ),
+    },
+    {
+      key: "semaphore",
+      label: "Semáforo",
+      width: "6.5rem",
+      align: "center",
+      render: (prop) => {
+        const authorized = project.approvedInvestmentAmount ?? 0;
+        const pct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
+        const colors = SEMAPHORE_COLORS[levelOf(pct)];
+        return (
+          <div className="flex flex-col items-center gap-1 w-20">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold text-[10px] border ${colors.text} ${colors.bg}`}>
+              <Gauge className="h-3 w-3" />
+              {Math.round(pct)}%
+            </span>
+            <div className="h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div className={`h-full rounded-full ${colors.bar}`} style={{ width: `${Math.min(100, pct)}%` }} />
+            </div>
+          </div>
+        );
+      },
+    },
+    { key: "deliveryWeeks", label: "Entrega", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{formatProposalDuration(prop)}</span> },
+    {
+      key: "advance",
+      label: "Anticipo Pactado",
+      width: "8rem",
+      align: "center",
+      render: (prop) => {
+        const exceedsMax = prop.negotiatedAdvancePercent > maxAdvancePercent;
+        return (
+          <>
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-[10px] border ${
+                exceedsMax
+                  ? "bg-warning-50 text-warning-800 border-warning-200"
+                  : "bg-success-50 text-success-800 border-success-200"
+              }`}
+            >
+              {exceedsMax && <AlertTriangle className="h-3 w-3" />}
+              {prop.negotiatedAdvancePercent}%
+            </span>
+            <div className="text-[9px] text-slate-400 mt-1 font-semibold">
+              ({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))})
+              <BsAmount amount={prop.totalCost * (prop.negotiatedAdvancePercent / 100)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
+            </div>
+            {exceedsMax && (
+              <div className="text-[8px] text-warning-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      key: "actions",
+      label: "Contratación",
+      width: "11.5rem",
+      align: "center",
+      render: (prop) => {
+        const authorized = project.approvedInvestmentAmount ?? 0;
+        const executedPct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
+        return (
+          <div className="flex items-center justify-center gap-1.5">
+            <Tooltip content="Inspeccionar" placement="top">
+              <Button
+                id={`btn-inspect-${project.id}-${prop.contractorCode}`}
+                onClick={() => onInspect(prop)}
+                variant="secondary"
+                size="sm"
+                icon={<Eye className="h-3.5 w-3.5" />}
+              />
+            </Tooltip>
+            <Button
+              id={`btn-hire-${project.id}-${prop.contractorCode}`}
+              onClick={() => onHire({
+                projectId: project.id,
+                contractorCode: prop.contractorCode,
+                proposalId: prop.id,
+                contractorName: prop.contractorName,
+                advancePercent: prop.negotiatedAdvancePercent,
+                executedPct,
+              })}
+              variant="primary"
+              colorScheme="sky"
+              size="sm"
+              icon={<ShieldCheck className="h-4 w-4" />}
+            >
+              Adjudicar
+            </Button>
+          </div>
+        );
+      },
+    },
+  ], [project, best, levelOf, maxAdvancePercent, convert, hasRates, isLoadingRates, onInspect, onHire]);
+
   return (
     <Modal
       isOpen
@@ -124,165 +287,7 @@ function BidEvaluationDetail({
         {/* Cuadro comparativo de propuestas */}
         <div className="border border-slate-100 rounded-xl bg-white overflow-hidden shadow-xs">
           <Table
-            columns={[
-              {
-                key: "contractor",
-                label: "Contratista (Código)",
-                width: "13rem",
-                render: (prop) => (
-                  <div className="flex items-center gap-2">
-                    {prop.id === best?.id && (
-                      <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-success-100 text-success-600" aria-hidden="true">
-                        <Trophy className="h-3.5 w-3.5" />
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 text-[12px] truncate">{prop.contractorName}</div>
-                      <div className="font-mono text-[9px] text-success-600 font-bold mt-0.5">Código: {prop.contractorCode}</div>
-                      <div className="text-[10px] text-slate-400 mt-1 max-w-xs truncate font-medium" title={prop.description}>{prop.description}</div>
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                key: "materialCost",
-                label: "Materiales",
-                width: "7.5rem",
-                align: "right",
-                render: (prop) => (
-                  <div>
-                    <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
-                    <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
-                  </div>
-                ),
-              },
-              {
-                key: "laborCost",
-                label: "Mano de Obra",
-                width: "7.5rem",
-                align: "right",
-                render: (prop) => (
-                  <div>
-                    <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
-                    <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
-                  </div>
-                ),
-              },
-              {
-                key: "totalCost",
-                label: "Costo Total",
-                width: "9rem",
-                align: "right",
-                render: (prop) => (
-                  <div>
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
-                        {formatCurrency(prop.totalCost)}
-                      </span>
-                      {prop.id === best?.id && (
-                        <span className="text-[8px] font-black uppercase tracking-wider bg-success-100 text-success-800 px-1.5 py-0.5 rounded-md border border-success-200">
-                          Mejor
-                        </span>
-                      )}
-                    </div>
-                    <BsAmount amount={prop.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
-                  </div>
-                ),
-              },
-              {
-                key: "semaphore",
-                label: "Semáforo",
-                width: "6.5rem",
-                align: "center",
-                render: (prop) => {
-                  const authorized = project.approvedInvestmentAmount ?? 0;
-                  const pct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
-                  const colors = SEMAPHORE_COLORS[levelOf(pct)];
-                  return (
-                    <div className="flex flex-col items-center gap-1 w-20">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold text-[10px] border ${colors.text} ${colors.bg}`}>
-                        <Gauge className="h-3 w-3" />
-                        {Math.round(pct)}%
-                      </span>
-                      <div className="h-1 w-full rounded-full bg-slate-100 overflow-hidden">
-                        <div className={`h-full rounded-full ${colors.bar}`} style={{ width: `${Math.min(100, pct)}%` }} />
-                      </div>
-                    </div>
-                  );
-                },
-              },
-              { key: "deliveryWeeks", label: "Entrega", width: "6.5rem", align: "center", render: (prop) => <span className="text-slate-600 font-semibold">{formatProposalDuration(prop)}</span> },
-              {
-                key: "advance",
-                label: "Anticipo Pactado",
-                width: "8rem",
-                align: "center",
-                render: (prop) => {
-                  const exceedsMax = prop.negotiatedAdvancePercent > maxAdvancePercent;
-                  return (
-                    <>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-[10px] border ${
-                          exceedsMax
-                            ? "bg-warning-50 text-warning-800 border-warning-200"
-                            : "bg-success-50 text-success-800 border-success-200"
-                        }`}
-                      >
-                        {exceedsMax && <AlertTriangle className="h-3 w-3" />}
-                        {prop.negotiatedAdvancePercent}%
-                      </span>
-                      <div className="text-[9px] text-slate-400 mt-1 font-semibold">
-                        ({formatCurrency(prop.totalCost * (prop.negotiatedAdvancePercent / 100))})
-                        <BsAmount amount={prop.totalCost * (prop.negotiatedAdvancePercent / 100)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
-                      </div>
-                      {exceedsMax && (
-                        <div className="text-[8px] text-warning-600 font-bold mt-0.5">Supera máx. {maxAdvancePercent}%</div>
-                      )}
-                    </>
-                  );
-                },
-              },
-              {
-                key: "actions",
-                label: "Contratación",
-                width: "11.5rem",
-                align: "center",
-                render: (prop) => {
-                  const authorized = project.approvedInvestmentAmount ?? 0;
-                  const executedPct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
-                  return (
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Tooltip content="Inspeccionar" placement="top">
-                        <Button
-                          id={`btn-inspect-${project.id}-${prop.contractorCode}`}
-                          onClick={() => onInspect(prop)}
-                          variant="secondary"
-                          size="sm"
-                          icon={<Eye className="h-3.5 w-3.5" />}
-                        />
-                      </Tooltip>
-                      <Button
-                        id={`btn-hire-${project.id}-${prop.contractorCode}`}
-                        onClick={() => onHire({
-                          projectId: project.id,
-                          contractorCode: prop.contractorCode,
-                          proposalId: prop.id,
-                          contractorName: prop.contractorName,
-                          advancePercent: prop.negotiatedAdvancePercent,
-                          executedPct,
-                        })}
-                        variant="primary"
-                        colorScheme="sky"
-                        size="sm"
-                        icon={<ShieldCheck className="h-4 w-4" />}
-                      >
-                        Adjudicar
-                      </Button>
-                    </div>
-                  );
-                },
-              },
-            ]}
+            columns={columns}
             data={proposals}
             rowKey={(prop) => prop.id}
             selectedRowKey={best?.id}

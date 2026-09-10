@@ -21,6 +21,7 @@ export function useCatalogProducts(authToken: string, showToast: ShowToast) {
     usePolledFetch<CatalogProduct>({
       authToken,
       showToast,
+      queryKey: ["catalogProducts"],
       // apiFetch ya desenvuelve el `.data` de nivel superior (convención
       // Laravel) — acá ese `.data` desenvuelto ES el array de productos del
       // paginador (el paginador es {data, current_page, ...}, y su `data`
@@ -34,6 +35,7 @@ export function useCatalogProducts(authToken: string, showToast: ShowToast) {
     usePolledFetch<CatalogCategory>({
       authToken,
       showToast,
+      queryKey: ["catalogCategories"],
       fetcher: useCallback(() => apiFetch<CatalogCategory[]>("/catalog-categories"), []),
       getSignature: useCallback((data: CatalogCategory[]) => data.map((c) => c.id).join("|"), []),
       errorMessage: "No se pudieron cargar las categorías de catálogo.",

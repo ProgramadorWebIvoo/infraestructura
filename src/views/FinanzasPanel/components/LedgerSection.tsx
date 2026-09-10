@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 import { ArrowUpRight, FileSpreadsheet, FileText, Search, Wallet, HandCoins, ReceiptText } from "lucide-react";
 import Card from "../../../components/UI/Card";
 import SectionHeader from "../../../components/UI/SectionHeader";
-import { Table } from "../../../components/UI/Table";
+import { Table, type Column } from "../../../components/UI/Table";
 import ExportButton, { type ExportColumn, type ExportRow } from "../../../components/UI/ExportButton";
 import { useDebounce } from "../../../hooks/useDebounce";
 
@@ -37,6 +37,19 @@ const FILTERS: { key: TypeFilter; label: string }[] = [
   { key: "TODOS", label: "Todos" },
   { key: "ANTICIPO", label: "Anticipos" },
   { key: "LIQUIDACIÓN_FINAL", label: "Liquidaciones" },
+];
+
+// Definidas a nivel de módulo (no dependen de props/estado): antes eran un
+// array literal inline en el JSX de <Table columns={[...]} />, recreado en
+// cada render — columns es dependencia del useMemo de sorting interno de
+// Table.tsx, así que invalidarlo de más re-renderizaba toda la tabla.
+const ledgerColumns: Column<LedgerEntry>[] = [
+  { key: "voucher", label: "ID Voucher", sortable: true, render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-slate-400 shrink-0" />{tx.voucher}</span> },
+  { key: "title", label: "Ref. Obra", sortable: true, render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
+  { key: "type", label: "Tipo Egreso", sortable: true, render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 border border-rose-100" : "bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
+  { key: "contractorCode", label: "Proveedor (Código)", sortable: true, render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
+  { key: "date", label: "Fecha Pago", sortable: true, render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
+  { key: "amount", label: "Monto Desembolsado", align: "right", sortable: true, render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
 ];
 
 export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
@@ -203,14 +216,7 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
 
       <div className="max-h-96 overflow-y-auto scroll-smooth">
         <Table
-          columns={[
-            { key: "voucher", label: "ID Voucher", sortable: true, render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-slate-400 shrink-0" />{tx.voucher}</span> },
-            { key: "title", label: "Ref. Obra", sortable: true, render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
-            { key: "type", label: "Tipo Egreso", sortable: true, render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 border border-rose-100" : "bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
-            { key: "contractorCode", label: "Proveedor (Código)", sortable: true, render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
-            { key: "date", label: "Fecha Pago", sortable: true, render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
-            { key: "amount", label: "Monto Desembolsado", align: "right", sortable: true, render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
-          ]}
+          columns={ledgerColumns}
           data={filteredLedger}
           rowKey={(tx) => tx.id}
           emptyMessage="Ninguna transferencia financiera ha sido efectuada aún."

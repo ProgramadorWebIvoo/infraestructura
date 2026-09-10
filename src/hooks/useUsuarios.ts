@@ -49,6 +49,7 @@ export function useUsuarios(authToken: string, showToast: ShowToast) {
     usePolledFetch<UserRecord>({
       authToken,
       showToast,
+      queryKey: ["users"],
       fetcher: useCallback(() => apiFetch<UserRecord[]>("/users"), []),
       getSignature: useCallback(
         (data: UserRecord[]) => data.map(u => [u.id, u.name, u.email, u.role, u.status].join(":")).join("|"),

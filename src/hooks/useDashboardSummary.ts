@@ -8,13 +8,19 @@
  * cálculo cliente (computeDashboardSummary) cuando el endpoint no responde —
  * así el dashboard nunca queda vacío y la bandera isExact indica si los
  * números son los oficiales del servidor o una aproximación local.
+ *
+ * Migrado de usePolling+useState a TanStack Query: mismo comportamiento
+ * observable (fallback silencioso al cómputo cliente si el fetch falla,
+ * sin toast — a diferencia de otros hooks polled, acá el fallback ES la
+ * respuesta al error, no un caso aparte), pero con caché compartida por
+ * queryKey si más de una vista consume el dashboard a la vez.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { DashboardSummary, Project } from "../types";
 import { apiFetch } from "../services/api";
 import { useAuth } from "./useAuth";
-import { usePolling } from "./usePolling";
 import { usePollingSettings } from "./usePollingSettings";
 import { computeDashboardSummary } from "../utils/dashboardSummary";
 
@@ -29,38 +35,23 @@ export interface UseDashboardSummaryResult {
 export function useDashboardSummary(projects: Project[]): UseDashboardSummaryResult {
   const { authToken } = useAuth();
   const { dashboardIntervalMs } = usePollingSettings();
-  const [serverSummary, setServerSummary] = useState<DashboardSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const enabled = !!authToken;
 
   const clientSummary = useMemo(() => computeDashboardSummary(projects), [projects]);
 
-  const load = useCallback(
-    async (isPoll = false) => {
-      if (!authToken) return;
-      try {
-        const data = await apiFetch<DashboardSummary>("/dashboard/summary", { token: authToken });
-        setServerSummary(data);
-        setLastSync(new Date());
-      } catch {
-        // Silencioso: se usa el fallback cliente (computeDashboardSummary)
-      } finally {
-        if (!isPoll) setIsLoading(false);
-      }
-    },
-    [authToken],
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  usePolling(useCallback(() => load(true), [load]), dashboardIntervalMs, !!authToken);
+  const query = useQuery({
+    queryKey: ["dashboardSummary", authToken],
+    queryFn: () => apiFetch<DashboardSummary>("/dashboard/summary", { token: authToken }),
+    enabled,
+    refetchInterval: enabled ? dashboardIntervalMs : false,
+    staleTime: Math.max(dashboardIntervalMs - 5000, 0),
+    retry: false,
+  });
 
   return {
-    summary: serverSummary ?? clientSummary,
-    isExact: serverSummary !== null,
-    isLoading,
-    lastSync,
+    summary: query.data ?? clientSummary,
+    isExact: query.data !== undefined,
+    isLoading: query.isPending && enabled,
+    lastSync: query.dataUpdatedAt ? new Date(query.dataUpdatedAt) : null,
   };
 }

@@ -4,101 +4,108 @@
  *
  * Fetch de proyectos y logs de auditoría desde la API Laravel.
  * Extraído de useProjects para separar data-fetching de workflows.
+ *
+ * Migrado de polling manual (usePolling + useState) a TanStack Query:
+ * caché por queryKey ([projects, token] / [auditLogs, token]) compartida
+ * si en el futuro más de un componente usa este hook a la vez, en vez de
+ * cada instancia abriendo su propio timer duplicado. La firma pública
+ * (projects, setProjects, auditLogs, setAuditLogs, isLoading, loadProjects)
+ * se mantiene igual para no tocar los consumidores (useProjects.ts).
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Project, AuditLog } from "../types";
 import { apiFetch } from "../services/api";
 import { logError } from "../services/logger";
 import { INITIAL_PROJECTS, INITIAL_AUDIT_LOGS } from "../data";
 import type { ShowToast } from "./useProjects";
-import { usePolling } from "./usePolling";
 
-type SignatureFn = (projects: Project[], audit: AuditLog[]) => string;
+const POLL_MS = 25000;
 
-const defaultSignatureOf: SignatureFn = (projects, audit) =>
-  projects
-    .map(p => [p.id, p.status, p.proposals?.length ?? 0, p.advancePaidAmount ?? "", p.finalPaidAmount ?? "", p.qualityVerified ?? ""].join(":"))
-    .join("|") +
-  "#" +
-  audit.map(a => a.id).join("|");
+function projectsKey(authToken: string) {
+  return ["projects", authToken] as const;
+}
+function auditLogsKey(authToken: string) {
+  return ["auditLogs", authToken] as const;
+}
+
+type ArrayUpdater<T> = T[] | ((prev: T[]) => T[]);
 
 interface UseProjectsDataOptions {
   authToken: string;
   showToast: ShowToast;
-  /** Custom signature function for polling deduplication. Defaults to id/status/proposals/amounts. */
-  signatureFn?: SignatureFn;
 }
 
-export function useProjectsData({ authToken, showToast, signatureFn }: UseProjectsDataOptions) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions) {
+  const queryClient = useQueryClient();
+  const enabled = !!authToken;
 
-  const signatureOf = signatureFn ?? defaultSignatureOf;
-  const lastSig = useRef("");
-  const prevToken = useRef(authToken);
-  const authTokenRef = useRef(authToken);
-  authTokenRef.current = authToken;
-
-  // Lee authToken/showToast desde refs para evitar race conditions si cambian durante un fetch
+  // Lee showToast desde ref para evitar recrear callbacks si cambia entre renders
   const showToastRef = useRef(showToast);
   showToastRef.current = showToast;
-  const loadProjects = useCallback(async (opts?: { isPoll?: boolean }) => {
-    const token = authTokenRef.current;
-    if (!token) {
-      return; // sin token no hay fetch, pero NO se baja isLoading para que al llegar el token se muestre skeleton
-    }
-    try {
-      const [projectsData, audit] = await Promise.all([
-        apiFetch<Project[]>("/projects", { token }),
-        apiFetch<AuditLog[]>("/audit-logs", { token }),
-      ]);
-      const sig = signatureOf(projectsData, audit);
-      if (opts?.isPoll && sig === lastSig.current) return; // dedupe: evita re-render cada tick
-      lastSig.current = sig;
-      setProjects(projectsData);
-      setAuditLogs(audit);
-    } catch (error) {
-      if (opts?.isPoll) return; // silencioso en poll
-      logError("useProjectsData", error);
-      if (import.meta.env.DEV) {
-        // Solo en desarrollo: datos demo para poder trabajar en la UI sin
-        // backend corriendo. En producción, mostrar fallback de negocio real
-        // sería engañoso (el usuario creería que son obras/pagos reales).
-        setProjects(INITIAL_PROJECTS);
-        setAuditLogs(INITIAL_AUDIT_LOGS);
-        showToastRef.current("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
-      } else {
-        setProjects([]);
-        setAuditLogs([]);
-        showToastRef.current("No se pudo conectar con el servidor. Intenta nuevamente en unos minutos.", "error");
-      }
-    } finally {
-      if (!opts?.isPoll) setIsLoading(false);
-    }
-  }, []); // sin dependencias — todo vía refs para evitar recreación y race conditions
 
-  // Resetear loading + disparar fetch cuando el token pasa de falsy → truthy (login)
+  const projectsQuery = useQuery({
+    queryKey: projectsKey(authToken),
+    queryFn: () => apiFetch<Project[]>("/projects", { token: authToken }),
+    enabled,
+    refetchInterval: enabled ? POLL_MS : false,
+    staleTime: POLL_MS - 5000,
+    retry: false,
+  });
+
+  const auditLogsQuery = useQuery({
+    queryKey: auditLogsKey(authToken),
+    queryFn: () => apiFetch<AuditLog[]>("/audit-logs", { token: authToken }),
+    enabled,
+    refetchInterval: enabled ? POLL_MS : false,
+    staleTime: POLL_MS - 5000,
+    retry: false,
+  });
+
+  const projects = projectsQuery.data ?? [];
+  const auditLogs = auditLogsQuery.data ?? [];
+  // isPending (sin data aún) en vez de isFetching: replica isLoading=true
+  // mientras no hay token (fetch deshabilitado) hasta el primer fetch real.
+  const isLoading = projectsQuery.isPending || auditLogsQuery.isPending;
+
+  // Fallback dev + toast solo en el fetch inicial sin data todavía — una vez
+  // que hay data en caché (éxito o fallback), un fallo de poll en background
+  // no vuelve a dejar la query en estado "error sin data", así que este
+  // efecto no se re-dispara en cada tick fallido (silencioso en poll, igual
+  // que el comportamiento original).
   useEffect(() => {
-    if (!prevToken.current && authToken) {
-      setIsLoading(true);
-      loadProjects();
+    if (!enabled) return;
+    if (!projectsQuery.isError && !auditLogsQuery.isError) return;
+    const error = projectsQuery.error ?? auditLogsQuery.error;
+    logError("useProjectsData", error);
+    if (import.meta.env.DEV) {
+      queryClient.setQueryData(projectsKey(authToken), INITIAL_PROJECTS);
+      queryClient.setQueryData(auditLogsKey(authToken), INITIAL_AUDIT_LOGS);
+      showToastRef.current("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
+    } else {
+      queryClient.setQueryData(projectsKey(authToken), []);
+      queryClient.setQueryData(auditLogsKey(authToken), []);
+      showToastRef.current("No se pudo conectar con el servidor. Intenta nuevamente en unos minutos.", "error");
     }
-    prevToken.current = authToken;
-  }, [authToken, loadProjects]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectsQuery.isError, auditLogsQuery.isError, enabled, authToken]);
 
-  // Carga inicial
-  useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+  const setProjects = useCallback((updater: ArrayUpdater<Project>) => {
+    queryClient.setQueryData<Project[]>(projectsKey(authToken), (prev = []) =>
+      typeof updater === "function" ? updater(prev) : updater);
+  }, [authToken, queryClient]);
 
-  // Polling esencial: projects + auditLogs (mutados por otros roles/dispositivos)
-  usePolling(
-    useCallback(() => loadProjects({ isPoll: true }), [loadProjects]),
-    25000,
-    !!authToken
-  );
+  const setAuditLogs = useCallback((updater: ArrayUpdater<AuditLog>) => {
+    queryClient.setQueryData<AuditLog[]>(auditLogsKey(authToken), (prev = []) =>
+      typeof updater === "function" ? updater(prev) : updater);
+  }, [authToken, queryClient]);
+
+  const loadProjects = useCallback(async () => {
+    if (!authToken) return;
+    await Promise.all([projectsQuery.refetch(), auditLogsQuery.refetch()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken, projectsQuery.refetch, auditLogsQuery.refetch]);
 
   return {
     projects,

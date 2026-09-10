@@ -53,6 +53,7 @@ describe("useCatalog", () => {
     expect(mockUsePolledFetch).toHaveBeenCalledWith({
       authToken: "token",
       showToast,
+      queryKey: expect.any(Array),
       fetcher: expect.any(Function),
       getSignature: expect.any(Function),
       errorMessage: expect.any(String),

@@ -121,7 +121,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (c: ConfigContractor) => {
+  const handleOpenEdit = useCallback((c: ConfigContractor) => {
     setModalMode("edit");
     setEditingCode(c.code);
     setForm({
@@ -134,7 +134,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
       status: c.status,
     });
     setIsModalOpen(true);
-  };
+  }, []);
 
   const handleCloseModal = () => {
     if (isSaving) return;
@@ -239,12 +239,16 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
     }
   };
 
-  const columns = getContractorColumns({
+  // useMemo: `columns` es dependencia del useMemo de ordenamiento interno de
+  // Table.tsx — sin memoizar, cualquier render de este panel (ej. abrir el
+  // modal, tipear en un filtro) crea un array nuevo e invalida ese sorting
+  // innecesariamente, re-renderizando toda la tabla.
+  const columns = useMemo(() => getContractorColumns({
     togglingCode,
     onEdit: handleOpenEdit,
     onRequestToggle: setConfirmToggleCode,
     onViewDetail: setDetailContractor,
-  });
+  }), [togglingCode, handleOpenEdit]);
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">

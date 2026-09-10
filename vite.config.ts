@@ -42,6 +42,28 @@ export default defineConfig(({mode}) => {
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Sin esto, Rollup mezcla React + motion + axios + pdfjs en un
+          // solo chunk (~797 KB) que se invalida completo en cada deploy —
+          // separar vendor por librería permite que el navegador siga
+          // cacheando react-vendor/motion-vendor entre releases que no los
+          // tocan, y evita que pdfjs-dist (grande, usado solo en
+          // DocumentPreviewModal) infle el chunk que carga toda la app.
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('pdfjs-dist')) return 'pdf-vendor';
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('motion')) return 'motion-vendor';
+            if (id.includes('axios') || id.includes('@tanstack')) return 'data-vendor';
+            return 'vendor';
+          },
+        },
+      },
+    },
     test: {
       globals: true,
       environment: 'jsdom',

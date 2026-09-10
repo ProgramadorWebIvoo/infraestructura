@@ -12,7 +12,7 @@
 import React, { useMemo } from "react";
 import { Clock, FileSearch, HandCoins, Mail, HelpCircle } from "lucide-react";
 import Modal from "../../../components/UI/Modal";
-import { Table } from "../../../components/UI/Table";
+import { Table, type Column } from "../../../components/UI/Table";
 import SummaryStat from "../../../components/UI/SummaryStat";
 import VariationBadge from "../../../components/UI/VariationBadge";
 import Tooltip from "../../../components/UI/Tooltip";
@@ -37,6 +37,43 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
   const currency = proposal.quoteCurrency ?? "USD";
   const { convert, hasRates } = useCurrencyConversion();
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, currency))}` : undefined);
+
+  // useMemo: columns es dependencia del useMemo de sorting interno de
+  // Table.tsx — sin memoizar, cualquier render de este modal re-renderiza
+  // toda la tabla de materiales cotizados sin necesidad.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const columns = useMemo<Column<any>[]>(() => [
+    { key: "materialName", label: "Material", render: (item: any) => <span className="font-semibold text-slate-800 text-[11px]">{item.materialName}</span> },
+    { key: "quantity", label: "Cantidad", align: "center", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
+    { key: "unit", label: "Unidad", render: (item: any) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
+    { key: "unitPrice", label: `PROP (${currency})`, align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{formatCurrency(item.unitPrice || 0, currency)}</span> },
+    { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => (
+      <Tooltip content="EST = Precio estimado (promedio histórico 6 meses). Vacío si sin cotizaciones previas.">
+        <div className="flex items-center gap-1 justify-end cursor-help">
+          <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span>
+          <HelpCircle className="h-3 w-3 text-slate-400" />
+        </div>
+      </Tooltip>
+    ) },
+    { key: "variation", label: "VAR%", align: "right", render: (item: any) => (
+      item.variationDirection && item.variationLabel ? (
+        <Tooltip content="VAR% = ((PROP - EST) / EST) × 100. Rango estable: ±5%">
+          <div className="cursor-help">
+            <VariationBadge label={item.variationLabel} direction={item.variationDirection} />
+          </div>
+        </Tooltip>
+      ) : (
+        <span className="text-slate-400 text-[11px]">—</span>
+      )
+    ) },
+    { key: "totalPrice", label: `Total (${currency})`, align: "right", render: (item: any) => (
+      <div>
+        <span className="font-mono font-black text-indigo-700 text-[11px] block">{formatCurrency(item.totalPrice || 0, currency)}</span>
+        {hasRates && <span className="font-mono text-[9px] text-slate-400">Bs. {formatBs(convert(item.totalPrice || 0, currency))}</span>}
+      </div>
+    ) },
+    { key: "notes", label: "Notas", render: (item: any) => <span className="text-slate-400 italic text-[11px]">{item.notes || "—"}</span> },
+  ], [currency, hasRates, convert]);
 
   return (
     <Modal
@@ -114,38 +151,7 @@ function InspectSupplierProposalModalComponent({ proposal, onClose }: InspectSup
           </div>
           <div className="max-h-80 overflow-y-auto overflow-x-auto">
             <Table
-              columns={[
-                { key: "materialName", label: "Material", render: (item: any) => <span className="font-semibold text-slate-800 text-[11px]">{item.materialName}</span> },
-                { key: "quantity", label: "Cantidad", align: "center", render: (item: any) => <span className="font-mono font-bold text-slate-600 text-[11px]">{item.quantity}</span> },
-                { key: "unit", label: "Unidad", render: (item: any) => <span className="text-slate-500 text-[11px]">{item.unit}</span> },
-                { key: "unitPrice", label: `PROP (${currency})`, align: "right", render: (item: any) => <span className="font-mono font-bold text-slate-700 text-[11px]">{formatCurrency(item.unitPrice || 0, currency)}</span> },
-                { key: "estimatedPrice", label: "EST (USD)", align: "right", render: (item: any) => (
-                  <Tooltip content="EST = Precio estimado (promedio histórico 6 meses). Vacío si sin cotizaciones previas.">
-                    <div className="flex items-center gap-1 justify-end cursor-help">
-                      <span className="font-mono font-bold text-slate-600 text-[11px]">{item.estimatedPriceDisplay || "—"}</span>
-                      <HelpCircle className="h-3 w-3 text-slate-400" />
-                    </div>
-                  </Tooltip>
-                ) },
-                { key: "variation", label: "VAR%", align: "right", render: (item: any) => (
-                  item.variationDirection && item.variationLabel ? (
-                    <Tooltip content="VAR% = ((PROP - EST) / EST) × 100. Rango estable: ±5%">
-                      <div className="cursor-help">
-                        <VariationBadge label={item.variationLabel} direction={item.variationDirection} />
-                      </div>
-                    </Tooltip>
-                  ) : (
-                    <span className="text-slate-400 text-[11px]">—</span>
-                  )
-                ) },
-                { key: "totalPrice", label: `Total (${currency})`, align: "right", render: (item: any) => (
-                  <div>
-                    <span className="font-mono font-black text-indigo-700 text-[11px] block">{formatCurrency(item.totalPrice || 0, currency)}</span>
-                    {hasRates && <span className="font-mono text-[9px] text-slate-400">Bs. {formatBs(convert(item.totalPrice || 0, currency))}</span>}
-                  </div>
-                ) },
-                { key: "notes", label: "Notas", render: (item: any) => <span className="text-slate-400 italic text-[11px]">{item.notes || "—"}</span> },
-              ]}
+              columns={columns}
               data={proposal.items}
               rowKey={(item, index) => `${proposal.id}-${index}-${item.materialName}`}
               pageSize={20}

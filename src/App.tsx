@@ -9,6 +9,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Views — lazy-loaded for route-level code-splitting
 const LoginScreen = lazy(() => import("./views/LoginScreen"));
@@ -119,23 +120,42 @@ type AppProps = {
   router?: React.ComponentType<any>;
 };
 
+// QueryClient a nivel de módulo (no dentro de App()): una sola instancia para
+// toda la vida de la pestaña, no una nueva en cada remount de <App/> (tests
+// con múltiples renders, HMR). staleTime por defecto conservador — los hooks
+// de application/ que migren a TanStack Query fijan su propio staleTime
+// alineado a los intervalos de polling ya documentados en Rules/09-METRICS.md
+// (proyectos 25s, notificaciones 8s, catálogos 15s) para no cambiar el
+// comportamiento percibido durante la migración incremental.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 15_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 export default function App({ router: Router = BrowserRouter, ...routerProps }: AppProps & Record<string, unknown> = {}) {
   return (
-    <Router {...routerProps}>
-      <ToastProvider>
-        {/* PublicSettingsProvider por fuera de AppRoutes: este último depende
-            de usePollingSettings(), que ahora lee de aquel contexto en vez de
-            fetchear /settings por su cuenta — un solo GET /settings
-            compartido por toda la sesión en vez de uno por cada hook que lo
-            necesitaba (usePollingSettings, useMaxAdvancePercent,
-            useBudgetSemaphore).
-            NotificationsProvider NO vive aquí a propósito — ver su montaje
-            dentro de AppRoutes, después de resolver la sesión real. */}
-        <PublicSettingsProvider>
-          <AppRoutes />
-        </PublicSettingsProvider>
-      </ToastProvider>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router {...routerProps}>
+        <ToastProvider>
+          {/* PublicSettingsProvider por fuera de AppRoutes: este último depende
+              de usePollingSettings(), que ahora lee de aquel contexto en vez de
+              fetchear /settings por su cuenta — un solo GET /settings
+              compartido por toda la sesión en vez de uno por cada hook que lo
+              necesitaba (usePollingSettings, useMaxAdvancePercent,
+              useBudgetSemaphore).
+              NotificationsProvider NO vive aquí a propósito — ver su montaje
+              dentro de AppRoutes, después de resolver la sesión real. */}
+          <PublicSettingsProvider>
+            <AppRoutes />
+          </PublicSettingsProvider>
+        </ToastProvider>
+      </Router>
+    </QueryClientProvider>
   );
 }
 

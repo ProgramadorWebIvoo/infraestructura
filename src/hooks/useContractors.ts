@@ -18,6 +18,7 @@ export function useContractors(authToken: string, showToast: ShowToast) {
     usePolledFetch<Contractor>({
       authToken,
       showToast,
+      queryKey: ["contractors"],
       fetcher: useCallback(() => apiFetch<Contractor[]>("/contractors"), []),
       getSignature: useCallback(
         (data: Contractor[]) => data.map(c => [c.code, c.name, c.rating].join(":")).join("|"),

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import type { Project, AuditLog } from "../../types";
 import { ProjectStatus } from "../../types";
 
@@ -7,10 +9,6 @@ import { ProjectStatus } from "../../types";
 const mockApiFetch = vi.fn();
 vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
-}));
-
-vi.mock("@/hooks/usePolling", () => ({
-  usePolling: vi.fn(),
 }));
 
 vi.mock("@/services/logger", () => ({
@@ -27,7 +25,6 @@ vi.mock("@/data", () => ({
 }));
 
 import { useProjectsData } from "../../hooks/useProjectsData";
-import { usePolling } from "../../hooks/usePolling";
 
 function createMockProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -47,21 +44,19 @@ function createMockAuditLog(id = "LOG-001"): AuditLog {
   return { id, projectId: "PRJ-001", role: "INFRAESTRUCTURA", action: "Creación", timestamp: "2026-07-01", details: "" } as AuditLog;
 }
 
-/** Helper: flush all pending microtasks (promises) and re-renders */
-async function flushAll() {
-  for (let i = 0; i < 10; i++) {
-    await act(async () => { await Promise.resolve(); });
-  }
+function renderWithClient(authToken: string, showToast = vi.fn()) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+  return { ...renderHook(() => useProjectsData({ authToken, showToast }), { wrapper }), showToast, client };
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 describe("useProjectsData", () => {
-  const showToast = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiFetch.mockReset();
-    (usePolling as ReturnType<typeof vi.fn>).mockImplementation((_cb: () => void, _interval: number, _enabled: boolean) => {});
   });
 
   afterEach(() => {
@@ -72,14 +67,14 @@ describe("useProjectsData", () => {
   // ── Initial state ───────────────────────────────────────────────────────────
   describe("initial state", () => {
     it("starts with empty arrays and isLoading=true", () => {
-      const { result } = renderHook(() => useProjectsData({ authToken: "", showToast }));
+      const { result } = renderWithClient("");
       expect(result.current.projects).toEqual([]);
       expect(result.current.auditLogs).toEqual([]);
       expect(result.current.isLoading).toBe(true);
     });
 
     it("does not fetch when authToken is empty", () => {
-      renderHook(() => useProjectsData({ authToken: "", showToast }));
+      renderWithClient("");
       expect(mockApiFetch).not.toHaveBeenCalled();
     });
   });
@@ -95,15 +90,13 @@ describe("useProjectsData", () => {
         return Promise.reject(new Error("unexpected"));
       });
 
-      const { result } = renderHook(() => useProjectsData({ authToken: "valid-token", showToast }));
+      const { result } = renderWithClient("valid-token");
 
       // Initially loading
       expect(result.current.isLoading).toBe(true);
 
-      // Flush microtasks → fetch completes → state updates
-      await flushAll();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      expect(result.current.isLoading).toBe(false);
       expect(mockApiFetch).toHaveBeenCalledWith("/projects", { token: "valid-token" });
       expect(mockApiFetch).toHaveBeenCalledWith("/audit-logs", { token: "valid-token" });
       expect(result.current.projects).toEqual(projects);
@@ -113,22 +106,18 @@ describe("useProjectsData", () => {
     it("sets isLoading=false even when fetch fails (non-poll)", async () => {
       mockApiFetch.mockRejectedValue(new Error("Network error"));
 
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { result } = renderWithClient("token");
 
-      await flushAll();
-
-      expect(result.current.isLoading).toBe(false);
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
     });
 
     it("en desarrollo, cae a INITIAL_PROJECTS y INITIAL_AUDIT_LOGS en error de fetch", async () => {
       vi.stubEnv("DEV", true);
       mockApiFetch.mockRejectedValue(new Error("API down"));
 
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { result } = renderWithClient("token");
 
-      await flushAll();
-
-      expect(result.current.projects).toEqual(INITIAL_PROJECTS_MOCK);
+      await waitFor(() => expect(result.current.projects).toEqual(INITIAL_PROJECTS_MOCK));
       expect(result.current.auditLogs).toEqual(INITIAL_AUDIT_LOGS_MOCK);
     });
 
@@ -136,13 +125,13 @@ describe("useProjectsData", () => {
       vi.stubEnv("DEV", true);
       mockApiFetch.mockRejectedValue(new Error("API down"));
 
-      renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { showToast } = renderWithClient("token");
 
-      await flushAll();
-
-      expect(showToast).toHaveBeenCalledWith(
-        expect.stringContaining("No se pudo conectar"),
-        "warning",
+      await waitFor(() =>
+        expect(showToast).toHaveBeenCalledWith(
+          expect.stringContaining("No se pudo conectar"),
+          "warning",
+        ),
       );
     });
 
@@ -150,9 +139,9 @@ describe("useProjectsData", () => {
       vi.stubEnv("DEV", false);
       mockApiFetch.mockRejectedValue(new Error("API down"));
 
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { result } = renderWithClient("token");
 
-      await flushAll();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       expect(result.current.projects).toEqual([]);
       expect(result.current.auditLogs).toEqual([]);
@@ -162,62 +151,21 @@ describe("useProjectsData", () => {
       vi.stubEnv("DEV", false);
       mockApiFetch.mockRejectedValue(new Error("API down"));
 
-      renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { showToast } = renderWithClient("token");
 
-      await flushAll();
-
-      expect(showToast).toHaveBeenCalledWith(
-        expect.stringContaining("No se pudo conectar con el servidor"),
-        "error",
+      await waitFor(() =>
+        expect(showToast).toHaveBeenCalledWith(
+          expect.stringContaining("No se pudo conectar con el servidor"),
+          "error",
+        ),
       );
-    });
-  });
-
-  // ── Deduplication via signature ─────────────────────────────────────────────
-  describe("deduplication (signature)", () => {
-    it("avoids re-render when poll returns identical data (same signature)", async () => {
-      const projects = [createMockProject()];
-      const audits = [createMockAuditLog()];
-      mockApiFetch.mockImplementation((url: string) => {
-        if (url === "/projects") return Promise.resolve(projects);
-        if (url === "/audit-logs") return Promise.resolve(audits);
-        return Promise.reject(new Error("unexpected"));
-      });
-
-      // Capture the poll callback
-      let pollCallback: () => Promise<void> = async () => {};
-      (usePolling as ReturnType<typeof vi.fn>).mockImplementation((cb: () => void | Promise<void>) => {
-        pollCallback = cb as () => Promise<void>;
-      });
-
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
-
-      // Wait for initial load
-      await flushAll();
-
-      // Simulate a poll tick with same data
-      mockApiFetch.mockClear();
-      mockApiFetch.mockImplementation((url: string) => {
-        if (url === "/projects") return Promise.resolve(projects);
-        if (url === "/audit-logs") return Promise.resolve(audits);
-        return Promise.reject(new Error("unexpected"));
-      });
-
-      await act(async () => {
-        await pollCallback();
-      });
-      await flushAll();
-
-      // setProjects should NOT have been called because signature matched
-      // We check that mockApiFetch was called but data didn't change
-      expect(mockApiFetch).toHaveBeenCalledTimes(2);
     });
   });
 
   // ── Token lifecycle (login / logout) ────────────────────────────────────────
   describe("token lifecycle", () => {
     it("does NOT fetch when token is empty on mount", () => {
-      renderHook(() => useProjectsData({ authToken: "", showToast }));
+      renderWithClient("");
       expect(mockApiFetch).not.toHaveBeenCalled();
     });
 
@@ -230,90 +178,24 @@ describe("useProjectsData", () => {
         return Promise.reject(new Error("unexpected"));
       });
 
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      );
       const { rerender, result } = renderHook(
-        ({ token }) => useProjectsData({ authToken: token, showToast }),
-        { initialProps: { token: "" } },
+        ({ token }) => useProjectsData({ authToken: token, showToast: vi.fn() }),
+        { initialProps: { token: "" }, wrapper },
       );
 
       expect(mockApiFetch).not.toHaveBeenCalled();
-      await flushAll();
 
       // Simulate login: token changes from "" to "new-token"
-      mockApiFetch.mockClear();
       rerender({ token: "new-token" });
 
-      await flushAll();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       expect(mockApiFetch).toHaveBeenCalled();
-      expect(result.current.isLoading).toBe(false);
       expect(result.current.projects).toEqual(projects);
-    });
-
-    it("sets isLoading back to true when token transitions from falsy to truthy", async () => {
-      mockApiFetch.mockResolvedValue([]);
-      const { rerender, result } = renderHook(
-        ({ token }) => useProjectsData({ authToken: token, showToast }),
-        { initialProps: { token: "" } },
-      );
-
-      // Initially isLoading is true
-      expect(result.current.isLoading).toBe(true);
-
-      // Now login: triggers fetch
-      rerender({ token: "new-token" });
-
-      await flushAll();
-
-      expect(result.current.isLoading).toBe(false);
-    });
-  });
-
-  // ── Polling ─────────────────────────────────────────────────────────────────
-  describe("polling", () => {
-    it("calls usePolling with correct interval and enabled flag", () => {
-      const mockUsePolling = vi.mocked(usePolling);
-
-      renderHook(() => useProjectsData({ authToken: "token", showToast }));
-
-      expect(mockUsePolling).toHaveBeenCalledWith(
-        expect.any(Function),
-        25000,
-        true,
-      );
-    });
-
-    it("disables polling when authToken is empty", () => {
-      const mockUsePolling = vi.mocked(usePolling);
-
-      renderHook(() => useProjectsData({ authToken: "", showToast }));
-
-      expect(mockUsePolling).toHaveBeenCalledWith(
-        expect.any(Function),
-        25000,
-        false,
-      );
-    });
-
-    it("poll callback does not throw when fetch fails (silent)", async () => {
-      // Capture poll callback
-      let pollCallback: () => Promise<void> = async () => {};
-      (usePolling as ReturnType<typeof vi.fn>).mockImplementation((cb: () => void | Promise<void>) => {
-        pollCallback = cb as () => Promise<void>;
-      });
-
-      mockApiFetch.mockResolvedValue([]);
-
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
-
-      // Wait for initial load
-      await flushAll();
-      expect(result.current.isLoading).toBe(false);
-
-      // Make next fetch fail
-      mockApiFetch.mockRejectedValue(new Error("poll error"));
-
-      // Poll should not throw
-      await expect(pollCallback()).resolves.toBeUndefined();
     });
   });
 
@@ -322,9 +204,9 @@ describe("useProjectsData", () => {
     it("exposes loadProjects, setProjects, setAuditLogs", async () => {
       mockApiFetch.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { result } = renderWithClient("token");
 
-      await flushAll();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       expect(result.current.loadProjects).toBeDefined();
       expect(typeof result.current.loadProjects).toBe("function");
@@ -332,17 +214,16 @@ describe("useProjectsData", () => {
       expect(typeof result.current.setAuditLogs).toBe("function");
     });
 
-    it("calling setProjects directly updates the projects state", () => {
+    it("calling setProjects directly updates the projects state", async () => {
       mockApiFetch.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useProjectsData({ authToken: "token", showToast }));
+      const { result } = renderWithClient("token");
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       const newProject = createMockProject({ id: "NEW-001" });
-      act(() => {
-        result.current.setProjects([newProject]);
-      });
+      result.current.setProjects([newProject]);
 
-      expect(result.current.projects).toEqual([newProject]);
+      await waitFor(() => expect(result.current.projects).toEqual([newProject]));
     });
   });
 });

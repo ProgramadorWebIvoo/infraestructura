@@ -42,6 +42,7 @@ export function useProveedores(authToken: string, showToast: ShowToast) {
     usePolledFetch<SupplierMaterialProposal>({
       authToken,
       showToast,
+      queryKey: ["supplierMaterialProposals"],
       fetcher: useCallback(
         () => apiFetch<SupplierMaterialProposal[]>("/supplier-material-proposals"),
         [],

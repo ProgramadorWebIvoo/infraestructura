@@ -112,7 +112,7 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (m: ConfigMaterial) => {
+  const handleOpenEdit = useCallback((m: ConfigMaterial) => {
     setModalMode("edit");
     setEditingId(m.id);
     setForm({
@@ -122,7 +122,7 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
       isActive: m.isActive,
     });
     setIsModalOpen(true);
-  };
+  }, []);
 
   const handleCloseModal = () => {
     if (isSaving) return;
@@ -198,11 +198,14 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
     }
   };
 
-  const columns = getMaterialColumns({
+  // useMemo: `columns` es dependencia del useMemo de ordenamiento interno de
+  // Table.tsx — sin memoizar, cualquier render de este panel invalida ese
+  // sorting innecesariamente, re-renderizando toda la tabla.
+  const columns = useMemo(() => getMaterialColumns({
     togglingId,
     onEdit: handleOpenEdit,
     onRequestToggle: setConfirmToggleId,
-  });
+  }), [togglingId, handleOpenEdit]);
 
   const materialPendingToggle = materials.find((m) => m.id === confirmToggleId);
 

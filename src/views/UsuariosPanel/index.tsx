@@ -7,7 +7,7 @@
  * y envío de link de restablecimiento de contraseña.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Plus, Users } from "lucide-react";
 import { Table } from "../../components/UI/Table";
@@ -86,7 +86,7 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (user: UserRecord) => {
+  const handleOpenEdit = useCallback((user: UserRecord) => {
     setModalMode("edit");
     setEditingUser(user);
     setForm({
@@ -98,7 +98,7 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
       status: user.status,
     });
     setIsModalOpen(true);
-  };
+  }, []);
 
   const handleCloseModal = () => {
     if (isSaving) return;
@@ -155,7 +155,7 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     }
   };
 
-  const handleToggle = async (user: UserRecord) => {
+  const handleToggle = useCallback(async (user: UserRecord) => {
     setTogglingId(user.id);
     try {
       const result = await handleToggleUserStatus(user.id);
@@ -165,9 +165,9 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     } finally {
       setTogglingId(null);
     }
-  };
+  }, [handleToggleUserStatus, isSuperadmin, prependAuditLog]);
 
-  const handleSendReset = async (user: UserRecord) => {
+  const handleSendReset = useCallback(async (user: UserRecord) => {
     setSendingId(user.id);
     try {
       await handleSendPasswordReset(user.id);
@@ -176,16 +176,21 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     } finally {
       setSendingId(null);
     }
-  };
+  }, [handleSendPasswordReset]);
 
-  const columns = getUserColumns({
+  // useMemo: sin esto, `columns` es un array nuevo en CADA render de este
+  // panel (incluido cualquier cambio de searchQuery/statusFilter que no
+  // toca la tabla), y Table.tsx usa `columns` como dependencia de su propio
+  // useMemo de ordenamiento — invalidarlo de más re-ordena/re-renderiza
+  // toda la tabla sin necesidad.
+  const columns = useMemo(() => getUserColumns({
     roleLabel,
     togglingId,
     sendingId,
     onEdit: handleOpenEdit,
     onToggleStatus: handleToggle,
     onSendReset: handleSendReset,
-  });
+  }), [togglingId, sendingId, handleOpenEdit, handleToggle, handleSendReset]);
 
   return (
     <motion.div
