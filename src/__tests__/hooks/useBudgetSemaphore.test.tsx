@@ -14,6 +14,7 @@ vi.mock("@/hooks/useAuth", () => ({
 
 import { useBudgetSemaphore, levelOf, type SemaphoreThresholds } from "@/hooks/useBudgetSemaphore";
 import { PublicSettingsProvider } from "@/components/UI/PublicSettingsProvider";
+import { usePublicSettingsStore } from "@/stores/publicSettingsStore";
 
 const DEFAULT_THRESHOLDS: SemaphoreThresholds = { verde: 80, amarillo: 95, naranja: 100 };
 
@@ -59,6 +60,9 @@ describe("useBudgetSemaphore", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     mockUseAuth.mockReturnValue({ authToken: "token" });
+    // publicSettingsStore es un singleton de módulo — resetear entre tests
+    // para que hasLoaded de un test no bloquee el fetch del siguiente.
+    usePublicSettingsStore.setState({ settings: {}, isLoading: true, hasLoaded: false });
   });
 
   it("usa umbrales por defecto mientras carga y hasta que responda el fetch", async () => {

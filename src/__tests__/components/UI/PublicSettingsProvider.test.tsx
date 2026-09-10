@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { PublicSettingsProvider, usePublicSettings } from "@/components/UI/PublicSettingsProvider";
+import { usePublicSettingsStore } from "@/stores/publicSettingsStore";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/services/api", () => ({
@@ -26,6 +27,9 @@ describe("PublicSettingsProvider", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     mockUseAuth.mockReturnValue({ authToken: "token" });
+    // El store es un singleton de módulo — resetear entre tests para que
+    // hasLoaded de un test no bloquee el fetch del siguiente.
+    usePublicSettingsStore.setState({ settings: {}, isLoading: true, hasLoaded: false });
   });
 
   it("arranca con isLoading=true y settings vacío", () => {
@@ -77,9 +81,12 @@ describe("PublicSettingsProvider", () => {
     expect(result.current.settings).toEqual({});
   });
 
-  it("lanza si se usa fuera del provider", () => {
-    expect(() => renderHook(() => usePublicSettings())).toThrow(
-      "usePublicSettings debe usarse dentro de PublicSettingsProvider",
-    );
+  it("expone el store aunque no haya un <PublicSettingsProvider> ancestro (store global)", () => {
+    // A diferencia del Context anterior, el store de Zustand no exige un
+    // provider ancestro: sin PublicSettingsProvider simplemente nadie
+    // dispara load(), pero usePublicSettings() sigue devolviendo el
+    // estado (vacío) sin lanzar.
+    const { result } = renderHook(() => usePublicSettings());
+    expect(result.current.settings).toEqual({});
   });
 });

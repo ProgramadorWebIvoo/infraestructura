@@ -1,57 +1,37 @@
-import { createContext, useContext, useState, useCallback, useMemo, useRef, type ReactNode } from "react";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Migrado de Context a Zustand (stores/toastStore.ts). showToast es un God
+ * Node (23 edges en graphify-out/COMPASS.md) — como store global también es
+ * invocable fuera de React vía useToastStore.getState().showToast(...) (ej.
+ * un interceptor de errores en services/api.ts), algo imposible con Context
+ * porque exigía estar dentro del árbol de <ToastProvider>.
+ *
+ * <ToastProvider> ahora solo renderiza el contenedor visual de toasts +
+ * children; el estado vive en el store, compartido sin necesidad de
+ * envolver nada (se deja el componente por compatibilidad con App.tsx y
+ * porque acá vive el JSX del contenedor fixed top-right).
+ */
+
+import { useCallback, type ReactNode } from "react";
 import { Bell, X } from "lucide-react";
 import { ALERT_ICONS, ALERT_STYLES, type AlertType } from "./alertStyles";
+import {
+  useToastStore,
+  getToastDuration,
+  type ToastType as StoreToastType,
+  type ShowToastOptions as StoreShowToastOptions,
+  type ToastAction as StoreToastAction,
+} from "../../stores/toastStore";
 
 type ToastType = AlertType;
-type ToastPriority = "normal" | "high";
-/** "notification": toast de alertas internas (useNotifications) — visualmente
- * distinto de success/error/warning/info para que el usuario reconozca de
- * un vistazo que es "algo pasó en el sistema/otro usuario", no feedback de
- * su propia acción. */
-type ToastVariant = "default" | "notification";
-
-export type ToastAction = {
-  label: string;
-  onClick: () => void;
-};
-
-export type ShowToastOptions = {
-  action?: ToastAction;
-  priority?: ToastPriority;
-  variant?: ToastVariant;
-};
-
-type Toast = {
-  id: number;
-  message: string;
-  type: ToastType;
-  action?: ToastAction;
-  priority: ToastPriority;
-  variant: ToastVariant;
-};
+export type ToastAction = StoreToastAction;
+export type ShowToastOptions = StoreShowToastOptions;
 
 type ToastContextType = {
   showToast: (message: string, type?: ToastType, options?: ShowToastOptions) => void;
 };
-
-const ToastContext = createContext<ToastContextType | null>(null);
-
-let nextId = 0;
-const MAX_TOASTS = 5;
-const TOAST_DURATION_MS = 4000;
-const HIGH_PRIORITY_DURATION_MS = 8000;
-// Los toasts de notificación (variant="notification") avisan de algo que
-// pasó fuera de la acción del propio usuario — con la duración normal (4s)
-// pasan inadvertidos con facilidad. 7s les da más tiempo sin llegar a los
-// 8s de priority="high" (reservado para casos realmente urgentes/bloqueantes).
-const NOTIFICATION_DURATION_MS = 7000;
-const EXIT_ANIMATION_MS = 250;
-
-function getToastDuration(priority: ToastPriority, variant: ToastVariant): number {
-  if (priority === "high") return HIGH_PRIORITY_DURATION_MS;
-  if (variant === "notification") return NOTIFICATION_DURATION_MS;
-  return TOAST_DURATION_MS;
-}
 
 // ── Configuration maps (compartidas con AlertBanner vía alertStyles.ts) ──
 
@@ -64,7 +44,7 @@ type ToastStyle = {
   iconChip: string;
 };
 
-const STYLES: Record<ToastType, ToastStyle> = {
+const STYLES: Record<StoreToastType, ToastStyle> = {
   success: {
     container: `${ALERT_STYLES.success.bg} ${ALERT_STYLES.success.border} text-emerald-900`,
     progress: "from-emerald-400 to-emerald-500",
@@ -114,68 +94,12 @@ const NOTIFICATION_STYLE: ToastStyle = {
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-  const [exitingIds, setExitingIds] = useState<Set<number>>(new Set());
-
-  // ── Dismiss (definido ANTES de showToast para evitar problemas de hoisting) ──
-  const dismiss = useCallback((id: number) => {
-    const timer = timersRef.current.get(id);
-    if (timer) {
-      clearTimeout(timer);
-      timersRef.current.delete(id);
-    }
-
-    // Marcar como "saliendo" para activar animate-slide-out-right
-    setExitingIds(prev => new Set(prev).add(id));
-
-    // Remover del DOM después de que termine la animación (250ms)
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-      setExitingIds(prev => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }, EXIT_ANIMATION_MS);
-  }, []);
-
-  const showToast = useCallback((message: string, type: ToastType = "info", options?: ShowToastOptions) => {
-    const id = ++nextId;
-    const priority = options?.priority ?? "normal";
-    const variant = options?.variant ?? "default";
-    const duration = getToastDuration(priority, variant);
-
-    setToasts(prev => {
-      const next = [{ id, message, type, action: options?.action, priority, variant }, ...prev];
-      if (next.length > MAX_TOASTS) {
-        const removed = next.splice(0, next.length - MAX_TOASTS);
-        removed.forEach(t => {
-          const timer = timersRef.current.get(t.id);
-          if (timer) {
-            clearTimeout(timer);
-            timersRef.current.delete(t.id);
-          }
-        });
-      }
-      return next;
-    });
-
-    const timer = setTimeout(() => {
-      dismiss(id);
-    }, duration);
-
-    timersRef.current.set(id, timer);
-  }, [dismiss]);
-
-  // Memoizado: value={{ showToast }} inline es un objeto nuevo en cada
-  // render de ToastProvider (ej. cada vez que se muestra/oculta un toast) —
-  // este Provider envuelve TODA la app, así que sin memo cualquier render
-  // suyo se propaga como "cambio" a cada useToast() consumidor del árbol.
-  const value = useMemo(() => ({ showToast }), [showToast]);
+  const toasts = useToastStore(s => s.toasts);
+  const exitingIds = useToastStore(s => s.exitingIds);
+  const dismiss = useToastStore(s => s.dismiss);
 
   return (
-    <ToastContext.Provider value={value}>
+    <>
       {children}
 
       <div
@@ -237,12 +161,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           );
         })}
       </div>
-    </ToastContext.Provider>
+    </>
   );
 }
 
 export function useToast(): ToastContextType {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast debe usarse dentro de ToastProvider");
-  return ctx;
+  const showToastAction = useToastStore(s => s.showToast);
+  const showToast = useCallback(
+    (message: string, type?: ToastType, options?: ShowToastOptions) => showToastAction(message, type, options),
+    [showToastAction],
+  );
+  return { showToast };
 }

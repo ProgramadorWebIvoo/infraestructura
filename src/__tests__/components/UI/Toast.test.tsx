@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { ToastProvider, useToast } from "../../../components/UI/Toast";
+import { useToastStore } from "../../../stores/toastStore";
 
 // ── Helper component to trigger toasts ────────────────────────────────────────
 function ToastTrigger({
@@ -22,6 +23,9 @@ function renderWithProvider(ui: React.ReactNode) {
 describe("Toast", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // El store es un singleton de módulo — resetear entre tests para que
+    // los toasts de un test no aparezcan en el siguiente.
+    useToastStore.getState().__reset();
   });
 
   afterEach(() => {
@@ -116,15 +120,17 @@ describe("Toast", () => {
     expect(screen.getByTestId("child")).toHaveTextContent("Child Content");
   });
 
-  it("throws error when useToast is used outside provider", () => {
-    // Suppress console.error for this expected error
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("permite llamar a showToast fuera del árbol de ToastProvider (store global)", () => {
+    // A diferencia del Context anterior, el store de Zustand no exige un
+    // <ToastProvider> ancestro — showToast es invocable desde cualquier
+    // lado (incluso fuera de React, ver stores/toastStore.ts).
+    render(<ToastTrigger message="Sin provider" />);
 
-    expect(() => render(<ToastTrigger message="test" />)).toThrow(
-      "useToast debe usarse dentro de ToastProvider",
-    );
+    act(() => {
+      screen.getByText("Show Toast").click();
+    });
 
-    spy.mockRestore();
+    expect(useToastStore.getState().toasts.some(t => t.message === "Sin provider")).toBe(true);
   });
 
   it("handles multiple toasts with different types", () => {

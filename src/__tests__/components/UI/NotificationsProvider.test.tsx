@@ -4,6 +4,7 @@ import { render, renderHook } from "@testing-library/react";
 import type { AppNotification } from "@/types";
 import type { AuthUser } from "@/hooks/useAuth";
 import { useNotifications, NotificationsProvider } from "@/components/UI/NotificationsProvider";
+import { useNotificationsStore } from "@/stores/notificationsStore";
 
 // Simula el Echo real lo suficiente para probar la suscripción: private()
 // devuelve un canal con listen()/stopListening(), y el módulo expone el
@@ -81,6 +82,10 @@ describe("useNotifications", () => {
     mockEcho.private.mockClear();
     mockEcho.leave.mockClear();
     mockEcho.disconnect.mockClear();
+    // El store es un singleton de módulo (a diferencia del Context anterior,
+    // que se reseteaba solo con volver a montar el Provider) — hay que
+    // resetearlo a mano entre tests para que no arrastren estado.
+    useNotificationsStore.setState({ authToken: "", notifications: [], unreadCount: 0, isLoading: true });
   });
 
   it("carga notificaciones y conteo de no leídas al montar", async () => {

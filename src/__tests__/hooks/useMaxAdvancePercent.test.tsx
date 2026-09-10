@@ -14,6 +14,7 @@ vi.mock("@/hooks/useAuth", () => ({
 
 import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
 import { PublicSettingsProvider } from "@/components/UI/PublicSettingsProvider";
+import { usePublicSettingsStore } from "@/stores/publicSettingsStore";
 
 async function flush() {
   for (let i = 0; i < 5; i++) {
@@ -29,6 +30,9 @@ describe("useMaxAdvancePercent", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     mockUseAuth.mockReturnValue({ authToken: "token" });
+    // publicSettingsStore es un singleton de módulo — resetear entre tests
+    // para que hasLoaded de un test no bloquee el fetch del siguiente.
+    usePublicSettingsStore.setState({ settings: {}, isLoading: true, hasLoaded: false });
   });
 
   it("usa 100 por defecto mientras carga", async () => {

@@ -2,25 +2,21 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Caché compartida de las tasas de cambio para toda la sesión — mismo patrón
- * y misma motivación que `PublicSettingsProvider`: antes cada componente que
- * mostraba un monto convertido llamaba `useCurrencyConversion()`, y ese hook
- * instanciaba por su cuenta `useAuth()` + `useExchangeRates()`. Con la
- * conversión a Bs. integrada en tablas, cards y modales de casi todas las
- * vistas, eso significaba decenas de instancias de auth (cada una con su
- * propio GET /user de validación de sesión) y decenas de GET /exchange-rates
- * pidiendo exactamente el mismo dato.
+ * Caché compartida de las tasas de cambio para toda la sesión. Migrado de
+ * Context a Zustand (stores/exchangeRatesStore.ts): el store es un
+ * singleton de módulo, así que los consumidores leen por selector sin
+ * necesidad de árbol de Provider — este componente ahora solo dispara el
+ * fetch una vez por sesión (mismo patrón que antes).
  *
- * Ahora el fetch ocurre UNA vez acá y todos los consumidores leen de este
- * contexto. Fuera del provider (tests de componentes aislados, vistas
- * públicas sin sesión) el contexto es null y `useCurrencyConversion` degrada
- * a "sin tasas disponibles" en vez de explotar — mostrar el monto en su
- * moneda original sin la línea de conversión es una degradación aceptable;
- * romper el render no lo es.
+ * Fuera de sesión (tests de componentes aislados, vistas públicas sin auth)
+ * hasLoaded queda en false y rates vacío — useExchangeRatesContext() sigue
+ * degradando a "sin tasas disponibles" en vez de explotar.
  */
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useExchangeRates, type ExchangeRateRecord } from "../../hooks/useExchangeRates";
+import { useEffect, type ReactNode } from "react";
+import { useExchangeRatesStore, type ExchangeRateRecord } from "../../stores/exchangeRatesStore";
+
+export type { ExchangeRateRecord };
 
 interface ExchangeRatesContextValue {
   rates: ExchangeRateRecord[];
@@ -28,20 +24,25 @@ interface ExchangeRatesContextValue {
   hasLoaded: boolean;
 }
 
-const ExchangeRatesContext = createContext<ExchangeRatesContextValue | null>(null);
-
 export function ExchangeRatesProvider({ authToken, children }: { authToken: string; children: ReactNode }) {
-  const { rates, isLoading, hasLoaded } = useExchangeRates(authToken, !!authToken);
+  const load = useExchangeRatesStore(s => s.load);
 
-  const value = useMemo(() => ({ rates, isLoading, hasLoaded }), [rates, isLoading, hasLoaded]);
+  useEffect(() => {
+    if (authToken) load(authToken);
+  }, [authToken, load]);
 
-  return <ExchangeRatesContext.Provider value={value}>{children}</ExchangeRatesContext.Provider>;
+  return <>{children}</>;
 }
 
-/**
- * Devuelve null fuera del provider — a propósito, no lanza: ver el comentario
- * de arriba sobre degradación en tests y vistas públicas.
- */
 export function useExchangeRatesContext(): ExchangeRatesContextValue | null {
-  return useContext(ExchangeRatesContext);
+  // Ya no depende de estar "dentro" de un árbol de Provider (el store es un
+  // singleton de módulo) — siempre devuelve un valor con defaults seguros
+  // (rates: [], isLoading: false) para vistas públicas o tests que nunca
+  // llaman a load(). Los consumidores (ej. useCurrencyConversion) ya usan
+  // `context?.rates ?? []`, así que este objeto no-null es compatible.
+  const rates = useExchangeRatesStore(s => s.rates);
+  const isLoading = useExchangeRatesStore(s => s.isLoading);
+  const hasLoaded = useExchangeRatesStore(s => s.hasLoaded);
+
+  return { rates, isLoading, hasLoaded };
 }
