@@ -7,9 +7,9 @@
  */
 
 import { Activity, User, Building2, FileText, Clock, Hash } from "lucide-react";
-import type { AuditLog } from "../../types";
-import Modal from "../UI/Modal";
-import { getRoleColor } from "../../utils";
+import type { AuditLog } from "@/types";
+import Modal from "@/components/UI/Modal";
+import { getRoleColor } from "@/utils";
 
 // ---------------------------------------------------------------------------
 // Props

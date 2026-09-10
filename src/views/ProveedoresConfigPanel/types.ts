@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SemanticColor } from "../../components/UI/colorTokens";
+import type { SemanticColor } from "@/components/UI/colorTokens";
 
 export interface ConfigContractor {
   code: string;

@@ -9,8 +9,8 @@
 
 import { motion } from "motion/react";
 import { Layers, Wallet } from "lucide-react";
-import type { DashboardSummary } from "../../../types";
-import { itemVariants } from "../../../animations";
+import type { DashboardSummary } from "@/types";
+import { itemVariants } from "@/animations";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

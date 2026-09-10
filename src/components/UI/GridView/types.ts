@@ -8,7 +8,7 @@
  */
 
 import type { ReactNode } from "react";
-import type { SemanticColor } from "../colorTokens";
+import type { SemanticColor } from "@/components/UI/colorTokens";
 
 export interface GridViewProps<T> {
   items: T[];

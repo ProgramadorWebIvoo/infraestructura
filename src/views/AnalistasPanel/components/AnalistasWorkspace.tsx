@@ -17,7 +17,7 @@ import { formatCurrency } from "@ivoo/shared";
 import { useMemo, useState } from "react";
 import React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Project, Contractor, Proposal, ProposalOrigin, SupplierMaterialProposal } from "../../../types";
+import type { Project, Contractor, Proposal, ProposalOrigin, SupplierMaterialProposal } from "@/types";
 import {
   AlertTriangle,
   Award,
@@ -32,30 +32,30 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import EmptyState from "../../../components/UI/EmptyState";
-import Modal from "../../../components/UI/Modal";
-import TableToolbar from "../../../components/UI/TableToolbar";
-import { Table, type Column } from "../../../components/UI/Table";
-import GridView from "../../../components/UI/GridView/GridView";
-import Button from "../../../components/UI/Button";
-import ConfirmDialog from "../../../components/UI/ConfirmDialog";
-import ProposalSummary from "../../../components/ProposalSummary";
-import Tooltip from "../../../components/UI/Tooltip";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import EmptyState from "@/components/UI/EmptyState";
+import Modal from "@/components/UI/Modal";
+import TableToolbar from "@/components/UI/TableToolbar";
+import { Table, type Column } from "@/components/UI/Table";
+import GridView from "@/components/UI/GridView/GridView";
+import Button from "@/components/UI/Button";
+import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import ProposalSummary from "@/components/ProposalSummary";
+import Tooltip from "@/components/UI/Tooltip";
 import { renderAnalistasCard } from "./AnalistasGridCard";
 import RegisterProposalModal, { formatProposalDuration } from "./RegisterProposalModal";
 import RenegotiateProposalModal from "./RenegotiateProposalModal";
-import InspectProposalModal from "../../ProcuraPanel/components/InspectProposalModal";
-import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
-import { useSupplierProposalsForProject } from "../../../hooks/useSupplierProposalsForProject";
-import { calculatePendingPortalProposals } from "../utils/portalProposalUtils";
-import { useContainerRows } from "../../../hooks/useContainerRows";
-import { useTableViewMode } from "../../../hooks/useTableViewMode";
-import { useToast } from "../../../components/UI/Toast";
-import { viewSwitchVariants } from "../../../animations";
-import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
-import BsAmount from "../../../components/UI/BsAmount";
+import InspectProposalModal from "@/views/ProcuraPanel/components/InspectProposalModal";
+import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
+import { useSupplierProposalsForProject } from "@/hooks/useSupplierProposalsForProject";
+import { calculatePendingPortalProposals } from "@/views/AnalistasPanel/utils/portalProposalUtils";
+import { useContainerRows } from "@/hooks/useContainerRows";
+import { useTableViewMode } from "@/hooks/useTableViewMode";
+import { useToast } from "@/components/UI/Toast";
+import { viewSwitchVariants } from "@/animations";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 const ORIGIN_BADGE: Record<ProposalOrigin, { label: string; className: string }> = {
   MANUAL: { label: "Manual", className: "bg-slate-100 text-slate-600 border-slate-200" },

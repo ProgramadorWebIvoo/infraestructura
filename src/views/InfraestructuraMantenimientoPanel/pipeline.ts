@@ -9,8 +9,8 @@
 
 import { Calculator, CheckCircle2, DollarSign, FilePlus2, HardHat, Scale } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { ProjectStatus } from "../../types";
-import type { Project } from "../../types";
+import { ProjectStatus } from "@/types";
+import type { Project } from "@/types";
 
 export interface PipelineStage {
   key: string;

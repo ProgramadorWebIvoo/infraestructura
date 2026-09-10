@@ -10,7 +10,7 @@
  */
 
 import { create } from "zustand";
-import type { AlertType } from "../components/UI/alertStyles";
+import type { AlertType } from "@/components/UI/alertStyles";
 
 export type ToastType = AlertType;
 export type ToastPriority = "normal" | "high";

@@ -26,7 +26,7 @@ import {
   apiDownload as sharedApiDownload,
 } from "@ivoo/shared";
 import type { ApiFetchOptions } from "@ivoo/shared";
-import type { ProjectDocument } from "../types";
+import type { ProjectDocument } from "@/types";
 export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 

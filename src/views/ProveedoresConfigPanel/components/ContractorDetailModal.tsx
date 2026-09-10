@@ -10,9 +10,9 @@
 
 import type { ReactNode } from "react";
 import { Mail, Phone, Info } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "../types";
+import Modal from "@/components/UI/Modal";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "@/views/ProveedoresConfigPanel/types";
 
 interface ContractorDetailModalProps {
   contractor: ConfigContractor | null;

@@ -7,9 +7,9 @@
 
 import { motion } from "motion/react";
 import { GitBranch } from "lucide-react";
-import type { DashboardSummaryFunnelEntry } from "../../../types";
-import { STATUS_LABELS } from "../../../utils";
-import { itemVariants } from "../../../animations";
+import type { DashboardSummaryFunnelEntry } from "@/types";
+import { STATUS_LABELS } from "@/utils";
+import { itemVariants } from "@/animations";
 
 interface StatusFunnelSectionProps {
   funnel: DashboardSummaryFunnelEntry[];

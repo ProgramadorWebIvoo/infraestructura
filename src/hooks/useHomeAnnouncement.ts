@@ -8,7 +8,7 @@
  * la sesión) — mismo patrón que useMaxAdvancePercent/useBudgetSemaphore.
  */
 
-import { usePublicSettings } from "../components/UI/PublicSettingsProvider";
+import { usePublicSettings } from "@/components/UI/PublicSettingsProvider";
 
 export function useHomeAnnouncement(): string | null {
   const { settings } = usePublicSettings();

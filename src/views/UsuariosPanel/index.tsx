@@ -10,22 +10,22 @@
 import { useCallback, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Plus, Users } from "lucide-react";
-import { Table } from "../../components/UI/Table";
-import TableToolbar from "../../components/UI/TableToolbar";
-import { useToast } from "../../components/UI/Toast";
-import { useUsuarios, type UserRecord } from "../../hooks/useUsuarios";
-import { containerVariants, itemVariants } from "../../animations";
-import { ROLE_LABELS, roleLabel } from "../../constants/roles";
-import SectionHeader from "../../components/UI/SectionHeader";
-import Card from "../../components/UI/Card";
-import Button from "../../components/UI/Button";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
+import { Table } from "@/components/UI/Table";
+import TableToolbar from "@/components/UI/TableToolbar";
+import { useToast } from "@/components/UI/Toast";
+import { useUsuarios, type UserRecord } from "@/hooks/useUsuarios";
+import { containerVariants, itemVariants } from "@/animations";
+import { ROLE_LABELS, roleLabel } from "@/constants/roles";
+import SectionHeader from "@/components/UI/SectionHeader";
+import Card from "@/components/UI/Card";
+import Button from "@/components/UI/Button";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import UserFormModal from "./components/UserFormModal";
 import { getUserColumns } from "./columns";
 import { EMPTY_FORM, type UserForm } from "./types";
-import { getErrorMessage } from "../../services/logger";
+import { getErrorMessage } from "@/services/logger";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
-import { userFormSchema } from "../../schemas/userAccount.schema";
+import { userFormSchema } from "@/schemas/userAccount.schema";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
 
 interface UsuariosPanelProps {

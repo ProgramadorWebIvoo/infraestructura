@@ -22,8 +22,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 import { useDebounce } from "./useDebounce";
 
 export interface ConfigAuditLogRecord {

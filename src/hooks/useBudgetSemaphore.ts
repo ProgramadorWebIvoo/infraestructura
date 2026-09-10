@@ -14,7 +14,7 @@
  * BidEvaluationSection) disparaban un GET /settings por cada uno.
  */
 
-import { usePublicSettings } from "../components/UI/PublicSettingsProvider";
+import { usePublicSettings } from "@/components/UI/PublicSettingsProvider";
 
 export type SemaphoreLevel = "verde" | "amarillo" | "naranja" | "rojo";
 

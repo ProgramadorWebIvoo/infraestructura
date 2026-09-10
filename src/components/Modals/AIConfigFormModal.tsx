@@ -1,13 +1,13 @@
 import { type ReactNode } from "react";
 import { motion } from "motion/react";
 import { Brain, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
-import Modal from "../../components/UI/Modal";
-import Button from "../../components/UI/Button";
-import Select from "../../components/UI/Select";
-import { RequiredMark } from "../../components/UI/HintSignals";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
-import { AI_PROVIDERS, PROVIDER_LABELS } from "../../constants/aiProviders";
-import type { AiConfigForm } from "../../hooks/useAIConfig";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import Select from "@/components/UI/Select";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { AI_PROVIDERS, PROVIDER_LABELS } from "@/constants/aiProviders";
+import type { AiConfigForm } from "@/hooks/useAIConfig";
 
 const labelClass =
   "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";

@@ -10,13 +10,13 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, FilePlus2, Send } from "lucide-react";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import Stepper, { type StepDefinition } from "../../../components/UI/Stepper";
-import Button from "../../../components/UI/Button";
-import { springs } from "../../../animations";
-import type { UseRequestFormReturn } from "../../../hooks/useRequestForm";
-import { useRequestWizard } from "../../../hooks/useRequestWizard";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import Stepper, { type StepDefinition } from "@/components/UI/Stepper";
+import Button from "@/components/UI/Button";
+import { springs } from "@/animations";
+import type { UseRequestFormReturn } from "@/hooks/useRequestForm";
+import { useRequestWizard } from "@/hooks/useRequestWizard";
 import RequestFormSection from "./RequestFormSection";
 import MaterialAdderSection from "./MaterialAdderSection";
 import AttachmentsSection from "./AttachmentsSection";

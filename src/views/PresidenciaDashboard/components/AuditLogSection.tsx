@@ -10,13 +10,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Activity, Eye, RefreshCw } from "lucide-react";
-import type { AuditLog } from "../../../types";
-import { Table, type Column } from "../../../components/UI/Table";
-import EmptyState from "../../../components/UI/EmptyState";
-import { SearchInput, SelectFilter } from "../../../components/UI/FilterBar";
-import { getRoleColor } from "../../../utils";
-import AuditInspectModal from "../../../components/Modals/AuditInspectModal";
-import { itemVariants } from "../../../animations";
+import type { AuditLog } from "@/types";
+import { Table, type Column } from "@/components/UI/Table";
+import EmptyState from "@/components/UI/EmptyState";
+import { SearchInput, SelectFilter } from "@/components/UI/FilterBar";
+import { getRoleColor } from "@/utils";
+import AuditInspectModal from "@/components/Modals/AuditInspectModal";
+import { itemVariants } from "@/animations";
 
 const AUDIT_ROLE_OPTIONS = [
   { value: "ALL", label: "Todos los Roles" },

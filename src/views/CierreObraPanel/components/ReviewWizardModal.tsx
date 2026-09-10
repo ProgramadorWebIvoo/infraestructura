@@ -28,23 +28,23 @@ import {
   XCircle,
 } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import type { Project, ProjectDocument } from "../../../types";
-import { useToast } from "../../../components/UI/Toast";
-import EmptyState from "../../../components/UI/EmptyState";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
-import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
-import Stepper, { type StepDefinition } from "../../../components/UI/Stepper";
-import { HelpHint } from "../../../components/UI/HintSignals";
-import AlertBanner from "../../../components/UI/AlertBanner";
+import type { Project, ProjectDocument } from "@/types";
+import { useToast } from "@/components/UI/Toast";
+import EmptyState from "@/components/UI/EmptyState";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import ProjectDocumentsList from "@/components/UI/ProjectDocumentsList";
+import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
+import Stepper, { type StepDefinition } from "@/components/UI/Stepper";
+import { HelpHint } from "@/components/UI/HintSignals";
+import AlertBanner from "@/components/UI/AlertBanner";
 import DossierEvaluationPanel from "./DossierEvaluationPanel";
 import { AttachmentsSummary, MaterialDetailRow, ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import { downloadProjectDocument } from "../../../services/api";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { springs } from "../../../animations";
-import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
-import BsAmount from "../../../components/UI/BsAmount";
+import { downloadProjectDocument } from "@/services/api";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { springs } from "@/animations";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 const WIZARD_STEPS: StepDefinition[] = [
   { id: "revisar", label: "Revisar", description: "Inversión y materiales" },

@@ -4,8 +4,8 @@
  *
  * Workflow status utilities — mapping between roles and pending project statuses.
  */
-import { ProjectStatus } from "../types";
-import type { Project } from "../types";
+import { ProjectStatus } from "@/types";
+import type { Project } from "@/types";
 
 /**
  * Returns the count of projects that are pending action for a given role,

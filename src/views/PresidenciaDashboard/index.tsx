@@ -5,11 +5,11 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { ProjectStatus } from "../../types";
-import type { Project, AuditLog } from "../../types";
-import { SkeletonStats, SkeletonStatsDark, SkeletonTable, SkeletonCard } from "../../components/SkeletonLoader";
-import { useDashboardSummary } from "../../hooks/useDashboardSummary";
-import { containerVariants } from "../../animations";
+import { ProjectStatus } from "@/types";
+import type { Project, AuditLog } from "@/types";
+import { SkeletonStats, SkeletonStatsDark, SkeletonTable, SkeletonCard } from "@/components/SkeletonLoader";
+import { useDashboardSummary } from "@/hooks/useDashboardSummary";
+import { containerVariants } from "@/animations";
 import KpiSection from "./components/KpiSection";
 import DistributionChart from "./components/DistributionChart";
 import StatusFunnelSection from "./components/StatusFunnelSection";

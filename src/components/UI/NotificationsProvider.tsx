@@ -36,13 +36,13 @@
  */
 
 import { useEffect, type ReactNode } from "react";
-import type { AppNotification } from "../../types";
-import type { AuthUser } from "../../hooks/useAuth";
-import { createEchoClient } from "../../services/echo";
+import type { AppNotification } from "@/types";
+import type { AuthUser } from "@/hooks/useAuth";
+import { createEchoClient } from "@/services/echo";
 import { useToast } from "./Toast";
 import { BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
-import { notifyBrowser } from "../../services/browserNotifications";
-import { useNotificationsStore } from "../../stores/notificationsStore";
+import { notifyBrowser } from "@/services/browserNotifications";
+import { useNotificationsStore } from "@/stores/notificationsStore";
 
 export interface UseNotificationsResult {
   notifications: AppNotification[];

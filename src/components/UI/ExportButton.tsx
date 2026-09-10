@@ -9,7 +9,7 @@
  */
 
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
-import { formatCurrency } from "../../utils";
+import { formatCurrency } from "@/utils";
 
 export type ExportFormat = "csv" | "excel" | "pdf";
 export type ExportRow = (string | number | null | undefined)[];

@@ -9,8 +9,8 @@
 
 import { motion } from "motion/react";
 import { Award, MapPinned, TrendingUp } from "lucide-react";
-import type { DashboardSummary } from "../../../types";
-import { itemVariants } from "../../../animations";
+import type { DashboardSummary } from "@/types";
+import { itemVariants } from "@/animations";
 
 interface InsightsSectionProps {
   summary: DashboardSummary;

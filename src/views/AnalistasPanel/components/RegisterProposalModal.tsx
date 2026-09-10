@@ -12,23 +12,23 @@
  */
 
 import { useState } from "react";
-import type { Project, Contractor, Proposal, ProposalMaterialItem, ProposalDurationUnit } from "../../../types";
+import type { Project, Contractor, Proposal, ProposalMaterialItem, ProposalDurationUnit } from "@/types";
 import { AlertTriangle, Loader2, LayoutList, MessageSquareWarning, Plus, Trash2, Users, Wallet } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import Modal from "../../../components/UI/Modal";
-import SelectModal from "../../../components/UI/SelectModal";
-import NumericInput from "../../../components/UI/NumericInput";
-import Select from "../../../components/UI/Select";
-import Button from "../../../components/UI/Button";
-import ConfirmDialog from "../../../components/UI/ConfirmDialog";
-import { HelpHint, RequiredMark } from "../../../components/UI/HintSignals";
-import Tabs from "../../../components/UI/Tabs";
-import TabPanel from "../../../components/UI/TabPanel";
-import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
-import { useToast } from "../../../components/UI/Toast";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
-import { formatNumber } from "../../../utils";
-import BsAmount from "../../../components/UI/BsAmount";
+import Modal from "@/components/UI/Modal";
+import SelectModal from "@/components/UI/SelectModal";
+import NumericInput from "@/components/UI/NumericInput";
+import Select from "@/components/UI/Select";
+import Button from "@/components/UI/Button";
+import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import { HelpHint, RequiredMark } from "@/components/UI/HintSignals";
+import Tabs from "@/components/UI/Tabs";
+import TabPanel from "@/components/UI/TabPanel";
+import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
+import { useToast } from "@/components/UI/Toast";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import { formatNumber } from "@/utils";
+import BsAmount from "@/components/UI/BsAmount";
 
 export const DURATION_UNITS: { value: ProposalDurationUnit; label: string }[] = [
   { value: "dias", label: "Días" },

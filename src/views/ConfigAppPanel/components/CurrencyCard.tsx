@@ -11,18 +11,18 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Coins, CheckCircle, XCircle, Pencil, Trash2, Plus, X, Check, Landmark, TrendingUp } from "lucide-react";
-import { itemVariants, bannerVariants } from "../../../animations";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import Button from "../../../components/UI/Button";
-import { SkeletonCatalogRow, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
-import IconActionButton from "../../../components/UI/IconActionButton";
-import { RequiredMark } from "../../../components/UI/HintSignals";
-import { useToast } from "../../../components/UI/Toast";
-import { getErrorMessage } from "../../../services/logger";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import type { CurrencyRecord } from "../../../hooks/useCurrencies";
-import { currencyAddSchema, currencyEditSchema } from "../../../schemas/currency.schema";
+import { itemVariants, bannerVariants } from "@/animations";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import Button from "@/components/UI/Button";
+import { SkeletonCatalogRow, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
+import IconActionButton from "@/components/UI/IconActionButton";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import { useToast } from "@/components/UI/Toast";
+import { getErrorMessage } from "@/services/logger";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import type { CurrencyRecord } from "@/hooks/useCurrencies";
+import { currencyAddSchema, currencyEditSchema } from "@/schemas/currency.schema";
 
 interface CurrencyCardProps {
   currencies: CurrencyRecord[];

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { springs } from "../../../animations";
-import type { AiUsageDaily } from "../../../hooks/useAIConfig";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { springs } from "@/animations";
+import type { AiUsageDaily } from "@/hooks/useAIConfig";
 
 type ViewMode = "daily" | "weekly";
 

@@ -7,12 +7,12 @@
  */
 
 import { Pencil, RotateCcw, Send, UserX } from "lucide-react";
-import type { Column } from "../../components/UI/Table";
-import IconActionButton from "../../components/UI/IconActionButton";
-import StatusBadge from "../../components/UI/StatusBadge";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
-import { getUserInitials } from "../../utils";
-import type { UserRecord } from "../../hooks/useUsuarios";
+import type { Column } from "@/components/UI/Table";
+import IconActionButton from "@/components/UI/IconActionButton";
+import StatusBadge from "@/components/UI/StatusBadge";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { getUserInitials } from "@/utils";
+import type { UserRecord } from "@/hooks/useUsuarios";
 
 interface GetUserColumnsArgs {
   roleLabel: (value: string) => string;

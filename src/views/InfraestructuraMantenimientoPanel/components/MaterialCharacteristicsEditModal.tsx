@@ -15,14 +15,14 @@
 
 import { useState } from "react";
 import { Check, Pencil } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import TextField from "../../../components/UI/TextField";
-import SegmentedControl from "../../../components/UI/SegmentedControl";
-import NumericInput from "../../../components/UI/NumericInput";
-import FieldError from "../../../components/UI/FieldError";
-import { RequiredMark, HelpHint } from "../../../components/UI/HintSignals";
-import type { MaterialItem } from "../../../types";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import TextField from "@/components/UI/TextField";
+import SegmentedControl from "@/components/UI/SegmentedControl";
+import NumericInput from "@/components/UI/NumericInput";
+import FieldError from "@/components/UI/FieldError";
+import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
+import type { MaterialItem } from "@/types";
 
 interface MaterialCharacteristicsEditModalProps {
   isOpen: boolean;

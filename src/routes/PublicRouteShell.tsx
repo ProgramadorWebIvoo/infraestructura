@@ -1,13 +1,13 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import Spinner from "../components/UI/Spinner";
-import ErrorBoundary from "../components/ErrorBoundary";
-import { ROUTES } from "../routes.tsx";
-import type { Contractor } from "../types";
+import Spinner from "@/components/UI/Spinner";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ROUTES } from "@/routes.tsx";
+import type { Contractor } from "@/types";
 
-const MaterialesProveedores = lazy(() => import("../views/MaterialesProveedores"));
-const PropuestaMaterialesPublica = lazy(() => import("../views/PropuestaMaterialesPublica"));
-const ResetPasswordScreen = lazy(() => import("../views/ResetPasswordScreen"));
+const MaterialesProveedores = lazy(() => import("@/views/MaterialesProveedores"));
+const PropuestaMaterialesPublica = lazy(() => import("@/views/PropuestaMaterialesPublica"));
+const ResetPasswordScreen = lazy(() => import("@/views/ResetPasswordScreen"));
 
 function FullScreenFallback() {
   return (

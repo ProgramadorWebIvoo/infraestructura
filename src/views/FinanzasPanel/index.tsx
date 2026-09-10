@@ -8,11 +8,11 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import { Banknote, CircleCheckBig, Coins, HandCoins, Wallet, Hourglass } from "lucide-react";
-import { ProjectStatus } from "../../types";
-import type { Project } from "../../types";
-import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
-import { containerVariants, itemVariants } from "../../animations";
-import KpiCard from "../../components/UI/KpiCard";
+import { ProjectStatus } from "@/types";
+import type { Project } from "@/types";
+import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "@/components/SkeletonLoader";
+import { containerVariants, itemVariants } from "@/animations";
+import KpiCard from "@/components/UI/KpiCard";
 import FinancialSummarySection from "./components/FinancialSummarySection";
 import AdvancesSection from "./components/AdvancesSection";
 import FinalSettlementsSection from "./components/FinalSettlementsSection";

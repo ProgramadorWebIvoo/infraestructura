@@ -1,15 +1,15 @@
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { Activity, Brain, Database } from "lucide-react";
-import { itemVariants, springs } from "../../../animations";
-import { PROVIDER_LABELS, providerColor } from "../../../constants/aiProviders";
-import type { AiUsageByProvider, AiUsageData, AiUsageTotals } from "../../../hooks/useAIConfig";
-import KpiCard from "../../../components/UI/KpiCard";
-import Card from "../../../components/UI/Card";
-import { SkeletonBlock, SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import Select from "../../../components/UI/Select";
+import { itemVariants, springs } from "@/animations";
+import { PROVIDER_LABELS, providerColor } from "@/constants/aiProviders";
+import type { AiUsageByProvider, AiUsageData, AiUsageTotals } from "@/hooks/useAIConfig";
+import KpiCard from "@/components/UI/KpiCard";
+import Card from "@/components/UI/Card";
+import { SkeletonBlock, SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import Select from "@/components/UI/Select";
 import MiniBarChart from "./MiniBarChart";
-import { formatAiCost } from "../../../utils/aiFormat";
+import { formatAiCost } from "@/utils/aiFormat";
 
 // ---------------------------------------------------------------------------
 // KPIs del período

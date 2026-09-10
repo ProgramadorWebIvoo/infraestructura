@@ -6,7 +6,7 @@ vi.mock("motion/react", () => ({
 }));
 
 import { useReducedMotion } from "motion/react";
-import { useSafeMotion } from "../../hooks/useSafeMotion";
+import { useSafeMotion } from "@/hooks/useSafeMotion";
 
 describe("useSafeMotion", () => {
   it("returns full animations when prefersReducedMotion is false", () => {

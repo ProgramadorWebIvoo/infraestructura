@@ -9,9 +9,9 @@
 
 import { motion } from "motion/react";
 import { Wallet, AlertTriangle, HandCoins, CalendarClock, Gauge } from "lucide-react";
-import type { DashboardSummary } from "../../../types";
-import { itemVariants } from "../../../animations";
-import { useBudgetSemaphore, SEMAPHORE_COLORS } from "../../../hooks/useBudgetSemaphore";
+import type { DashboardSummary } from "@/types";
+import { itemVariants } from "@/animations";
+import { useBudgetSemaphore, SEMAPHORE_COLORS } from "@/hooks/useBudgetSemaphore";
 
 interface FinancialOverviewSectionProps {
   summary: DashboardSummary;

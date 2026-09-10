@@ -1,23 +1,24 @@
 import { lazy } from "react";
 import { Location, Navigate, Route, Routes } from "react-router-dom";
-import { ROUTES, ProtectedRoute } from "../routes.tsx";
-import AuthenticatedLayout from "../components/Layout/AuthenticatedLayout";
-import { useHomeAnnouncement } from "../hooks/useHomeAnnouncement";
+import { ROUTES, ProtectedRoute } from "@/routes.tsx";
+import AuthenticatedLayout from "@/components/Layout/AuthenticatedLayout";
+import { useHomeAnnouncement } from "@/hooks/useHomeAnnouncement";
 // Types are enforced at the leaf view component level; this shell passes through any props.
 
-const HomePanel = lazy(() => import("../views/HomePanel"));
-const PresidenciaDashboard = lazy(() => import("../views/PresidenciaDashboard"));
-const InfraestructuraMantenimientoPanel = lazy(() => import("../views/InfraestructuraMantenimientoPanel"));
-const CierreObraPanel = lazy(() => import("../views/CierreObraPanel"));
-const ProcuraPanel = lazy(() => import("../views/ProcuraPanel"));
-const AnalistasPanel = lazy(() => import("../views/AnalistasPanel"));
-const FinanzasPanel = lazy(() => import("../views/FinanzasPanel"));
-const ProveedoresRegistrados = lazy(() => import("../views/ProveedoresRegistrados"));
-const ProveedoresConfigPanel = lazy(() => import("../views/ProveedoresConfigPanel"));
-const MaterialConfigPanel = lazy(() => import("../views/MaterialConfigPanel"));
-const AIConfigPanel = lazy(() => import("../views/AIConfigPanel"));
-const ConfigAppPanel = lazy(() => import("../views/ConfigAppPanel"));
-const UsuariosPanel = lazy(() => import("../views/UsuariosPanel"));
+const HomePanel = lazy(() => import("@/views/HomePanel"));
+const PresidenciaDashboard = lazy(() => import("@/views/PresidenciaDashboard"));
+const MarketingPanel = lazy(() => import("@/views/MarketingPanel"));
+const InfraestructuraMantenimientoPanel = lazy(() => import("@/views/InfraestructuraMantenimientoPanel"));
+const CierreObraPanel = lazy(() => import("@/views/CierreObraPanel"));
+const ProcuraPanel = lazy(() => import("@/views/ProcuraPanel"));
+const AnalistasPanel = lazy(() => import("@/views/AnalistasPanel"));
+const FinanzasPanel = lazy(() => import("@/views/FinanzasPanel"));
+const ProveedoresRegistrados = lazy(() => import("@/views/ProveedoresRegistrados"));
+const ProveedoresConfigPanel = lazy(() => import("@/views/ProveedoresConfigPanel"));
+const MaterialConfigPanel = lazy(() => import("@/views/MaterialConfigPanel"));
+const AIConfigPanel = lazy(() => import("@/views/AIConfigPanel"));
+const ConfigAppPanel = lazy(() => import("@/views/ConfigAppPanel"));
+const UsuariosPanel = lazy(() => import("@/views/UsuariosPanel"));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AuthenticatedRoutesProps = Record<string, any>;
@@ -56,6 +57,14 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
               <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={onSelectProject} isLoading={isLoadingApi} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.MARKETING}
+          element={
+            <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
+              <MarketingPanel />
             </ProtectedRoute>
           }
         />

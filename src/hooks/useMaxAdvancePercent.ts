@@ -13,7 +13,7 @@
  * BidEvaluationSection) disparaban un GET /settings por cada uno.
  */
 
-import { usePublicSettings } from "../components/UI/PublicSettingsProvider";
+import { usePublicSettings } from "@/components/UI/PublicSettingsProvider";
 
 const DEFAULT_MAX_ADVANCE_PERCENT = 100;
 

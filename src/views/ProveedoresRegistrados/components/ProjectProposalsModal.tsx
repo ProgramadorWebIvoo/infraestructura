@@ -8,14 +8,14 @@
 
 import { useMemo, useState } from "react";
 import { ChevronRight, FileSearch, Mail, Package } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import { Table, type Column } from "../../../components/UI/Table";
-import TableToolbar from "../../../components/UI/TableToolbar";
-import EmptyState from "../../../components/UI/EmptyState";
+import Modal from "@/components/UI/Modal";
+import { Table, type Column } from "@/components/UI/Table";
+import TableToolbar from "@/components/UI/TableToolbar";
+import EmptyState from "@/components/UI/EmptyState";
 import InspectSupplierProposalModal from "./InspectSupplierProposalModal";
-import { formatCurrency } from "../../../utils";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
-import type { SupplierMaterialProposal } from "../../../types";
+import { formatCurrency } from "@/utils";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import type { SupplierMaterialProposal } from "@/types";
 
 interface ProjectProposalsModalProps {
   projectId: string;

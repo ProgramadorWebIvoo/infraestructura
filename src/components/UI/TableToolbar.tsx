@@ -12,7 +12,7 @@ import { motion } from "motion/react";
 import { Table as TableIcon, LayoutGrid } from "lucide-react";
 import { SearchInput, SelectFilter, type SelectOption } from "./FilterBar";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
-import { springs } from "../../animations";
+import { springs } from "@/animations";
 
 interface TableToolbarProps {
   searchId: string;

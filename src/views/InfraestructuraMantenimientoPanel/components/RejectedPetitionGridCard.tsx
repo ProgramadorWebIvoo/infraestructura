@@ -9,7 +9,7 @@
  */
 
 import { Eye, MapPin, Pencil } from "lucide-react";
-import type { AuditLog, Project } from "../../../types";
+import type { AuditLog, Project } from "@/types";
 
 interface RejectedRow {
   project: Project;

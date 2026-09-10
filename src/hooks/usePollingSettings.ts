@@ -19,7 +19,7 @@
  * useBudgetSemaphore/etc. ya pedían por su cuenta.
  */
 
-import { usePublicSettings } from "../components/UI/PublicSettingsProvider";
+import { usePublicSettings } from "@/components/UI/PublicSettingsProvider";
 
 const DEFAULT_DASHBOARD_POLL_SECONDS = 25;
 

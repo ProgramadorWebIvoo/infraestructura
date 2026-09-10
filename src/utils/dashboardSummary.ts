@@ -10,7 +10,7 @@
  * debe reflejar las mismas reglas para que el dashboard nunca muestre vacíos.
  */
 
-import type { DashboardSummary, Project } from "../types";
+import type { DashboardSummary, Project } from "@/types";
 
 /** Estados posteriores a la adjudicación (contrato firmado, aún no cerrado). */
 export const COMMITTED_STATUSES: ReadonlySet<string> = new Set([

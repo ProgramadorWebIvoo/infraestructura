@@ -8,8 +8,8 @@
  */
 
 import { useMemo, useState } from "react";
-import type { MaterialItem, Project, ProjectDocument } from "../types";
-import { datosStepSchema, materialesStepSchema, adjuntosStepSchema } from "../schemas/requestForm.schema";
+import type { MaterialItem, Project, ProjectDocument } from "@/types";
+import { datosStepSchema, materialesStepSchema, adjuntosStepSchema } from "@/schemas/requestForm.schema";
 
 /** Convierte el resultado de un safeParse fallido a FieldErrors (un mensaje por FieldKey). */
 function toFieldErrors(issues: { path: PropertyKey[]; message: string }[]): FieldErrors {

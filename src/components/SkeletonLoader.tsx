@@ -15,7 +15,7 @@
 
 import { memo, type CSSProperties, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { containerVariants, itemVariants } from "../animations";
+import { containerVariants, itemVariants } from "@/animations";
 
 const base = "skeleton-shimmer rounded-xl";
 

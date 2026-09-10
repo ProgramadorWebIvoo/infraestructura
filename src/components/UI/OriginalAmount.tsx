@@ -17,7 +17,7 @@
  */
 
 import { motion } from "motion/react";
-import { formatCurrency } from "../../utils";
+import { formatCurrency } from "@/utils";
 
 interface OriginalAmountProps {
   /** Monto tal como lo cotizó el proveedor, en `currency`. */

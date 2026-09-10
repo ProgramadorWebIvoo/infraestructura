@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SupplierMaterialProposalItem } from "../../types";
+import { SupplierMaterialProposalItem } from "@/types";
 
 export interface ProjectPublicData {
   id: string;

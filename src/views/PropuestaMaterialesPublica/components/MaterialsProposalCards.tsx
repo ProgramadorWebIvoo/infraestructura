@@ -13,13 +13,13 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "motion/react";
 import { AlertCircle, Camera, ChevronDown, Loader2, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
-import NumericInput from "../../../components/UI/NumericInput";
-import Select from "../../../components/UI/Select";
-import TextField from "../../../components/UI/TextField";
-import { RequiredMark, HelpHint } from "../../../components/UI/HintSignals";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { itemVariants, springs } from "../../../animations";
-import { apiFetch, getApiBaseUrl } from "../../../services/api";
+import NumericInput from "@/components/UI/NumericInput";
+import Select from "@/components/UI/Select";
+import TextField from "@/components/UI/TextField";
+import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { itemVariants, springs } from "@/animations";
+import { apiFetch, getApiBaseUrl } from "@/services/api";
 import {
   sanitize,
   CONDITION_OPTIONS,
@@ -27,7 +27,7 @@ import {
   type CatalogProductSearchResult,
   type ItemRow,
   type PublicCatalogCategory,
-} from "../types";
+} from "@/views/PropuestaMaterialesPublica/types";
 
 interface MaterialsProposalCardsProps {
   token: string;

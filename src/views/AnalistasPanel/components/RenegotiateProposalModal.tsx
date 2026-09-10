@@ -12,19 +12,19 @@
  */
 
 import { useState } from "react";
-import type { Project, Proposal, ProposalMaterialItem, ProposalDurationUnit } from "../../../types";
+import type { Project, Proposal, ProposalMaterialItem, ProposalDurationUnit } from "@/types";
 import { AlertTriangle, ArrowRight, MessageSquareWarning, Plus, Trash2, Wallet } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import Modal from "../../../components/UI/Modal";
-import NumericInput from "../../../components/UI/NumericInput";
-import Select from "../../../components/UI/Select";
-import Button from "../../../components/UI/Button";
-import { HelpHint, RequiredMark } from "../../../components/UI/HintSignals";
-import { useMaxAdvancePercent } from "../../../hooks/useMaxAdvancePercent";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
-import { formatNumber } from "../../../utils";
+import Modal from "@/components/UI/Modal";
+import NumericInput from "@/components/UI/NumericInput";
+import Select from "@/components/UI/Select";
+import Button from "@/components/UI/Button";
+import { HelpHint, RequiredMark } from "@/components/UI/HintSignals";
+import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import { formatNumber } from "@/utils";
 import { DURATION_UNITS } from "./RegisterProposalModal";
-import BsAmount from "../../../components/UI/BsAmount";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface MaterialItemRow extends ProposalMaterialItem {
   _id: string;

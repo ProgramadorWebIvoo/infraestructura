@@ -23,7 +23,7 @@ import {
   type ToastType as StoreToastType,
   type ShowToastOptions as StoreShowToastOptions,
   type ToastAction as StoreToastAction,
-} from "../../stores/toastStore";
+} from "@/stores/toastStore";
 
 type ToastType = AlertType;
 export type ToastAction = StoreToastAction;

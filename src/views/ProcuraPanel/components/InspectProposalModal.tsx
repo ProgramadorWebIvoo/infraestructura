@@ -17,14 +17,14 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, ArrowRightLeft, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck, Info } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import Modal from "../../../components/UI/Modal";
-import SummaryStat from "../../../components/UI/SummaryStat";
-import Tooltip from "../../../components/UI/Tooltip";
-import type { Project, Proposal, ProposalMaterialItem } from "../../../types";
-import { apiDownload } from "../../../services/api";
-import { formatProposalDuration } from "../../AnalistasPanel/components/RegisterProposalModal";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
-import BsAmount from "../../../components/UI/BsAmount";
+import Modal from "@/components/UI/Modal";
+import SummaryStat from "@/components/UI/SummaryStat";
+import Tooltip from "@/components/UI/Tooltip";
+import type { Project, Proposal, ProposalMaterialItem } from "@/types";
+import { apiDownload } from "@/services/api";
+import { formatProposalDuration } from "@/views/AnalistasPanel/components/RegisterProposalModal";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface InspectProposalModalProps {
   project: Project;

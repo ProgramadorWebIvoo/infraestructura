@@ -11,14 +11,14 @@
 
 import { useState } from "react";
 import { AlertTriangle, XCircle } from "lucide-react";
-import type { Project } from "../../../types";
-import { useToast } from "../../../components/UI/Toast";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import FileDropZone from "../../../components/UI/FileDropZone";
-import { RequiredMark } from "../../../components/UI/HintSignals";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
+import type { Project } from "@/types";
+import { useToast } from "@/components/UI/Toast";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import FileDropZone from "@/components/UI/FileDropZone";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
 
 interface RejectProjectModalProps {
   project: Project | undefined;

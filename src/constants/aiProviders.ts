@@ -12,7 +12,7 @@
  * segundo mapa de clases Tailwind crudas en paralelo.
  */
 
-import { SEMANTIC_COLOR_MAP, type SemanticColor } from "../components/UI/colorTokens";
+import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTokens";
 
 export type AIProvider = "openai" | "anthropic" | "gemini";
 

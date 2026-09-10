@@ -10,9 +10,9 @@
 
 import { motion } from "motion/react";
 import { AlertTriangle } from "lucide-react";
-import type { AuditLog } from "../../../types";
-import { getRoleColor } from "../../../utils";
-import { containerVariants, itemVariants } from "../../../animations";
+import type { AuditLog } from "@/types";
+import { getRoleColor } from "@/utils";
+import { containerVariants, itemVariants } from "@/animations";
 import { REJECTION_ACTION } from "./rejectionAudit";
 
 interface ProjectIterationsTimelineProps {

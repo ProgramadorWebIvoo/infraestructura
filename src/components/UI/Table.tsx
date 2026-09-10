@@ -5,8 +5,8 @@
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { SkeletonBlock } from "../SkeletonLoader";
-import { itemVariants } from "../../animations";
+import { SkeletonBlock } from "@/components/SkeletonLoader";
+import { itemVariants } from "@/animations";
 
 // ─── Types ───
 

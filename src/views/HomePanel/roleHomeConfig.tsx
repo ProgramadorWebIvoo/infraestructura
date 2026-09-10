@@ -28,10 +28,10 @@ import {
   UserCog,
   Wallet,
 } from "lucide-react";
-import { ROUTES } from "../../routes.tsx";
-import { ProjectStatus } from "../../types";
-import type { Project } from "../../types";
-import type { SemanticColor } from "../../components/UI/colorTokens";
+import { ROUTES } from "@/routes.tsx";
+import { ProjectStatus } from "@/types";
+import type { Project } from "@/types";
+import type { SemanticColor } from "@/components/UI/colorTokens";
 
 export interface HomeKpi {
   key: string;

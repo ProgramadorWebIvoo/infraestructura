@@ -18,7 +18,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
-import { springs } from "../../animations";
+import { springs } from "@/animations";
 
 interface KpiPillProps {
   icon: ReactNode;

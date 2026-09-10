@@ -8,8 +8,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import type { Project, AuditLog } from "../types";
-import { apiFetch } from "../services/api";
+import type { Project, AuditLog } from "@/types";
+import { apiFetch } from "@/services/api";
 import { useProjectsData } from "./useProjectsData";
 import { useProjectsWorkflows } from "./useProjectsWorkflows";
 

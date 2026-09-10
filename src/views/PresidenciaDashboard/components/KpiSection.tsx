@@ -8,10 +8,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { CheckCircle2, Clock, DollarSign, Layers, TrendingUp, AlertTriangle } from "lucide-react";
-import KpiCard from "../../../components/UI/KpiCard";
-import { containerVariants, itemVariants } from "../../../animations";
+import KpiCard from "@/components/UI/KpiCard";
+import { containerVariants, itemVariants } from "@/animations";
 import KpiDetailModal, { type KpiKind } from "./KpiDetailModal";
-import type { DashboardSummary, Project } from "../../../types";
+import type { DashboardSummary, Project } from "@/types";
 
 interface KpiSectionProps {
   summary: DashboardSummary;

@@ -9,7 +9,7 @@
  */
 
 import { z } from "zod";
-import { isValidEmail, isValidPhone, isValidRif } from "../utils/validators";
+import { isValidEmail, isValidPhone, isValidRif } from "@/utils/validators";
 
 export const providerConfigSchema = z
   .object({

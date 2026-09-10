@@ -8,8 +8,8 @@
  */
 
 import { CheckCircle2, Circle, Clock, Database } from "lucide-react";
-import type { Project } from "../../../types";
-import { ProjectStatus } from "../../../types";
+import type { Project } from "@/types";
+import { ProjectStatus } from "@/types";
 import { ROLE_STYLES, type RoleId } from "./roleStyles";
 
 type NodeState = "done" | "current" | "partial" | "pending";

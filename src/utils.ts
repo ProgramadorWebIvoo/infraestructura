@@ -77,6 +77,11 @@ export const STATUS_COLORS: Record<string, string> = {
   VERIFICANDO_FINALIZACION: "bg-orange-50 text-orange-700 border-orange-200",
   LISTO_PAGO_FINAL: "bg-rose-50 text-rose-700 border-rose-200",
   COMPLETADO_PAGADO: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  // Flujo de Marketing (marketing_projects)
+  BORRADOR: "bg-slate-100 text-slate-700 border-slate-200",
+  EN_REVISION: "bg-amber-50 text-amber-700 border-amber-200",
+  APROBADO: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  RECHAZADO: "bg-red-50 text-red-700 border-red-200",
 };
 
 export function getStatusColor(status: string): string {

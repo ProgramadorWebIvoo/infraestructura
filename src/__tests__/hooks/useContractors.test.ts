@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import type { Contractor } from "../../types";
+import type { Contractor } from "@/types";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockUsePolledFetch = vi.fn();
@@ -13,7 +13,7 @@ vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-import { useContractors } from "../../hooks/useContractors";
+import { useContractors } from "@/hooks/useContractors";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockContractor(overrides: Partial<Contractor> = {}): Contractor {

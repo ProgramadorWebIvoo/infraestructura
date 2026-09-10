@@ -21,6 +21,7 @@ import { Navigate } from "react-router-dom";
 export const ROUTES = {
   HOME: "/",
   PRESIDENCIA: "/presidencia",
+  MARKETING: "/marketing",
   INFRAESTRUCTURA: "/infraestructura",
   CIERRE_OBRA: "/cierre-obra",
   PROCURA: "/procura",

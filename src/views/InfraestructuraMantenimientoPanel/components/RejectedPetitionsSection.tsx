@@ -18,22 +18,22 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Eye, Pencil, SearchX, XCircle } from "lucide-react";
-import type { AuditLog, Project, ProjectDocument } from "../../../types";
-import { ProjectStatus } from "../../../types";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import Modal from "../../../components/UI/Modal";
-import EmptyState from "../../../components/UI/EmptyState";
-import TableToolbar from "../../../components/UI/TableToolbar";
-import { Table, type Column } from "../../../components/UI/Table";
-import GridView from "../../../components/UI/GridView/GridView";
+import type { AuditLog, Project, ProjectDocument } from "@/types";
+import { ProjectStatus } from "@/types";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import Modal from "@/components/UI/Modal";
+import EmptyState from "@/components/UI/EmptyState";
+import TableToolbar from "@/components/UI/TableToolbar";
+import { Table, type Column } from "@/components/UI/Table";
+import GridView from "@/components/UI/GridView/GridView";
 import RequestWizardCard from "./RequestWizardCard";
 import RejectedPetitionDetailModal from "./RejectedPetitionDetailModal";
 import { renderRejectedPetitionCard } from "./RejectedPetitionGridCard";
-import { useRequestForm } from "../../../hooks/useRequestForm";
-import { useContainerRows } from "../../../hooks/useContainerRows";
-import { useTableViewMode, type TableViewMode } from "../../../hooks/useTableViewMode";
-import { viewSwitchVariants } from "../../../animations";
+import { useRequestForm } from "@/hooks/useRequestForm";
+import { useContainerRows } from "@/hooks/useContainerRows";
+import { useTableViewMode, type TableViewMode } from "@/hooks/useTableViewMode";
+import { viewSwitchVariants } from "@/animations";
 
 const REJECT_ACTION = "Rechazo de petición de obra";
 

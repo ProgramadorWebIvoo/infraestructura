@@ -7,8 +7,8 @@
  * y se mantiene una única fuente de verdad para reglas de negocio.
  */
 
-import type { AiConfigForm, AiConfigUpdatePayload } from "../../hooks/useAIConfig";
-import { aiConfigFormSchema } from "../../schemas/aiConfig.schema";
+import type { AiConfigForm, AiConfigUpdatePayload } from "@/hooks/useAIConfig";
+import { aiConfigFormSchema } from "@/schemas/aiConfig.schema";
 
 /** Valor por defecto de max_tokens cuando el campo queda vacío. */
 export const DEFAULT_MAX_TOKENS = 4096;

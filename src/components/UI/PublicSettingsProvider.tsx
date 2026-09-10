@@ -13,10 +13,10 @@
  */
 
 import { useEffect, type ReactNode } from "react";
-import { useAuth } from "../../hooks/useAuth";
-import { usePublicSettingsStore, type SettingsByGroup } from "../../stores/publicSettingsStore";
+import { useAuth } from "@/hooks/useAuth";
+import { usePublicSettingsStore, type SettingsByGroup } from "@/stores/publicSettingsStore";
 
-export type { RawSetting, SettingsByGroup } from "../../stores/publicSettingsStore";
+export type { RawSetting, SettingsByGroup } from "@/stores/publicSettingsStore";
 
 interface PublicSettingsContextValue {
   settings: SettingsByGroup;

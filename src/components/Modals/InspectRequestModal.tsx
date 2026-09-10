@@ -8,11 +8,11 @@ import { formatCurrency } from "@ivoo/shared";
  */
 
 import { Calendar, DollarSign, FileText, MapPin, Package } from "lucide-react";
-import type { Project } from "../../types";
-import Modal from "../UI/Modal";
-import StatusBadge from "../UI/StatusBadge";
-import { useCurrencyConversion } from "../../hooks/useCurrencyConversion";
-import BsAmount from "../UI/BsAmount";
+import type { Project } from "@/types";
+import Modal from "@/components/UI/Modal";
+import StatusBadge from "@/components/UI/StatusBadge";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 // ---------------------------------------------------------------------------
 // Props

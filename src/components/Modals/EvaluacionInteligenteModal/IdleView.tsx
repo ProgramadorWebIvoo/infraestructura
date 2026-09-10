@@ -6,8 +6,8 @@
  */
 
 import { BrainCircuit, DollarSign, TrendingUp, Clock, Zap } from "lucide-react";
-import { Table, type Column } from "../../UI/Table";
-import Select from "../../UI/Select";
+import { Table, type Column } from "@/components/UI/Table";
+import Select from "@/components/UI/Select";
 import type { IdleViewProps } from "./types";
 
 type ProposalRow = IdleViewProps["proposals"][number];

@@ -12,8 +12,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 
 export function useRoleAccess(role: string | undefined) {
   const activeRole = role; // sin fallback — si no hay rol, canAccess es false

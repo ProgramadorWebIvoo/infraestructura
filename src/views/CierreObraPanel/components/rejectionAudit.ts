@@ -7,7 +7,7 @@
  * RevisedDocumentsSection.tsx y ProjectIterationsTimeline.tsx.
  */
 
-import type { AuditLog } from "../../../types";
+import type { AuditLog } from "@/types";
 
 export const REJECTION_ACTION = "Rechazo de petición de obra";
 

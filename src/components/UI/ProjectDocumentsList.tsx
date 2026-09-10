@@ -20,7 +20,7 @@
 
 import { useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, Download, Eye, FileSpreadsheet, Image as ImageIcon, Map, RefreshCw, Undo2, X } from "lucide-react";
-import type { AuditLog, Project, ProjectDocument } from "../../types";
+import type { AuditLog, Project, ProjectDocument } from "@/types";
 import Tooltip from "./Tooltip";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 

@@ -9,9 +9,9 @@
  */
 
 import { Layers, MapPin } from "lucide-react";
-import type { Project, BaseCurrency } from "../../../types";
+import type { Project, BaseCurrency } from "@/types";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import BsAmount from "../../../components/UI/BsAmount";
+import BsAmount from "@/components/UI/BsAmount";
 
 export function renderTechnicalReviewCard(
   project: Project,

@@ -12,7 +12,7 @@ import { useEffect } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { useLocation } from "react-router-dom";
-import { getRouteMeta } from "../routeMeta.tsx";
+import { getRouteMeta } from "@/routeMeta.tsx";
 
 const DEFAULT_TITLE = "IVOO Gestión de Infraestructura";
 const DEFAULT_FAVICON = "/favicon.svg";

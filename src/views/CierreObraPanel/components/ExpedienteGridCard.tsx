@@ -9,8 +9,8 @@
  */
 
 import { AlertTriangle, FileStack, MapPin } from "lucide-react";
-import type { Project } from "../../../types";
-import StatusBadge from "../../../components/UI/StatusBadge";
+import type { Project } from "@/types";
+import StatusBadge from "@/components/UI/StatusBadge";
 
 export function renderExpedienteCard(project: Project, rejectionCount: number) {
   return (

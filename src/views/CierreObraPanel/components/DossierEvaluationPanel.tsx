@@ -34,12 +34,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import Button from "../../../components/UI/Button";
-import Spinner from "../../../components/UI/Spinner";
-import { useToast } from "../../../components/UI/Toast";
-import { evaluateDossier } from "../../../services/aiEvaluationService";
-import DossierEvaluationSummary from "../../../components/DossierEvaluationSummary";
-import type { Project } from "../../../types";
+import Button from "@/components/UI/Button";
+import Spinner from "@/components/UI/Spinner";
+import { useToast } from "@/components/UI/Toast";
+import { evaluateDossier } from "@/services/aiEvaluationService";
+import DossierEvaluationSummary from "@/components/DossierEvaluationSummary";
+import type { Project } from "@/types";
 
 interface DossierEvaluationPanelProps {
   project: Project;

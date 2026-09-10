@@ -11,13 +11,13 @@ import { formatCurrency } from "@ivoo/shared";
 
 import { useEffect, useState } from "react";
 import { Boxes, Package, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import EmptyState from "../../../components/UI/EmptyState";
-import Button from "../../../components/UI/Button";
-import { SkeletonPriceChart, SkeletonSupplierList } from "../../../components/SkeletonLoader";
-import { apiFetch } from "../../../services/api";
-import type { CatalogProduct, CatalogProductPriceHistoryEntry } from "../../../types";
-import { getErrorMessage } from "../../../services/logger";
+import Modal from "@/components/UI/Modal";
+import EmptyState from "@/components/UI/EmptyState";
+import Button from "@/components/UI/Button";
+import { SkeletonPriceChart, SkeletonSupplierList } from "@/components/SkeletonLoader";
+import { apiFetch } from "@/services/api";
+import type { CatalogProduct, CatalogProductPriceHistoryEntry } from "@/types";
+import { getErrorMessage } from "@/services/logger";
 import Tooltip from "@/components/UI/Tooltip";
 
 interface CatalogProductDetailModalProps {

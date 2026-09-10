@@ -9,8 +9,8 @@
  */
 
 import { AlertTriangle, Calendar, MapPin, Package } from "lucide-react";
-import type { Project } from "../../../types";
-import StatusBadge from "../../../components/UI/StatusBadge";
+import type { Project } from "@/types";
+import StatusBadge from "@/components/UI/StatusBadge";
 
 interface ExpedienteDetailTabProps {
   project: Project;

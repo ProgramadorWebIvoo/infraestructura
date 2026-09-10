@@ -8,9 +8,9 @@
  * visual y lógicamente independiente de las otras dos).
  */
 
-import type { Project } from "../../../types";
-import { approvedOf, winnerOf } from "../../../utils/dashboardSummary";
-import { formatCurrency } from "../../../utils";
+import type { Project } from "@/types";
+import { approvedOf, winnerOf } from "@/utils/dashboardSummary";
+import { formatCurrency } from "@/utils";
 
 function FinancialStat({
   label,

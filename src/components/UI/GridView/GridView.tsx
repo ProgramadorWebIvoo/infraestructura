@@ -18,7 +18,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "motion/react";
-import { containerVariants } from "../../../animations";
+import { containerVariants } from "@/animations";
 import GridCard from "./GridCard";
 import { useFullViewport } from "./useFullViewport";
 import type { GridViewProps } from "./types";

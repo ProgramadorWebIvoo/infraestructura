@@ -19,7 +19,7 @@
  */
 
 import { motion } from "motion/react";
-import { formatBs } from "../../hooks/useCurrencyConversion";
+import { formatBs } from "@/hooks/useCurrencyConversion";
 
 interface BsAmountProps {
   amount: number;

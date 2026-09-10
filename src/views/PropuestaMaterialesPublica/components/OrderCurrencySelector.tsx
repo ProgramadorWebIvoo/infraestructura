@@ -12,9 +12,9 @@
 
 import { motion } from "motion/react";
 import { Coins } from "lucide-react";
-import { itemVariants } from "../../../animations";
-import { RequiredMark } from "../../../components/UI/HintSignals";
-import type { PublicCurrency } from "../types";
+import { itemVariants } from "@/animations";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import type { PublicCurrency } from "@/views/PropuestaMaterialesPublica/types";
 
 interface OrderCurrencySelectorProps {
   currencies: PublicCurrency[];

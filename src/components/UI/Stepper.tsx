@@ -9,7 +9,7 @@
 
 import { Check } from "lucide-react";
 import { motion } from "motion/react";
-import { springs } from "../../animations";
+import { springs } from "@/animations";
 
 export interface StepDefinition {
   id: string;

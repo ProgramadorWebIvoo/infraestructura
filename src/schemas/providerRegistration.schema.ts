@@ -9,7 +9,7 @@
  */
 
 import { z } from "zod";
-import { isValidEmail } from "../utils/validators";
+import { isValidEmail } from "@/utils/validators";
 
 export const providerRegistrationSchema = z.object({
   name: z.string().min(1),

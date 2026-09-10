@@ -9,14 +9,14 @@
 
 import { RefreshCw, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import { Table, type Column } from "../../../components/UI/Table";
-import EmptyState from "../../../components/UI/EmptyState";
-import { useToast } from "../../../components/UI/Toast";
-import { getErrorMessage } from "../../../services/logger";
-import type { ExchangeRateRecord } from "../../../hooks/useExchangeRates";
-import { formatBs } from "../../../hooks/useCurrencyConversion";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import { Table, type Column } from "@/components/UI/Table";
+import EmptyState from "@/components/UI/EmptyState";
+import { useToast } from "@/components/UI/Toast";
+import { getErrorMessage } from "@/services/logger";
+import type { ExchangeRateRecord } from "@/hooks/useExchangeRates";
+import { formatBs } from "@/hooks/useCurrencyConversion";
 
 interface ExchangeRateHistoryModalProps {
   isOpen: boolean;

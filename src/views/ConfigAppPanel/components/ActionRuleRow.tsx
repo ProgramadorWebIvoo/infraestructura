@@ -23,12 +23,12 @@
 import { useState } from "react";
 import { ChevronDown, AlertTriangle, BellOff } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import RoleMultiSelect from "../../../components/UI/RoleMultiSelect";
-import FieldError from "../../../components/UI/FieldError";
-import Tooltip from "../../../components/UI/Tooltip";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { springs } from "../../../animations";
-import type { NotificationRuleChannels } from "../../../hooks/useNotificationRules";
+import RoleMultiSelect from "@/components/UI/RoleMultiSelect";
+import FieldError from "@/components/UI/FieldError";
+import Tooltip from "@/components/UI/Tooltip";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { springs } from "@/animations";
+import type { NotificationRuleChannels } from "@/hooks/useNotificationRules";
 
 type Channel = "app" | "mail";
 

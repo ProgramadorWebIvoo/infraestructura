@@ -14,12 +14,12 @@
  */
 
 import { Building2, Calendar, MapPin } from "lucide-react";
-import { ProjectStatus } from "../../../types";
-import type { Project } from "../../../types";
-import Modal from "../../UI/Modal";
-import EmptyState from "../../UI/EmptyState";
-import StatusBadge from "../../UI/StatusBadge";
-import { daysBetween } from "../../../utils/dashboardSummary";
+import { ProjectStatus } from "@/types";
+import type { Project } from "@/types";
+import Modal from "@/components/UI/Modal";
+import EmptyState from "@/components/UI/EmptyState";
+import StatusBadge from "@/components/UI/StatusBadge";
+import { daysBetween } from "@/utils/dashboardSummary";
 import FinancialSnapshot from "./FinancialSnapshot";
 import ProjectOrganigrama from "./ProjectOrganigrama";
 import WorkflowTimeline from "./WorkflowTimeline";

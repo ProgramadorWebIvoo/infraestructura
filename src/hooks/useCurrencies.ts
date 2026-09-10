@@ -10,8 +10,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 
 export interface CurrencyRecord {

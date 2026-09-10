@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronLeft, ChevronRight, History, Search, SlidersHorizontal } from "lucide-react";
-import { SkeletonAuditList } from "../SkeletonLoader";
+import { SkeletonAuditList } from "@/components/SkeletonLoader";
 import EmptyState from "./EmptyState";
 
 export interface AuditLogPanelProps<T> {

@@ -20,8 +20,8 @@
  */
 
 import { create } from "zustand";
-import type { AppNotification } from "../types";
-import { apiFetch } from "../services/api";
+import type { AppNotification } from "@/types";
+import { apiFetch } from "@/services/api";
 
 interface NotificationsState {
   authToken: string;

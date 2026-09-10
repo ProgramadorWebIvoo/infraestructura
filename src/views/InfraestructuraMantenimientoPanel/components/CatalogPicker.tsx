@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { ListChecks } from "lucide-react";
-import Button from "../../../components/UI/Button";
+import Button from "@/components/UI/Button";
 import MaterialChecklistModal from "./MaterialChecklistModal";
 
 interface CatalogPickerProps {

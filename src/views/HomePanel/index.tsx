@@ -20,13 +20,13 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, ArrowUpRight, CheckCircle2, Clock, Megaphone, Sparkles } from "lucide-react";
-import { SkeletonBlock, SkeletonStats } from "../../components/SkeletonLoader";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
-import EmptyState from "../../components/UI/EmptyState";
-import { roleLabel } from "../../constants/roles";
-import { getUserInitials, getRoleColor } from "../../utils";
+import { SkeletonBlock, SkeletonStats } from "@/components/SkeletonLoader";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import EmptyState from "@/components/UI/EmptyState";
+import { roleLabel } from "@/constants/roles";
+import { getUserInitials, getRoleColor } from "@/utils";
 import { getRoleHomeConfig } from "./roleHomeConfig";
-import type { AuditLog, Project } from "../../types";
+import type { AuditLog, Project } from "@/types";
 
 interface HomePanelProps {
   user: { name: string; email: string } | null;

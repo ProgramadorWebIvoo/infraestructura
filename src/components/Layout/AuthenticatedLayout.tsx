@@ -11,12 +11,12 @@ import { lazy, Suspense, useState, useEffect, useCallback, type ReactNode } from
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { SkeletonBlock } from "../SkeletonLoader";
-import SidebarNav from "../UI/SidebarNav";
-import MobileTopBar from "../UI/MobileTopBar";
-import OfflineBanner from "../UI/OfflineBanner";
-import ErrorBoundary from "../ErrorBoundary";
-import type { Project } from "../../types";
+import { SkeletonBlock } from "@/components/SkeletonLoader";
+import SidebarNav from "@/components/UI/SidebarNav";
+import MobileTopBar from "@/components/UI/MobileTopBar";
+import OfflineBanner from "@/components/UI/OfflineBanner";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import type { Project } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -62,7 +62,7 @@ function PageFallback() {
 }
 
 // El modal se lazy-loadea porque solo se abre bajo demanda
-const InspectProjectModal = lazy(() => import("../Modals/InspectProjectModal"));
+const InspectProjectModal = lazy(() => import("@/components/Modals/InspectProjectModal"));
 
 // El estado colapsado del sidebar sobrevive al refresh de página
 const SIDEBAR_COLLAPSED_KEY = "ivoo.sidebar.collapsed";

@@ -9,7 +9,7 @@
 
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { TrendingUp } from "lucide-react";
+import { CircleDollarSign } from "lucide-react";
 import { useExchangeRatesContext } from "./ExchangeRatesProvider";
 import { SEMANTIC_COLOR_MAP } from "./colorTokens";
 import SidebarTip from "./SidebarTip";
@@ -62,7 +62,7 @@ export default function ExchangeRatesSidebarSection({ userRole, isCollapsed }: E
         <SidebarTip label={`Tasas BCV\n${ratesLabel}`} disabled={false}>
           <div className="flex justify-center">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors cursor-help">
-              <TrendingUp className="h-5 w-5" />
+              <CircleDollarSign className="h-5 w-5" />
             </div>
           </div>
         </SidebarTip>

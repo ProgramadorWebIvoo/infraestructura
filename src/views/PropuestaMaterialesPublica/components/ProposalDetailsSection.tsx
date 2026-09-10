@@ -8,10 +8,10 @@
 
 import { motion } from "motion/react";
 import { Clock, HandCoins, Loader2, Send } from "lucide-react";
-import NumericInput from "../../../components/UI/NumericInput";
-import Select from "../../../components/UI/Select";
-import { itemVariants } from "../../../animations";
-import { DURATION_UNITS, sanitize, type DurationUnit } from "../types";
+import NumericInput from "@/components/UI/NumericInput";
+import Select from "@/components/UI/Select";
+import { itemVariants } from "@/animations";
+import { DURATION_UNITS, sanitize, type DurationUnit } from "@/views/PropuestaMaterialesPublica/types";
 
 interface ProposalDetailsSectionProps {
   estimatedDays: number | "";

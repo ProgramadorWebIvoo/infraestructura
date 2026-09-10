@@ -13,15 +13,15 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Table, type Column } from "../../../components/UI/Table";
-import Button from "../../../components/UI/Button";
-import IconActionButton from "../../../components/UI/IconActionButton";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import ActiveBadge from "../../../components/UI/ActiveBadge";
-import Card from "../../../components/UI/Card";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { itemVariants } from "../../../animations";
-import type { AiConfigRecord } from "../../../hooks/useAIConfig";
+import { Table, type Column } from "@/components/UI/Table";
+import Button from "@/components/UI/Button";
+import IconActionButton from "@/components/UI/IconActionButton";
+import SectionHeader from "@/components/UI/SectionHeader";
+import ActiveBadge from "@/components/UI/ActiveBadge";
+import Card from "@/components/UI/Card";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { itemVariants } from "@/animations";
+import type { AiConfigRecord } from "@/hooks/useAIConfig";
 import ProviderIcon from "./ProviderIcon";
 
 // ---------------------------------------------------------------------------

@@ -19,10 +19,10 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { apiFetch } from "../services/api";
-import { requestNotificationPermission } from "../services/browserNotifications";
+import { apiFetch } from "@/services/api";
+import { requestNotificationPermission } from "@/services/browserNotifications";
 import { useAppGroupSettings } from "./useAppGroupSettings";
-import { loginSchema } from "../schemas/auth.schema";
+import { loginSchema } from "@/schemas/auth.schema";
 
 const STORAGE_USER = "ivoo_auth_user";
 const AUTHENTICATED_SENTINEL = "authenticated";

@@ -8,9 +8,9 @@
 
 import { useCallback } from "react";
 import DOMPurify from "dompurify";
-import type { SupplierMaterialProposal } from "../types";
-import { apiFetch } from "../services/api";
-import { getErrorMessage } from "../services/logger";
+import type { SupplierMaterialProposal } from "@/types";
+import { apiFetch } from "@/services/api";
+import { getErrorMessage } from "@/services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 

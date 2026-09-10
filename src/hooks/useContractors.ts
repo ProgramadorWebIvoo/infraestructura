@@ -8,8 +8,8 @@
  */
 
 import { useCallback } from "react";
-import type { Contractor } from "../types";
-import { apiFetch } from "../services/api";
+import type { Contractor } from "@/types";
+import { apiFetch } from "@/services/api";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 

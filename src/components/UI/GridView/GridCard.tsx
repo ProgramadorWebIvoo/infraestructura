@@ -9,8 +9,8 @@
 
 import { memo } from "react";
 import { motion } from "motion/react";
-import { SEMANTIC_COLOR_MAP, type SemanticColor } from "../colorTokens";
-import { itemVariants } from "../../../animations";
+import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTokens";
+import { itemVariants } from "@/animations";
 
 /** Clases de ring literales por rol — Tailwind JIT no puede resolver clases
  * construidas en runtime (ej. `text600.replace("text-", "ring-")`), necesita

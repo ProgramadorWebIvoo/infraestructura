@@ -10,13 +10,13 @@
 
 import { useState } from "react";
 import { AlertTriangle, Eye, MessageSquareText, User } from "lucide-react";
-import type { AuditLog, Project, ProjectDocument } from "../../../types";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
-import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
-import { downloadProjectDocument } from "../../../services/api";
-import { useToast } from "../../../components/UI/Toast";
+import type { AuditLog, Project, ProjectDocument } from "@/types";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import ProjectDocumentsList from "@/components/UI/ProjectDocumentsList";
+import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
+import { downloadProjectDocument } from "@/services/api";
+import { useToast } from "@/components/UI/Toast";
 
 interface RejectedPetitionDetailModalProps {
   project: Project;

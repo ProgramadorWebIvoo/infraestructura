@@ -5,7 +5,7 @@
  * Utilidades para gestionar propuestas del portal de proveedores.
  */
 
-import type { Proposal } from "../../../types";
+import type { Proposal } from "@/types";
 
 /**
  * Calcula cuántas propuestas del portal aún están pendientes de importar.

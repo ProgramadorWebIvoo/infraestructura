@@ -9,10 +9,10 @@
 
 import { motion } from "motion/react";
 import { Users } from "lucide-react";
-import { itemVariants } from "../../../animations";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import type { NotificationActionOption, NotificationRuleChannels } from "../../../hooks/useNotificationRules";
+import { itemVariants } from "@/animations";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import type { NotificationActionOption, NotificationRuleChannels } from "@/hooks/useNotificationRules";
 import NotificationMatrix from "./NotificationMatrix";
 
 interface NotificationRulesCardProps {

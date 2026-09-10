@@ -9,12 +9,12 @@
 
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
-import { itemVariants } from "../../../animations";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import InfoBanner from "../../../components/UI/InfoBanner";
-import type { AppSettingRecord } from "../../../hooks/useAppSettings";
-import type { TagOption } from "../../../components/UI/TagMultiSelect";
+import { itemVariants } from "@/animations";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import InfoBanner from "@/components/UI/InfoBanner";
+import type { AppSettingRecord } from "@/hooks/useAppSettings";
+import type { TagOption } from "@/components/UI/TagMultiSelect";
 import SettingRow from "./SettingRow";
 
 export interface SettingGroupMeta {

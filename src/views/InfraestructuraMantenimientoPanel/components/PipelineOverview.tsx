@@ -8,8 +8,8 @@
  */
 
 import { useMemo } from "react";
-import type { Project } from "../../../types";
-import { PIPELINE_STAGES, countByStage } from "../pipeline";
+import type { Project } from "@/types";
+import { PIPELINE_STAGES, countByStage } from "@/views/InfraestructuraMantenimientoPanel/pipeline";
 
 interface PipelineOverviewProps {
   projects: Project[];

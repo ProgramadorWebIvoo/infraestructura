@@ -10,7 +10,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { Check, CheckCheck, Trash2, X } from "lucide-react";
-import type { AppNotification } from "../../types";
+import type { AppNotification } from "@/types";
 import { ALERT_ICONS, BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
 
 const TYPE_ICON_CLASS: Record<string, string> = {

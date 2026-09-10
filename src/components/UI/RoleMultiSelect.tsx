@@ -8,7 +8,7 @@
  */
 
 import TagMultiSelect from "./TagMultiSelect";
-import { roleLabel } from "../../constants/roles";
+import { roleLabel } from "@/constants/roles";
 
 interface RoleMultiSelectProps {
   roles: string[];

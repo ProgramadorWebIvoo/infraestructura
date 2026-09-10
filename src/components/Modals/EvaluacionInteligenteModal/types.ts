@@ -5,7 +5,7 @@
  * Tipos compartidos entre los sub-componentes del modal de Evaluación Inteligente.
  */
 
-import type { AIEvaluationResult } from "../../../services/aiEvaluationService";
+import type { AIEvaluationResult } from "@/services/aiEvaluationService";
 
 export interface FailoverLog {
   entries: string[];

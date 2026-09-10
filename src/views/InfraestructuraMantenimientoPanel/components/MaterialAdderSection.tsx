@@ -12,11 +12,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, Info, Package } from "lucide-react";
-import type { MaterialItem } from "../../../types";
-import SegmentedControl from "../../../components/UI/SegmentedControl";
-import AlertBanner from "../../../components/UI/AlertBanner";
-import { useToast } from "../../../components/UI/Toast";
-import { bannerVariants, springs } from "../../../animations";
+import type { MaterialItem } from "@/types";
+import SegmentedControl from "@/components/UI/SegmentedControl";
+import AlertBanner from "@/components/UI/AlertBanner";
+import { useToast } from "@/components/UI/Toast";
+import { bannerVariants, springs } from "@/animations";
 import CatalogPicker from "./CatalogPicker";
 import CustomMaterialForm from "./CustomMaterialForm";
 import AddedMaterialsTable from "./AddedMaterialsTable";

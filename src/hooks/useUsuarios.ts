@@ -8,8 +8,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { getErrorMessage, logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { getErrorMessage, logError } from "@/services/logger";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";

@@ -73,6 +73,12 @@ export const STATUS_LABELS: Record<string, string> = {
   VERIFICANDO_FINALIZACION: "Verificando",
   LISTO_PAGO_FINAL: "Listo para Pago Final",
   COMPLETADO_PAGADO: "Completado",
+  // Flujo de Marketing (marketing_projects) — códigos propios, sin
+  // colisión con los de arriba (flujo de obra).
+  BORRADOR: "Borrador",
+  EN_REVISION: "En Revisión",
+  APROBADO: "Aprobado",
+  RECHAZADO: "Rechazado",
 };
 
 export function getStatusLabel(status: string): string {

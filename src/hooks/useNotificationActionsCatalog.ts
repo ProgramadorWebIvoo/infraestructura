@@ -22,9 +22,9 @@
  */
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
-import type { TagOption } from "../components/UI/TagMultiSelect";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
+import type { TagOption } from "@/components/UI/TagMultiSelect";
 
 let cachedActions: TagOption[] | null = null;
 let inFlight: Promise<TagOption[]> | null = null;

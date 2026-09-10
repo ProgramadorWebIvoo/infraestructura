@@ -14,11 +14,11 @@
 import { useMemo } from "react";
 import { Package, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import type { MaterialItem } from "../../../types";
-import { Table, type Column } from "../../../components/UI/Table";
-import EmptyState from "../../../components/UI/EmptyState";
-import { useCurrencyConversion } from "../../../hooks/useCurrencyConversion";
-import BsAmount from "../../../components/UI/BsAmount";
+import type { MaterialItem } from "@/types";
+import { Table, type Column } from "@/components/UI/Table";
+import EmptyState from "@/components/UI/EmptyState";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 type MaterialRow = Omit<MaterialItem, "id">;
 

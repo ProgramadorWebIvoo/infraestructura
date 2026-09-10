@@ -10,10 +10,10 @@
 
 import { Eye, MapPin } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import type { Project } from "../../../types";
-import StatusBadge from "../../../components/UI/StatusBadge";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import BsAmount from "../../../components/UI/BsAmount";
+import type { Project } from "@/types";
+import StatusBadge from "@/components/UI/StatusBadge";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import BsAmount from "@/components/UI/BsAmount";
 
 function TypeBadge({ type }: { type: Project["type"] }) {
   const c = SEMANTIC_COLOR_MAP[type === "INFRAESTRUCTURA" ? "brand" : "neutral"];

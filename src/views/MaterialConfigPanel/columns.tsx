@@ -7,10 +7,10 @@
  */
 
 import { Pencil, ToggleLeft, ToggleRight } from "lucide-react";
-import type { Column } from "../../components/UI/Table";
-import IconActionButton from "../../components/UI/IconActionButton";
-import ActiveBadge from "../../components/UI/ActiveBadge";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
+import type { Column } from "@/components/UI/Table";
+import IconActionButton from "@/components/UI/IconActionButton";
+import ActiveBadge from "@/components/UI/ActiveBadge";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { ConfigMaterial } from "./types";
 
 interface GetMaterialColumnsArgs {

@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
-import { containerVariants } from "../../animations";
-import { useToast } from "../../components/UI/Toast";
-import ConfirmDialog from "../../components/UI/ConfirmDialog";
-import { getErrorMessage } from "../../services/logger";
+import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
+import { containerVariants } from "@/animations";
+import { useToast } from "@/components/UI/Toast";
+import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import { getErrorMessage } from "@/services/logger";
 import {
   useAIConfig,
   type AiConfigRecord,
   type AiConfigForm,
   EMPTY_CONFIG_FORM,
-} from "../../hooks/useAIConfig";
+} from "@/hooks/useAIConfig";
 import UsageDashboard from "./components/UsageDashboard";
 import AIConfigTable from "./components/AIConfigTable";
 import { validateConfigForm, buildUpdatePayload } from "./aiConfigForm";
-import AIConfigFormModal from "../../components/Modals/AIConfigFormModal";
-import { useConfigAuditLogs } from "../../hooks/useConfigAuditLogs";
+import AIConfigFormModal from "@/components/Modals/AIConfigFormModal";
+import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
 
 interface AIConfigPanelProps {
   authToken: string;

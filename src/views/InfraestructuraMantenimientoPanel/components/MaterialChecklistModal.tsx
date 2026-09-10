@@ -17,12 +17,12 @@
 import { useState, useMemo } from "react";
 import { Search, Check, Package } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import Modal from "../../../components/UI/Modal";
-import { Table, type Column } from "../../../components/UI/Table";
-import Button from "../../../components/UI/Button";
-import NumericInput from "../../../components/UI/NumericInput";
-import FieldError from "../../../components/UI/FieldError";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import Modal from "@/components/UI/Modal";
+import { Table, type Column } from "@/components/UI/Table";
+import Button from "@/components/UI/Button";
+import NumericInput from "@/components/UI/NumericInput";
+import FieldError from "@/components/UI/FieldError";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 
 interface CatalogMaterial {
   name: string;

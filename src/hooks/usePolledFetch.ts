@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
-import { logError } from "../services/logger";
+import { logError } from "@/services/logger";
 import type { ShowToast } from "./useProjects";
-import { DEFAULT_POLL_INTERVAL } from "../constants";
+import { DEFAULT_POLL_INTERVAL } from "@/constants";
 
 interface UsePolledFetchOptions<T> {
   authToken: string;

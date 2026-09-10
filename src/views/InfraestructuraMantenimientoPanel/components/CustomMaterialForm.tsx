@@ -9,12 +9,12 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Plus } from "lucide-react";
-import type { MaterialItem } from "../../../types";
-import TextField from "../../../components/UI/TextField";
-import NumericInput from "../../../components/UI/NumericInput";
-import Button from "../../../components/UI/Button";
-import { useToast } from "../../../components/UI/Toast";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
+import type { MaterialItem } from "@/types";
+import TextField from "@/components/UI/TextField";
+import NumericInput from "@/components/UI/NumericInput";
+import Button from "@/components/UI/Button";
+import { useToast } from "@/components/UI/Toast";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 
 interface CustomMaterialFormProps {
   onAdd: (material: Omit<MaterialItem, "id">) => void;

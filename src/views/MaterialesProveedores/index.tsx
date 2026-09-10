@@ -12,8 +12,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { Building2, Layers, ShieldCheck, Sparkles } from "lucide-react";
-import { Contractor } from "../../types";
-import { springs } from "../../animations";
+import { Contractor } from "@/types";
+import { springs } from "@/animations";
 import RegistrationForm from "./components/RegistrationForm";
 
 interface RegistroProveedoresPublicoProps {

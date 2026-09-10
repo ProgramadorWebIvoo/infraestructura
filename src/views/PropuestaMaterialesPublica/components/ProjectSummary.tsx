@@ -8,8 +8,8 @@
 
 import { motion } from "motion/react";
 import { Mail, MapPin, Package } from "lucide-react";
-import { itemVariants, springs } from "../../../animations";
-import type { InvitationPublicInfo } from "../types";
+import { itemVariants, springs } from "@/animations";
+import type { InvitationPublicInfo } from "@/views/PropuestaMaterialesPublica/types";
 
 interface ProjectSummaryProps {
   invitation: InvitationPublicInfo;

@@ -10,9 +10,9 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Building2, KeyRound, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
-import { apiFetch } from "../../services/api";
-import { ROUTES } from "../../routes.tsx";
-import BackgroundDecor from "../LoginScreen/components/BackgroundDecor";
+import { apiFetch } from "@/services/api";
+import { ROUTES } from "@/routes.tsx";
+import BackgroundDecor from "@/views/LoginScreen/components/BackgroundDecor";
 
 export default function ResetPasswordScreen() {
   const { token } = useParams<{ token: string }>();

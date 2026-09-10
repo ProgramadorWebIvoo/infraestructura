@@ -13,10 +13,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
-import { useToast } from "../../components/UI/Toast";
+import { useToast } from "@/components/UI/Toast";
 import { AlertTriangle, CheckCircle2, Loader2, Package } from "lucide-react";
-import { apiFetch } from "../../services/api";
-import { containerVariants, itemVariants, springs } from "../../animations";
+import { apiFetch } from "@/services/api";
+import { containerVariants, itemVariants, springs } from "@/animations";
 import TopBar from "./components/TopBar";
 import ProjectSummary from "./components/ProjectSummary";
 import OrderCurrencySelector from "./components/OrderCurrencySelector";

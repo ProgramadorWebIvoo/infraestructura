@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
-import { ToastProvider, useToast } from "../../../components/UI/Toast";
-import { useToastStore } from "../../../stores/toastStore";
+import { ToastProvider, useToast } from "@/components/UI/Toast";
+import { useToastStore } from "@/stores/toastStore";
 
 // ── Helper component to trigger toasts ────────────────────────────────────────
 function ToastTrigger({

@@ -9,7 +9,7 @@
 
 import { useCallback, useMemo } from "react";
 import { truncateToDecimals } from "@ivoo/shared";
-import { useExchangeRatesContext } from "../components/UI/ExchangeRatesProvider";
+import { useExchangeRatesContext } from "@/components/UI/ExchangeRatesProvider";
 
 /** Formatea un monto en Bs.: separador de miles ".", decimales ",", siempre 2 decimales, truncado (no redondeado). */
 export function formatBs(value: number): string {

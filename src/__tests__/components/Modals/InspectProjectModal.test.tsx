@@ -8,9 +8,9 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import InspectProjectModal from "../../../components/Modals/InspectProjectModal";
-import type { Project, Proposal } from "../../../types";
-import { ProjectStatus } from "../../../types";
+import InspectProjectModal from "@/components/Modals/InspectProjectModal";
+import type { Project, Proposal } from "@/types";
+import { ProjectStatus } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Helpers

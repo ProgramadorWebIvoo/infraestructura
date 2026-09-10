@@ -25,22 +25,22 @@ import {
   Check,
   RotateCcw,
 } from "lucide-react";
-import { itemVariants, springs } from "../../animations";
-import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
-import Button from "../../components/UI/Button";
-import AlertBanner from "../../components/UI/AlertBanner";
-import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
-import Tabs from "../../components/UI/Tabs";
-import TabPanel from "../../components/UI/TabPanel";
-import { useToast } from "../../components/UI/Toast";
-import { getErrorMessage } from "../../services/logger";
-import { useAppSettings } from "../../hooks/useAppSettings";
-import { useConfigAuditLogs } from "../../hooks/useConfigAuditLogs";
-import { useNotificationActionsCatalog } from "../../hooks/useNotificationActionsCatalog";
-import { useNotificationRules, type NotificationRuleChannels } from "../../hooks/useNotificationRules";
-import { useCurrencies, type CurrencyRecord } from "../../hooks/useCurrencies";
-import { useExchangeRates } from "../../hooks/useExchangeRates";
-import { useDraftState } from "../../hooks/useDraftState";
+import { itemVariants, springs } from "@/animations";
+import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
+import Button from "@/components/UI/Button";
+import AlertBanner from "@/components/UI/AlertBanner";
+import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
+import Tabs from "@/components/UI/Tabs";
+import TabPanel from "@/components/UI/TabPanel";
+import { useToast } from "@/components/UI/Toast";
+import { getErrorMessage } from "@/services/logger";
+import { useAppSettings } from "@/hooks/useAppSettings";
+import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
+import { useNotificationActionsCatalog } from "@/hooks/useNotificationActionsCatalog";
+import { useNotificationRules, type NotificationRuleChannels } from "@/hooks/useNotificationRules";
+import { useCurrencies, type CurrencyRecord } from "@/hooks/useCurrencies";
+import { useExchangeRates } from "@/hooks/useExchangeRates";
+import { useDraftState } from "@/hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";

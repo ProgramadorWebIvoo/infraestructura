@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import type { CatalogItem } from "../../hooks/useCatalog";
+import type { CatalogItem } from "@/hooks/useCatalog";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockUsePolledFetch = vi.fn();
@@ -13,7 +13,7 @@ vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-import { useCatalog } from "../../hooks/useCatalog";
+import { useCatalog } from "@/hooks/useCatalog";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockItem(overrides: Partial<CatalogItem> = {}): CatalogItem {

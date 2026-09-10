@@ -8,8 +8,8 @@
  */
 
 import { useCallback } from "react";
-import type { SupplierMaterialProposal } from "../types";
-import { apiFetch } from "../services/api";
+import type { SupplierMaterialProposal } from "@/types";
+import { apiFetch } from "@/services/api";
 
 export function useSupplierProposalsForProject(authToken: string) {
   /**

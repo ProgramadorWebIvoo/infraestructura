@@ -18,11 +18,11 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { DashboardSummary, Project } from "../types";
-import { apiFetch } from "../services/api";
+import type { DashboardSummary, Project } from "@/types";
+import { apiFetch } from "@/services/api";
 import { useAuth } from "./useAuth";
 import { usePollingSettings } from "./usePollingSettings";
-import { computeDashboardSummary } from "../utils/dashboardSummary";
+import { computeDashboardSummary } from "@/utils/dashboardSummary";
 
 export interface UseDashboardSummaryResult {
   summary: DashboardSummary;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
-import type { Project, Proposal } from "../../types";
-import { ProjectStatus } from "../../types";
+import type { Project, Proposal } from "@/types";
+import { ProjectStatus } from "@/types";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockApiFetch = vi.fn();
@@ -13,7 +13,7 @@ vi.mock("@/services/logger", () => ({
   logError: vi.fn(),
 }));
 
-import { useProjectsWorkflows } from "../../hooks/useProjectsWorkflows";
+import { useProjectsWorkflows } from "@/hooks/useProjectsWorkflows";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockProject(overrides: Partial<Project> = {}): Project {

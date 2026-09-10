@@ -9,15 +9,15 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Eye, EyeOff, Lock, Mail, Shield, User, UserCheck, UserPlus } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import Select from "../../../components/UI/Select";
-import { RequiredMark } from "../../../components/UI/HintSignals";
-import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
-import PasswordStrengthMeter, { type PasswordRequirement } from "../../../components/UI/PasswordStrengthMeter";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { isValidEmail } from "../../../utils/validators";
-import { STATUS_OPTIONS, type UserForm } from "../types";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import Select from "@/components/UI/Select";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
+import PasswordStrengthMeter, { type PasswordRequirement } from "@/components/UI/PasswordStrengthMeter";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { isValidEmail } from "@/utils/validators";
+import { STATUS_OPTIONS, type UserForm } from "@/views/UsuariosPanel/types";
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const inputClass =

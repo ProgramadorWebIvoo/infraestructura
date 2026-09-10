@@ -6,11 +6,11 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import { ClipboardList, FileSearch, Handshake, Send } from "lucide-react";
-import { ProjectStatus } from "../../types";
-import type { Project, Contractor, Proposal } from "../../types";
-import { containerVariants, itemVariants } from "../../animations";
-import { SkeletonBlock, SkeletonCard, SkeletonTable } from "../../components/SkeletonLoader";
-import KpiPill from "../../components/UI/KpiPill";
+import { ProjectStatus } from "@/types";
+import type { Project, Contractor, Proposal } from "@/types";
+import { containerVariants, itemVariants } from "@/animations";
+import { SkeletonBlock, SkeletonCard, SkeletonTable } from "@/components/SkeletonLoader";
+import KpiPill from "@/components/UI/KpiPill";
 import AnalistasWorkspace from "./components/AnalistasWorkspace";
 
 interface ImportResult {

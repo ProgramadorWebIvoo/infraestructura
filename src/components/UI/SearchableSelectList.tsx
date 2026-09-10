@@ -18,7 +18,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Search, SearchX } from "lucide-react";
 import EmptyState from "./EmptyState";
-import { containerVariants, itemVariants, springs } from "../../animations";
+import { containerVariants, itemVariants, springs } from "@/animations";
 
 interface SearchableSelectListProps<T> {
   items: T[];

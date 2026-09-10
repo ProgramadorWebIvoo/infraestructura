@@ -9,7 +9,7 @@
  */
 
 import { useExchangeRatesContext } from "./UI/ExchangeRatesProvider";
-import { formatBs } from "../hooks/useCurrencyConversion";
+import { formatBs } from "@/hooks/useCurrencyConversion";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { SEMANTIC_COLOR_MAP } from "./UI/colorTokens";

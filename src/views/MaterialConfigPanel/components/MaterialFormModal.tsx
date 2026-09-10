@@ -6,12 +6,12 @@
  */
 
 import { Package } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import Select from "../../../components/UI/Select";
-import NumericInput from "../../../components/UI/NumericInput";
-import { RequiredMark } from "../../../components/UI/HintSignals";
-import { STATUS_OPTIONS, type MaterialForm } from "../types";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import Select from "@/components/UI/Select";
+import NumericInput from "@/components/UI/NumericInput";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import { STATUS_OPTIONS, type MaterialForm } from "@/views/MaterialConfigPanel/types";
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const inputClass =

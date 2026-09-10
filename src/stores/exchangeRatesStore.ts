@@ -10,9 +10,9 @@
  */
 
 import { create } from "zustand";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
-import type { ExchangeRateRecord } from "../hooks/useExchangeRates";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
+import type { ExchangeRateRecord } from "@/hooks/useExchangeRates";
 
 export type { ExchangeRateRecord };
 

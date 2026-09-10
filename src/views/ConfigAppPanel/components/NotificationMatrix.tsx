@@ -15,13 +15,13 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import InfoBanner from "../../../components/UI/InfoBanner";
-import AlertBanner from "../../../components/UI/AlertBanner";
-import { SkeletonBlock, SkeletonCollapsedRow, SkeletonGroup, SkeletonGroupItem } from "../../../components/SkeletonLoader";
-import Card from "../../../components/UI/Card";
-import { SearchInput } from "../../../components/UI/FilterBar";
-import { springs } from "../../../animations";
-import type { NotificationActionOption, NotificationRuleChannels } from "../../../hooks/useNotificationRules";
+import InfoBanner from "@/components/UI/InfoBanner";
+import AlertBanner from "@/components/UI/AlertBanner";
+import { SkeletonBlock, SkeletonCollapsedRow, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
+import Card from "@/components/UI/Card";
+import { SearchInput } from "@/components/UI/FilterBar";
+import { springs } from "@/animations";
+import type { NotificationActionOption, NotificationRuleChannels } from "@/hooks/useNotificationRules";
 import ActionRuleRow from "./ActionRuleRow";
 
 const GROUP_LABELS: Record<string, string> = {

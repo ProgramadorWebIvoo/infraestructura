@@ -8,7 +8,7 @@
  */
 
 import { useMemo } from "react";
-import type { Project } from "../types";
+import type { Project } from "@/types";
 
 export interface ProjectFinancials {
   totalApprovedInvestment: number;

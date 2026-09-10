@@ -6,7 +6,7 @@
  */
 
 import { Bot, Sparkles, Brain, Network } from "lucide-react";
-import type { AIProviderUsed } from "../../../services/aiEvaluationService";
+import type { AIProviderUsed } from "@/services/aiEvaluationService";
 
 export const PROVIDER_META: Record<
   AIProviderUsed | "auto",

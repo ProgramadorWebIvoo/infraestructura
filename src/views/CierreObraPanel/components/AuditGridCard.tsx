@@ -9,11 +9,11 @@
  */
 
 import { MapPin } from "lucide-react";
-import type { Project, BaseCurrency } from "../../../types";
-import { ProjectStatus } from "../../../types";
-import StatusBadge from "../../../components/UI/StatusBadge";
+import type { Project, BaseCurrency } from "@/types";
+import { ProjectStatus } from "@/types";
+import StatusBadge from "@/components/UI/StatusBadge";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import BsAmount from "../../../components/UI/BsAmount";
+import BsAmount from "@/components/UI/BsAmount";
 
 export function renderAuditCard(
   project: Project,

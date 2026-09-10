@@ -13,8 +13,8 @@ vi.mock("@/services/logger", () => ({
   getErrorMessage: (...args: unknown[]) => mockGetErrorMessage(...args),
 }));
 
-import { useAIConfig, type AiConfigRecord, type AiConfigForm, EMPTY_CONFIG_FORM } from "../../hooks/useAIConfig";
-import { PROVIDER_MODELS } from "../../constants/aiModels";
+import { useAIConfig, type AiConfigRecord, type AiConfigForm, EMPTY_CONFIG_FORM } from "@/hooks/useAIConfig";
+import { PROVIDER_MODELS } from "@/constants/aiModels";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockConfig(overrides: Partial<AiConfigRecord> = {}): AiConfigRecord {

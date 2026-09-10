@@ -6,7 +6,7 @@
  * Usa los mapas unificados de utils.ts.
  */
 
-import { getRoleColor, getStatusColor, STATUS_LABELS } from "../../utils";
+import { getRoleColor, getStatusColor, STATUS_LABELS } from "@/utils";
 
 interface StatusBadgeProps {
   /** Código del estado o rol (ej. "CREADO", "ANALISTA", "INFRAESTRUCTURA") */

@@ -9,8 +9,8 @@
 
 import { useEffect } from "react";
 import { Building2, MapPin, Wrench } from "lucide-react";
-import TextField from "../../../components/UI/TextField";
-import SegmentedControl from "../../../components/UI/SegmentedControl";
+import TextField from "@/components/UI/TextField";
+import SegmentedControl from "@/components/UI/SegmentedControl";
 
 export interface RequestFormErrors {
   title?: string;

@@ -15,9 +15,9 @@
 import { motion } from "motion/react";
 import { Clock, Star, Trophy, Wallet } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import { containerVariants, itemVariants, springs } from "../animations";
-import type { Project } from "../types";
-import { useCurrencyConversion, formatBs } from "../hooks/useCurrencyConversion";
+import { containerVariants, itemVariants, springs } from "@/animations";
+import type { Project } from "@/types";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 
 export default function ProposalSummary({ project }: { project: Project }) {
   const proposals = project.proposals ?? [];

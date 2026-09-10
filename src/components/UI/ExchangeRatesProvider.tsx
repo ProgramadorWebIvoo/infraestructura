@@ -14,7 +14,7 @@
  */
 
 import { useEffect, type ReactNode } from "react";
-import { useExchangeRatesStore, type ExchangeRateRecord } from "../../stores/exchangeRatesStore";
+import { useExchangeRatesStore, type ExchangeRateRecord } from "@/stores/exchangeRatesStore";
 
 export type { ExchangeRateRecord };
 

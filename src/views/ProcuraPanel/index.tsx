@@ -16,13 +16,13 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ClipboardList, Handshake, Scale, TrendingUp } from "lucide-react";
-import type { Project } from "../../types";
-import { ProjectStatus } from "../../types";
-import { SkeletonCard, SkeletonTable, SkeletonBlock } from "../../components/SkeletonLoader";
-import { containerVariants, itemVariants } from "../../animations";
-import KpiPill from "../../components/UI/KpiPill";
-import Tabs from "../../components/UI/Tabs";
-import TabPanel from "../../components/UI/TabPanel";
+import type { Project } from "@/types";
+import { ProjectStatus } from "@/types";
+import { SkeletonCard, SkeletonTable, SkeletonBlock } from "@/components/SkeletonLoader";
+import { containerVariants, itemVariants } from "@/animations";
+import KpiPill from "@/components/UI/KpiPill";
+import Tabs from "@/components/UI/Tabs";
+import TabPanel from "@/components/UI/TabPanel";
 import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
 import BidEvaluationSection from "./components/BidEvaluationSection";
 

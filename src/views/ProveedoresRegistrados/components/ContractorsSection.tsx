@@ -12,18 +12,18 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { History, Link2, Mail, Pencil, SearchX, Star, Users } from "lucide-react";
-import { itemVariants } from "../../../animations";
-import Card from "../../../components/UI/Card";
-import TableToolbar from "../../../components/UI/TableToolbar";
-import EmptyState from "../../../components/UI/EmptyState";
-import IconActionButton from "../../../components/UI/IconActionButton";
-import { Table, type Column } from "../../../components/UI/Table";
-import GridView from "../../../components/UI/GridView/GridView";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import { useTableViewMode } from "../../../hooks/useTableViewMode";
-import { useContainerRows } from "../../../hooks/useContainerRows";
+import { itemVariants } from "@/animations";
+import Card from "@/components/UI/Card";
+import TableToolbar from "@/components/UI/TableToolbar";
+import EmptyState from "@/components/UI/EmptyState";
+import IconActionButton from "@/components/UI/IconActionButton";
+import { Table, type Column } from "@/components/UI/Table";
+import GridView from "@/components/UI/GridView/GridView";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { useTableViewMode } from "@/hooks/useTableViewMode";
+import { useContainerRows } from "@/hooks/useContainerRows";
 import { renderContractorGridCard } from "./ContractorGridCard";
-import type { Contractor } from "../../../types";
+import type { Contractor } from "@/types";
 
 interface ContractorsSectionProps {
   contractors: Contractor[];

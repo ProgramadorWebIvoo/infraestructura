@@ -10,11 +10,11 @@
 
 import { AlertTriangle, CheckCircle, Gauge, HandCoins, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
-import Modal from "../UI/Modal";
-import Button from "../UI/Button";
-import { SEMANTIC_COLOR_MAP } from "../UI/colorTokens";
-import { SEMAPHORE_COLORS, type SemaphoreLevel } from "../../hooks/useBudgetSemaphore";
-import { containerVariants, itemVariants } from "../../animations";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { SEMAPHORE_COLORS, type SemaphoreLevel } from "@/hooks/useBudgetSemaphore";
+import { containerVariants, itemVariants } from "@/animations";
 
 interface HireConfirmDialogProps {
   isOpen: boolean;

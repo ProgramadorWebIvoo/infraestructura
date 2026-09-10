@@ -22,10 +22,10 @@ import { formatCurrency } from "@ivoo/shared";
 
 import { AlertTriangle, RefreshCw, Sparkles, Wallet } from "lucide-react";
 import Button from "./UI/Button";
-import { containerVariants, itemVariants } from "../animations";
+import { containerVariants, itemVariants } from "@/animations";
 import { motion } from "motion/react";
-import { useCurrencyConversion } from "../hooks/useCurrencyConversion";
-import type { Project } from "../types";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import type { Project } from "@/types";
 
 interface DossierEvaluationSummaryProps {
   project: Project;

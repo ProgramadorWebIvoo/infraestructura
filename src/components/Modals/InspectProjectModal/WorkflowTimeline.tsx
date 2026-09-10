@@ -9,10 +9,10 @@
 
 import { Building2, CheckCircle2, FileSearch, Landmark, ShieldCheck, Star, TrendingUp, Users, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { Project } from "../../../types";
-import { ProjectStatus } from "../../../types";
-import { winnerOf } from "../../../utils/dashboardSummary";
-import { formatCurrency } from "../../../utils";
+import type { Project } from "@/types";
+import { ProjectStatus } from "@/types";
+import { winnerOf } from "@/utils/dashboardSummary";
+import { formatCurrency } from "@/utils";
 import { ROLE_STYLES, type RoleId } from "./roleStyles";
 
 type StepState = "done" | "current" | "pending";

@@ -10,19 +10,19 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { motion } from "motion/react";
 import { BrainCircuit, CheckCircle } from "lucide-react";
-import Modal from "../../UI/Modal";
-import type { Project, Proposal } from "../../../types";
+import Modal from "@/components/UI/Modal";
+import type { Project, Proposal } from "@/types";
 import {
   evaluateProposals,
   AIEvaluationResult,
   type AIProviderUsed,
-} from "../../../services/aiEvaluationService";
+} from "@/services/aiEvaluationService";
 import { PROVIDER_META } from "./constants";
 import IdleView from "./IdleView";
 import LoadingView from "./LoadingView";
 import ResultView from "./ResultView";
 import ErrorView from "./ErrorView";
-import { formatProposalDuration } from "../../../views/AnalistasPanel/components/RegisterProposalModal";
+import { formatProposalDuration } from "@/views/AnalistasPanel/components/RegisterProposalModal";
 
 // ---------------------------------------------------------------------------
 // Props

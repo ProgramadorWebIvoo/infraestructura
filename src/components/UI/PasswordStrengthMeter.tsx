@@ -10,7 +10,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Check, X } from "lucide-react";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
-import { springs } from "../../animations";
+import { springs } from "@/animations";
 
 export interface PasswordRequirement {
   label: string;

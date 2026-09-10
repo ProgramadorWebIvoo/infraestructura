@@ -1,5 +1,5 @@
 import { Brain } from "lucide-react";
-import { PROVIDER_LABELS, providerColor } from "../../../constants/aiProviders";
+import { PROVIDER_LABELS, providerColor } from "@/constants/aiProviders";
 
 export default function ProviderIcon({ provider }: { provider: string }) {
   const semantic = providerColor(provider);

@@ -13,9 +13,9 @@ import { Download, Eye, Minus, Plus, ZoomIn } from "lucide-react";
 import Modal from "./Modal";
 import Button from "./Button";
 import Spinner from "./Spinner";
-import { apiDownload } from "../../services/api";
+import { apiDownload } from "@/services/api";
 import { useToast } from "./Toast";
-import type { ProjectDocument } from "../../types";
+import type { ProjectDocument } from "@/types";
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;

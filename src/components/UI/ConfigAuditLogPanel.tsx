@@ -23,7 +23,7 @@ import { X } from "lucide-react";
 import AuditLogPanel from "./AuditLogPanel";
 import AuditLogValueDiff from "./AuditLogValueDiff";
 import Select from "./Select";
-import type { ConfigAuditLogFilters, ConfigAuditLogRecord } from "../../hooks/useConfigAuditLogs";
+import type { ConfigAuditLogFilters, ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
 interface ConfigAuditLogPanelProps {
   title?: string;

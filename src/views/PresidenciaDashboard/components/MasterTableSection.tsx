@@ -10,15 +10,15 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, Download, FileSpreadsheet, FileText, Layers, MapPin, Star } from "lucide-react";
-import { ProjectStatus } from "../../../types";
-import type { Project } from "../../../types";
-import StatusBadge from "../../../components/UI/StatusBadge";
-import EmptyState from "../../../components/UI/EmptyState";
-import ExportButton, { type ExportRow } from "../../../components/UI/ExportButton";
-import { SearchInput, SelectFilter } from "../../../components/UI/FilterBar";
-import { Table, type Column } from "../../../components/UI/Table";
-import { daysBetween, approvedOf, releasedOf, winnerOf } from "../../../utils/dashboardSummary";
-import { itemVariants } from "../../../animations";
+import { ProjectStatus } from "@/types";
+import type { Project } from "@/types";
+import StatusBadge from "@/components/UI/StatusBadge";
+import EmptyState from "@/components/UI/EmptyState";
+import ExportButton, { type ExportRow } from "@/components/UI/ExportButton";
+import { SearchInput, SelectFilter } from "@/components/UI/FilterBar";
+import { Table, type Column } from "@/components/UI/Table";
+import { daysBetween, approvedOf, releasedOf, winnerOf } from "@/utils/dashboardSummary";
+import { itemVariants } from "@/animations";
 
 const fmtMoney = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 

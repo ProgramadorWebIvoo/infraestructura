@@ -10,10 +10,10 @@
 
 import type { ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Clock, DollarSign, Layers } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import type { DashboardSummary, Project } from "../../../types";
-import { STATUS_LABELS } from "../../../utils";
-import { approvedOf, releasedOf } from "../../../utils/dashboardSummary";
+import Modal from "@/components/UI/Modal";
+import type { DashboardSummary, Project } from "@/types";
+import { STATUS_LABELS } from "@/utils";
+import { approvedOf, releasedOf } from "@/utils/dashboardSummary";
 
 export type KpiKind = "approved" | "released" | "pending" | "projects" | null;
 

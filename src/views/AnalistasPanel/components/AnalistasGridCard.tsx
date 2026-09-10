@@ -9,9 +9,9 @@
 
 import { AlertTriangle, MapPin, Trophy, Wallet } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import type { Project, SupplierMaterialProposal } from "../../../types";
-import { calculatePendingPortalProposals } from "../utils/portalProposalUtils";
-import BsAmount from "../../../components/UI/BsAmount";
+import type { Project, SupplierMaterialProposal } from "@/types";
+import { calculatePendingPortalProposals } from "@/views/AnalistasPanel/utils/portalProposalUtils";
+import BsAmount from "@/components/UI/BsAmount";
 
 export function renderAnalistasCard(
   project: Project,

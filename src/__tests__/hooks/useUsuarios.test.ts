@@ -19,7 +19,7 @@ vi.mock("@/services/logger", () => ({
   logError: (...args: unknown[]) => mockLogError(...args),
 }));
 
-import { useUsuarios, type UserRecord, __resetRolesCacheForTests } from "../../hooks/useUsuarios";
+import { useUsuarios, type UserRecord, __resetRolesCacheForTests } from "@/hooks/useUsuarios";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function createMockUser(overrides: Partial<UserRecord> = {}): UserRecord {

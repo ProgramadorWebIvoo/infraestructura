@@ -23,17 +23,17 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { History, TrendingUp, TrendingDown, Minus, Boxes, Sparkles, Briefcase, Trophy, AlertCircle, type LucideIcon } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import EmptyState from "../../../components/UI/EmptyState";
-import StatusBadge from "../../../components/UI/StatusBadge";
-import SummaryStat from "../../../components/UI/SummaryStat";
-import Tabs from "../../../components/UI/Tabs";
-import TabPanel from "../../../components/UI/TabPanel";
-import Tooltip from "../../../components/UI/Tooltip";
-import { SkeletonPriceChart, SkeletonStatCardGrid } from "../../../components/SkeletonLoader";
-import { apiFetch } from "../../../services/api";
-import type { Contractor, ContractorHistory } from "../../../types";
-import { getErrorMessage } from "../../../services/logger";
+import Modal from "@/components/UI/Modal";
+import EmptyState from "@/components/UI/EmptyState";
+import StatusBadge from "@/components/UI/StatusBadge";
+import SummaryStat from "@/components/UI/SummaryStat";
+import Tabs from "@/components/UI/Tabs";
+import TabPanel from "@/components/UI/TabPanel";
+import Tooltip from "@/components/UI/Tooltip";
+import { SkeletonPriceChart, SkeletonStatCardGrid } from "@/components/SkeletonLoader";
+import { apiFetch } from "@/services/api";
+import type { Contractor, ContractorHistory } from "@/types";
+import { getErrorMessage } from "@/services/logger";
 
 const ORIGEN_LABELS: Record<string, string> = {
   MANUAL: "Carga manual",

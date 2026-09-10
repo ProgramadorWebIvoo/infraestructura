@@ -10,8 +10,8 @@
  */
 
 import { create } from "zustand";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 
 export interface RawSetting {
   key: string;

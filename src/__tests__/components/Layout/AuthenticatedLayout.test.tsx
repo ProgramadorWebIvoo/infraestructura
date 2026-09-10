@@ -43,8 +43,8 @@ vi.mock("../../../components/Modals/InspectProjectModal", () => ({
     ) : null,
 }));
 
-import AuthenticatedLayout from "../../../components/Layout/AuthenticatedLayout";
-import type { Project } from "../../../types";
+import AuthenticatedLayout from "@/components/Layout/AuthenticatedLayout";
+import type { Project } from "@/types";
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 describe("AuthenticatedLayout", () => {

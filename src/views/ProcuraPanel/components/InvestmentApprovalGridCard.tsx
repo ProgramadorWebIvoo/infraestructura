@@ -10,8 +10,8 @@
 
 import { MapPin } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
-import type { Project } from "../../../types";
-import BsAmount from "../../../components/UI/BsAmount";
+import type { Project } from "@/types";
+import BsAmount from "@/components/UI/BsAmount";
 
 function TypeBadge({ type }: { type: Project["type"] }) {
   return (

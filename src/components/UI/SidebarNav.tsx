@@ -25,7 +25,8 @@ import {
   X,
   LogOut,
   ChevronRight,
-  House
+  House,
+  BanknoteArrowDown
 } from "lucide-react";
 import ConfigDropdown from "./ConfigDropdown";
 import SidebarTip from "./SidebarTip";
@@ -34,7 +35,7 @@ import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
 import ExchangeRatesSidebarSection from "./ExchangeRatesSidebarSection";
 import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
-import { getUserInitials } from "../../utils";
+import { getUserInitials } from "@/utils";
 
 interface SidebarNavProps {
   isOpen: boolean;
@@ -199,6 +200,24 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                   <>
                     <TrendingUp className={sidebarIconClass(isActive)} />
                     <span className={sidebarTextClass(effectiveCollapsed)}>Presidencia</span>
+                  </>
+                )}
+              </NavLink>
+            </SidebarTip>
+          )}
+
+          {canAccess("/marketing") && (
+            <SidebarTip label='Marketing' disabled={!effectiveCollapsed}>
+              <NavLink 
+                to='/marketing'
+                id="sidebar-marketing"
+                onClick={onClose}
+                className={navLinkClass('warning', effectiveCollapsed)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <BanknoteArrowDown className={sidebarIconClass(isActive)}/>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>Marketing</span>
                   </>
                 )}
               </NavLink>

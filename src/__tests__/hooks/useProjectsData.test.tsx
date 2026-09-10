@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import type { Project, AuditLog } from "../../types";
-import { ProjectStatus } from "../../types";
+import type { Project, AuditLog } from "@/types";
+import { ProjectStatus } from "@/types";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockApiFetch = vi.fn();
@@ -24,7 +24,7 @@ vi.mock("@/data", () => ({
   INITIAL_AUDIT_LOGS: INITIAL_AUDIT_LOGS_MOCK,
 }));
 
-import { useProjectsData } from "../../hooks/useProjectsData";
+import { useProjectsData } from "@/hooks/useProjectsData";
 
 function createMockProject(overrides: Partial<Project> = {}): Project {
   return {

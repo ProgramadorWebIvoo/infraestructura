@@ -15,10 +15,10 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Project, AuditLog } from "../types";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
-import { INITIAL_PROJECTS, INITIAL_AUDIT_LOGS } from "../data";
+import type { Project, AuditLog } from "@/types";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
+import { INITIAL_PROJECTS, INITIAL_AUDIT_LOGS } from "@/data";
 import type { ShowToast } from "./useProjects";
 
 const POLL_MS = 25000;

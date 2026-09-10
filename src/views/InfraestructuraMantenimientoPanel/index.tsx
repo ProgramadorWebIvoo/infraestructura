@@ -8,22 +8,22 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Clock, FilePlus2, HardHat } from "lucide-react";
-import type { AuditLog, Project, ProjectDocument } from "../../types";
-import { ProjectStatus } from "../../types";
-import { containerVariants, itemVariants, springs } from "../../animations";
-import { SkeletonCard, SkeletonBlock, SkeletonGroup, SkeletonGroupItem } from "../../components/SkeletonLoader";
-import KpiPill from "../../components/UI/KpiPill";
-import Tabs from "../../components/UI/Tabs";
-import TabPanel from "../../components/UI/TabPanel";
+import type { AuditLog, Project, ProjectDocument } from "@/types";
+import { ProjectStatus } from "@/types";
+import { containerVariants, itemVariants, springs } from "@/animations";
+import { SkeletonCard, SkeletonBlock, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
+import KpiPill from "@/components/UI/KpiPill";
+import Tabs from "@/components/UI/Tabs";
+import TabPanel from "@/components/UI/TabPanel";
 import RequestWizardCard from "./components/RequestWizardCard";
 import RequestsTableSection from "./components/RequestsTableSection";
 import RejectedPetitionsSection from "./components/RejectedPetitionsSection";
 import RejectedWarningLabel from "./components/RejectedWarningLabel";
-import { useRequestForm } from "../../hooks/useRequestForm";
+import { useRequestForm } from "@/hooks/useRequestForm";
 
 type TabKey = "crear" | "expedientes" | "rechazadas";
 
-export type { FieldKey, FieldErrors } from "../../hooks/useRequestForm";
+export type { FieldKey, FieldErrors } from "@/hooks/useRequestForm";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (

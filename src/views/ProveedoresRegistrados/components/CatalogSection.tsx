@@ -14,14 +14,14 @@ import { formatCurrency } from "@ivoo/shared";
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Boxes, PackageSearch, Sparkles } from "lucide-react";
-import { itemVariants } from "../../../animations";
-import Card from "../../../components/UI/Card";
-import TableToolbar from "../../../components/UI/TableToolbar";
-import EmptyState from "../../../components/UI/EmptyState";
-import { Table, type Column } from "../../../components/UI/Table";
-import { useContainerRows } from "../../../hooks/useContainerRows";
-import type { CatalogCategory, CatalogProduct } from "../../../types";
-import type { SelectOption } from "../../../components/UI/FilterBar";
+import { itemVariants } from "@/animations";
+import Card from "@/components/UI/Card";
+import TableToolbar from "@/components/UI/TableToolbar";
+import EmptyState from "@/components/UI/EmptyState";
+import { Table, type Column } from "@/components/UI/Table";
+import { useContainerRows } from "@/hooks/useContainerRows";
+import type { CatalogCategory, CatalogProduct } from "@/types";
+import type { SelectOption } from "@/components/UI/FilterBar";
 
 interface CatalogSectionProps {
   products: CatalogProduct[];

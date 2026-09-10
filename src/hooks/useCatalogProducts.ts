@@ -11,8 +11,8 @@
  */
 
 import { useCallback } from "react";
-import type { CatalogCategory, CatalogProduct } from "../types";
-import { apiFetch } from "../services/api";
+import type { CatalogCategory, CatalogProduct } from "@/types";
+import { apiFetch } from "@/services/api";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 

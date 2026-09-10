@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { LogIn, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
-import { useRateLimit } from "../../../hooks/useRateLimit";
+import { useRateLimit } from "@/hooks/useRateLimit";
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;

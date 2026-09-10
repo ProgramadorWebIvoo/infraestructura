@@ -6,8 +6,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 // Re-export de constantes de dominio: las vistas las consumen desde el hook
 // (API pública estable) pero la fuente de verdad vive en constants/aiProviders.
@@ -16,9 +16,9 @@ export {
   PROVIDER_LABELS,
   providerColor,
   providerRole,
-} from "../constants/aiProviders";
-import type { AIProvider } from "../constants/aiProviders";
-import { PROVIDER_MODELS } from "../constants/aiModels";
+} from "@/constants/aiProviders";
+import type { AIProvider } from "@/constants/aiProviders";
+import { PROVIDER_MODELS } from "@/constants/aiModels";
 
 // ---------------------------------------------------------------------------
 // Types

@@ -12,11 +12,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, Minus, Plus, Star } from "lucide-react";
-import { useToast } from "../../../components/UI/Toast";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import { springs } from "../../../animations";
-import type { Contractor } from "../../../types";
+import { useToast } from "@/components/UI/Toast";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import { springs } from "@/animations";
+import type { Contractor } from "@/types";
 
 interface RatingModalProps {
   contractor: Contractor | null;

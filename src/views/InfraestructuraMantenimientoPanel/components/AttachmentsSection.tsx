@@ -20,15 +20,15 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, Paperclip } from "lucide-react";
-import FileDropZone from "../../../components/UI/FileDropZone";
-import AlertBanner from "../../../components/UI/AlertBanner";
-import ProjectDocumentsList from "../../../components/UI/ProjectDocumentsList";
-import DocumentPreviewModal from "../../../components/UI/DocumentPreviewModal";
-import { useAppGroupSettings } from "../../../hooks/useAppGroupSettings";
-import { useToast } from "../../../components/UI/Toast";
-import { downloadProjectDocument } from "../../../services/api";
-import { bannerVariants } from "../../../animations";
-import type { Project, ProjectDocument } from "../../../types";
+import FileDropZone from "@/components/UI/FileDropZone";
+import AlertBanner from "@/components/UI/AlertBanner";
+import ProjectDocumentsList from "@/components/UI/ProjectDocumentsList";
+import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
+import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
+import { useToast } from "@/components/UI/Toast";
+import { downloadProjectDocument } from "@/services/api";
+import { bannerVariants } from "@/animations";
+import type { Project, ProjectDocument } from "@/types";
 
 interface AttachmentsSectionProps {
   photoFiles: File[];

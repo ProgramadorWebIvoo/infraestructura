@@ -9,8 +9,8 @@
  */
 
 import { ShieldCheck, Paperclip } from "lucide-react";
-import type { MaterialItem, Project, ProjectDocument } from "../../../types";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
+import type { MaterialItem, Project, ProjectDocument } from "@/types";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 
 export const CONDITION_LABEL: Record<MaterialItem["condition"], string> = {
   NUEVO: "Nuevo",

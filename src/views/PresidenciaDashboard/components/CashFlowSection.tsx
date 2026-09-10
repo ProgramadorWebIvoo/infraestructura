@@ -10,8 +10,8 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import { Landmark } from "lucide-react";
-import type { Project } from "../../../types";
-import { itemVariants } from "../../../animations";
+import type { Project } from "@/types";
+import { itemVariants } from "@/animations";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -18,7 +18,7 @@
 
 import { motion } from "motion/react";
 import { AlertTriangle } from "lucide-react";
-import { itemVariants } from "../../../animations";
+import { itemVariants } from "@/animations";
 
 interface RejectedWarningLabelProps {
   count: number;

@@ -113,7 +113,7 @@ vi.mock("@/components/UI/Toast", async () => {
   };
 });
 
-import App from "../App";
+import App from "@/App";
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 /** Flush microtasks so lazy imports resolve and Suspense boundaries settle */

@@ -7,10 +7,10 @@
  */
 
 import { useCallback, useRef } from "react";
-import type { Project, ProjectDocument, Proposal } from "../types";
-import { ProjectStatus } from "../types";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import type { Project, ProjectDocument, Proposal } from "@/types";
+import { ProjectStatus } from "@/types";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 import type { ShowToast } from "./useProjects";
 
 interface UseProjectsWorkflowsOptions {

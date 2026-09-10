@@ -13,15 +13,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Clock, ClipboardCheck, Link2, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
-import { useToast } from "../../../components/UI/Toast";
-import Modal from "../../../components/UI/Modal";
-import Button from "../../../components/UI/Button";
-import SearchableSelectList from "../../../components/UI/SearchableSelectList";
-import { copyToClipboard } from "../../../utils/clipboard";
-import { containerVariants, itemVariants, springs } from "../../../animations";
-import { ProjectStatus } from "../../../types";
-import type { Contractor, Project } from "../../../types";
-import type { SupplierInvitationInfo } from "../../../hooks/useProveedores";
+import { useToast } from "@/components/UI/Toast";
+import Modal from "@/components/UI/Modal";
+import Button from "@/components/UI/Button";
+import SearchableSelectList from "@/components/UI/SearchableSelectList";
+import { copyToClipboard } from "@/utils/clipboard";
+import { containerVariants, itemVariants, springs } from "@/animations";
+import { ProjectStatus } from "@/types";
+import type { Contractor, Project } from "@/types";
+import type { SupplierInvitationInfo } from "@/hooks/useProveedores";
 
 interface InviteModalProps {
   contractor: Contractor | null;

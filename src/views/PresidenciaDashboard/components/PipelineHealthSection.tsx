@@ -10,11 +10,11 @@
 
 import { motion } from "motion/react";
 import { AlertTriangle, Gauge, GitBranch } from "lucide-react";
-import type { DashboardSummary, Project } from "../../../types";
-import { ProjectStatus } from "../../../types";
-import { STATUS_LABELS } from "../../../utils";
-import { STATUS_ORDER, computePipelineHealth, STALLED_THRESHOLD_DAYS } from "../../../utils/dashboardSummary";
-import { itemVariants } from "../../../animations";
+import type { DashboardSummary, Project } from "@/types";
+import { ProjectStatus } from "@/types";
+import { STATUS_LABELS } from "@/utils";
+import { STATUS_ORDER, computePipelineHealth, STALLED_THRESHOLD_DAYS } from "@/utils/dashboardSummary";
+import { itemVariants } from "@/animations";
 
 interface PipelineHealthSectionProps {
   summary: DashboardSummary;

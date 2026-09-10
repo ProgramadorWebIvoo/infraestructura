@@ -7,9 +7,9 @@
  */
 
 import { CheckCircle, Eye, Loader2, Pencil, ToggleLeft, ToggleRight, XCircle } from "lucide-react";
-import type { Column } from "../../components/UI/Table";
-import IconActionButton from "../../components/UI/IconActionButton";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
+import type { Column } from "@/components/UI/Table";
+import IconActionButton from "@/components/UI/IconActionButton";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { STATUS_BADGE, type ConfigContractor } from "./types";
 
 interface GetContractorColumnsArgs {

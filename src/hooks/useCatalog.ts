@@ -7,7 +7,7 @@
  */
 
 import { useCallback } from "react";
-import { apiFetch } from "../services/api";
+import { apiFetch } from "@/services/api";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 

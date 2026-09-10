@@ -36,7 +36,7 @@
  */
 
 import { motion } from "motion/react";
-import { springs } from "../../animations";
+import { springs } from "@/animations";
 
 export interface TabDefinition {
   key: string;

@@ -24,7 +24,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronDown } from "lucide-react";
 import type { SemanticColor } from "./colorTokens";
 import { fieldErrorClasses } from "./FieldError";
-import { springs } from "../../animations";
+import { springs } from "@/animations";
 
 export interface SelectOption {
   value: string;

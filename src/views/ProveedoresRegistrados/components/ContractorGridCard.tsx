@@ -8,9 +8,9 @@
  */
 
 import { History, Link2, Mail, Pencil, Star } from "lucide-react";
-import IconActionButton from "../../../components/UI/IconActionButton";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import type { Contractor } from "../../../types";
+import IconActionButton from "@/components/UI/IconActionButton";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import type { Contractor } from "@/types";
 
 interface ContractorGridCardActions {
   onOpenEdit: (contractor: Contractor) => void;

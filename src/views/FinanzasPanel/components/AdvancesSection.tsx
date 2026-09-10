@@ -8,13 +8,13 @@
 
 import { useState } from "react";
 import { CheckCircle, Coins, CreditCard } from "lucide-react";
-import Button from "../../../components/UI/Button";
-import type { Project } from "../../../types";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import EmptyState from "../../../components/UI/EmptyState";
-import ConfirmDialog from "../../../components/UI/ConfirmDialog";
-import { formatNumber } from "../../../utils";
+import Button from "@/components/UI/Button";
+import type { Project } from "@/types";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import EmptyState from "@/components/UI/EmptyState";
+import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import { formatNumber } from "@/utils";
 
 interface AdvancesSectionProps {
   pendingAdvances: Project[];

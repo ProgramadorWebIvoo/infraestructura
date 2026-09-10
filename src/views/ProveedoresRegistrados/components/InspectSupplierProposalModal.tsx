@@ -11,14 +11,14 @@
 
 import React, { useMemo } from "react";
 import { Clock, FileSearch, HandCoins, Mail, HelpCircle } from "lucide-react";
-import Modal from "../../../components/UI/Modal";
-import { Table, type Column } from "../../../components/UI/Table";
-import SummaryStat from "../../../components/UI/SummaryStat";
-import VariationBadge from "../../../components/UI/VariationBadge";
-import Tooltip from "../../../components/UI/Tooltip";
-import { formatCurrency } from "../../../utils";
-import { useCurrencyConversion, formatBs } from "../../../hooks/useCurrencyConversion";
-import type { SupplierMaterialProposal } from "../../../types";
+import Modal from "@/components/UI/Modal";
+import { Table, type Column } from "@/components/UI/Table";
+import SummaryStat from "@/components/UI/SummaryStat";
+import VariationBadge from "@/components/UI/VariationBadge";
+import Tooltip from "@/components/UI/Tooltip";
+import { formatCurrency } from "@/utils";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import type { SupplierMaterialProposal } from "@/types";
 
 interface InspectSupplierProposalModalProps {
   proposal: SupplierMaterialProposal;

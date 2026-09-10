@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { getErrorMessage } from "../services/logger";
+import { getErrorMessage } from "@/services/logger";
 
 export interface UseDraftStateOptions<K extends string | number, V> {
   /** Valor "guardado" actual de una clave — el borrador se compara contra esto para saber si está dirty. */

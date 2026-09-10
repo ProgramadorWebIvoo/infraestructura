@@ -7,8 +7,8 @@
  * lógica de estado y JSX.
  */
 
-import type { AppSettingRecord } from "../../hooks/useAppSettings";
-import type { NotificationRuleChannels } from "../../hooks/useNotificationRules";
+import type { AppSettingRecord } from "@/hooks/useAppSettings";
+import type { NotificationRuleChannels } from "@/hooks/useNotificationRules";
 
 /**
  * Compara el valor en borrador contra el original para decidir si un

@@ -10,9 +10,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign } from "lucide-react";
-import type { Project } from "../../../types";
-import { itemVariants } from "../../../animations";
-import { computeDashboardSummary } from "../../../utils/dashboardSummary";
+import type { Project } from "@/types";
+import { itemVariants } from "@/animations";
+import { computeDashboardSummary } from "@/utils/dashboardSummary";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

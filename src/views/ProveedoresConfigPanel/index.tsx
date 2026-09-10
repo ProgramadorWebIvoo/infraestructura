@@ -9,23 +9,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Building2, Plus, UserCog } from "lucide-react";
-import { Table } from "../../components/UI/Table";
-import TableToolbar from "../../components/UI/TableToolbar";
-import Button from "../../components/UI/Button";
-import Card from "../../components/UI/Card";
-import ConfirmDialog from "../../components/UI/ConfirmDialog";
-import SectionHeader from "../../components/UI/SectionHeader";
-import { SEMANTIC_COLOR_MAP } from "../../components/UI/colorTokens";
-import { useToast } from "../../components/UI/Toast";
-import { apiFetch } from "../../services/api";
-import { logError, getErrorMessage } from "../../services/logger";
-import { containerVariants, itemVariants } from "../../animations";
+import { Table } from "@/components/UI/Table";
+import TableToolbar from "@/components/UI/TableToolbar";
+import Button from "@/components/UI/Button";
+import Card from "@/components/UI/Card";
+import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import SectionHeader from "@/components/UI/SectionHeader";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { useToast } from "@/components/UI/Toast";
+import { apiFetch } from "@/services/api";
+import { logError, getErrorMessage } from "@/services/logger";
+import { containerVariants, itemVariants } from "@/animations";
 import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
-import { providerConfigSchema } from "../../schemas/providerConfig.schema";
+import { providerConfigSchema } from "@/schemas/providerConfig.schema";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
 interface ProveedoresConfigPanelProps {

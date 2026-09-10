@@ -9,8 +9,8 @@
 import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Upload, X } from "lucide-react";
-import { formatFileSize } from "../../utils";
-import { springs } from "../../animations";
+import { formatFileSize } from "@/utils";
+import { springs } from "@/animations";
 
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 

@@ -11,15 +11,15 @@
 
 import { useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Contractor } from "../../../types";
+import { Contractor } from "@/types";
 import { CheckCircle2, Loader2, Mail, Send, UserRound } from "lucide-react";
-import { apiFetch } from "../../../services/api";
-import { getErrorMessage } from "../../../services/logger";
-import { useToast } from "../../../components/UI/Toast";
-import { RequiredMark } from "../../../components/UI/HintSignals";
-import { isValidEmail, joinRif } from "../../../utils/validators";
-import { containerVariants, itemVariants, springs } from "../../../animations";
-import { providerRegistrationSchema } from "../../../schemas/providerRegistration.schema";
+import { apiFetch } from "@/services/api";
+import { getErrorMessage } from "@/services/logger";
+import { useToast } from "@/components/UI/Toast";
+import { RequiredMark } from "@/components/UI/HintSignals";
+import { isValidEmail, joinRif } from "@/utils/validators";
+import { containerVariants, itemVariants, springs } from "@/animations";
+import { providerRegistrationSchema } from "@/schemas/providerRegistration.schema";
 
 interface RegistrationFormProps {
   onAddContractor: (contractor: Contractor) => void;

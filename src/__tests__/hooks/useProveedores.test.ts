@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import type { SupplierMaterialProposal } from "../../types";
+import type { SupplierMaterialProposal } from "@/types";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockUsePolledFetch = vi.fn();
@@ -18,7 +18,7 @@ vi.mock("@/services/logger", () => ({
   getErrorMessage: (...args: unknown[]) => mockGetErrorMessage(...args),
 }));
 
-import { useProveedores } from "../../hooks/useProveedores";
+import { useProveedores } from "@/hooks/useProveedores";
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 describe("useProveedores", () => {

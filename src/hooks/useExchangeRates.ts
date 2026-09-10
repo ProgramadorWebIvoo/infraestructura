@@ -7,8 +7,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 
 export interface ExchangeRateRecord {
   id: number;

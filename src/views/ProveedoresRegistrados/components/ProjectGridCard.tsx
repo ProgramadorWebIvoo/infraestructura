@@ -8,7 +8,7 @@
  */
 
 import { Package, TrendingUp } from "lucide-react";
-import { formatCurrency } from "../../../utils";
+import { formatCurrency } from "@/utils";
 
 interface ProjectProposalSummary {
   projectId: string;

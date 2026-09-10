@@ -7,11 +7,11 @@
 
 import { useMemo, useState } from "react";
 import { ArrowUpRight, FileSpreadsheet, FileText, Search, Wallet, HandCoins, ReceiptText } from "lucide-react";
-import Card from "../../../components/UI/Card";
-import SectionHeader from "../../../components/UI/SectionHeader";
-import { Table, type Column } from "../../../components/UI/Table";
-import ExportButton, { type ExportColumn, type ExportRow } from "../../../components/UI/ExportButton";
-import { useDebounce } from "../../../hooks/useDebounce";
+import Card from "@/components/UI/Card";
+import SectionHeader from "@/components/UI/SectionHeader";
+import { Table, type Column } from "@/components/UI/Table";
+import ExportButton, { type ExportColumn, type ExportRow } from "@/components/UI/ExportButton";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface LedgerEntry {
   id: string;

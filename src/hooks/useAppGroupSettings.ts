@@ -10,8 +10,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { logError } from "../services/logger";
+import { apiFetch } from "@/services/api";
+import { logError } from "@/services/logger";
 
 const DEFAULT_MAX_FILE_SIZE_MB = 25;
 const DEFAULT_MAX_FILE_COUNT = 10;

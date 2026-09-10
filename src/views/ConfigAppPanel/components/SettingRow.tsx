@@ -9,12 +9,12 @@
  */
 
 import { motion } from "motion/react";
-import NumericInput from "../../../components/UI/NumericInput";
-import FieldError, { fieldErrorClasses } from "../../../components/UI/FieldError";
-import TagMultiSelect, { type TagOption } from "../../../components/UI/TagMultiSelect";
-import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
-import type { AppSettingRecord } from "../../../hooks/useAppSettings";
-import { formatRangeBound } from "../utils";
+import NumericInput from "@/components/UI/NumericInput";
+import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
+import TagMultiSelect, { type TagOption } from "@/components/UI/TagMultiSelect";
+import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import type { AppSettingRecord } from "@/hooks/useAppSettings";
+import { formatRangeBound } from "@/views/ConfigAppPanel/utils";
 
 /** Settings `json` que son en realidad listas de acciones auditadas — se
  *  editan con el selector de tags (catálogo real) en vez del textarea JSON
