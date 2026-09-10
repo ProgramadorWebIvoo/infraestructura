@@ -42,8 +42,7 @@ export default function BrandPanel() {
         className="relative z-10 flex w-full flex-col justify-between px-14 py-16 xl:px-20"
       >
         <motion.div variants={item} className="flex items-center gap-3.5">
-          <img src="/ivoo_logoo.svg" alt="" aria-hidden="true" className="block h-9 w-auto brightness-0 invert" />
-          <span className="text-[13px] font-bold uppercase tracking-[0.22em] text-white/70">IVOO</span>
+          <img src="/ivoo_logoo.svg" alt="" aria-hidden="true" className="block h-11 w-auto brightness-0 invert" />
         </motion.div>
 
         <div className="max-w-md">

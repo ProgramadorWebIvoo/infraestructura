@@ -9,7 +9,9 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 // Views — lazy-loaded for route-level code-splitting
 const LoginScreen = lazy(() => import("./views/LoginScreen"));
@@ -127,19 +129,57 @@ type AppProps = {
 // alineado a los intervalos de polling ya documentados en Rules/09-METRICS.md
 // (proyectos 25s, notificaciones 8s, catálogos 15s) para no cambiar el
 // comportamiento percibido durante la migración incremental.
+//
+// gcTime: 24h — alineado al maxAge del persister de abajo. Si gcTime fuera
+// menor (el default de TanStack es 5min), una query sin observers activos
+// (tab en background, componente desmontado) se recolectaría de la memoria
+// antes de que el persister la escriba, perdiendo el propósito de persistir.
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 15_000,
+      gcTime: CACHE_MAX_AGE_MS,
       refetchOnWindowFocus: false,
       retry: 1,
     },
   },
 });
 
+// Persistencia del cache en localStorage: al recargar la página (F5, cierre
+// de pestaña) la UI hidrata instantáneo con los últimos datos conocidos en
+// vez de mostrar skeletons, y TanStack revalida en background según el
+// staleTime/refetchInterval de cada query (stale-while-revalidate
+// cross-reload).
+//
+// buster: NO es la versión de la app — cambiarlo en cada deploy invalidaría
+// el cache persistido en cada release, anulando el propósito. Es un lever
+// manual: subir CACHE_SCHEMA_VERSION solo cuando un cambio de shape en los
+// datos cacheados (ej. un campo renombrado/removido en la respuesta de la
+// API) haría que hidratar cache viejo rompa un componente en vez de
+// simplemente mostrar datos desactualizados por unos segundos.
+const CACHE_SCHEMA_VERSION = "1";
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "ivoo-query-cache",
+});
+
+const PERSIST_OPTIONS = {
+  persister,
+  maxAge: CACHE_MAX_AGE_MS,
+  buster: CACHE_SCHEMA_VERSION,
+  dehydrateOptions: {
+    // No persistir queries en estado de error: al rehidratar no queremos
+    // que un fetch fallido de la última sesión se muestre como dato válido.
+    shouldDehydrateQuery: (query: { state: { status: string } }) => query.state.status === "success",
+  },
+};
+
 export default function App({ router: Router = BrowserRouter, ...routerProps }: AppProps & Record<string, unknown> = {}) {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={PERSIST_OPTIONS}>
       <Router {...routerProps}>
         <ToastProvider>
           {/* PublicSettingsProvider por fuera de AppRoutes: este último depende
@@ -155,7 +195,7 @@ export default function App({ router: Router = BrowserRouter, ...routerProps }: 
           </PublicSettingsProvider>
         </ToastProvider>
       </Router>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
@@ -167,6 +207,7 @@ function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const queryClientInstance = useQueryClient();
   useDocumentHead();
 
   // ---- Auth ----
@@ -240,10 +281,15 @@ function AppRoutes() {
     resetData();
     resetContractors();
     resetCatalog();
+    // Limpia el cache de TanStack (memoria + localStorage persistido): sin
+    // esto, el próximo login en el mismo navegador (otro usuario/rol)
+    // hidrataría de entrada con datos del usuario anterior hasta que cada
+    // query revalide.
+    queryClientInstance.clear();
     navigate(ROUTES.HOME);
     showToast("Sesión cerrada.", "info");
     setIsLoggingOut(false);
-  }, [authLogout, resetData, resetContractors, resetCatalog, navigate, showToast]);
+  }, [authLogout, resetData, resetContractors, resetCatalog, queryClientInstance, navigate, showToast]);
 
   // ---- Login wrapper con toast de bienvenida ----
   const handleLoginWithToast = useCallback(async (email: string, password: string) => {

@@ -24,8 +24,8 @@ import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
-import { isValidEmail, isValidPhone, isValidRif } from "../../utils/validators";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
+import { providerConfigSchema } from "../../schemas/providerConfig.schema";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
 interface ProveedoresConfigPanelProps {
@@ -143,33 +143,14 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.rif.trim() || !form.specialty.trim()) {
-      showToast("Completa todos los campos obligatorios.", "error");
-      return;
-    }
-
-    if (!isValidRif(form.rif)) {
-      showToast("Ingresa un RIF válido (ej: J-12345678-9).", "error");
+    const result = providerConfigSchema.safeParse(form);
+    if (!result.success) {
+      showToast(result.error.issues[0].message, "error");
       return;
     }
 
     const hasEmail = form.email.trim() !== "";
     const hasPhone = form.phone.trim() !== "";
-
-    if (!hasEmail && !hasPhone) {
-      showToast("Ingresa al menos un email o teléfono de contacto.", "error");
-      return;
-    }
-
-    if (hasEmail && !isValidEmail(form.email)) {
-      showToast("Ingresa un email válido.", "error");
-      return;
-    }
-
-    if (hasPhone && !isValidPhone(form.phone)) {
-      showToast("Ingresa un teléfono válido.", "error");
-      return;
-    }
 
     setIsSaving(true);
     try {

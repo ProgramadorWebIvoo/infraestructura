@@ -8,6 +8,7 @@
  */
 
 import type { AiConfigForm, AiConfigUpdatePayload } from "../../hooks/useAIConfig";
+import { aiConfigFormSchema } from "../../schemas/aiConfig.schema";
 
 /** Valor por defecto de max_tokens cuando el campo queda vacío. */
 export const DEFAULT_MAX_TOKENS = 4096;
@@ -20,9 +21,8 @@ export function validateConfigForm(
   form: AiConfigForm,
   mode: "create" | "edit",
 ): string | null {
-  if (!form.model.trim()) return "El nombre del modelo es obligatorio.";
-  if (mode === "create" && !form.apiKey.trim()) return "La API Key es obligatoria.";
-  return null;
+  const result = aiConfigFormSchema(mode).safeParse(form);
+  return result.success ? null : result.error.issues[0].message;
 }
 
 /**

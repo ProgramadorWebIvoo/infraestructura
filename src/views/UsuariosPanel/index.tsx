@@ -25,6 +25,7 @@ import { getUserColumns } from "./columns";
 import { EMPTY_FORM, type UserForm } from "./types";
 import { getErrorMessage } from "../../services/logger";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
+import { userFormSchema } from "../../schemas/userAccount.schema";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
 
 interface UsuariosPanelProps {
@@ -107,22 +108,15 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.email.trim()) {
-      showToast("Completa todos los campos obligatorios.", "error");
+    const result = userFormSchema(modalMode).safeParse(form);
+    if (!result.success) {
+      showToast(result.error.issues[0].message, "error");
       return;
     }
 
     setIsSaving(true);
     try {
       if (modalMode === "create") {
-        if (form.password.length < 8) {
-          showToast("La contraseña debe tener al menos 8 caracteres.", "error");
-          return;
-        }
-        if (form.password !== form.password_confirmation) {
-          showToast("Las contraseñas no coinciden.", "error");
-          return;
-        }
         const created = await handleCreateUser({
           name: form.name.trim(),
           email: form.email.trim(),

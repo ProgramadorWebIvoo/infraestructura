@@ -22,26 +22,13 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { apiFetch } from "../services/api";
 import { requestNotificationPermission } from "../services/browserNotifications";
 import { useAppGroupSettings } from "./useAppGroupSettings";
+import { loginSchema } from "../schemas/auth.schema";
 
 const STORAGE_USER = "ivoo_auth_user";
 const AUTHENTICATED_SENTINEL = "authenticated";
 const INACTIVITY_CHECK_MS = 15_000; // cada 15s verificar tiempo real transcurrido
 
 export type AuthUser = { id: number; name: string; email: string; role?: string } | null;
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validateEmail(email: string): string | null {
-  if (!email.trim()) return "Ingrese su correo electrónico.";
-  if (!EMAIL_REGEX.test(email.trim())) return "El formato del correo no es válido.";
-  if (email.trim().length > 254) return "El correo es demasiado largo.";
-  return null;
-}
-
-function validatePassword(password: string): string | null {
-  if (!password) return "Ingrese su clave.";
-  return null;
-}
 
 export function useAuth() {
   const { sessionTimeoutMs } = useAppGroupSettings();
@@ -168,11 +155,8 @@ export function useAuth() {
   const handleLogin = useCallback(async (email: string, password: string) => {
     const sanitizedEmail = email.trim().toLowerCase();
 
-    const emailError = validateEmail(sanitizedEmail);
-    if (emailError) throw new Error(emailError);
-
-    const passwordError = validatePassword(password);
-    if (passwordError) throw new Error(passwordError);
+    const result = loginSchema.safeParse({ email: sanitizedEmail, password });
+    if (!result.success) throw new Error(result.error.issues[0].message);
 
     // Sin device_name: el backend detecta por Referer/Origin que esta
     // petición viene del SPA (dominio "stateful") y responde con cookie

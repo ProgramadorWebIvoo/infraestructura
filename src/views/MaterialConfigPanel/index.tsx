@@ -25,6 +25,7 @@ import MaterialFormModal from "./components/MaterialFormModal";
 import { EMPTY_FORM, type ConfigMaterial, type MaterialForm } from "./types";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 import ConfigAuditLogPanel from "../../components/UI/ConfigAuditLogPanel";
+import { materialConfigSchema } from "../../schemas/materialConfig.schema";
 
 interface MaterialConfigPanelProps {
   authToken: string;
@@ -131,13 +132,9 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.unit.trim()) {
-      showToast("Completa todos los campos obligatorios.", "error");
-      return;
-    }
-
-    if (form.estimatedUnitPrice === "" || form.estimatedUnitPrice <= 0) {
-      showToast("El precio unitario estimado debe ser mayor a 0.", "error");
+    const result = materialConfigSchema.safeParse(form);
+    if (!result.success) {
+      showToast(result.error.issues[0].message, "error");
       return;
     }
 

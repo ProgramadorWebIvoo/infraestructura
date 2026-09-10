@@ -9,6 +9,17 @@
 
 import { useMemo, useState } from "react";
 import type { MaterialItem, Project, ProjectDocument } from "../types";
+import { datosStepSchema, materialesStepSchema, adjuntosStepSchema } from "../schemas/requestForm.schema";
+
+/** Convierte el resultado de un safeParse fallido a FieldErrors (un mensaje por FieldKey). */
+function toFieldErrors(issues: { path: PropertyKey[]; message: string }[]): FieldErrors {
+  const errors: FieldErrors = {};
+  for (const issue of issues) {
+    const key = issue.path[0] as FieldKey;
+    if (!errors[key]) errors[key] = issue.message;
+  }
+  return errors;
+}
 
 /** Alias legible en los call sites de useRequestForm — ver UseRequestFormParams::existingProject. */
 type RequestFormExistingProject = Pick<
@@ -38,29 +49,22 @@ type AdjuntosStepFields = Pick<FormFields, "photoFiles" | "documentFiles" | "pla
 };
 
 /** Paso 1 del wizard: datos de la obra. Pura, testeable sin renderizar el hook. */
-export function validateDatosStep({ title, location, description }: DatosStepFields): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!title.trim()) errors.title = "El título de la obra o trabajo es obligatorio.";
-  if (!location.trim()) errors.location = "La ubicación exacta es obligatoria.";
-  if (!description.trim()) errors.description = "Describe el alcance del trabajo a realizar.";
-  return errors;
+export function validateDatosStep(fields: DatosStepFields): FieldErrors {
+  const result = datosStepSchema.safeParse(fields);
+  return result.success ? {} : toFieldErrors(result.error.issues);
 }
 
 /** Paso 2 del wizard: materiales. */
-export function validateMaterialesStep({ addedMaterials }: MaterialesStepFields): FieldErrors {
-  const errors: FieldErrors = {};
-  if (addedMaterials.length === 0) errors.materials = "Agrega al menos un material o servicio a la petición.";
-  return errors;
+export function validateMaterialesStep(fields: MaterialesStepFields): FieldErrors {
+  const result = materialesStepSchema.safeParse(fields);
+  return result.success ? {} : toFieldErrors(result.error.issues);
 }
 
 /** Paso 3 del wizard: adjuntos. Al menos un archivo entre los 3 grupos (fotos/documentos/planos),
  * salvo en modo edición cuando el proyecto ya tiene adjuntos persistidos del envío original. */
-export function validateAdjuntosStep({ photoFiles, documentFiles, planFiles, hasExistingAttachments }: AdjuntosStepFields): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!hasExistingAttachments && photoFiles.length === 0 && documentFiles.length === 0 && planFiles.length === 0) {
-    errors.attachments = "Adjunta al menos un archivo (foto, documento o plano) antes de continuar.";
-  }
-  return errors;
+export function validateAdjuntosStep(fields: AdjuntosStepFields): FieldErrors {
+  const result = adjuntosStepSchema.safeParse(fields);
+  return result.success ? {} : toFieldErrors(result.error.issues);
 }
 
 /** Unión exacta de los 3 validadores por paso — misma firma/mensajes que antes de dividirla. */

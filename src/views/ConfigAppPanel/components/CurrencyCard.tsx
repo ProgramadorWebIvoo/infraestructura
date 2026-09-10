@@ -22,6 +22,7 @@ import { useToast } from "../../../components/UI/Toast";
 import { getErrorMessage } from "../../../services/logger";
 import { SEMANTIC_COLOR_MAP } from "../../../components/UI/colorTokens";
 import type { CurrencyRecord } from "../../../hooks/useCurrencies";
+import { currencyAddSchema, currencyEditSchema } from "../../../schemas/currency.schema";
 
 interface CurrencyCardProps {
   currencies: CurrencyRecord[];
@@ -68,8 +69,9 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
   const customCurrencies = currencies.filter(c => !c.is_official);
 
   const saveEdit = async (id: number) => {
-    if (!editName.trim() || !editSymbol.trim()) {
-      showToast("Nombre y símbolo no pueden quedar vacíos.", "error");
+    const result = currencyEditSchema.safeParse({ name: editName, symbol: editSymbol });
+    if (!result.success) {
+      showToast(result.error.issues[0].message, "error");
       return;
     }
     await run(id, () => onUpdate(id, { name: editName.trim(), symbol: editSymbol.trim() }));
@@ -77,8 +79,9 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
   };
 
   const handleAdd = async () => {
-    if (!code.trim() || !name.trim() || !symbol.trim()) {
-      showToast("Completa código, nombre y símbolo.", "error");
+    const result = currencyAddSchema.safeParse({ code, name, symbol });
+    if (!result.success) {
+      showToast(result.error.issues[0].message, "error");
       return;
     }
     setSubmitting(true);

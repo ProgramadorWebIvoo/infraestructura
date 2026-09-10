@@ -19,6 +19,7 @@ import { useToast } from "../../../components/UI/Toast";
 import { RequiredMark } from "../../../components/UI/HintSignals";
 import { isValidEmail, joinRif } from "../../../utils/validators";
 import { containerVariants, itemVariants, springs } from "../../../animations";
+import { providerRegistrationSchema } from "../../../schemas/providerRegistration.schema";
 
 interface RegistrationFormProps {
   onAddContractor: (contractor: Contractor) => void;
@@ -68,15 +69,20 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
     const cleanSpecialty = sanitize(specialty);
     const cleanContact = sanitize(contact);
 
-    if (!cleanName || rifDigits.length !== 9 || !cleanSpecialty || !cleanContact) {
-      showToast("Completa todos los campos para registrar el proveedor.", "warning");
-      setTouched({ name: true, rif: true, specialty: true, contact: true });
-      return;
-    }
+    const result = providerRegistrationSchema.safeParse({
+      name: cleanName,
+      rifDigits,
+      specialty: cleanSpecialty,
+      contact: cleanContact,
+    });
 
-    if (!isValidEmail(cleanContact)) {
-      showToast("Ingresa un correo electrónico válido.", "warning");
-      setTouched((prev) => ({ ...prev, contact: true }));
+    if (!result.success) {
+      const isEmailIssue = result.error.issues.some((issue) => issue.path[0] === "contact");
+      showToast(
+        isEmailIssue ? "Ingresa un correo electrónico válido." : "Completa todos los campos para registrar el proveedor.",
+        "warning",
+      );
+      setTouched({ name: true, rif: true, specialty: true, contact: true });
       return;
     }
 
