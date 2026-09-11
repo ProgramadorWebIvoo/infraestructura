@@ -356,7 +356,7 @@ function AppRoutes() {
   // desincronizado, ver comentario en NotificationsProvider.tsx). Fuera de
   // esta rama (login, validando sesión, sin rol) no hay bandeja que
   // mostrar, así que tampoco debe haber conexión WebSocket activa.
-  const fallbackRoute = firstAllowedRoute(authUser.role) as string;
+  const fallbackRoute = firstAllowedRoute() as string;
   return (
     <NotificationsProvider authToken={authToken} authUser={authUser}>
       {/* Un solo fetch de tasas para toda la sesión autenticada — las vistas

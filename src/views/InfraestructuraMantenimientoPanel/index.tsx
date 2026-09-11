@@ -20,6 +20,7 @@ import RequestsTableSection from "./components/RequestsTableSection";
 import RejectedPetitionsSection from "./components/RejectedPetitionsSection";
 import RejectedWarningLabel from "./components/RejectedWarningLabel";
 import { useRequestForm } from "@/hooks/useRequestForm";
+import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "crear" | "expedientes" | "rechazadas";
 
@@ -55,6 +56,7 @@ export default function InfraestructuraMantenimientoPanel({
   isLoading = false,
 }: InfraestructuraMantenimientoPanelProps) {
   const form = useRequestForm({ onAddProject });
+  const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
 
   // Filtro de etapa compartido entre el pipeline y la tabla
   const [stageKey, setStageKey] = useState("todas");
@@ -71,7 +73,14 @@ export default function InfraestructuraMantenimientoPanel({
     [projects],
   );
 
-  if (isLoading) return <InfraestructuraSkeleton />;
+  const visibleTabs = filterTabs("/infraestructura", [
+    { key: "crear", label: "Crear" },
+    { key: "expedientes", label: "Expedientes", count: kpis.total },
+    { key: "rechazadas", label: "Rechazadas", count: kpis.rejected, showDot: kpis.rejected > 0 && activeTab !== "rechazadas" },
+  ]);
+  useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
+
+  if (isLoading || isLoadingTabs) return <InfraestructuraSkeleton />;
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
@@ -99,11 +108,7 @@ export default function InfraestructuraMantenimientoPanel({
             activeKey={activeTab}
             onChange={(key) => setActiveTab(key as TabKey)}
             fullWidth
-            tabs={[
-              { key: "crear", label: "Crear" },
-              { key: "expedientes", label: "Expedientes", count: kpis.total },
-              { key: "rechazadas", label: "Rechazadas", count: kpis.rejected, showDot: kpis.rejected > 0 && activeTab !== "rechazadas" },
-            ]}
+            tabs={visibleTabs}
           />
         </motion.div>
 

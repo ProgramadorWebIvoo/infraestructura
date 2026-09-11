@@ -25,6 +25,7 @@ import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
 import BidEvaluationSection from "./components/BidEvaluationSection";
+import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "autorizacion" | "comparativa";
 
@@ -45,6 +46,7 @@ export default function ProcuraPanel({
   authToken,
   isLoading = false,
 }: ProcuraPanelProps) {
+  const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("autorizacion");
 
   const kpis = useMemo(
@@ -57,7 +59,13 @@ export default function ProcuraPanel({
     [projects],
   );
 
-  if (isLoading) return <ProcuraSkeleton />;
+  const visibleTabs = filterTabs("/procura", [
+    { key: "autorizacion", label: "Autorización de Inversión", count: kpis.pendingApproval },
+    { key: "comparativa", label: "Evaluación Comparativa", count: kpis.comparative },
+  ]);
+  useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
+
+  if (isLoading || isLoadingTabs) return <ProcuraSkeleton />;
 
   return (
     <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
@@ -71,10 +79,7 @@ export default function ProcuraPanel({
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as TabKey)}
           fullWidth
-          tabs={[
-            { key: "autorizacion", label: "Autorización de Inversión", count: kpis.pendingApproval },
-            { key: "comparativa", label: "Evaluación Comparativa", count: kpis.comparative },
-          ]}
+          tabs={visibleTabs}
         />
       </motion.div>
 

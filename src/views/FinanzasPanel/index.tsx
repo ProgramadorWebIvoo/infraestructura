@@ -22,17 +22,21 @@ import FinancialSummarySection from "./components/FinancialSummarySection";
 import AdvancesSection from "./components/AdvancesSection";
 import FinalSettlementsSection from "./components/FinalSettlementsSection";
 import LedgerSection, { type LedgerEntry } from "./components/LedgerSection";
+import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "book" | "stats" | "advances" | "settlements";
 
 interface FinanzasPanelProps {
   projects: Project[];
+  /** Opcional con default "" — solo se usa para resolver tabs dinámicas (GET /auth/tabs); sin token, todas las tabs quedan visibles. */
+  authToken?: string;
   onPayAdvance: (projectId: string, amount: number) => Promise<void>;
   onPayFinal: (projectId: string, amount: number) => Promise<void>;
   isLoading?: boolean;
 }
 
-export default function FinanzasPanel({ projects, onPayAdvance, onPayFinal, isLoading = false }: FinanzasPanelProps) {
+export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, onPayFinal, isLoading = false }: FinanzasPanelProps) {
+  const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("stats");
 
   const pendingAdvances = useMemo(
@@ -95,7 +99,15 @@ export default function FinanzasPanel({ projects, onPayAdvance, onPayFinal, isLo
     return entries.sort((a, b) => b.date.localeCompare(a.date));
   }, [projects]);
 
-  if (isLoading) return <FinanzasSkeleton />;
+  const visibleTabs = filterTabs("/finanzas", [
+    { key: "stats", label: "Estadisticas" },
+    { key: "book", label: "Diario de Egresos", count: paidLedger.length },
+    { key: "advances", label: "Anticipos", count: kpis.pendingAdvances },
+    { key: "settlements", label: "Finiquitos", count: kpis.pendingFinal },
+  ]);
+  useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
+
+  if (isLoading || isLoadingTabs) return <FinanzasSkeleton />;
 
   return (
     <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
@@ -109,12 +121,7 @@ export default function FinanzasPanel({ projects, onPayAdvance, onPayFinal, isLo
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as TabKey)}
           fullWidth
-          tabs={[
-            { key: "stats", label: "Estadisticas" },
-            { key: "book", label: "Diario de Egresos", count: paidLedger.length },
-            { key: "advances", label: "Anticipos", count: kpis.pendingAdvances },
-            { key: "settlements", label: "Finiquitos", count: kpis.pendingFinal },
-          ]}
+          tabs={visibleTabs}
         />
       </motion.div>
 

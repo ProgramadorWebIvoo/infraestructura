@@ -19,6 +19,7 @@ import InfoBanner from "@/components/UI/InfoBanner";
 import TechnicalReviewSection from "./components/TechnicalReviewSection";
 import CompletionAuditSection from "./components/CompletionAuditSection";
 import RevisedDocumentsSection from "./components/RevisedDocumentsSection";
+import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "revision" | "auditoria" | "documentos";
 
@@ -48,6 +49,7 @@ export default function CierreObraPanel({
   onSyncProject,
   isLoading = false,
 }: CierreObraPanelProps) {
+  const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("revision");
 
   const kpis = useMemo(
@@ -60,7 +62,14 @@ export default function CierreObraPanel({
     [projects],
   );
 
-  if (isLoading) return <CierreObraSkeleton />;
+  const visibleTabs = filterTabs("/cierre-obra", [
+    { key: "revision", label: "Revisión de Cálculos y Planos", count: kpis.pendingReview, showDot: kpis.pendingReview > 0 && activeTab !== "revision" },
+    { key: "auditoria", label: "Auditoría de Fin de Obra", count: kpis.inExecution + kpis.underAudit },
+    { key: "documentos", label: "Historial de Expedientes", count: kpis.revised },
+  ]);
+  useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
+
+  if (isLoading || isLoadingTabs) return <CierreObraSkeleton />;
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
@@ -77,11 +86,7 @@ export default function CierreObraPanel({
             activeKey={activeTab}
             onChange={(key) => setActiveTab(key as TabKey)}
             fullWidth
-            tabs={[
-              { key: "revision", label: "Revisión de Cálculos y Planos", count: kpis.pendingReview, showDot: kpis.pendingReview > 0 && activeTab !== "revision" },
-              { key: "auditoria", label: "Auditoría de Fin de Obra", count: kpis.inExecution + kpis.underAudit },
-              { key: "documentos", label: "Historial de Expedientes", count: kpis.revised },
-            ]}
+            tabs={visibleTabs}
           />
         </motion.div>
 

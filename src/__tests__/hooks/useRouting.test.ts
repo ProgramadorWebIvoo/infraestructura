@@ -12,18 +12,11 @@ vi.mock("@/services/logger", () => ({
   logError: vi.fn(),
 }));
 
-// Espejo de config/permissions.php (backend) — fixture de test, no fuente de verdad.
-const MOCK_PERMISSIONS: Record<string, string[]> = {
-  SUPERADMIN: ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
-  ADMIN: ["/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"],
-  PRESIDENCIA: ["/presidencia", "/catalogos"],
-  INFRAESTRUCTURA: ["/infraestructura"],
-  CIERRE_DE_OBRA: ["/cierre-obra"],
-  PROCURA: ["/procura", "/catalogos"],
-  ANALISTA: ["/analistas"],
-  FINANZAS: ["/finanzas"],
-  CATALOGOS: ["/catalogos"],
-};
+// GET /auth/permissions ya devuelve la lista resuelta para el usuario
+// autenticado (rol + overrides individuales, ver AccessResolver en el
+// backend) — no una matriz por rol.
+const SUPERADMIN_VIEWS = ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"];
+const PRESIDENCIA_VIEWS = ["/presidencia", "/catalogos"];
 
 async function renderLoaded(role: string | undefined) {
   const hook = renderHook(() => useRoleAccess(role));
@@ -34,7 +27,7 @@ async function renderLoaded(role: string | undefined) {
 describe("useRoleAccess", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
-    mockApiFetch.mockResolvedValue(MOCK_PERMISSIONS);
+    mockApiFetch.mockResolvedValue(SUPERADMIN_VIEWS);
   });
 
   // -----------------------------------------------------------------------
@@ -72,22 +65,23 @@ describe("useRoleAccess", () => {
   // -----------------------------------------------------------------------
 
   describe("canAccess", () => {
-    it("SUPERADMIN accede a todas las rutas de su matriz", async () => {
+    it("accede a todas las vistas resueltas por el backend", async () => {
       const { result } = await renderLoaded("SUPERADMIN");
 
-      for (const path of MOCK_PERMISSIONS.SUPERADMIN) {
+      for (const path of SUPERADMIN_VIEWS) {
         expect(result.current.canAccess(path)).toBe(true);
       }
     });
 
-    it("SUPERADMIN NO accede a rutas no listadas", async () => {
+    it("NO accede a rutas no listadas", async () => {
       const { result } = await renderLoaded("SUPERADMIN");
 
       expect(result.current.canAccess("/no-existe")).toBe(false);
       expect(result.current.canAccess("/login")).toBe(false);
     });
 
-    it("PRESIDENCIA solo accede a presidencia y catalogos", async () => {
+    it("respeta la lista resuelta (rol + overrides) tal como llega del backend", async () => {
+      mockApiFetch.mockResolvedValue(PRESIDENCIA_VIEWS);
       const { result } = await renderLoaded("PRESIDENCIA");
 
       expect(result.current.canAccess("/presidencia")).toBe(true);
@@ -96,17 +90,13 @@ describe("useRoleAccess", () => {
       expect(result.current.canAccess("/finanzas")).toBe(false);
     });
 
-    it("ADMIN no accede a /presidencia (solo SUPERADMIN y PRESIDENCIA)", async () => {
-      const { result } = await renderLoaded("ADMIN");
-      expect(result.current.canAccess("/presidencia")).toBe(false);
-    });
-
     it("returna false si role es undefined", () => {
       const { result } = renderHook(() => useRoleAccess(undefined));
       expect(result.current.canAccess("/presidencia")).toBe(false);
     });
 
-    it("deniega todo acceso si el rol no existe en la matriz (deny-by-default)", async () => {
+    it("deniega todo si el backend no devuelve vistas (deny-by-default)", async () => {
+      mockApiFetch.mockResolvedValue([]);
       const { result } = await renderLoaded("ROL_INEXISTENTE");
 
       expect(result.current.canAccess("/presidencia")).toBe(false);
@@ -120,19 +110,15 @@ describe("useRoleAccess", () => {
   // -----------------------------------------------------------------------
 
   describe("firstAllowedRoute", () => {
-    it("retorna la primera ruta del rol", async () => {
+    it("retorna la primera vista resuelta", async () => {
       const { result } = await renderLoaded("SUPERADMIN");
-      expect(result.current.firstAllowedRoute("SUPERADMIN")).toBe("/presidencia");
+      expect(result.current.firstAllowedRoute()).toBe("/presidencia");
     });
 
-    it("retorna null si el argumento es undefined", async () => {
+    it("retorna null si no hay vistas resueltas", async () => {
+      mockApiFetch.mockResolvedValue([]);
       const { result } = await renderLoaded("SUPERADMIN");
-      expect(result.current.firstAllowedRoute(undefined)).toBeNull();
-    });
-
-    it("retorna null si el rol no existe", async () => {
-      const { result } = await renderLoaded("SUPERADMIN");
-      expect(result.current.firstAllowedRoute("NO_EXISTE")).toBeNull();
+      expect(result.current.firstAllowedRoute()).toBeNull();
     });
   });
 

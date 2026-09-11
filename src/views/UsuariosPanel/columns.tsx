@@ -6,7 +6,7 @@
  * ProveedoresConfigPanel/columns.tsx.
  */
 
-import { Pencil, RotateCcw, Send, UserX } from "lucide-react";
+import { KeyRound, Pencil, RotateCcw, Send, UserX } from "lucide-react";
 import type { Column } from "@/components/UI/Table";
 import IconActionButton from "@/components/UI/IconActionButton";
 import StatusBadge from "@/components/UI/StatusBadge";
@@ -21,6 +21,7 @@ interface GetUserColumnsArgs {
   onEdit: (user: UserRecord) => void;
   onToggleStatus: (user: UserRecord) => void;
   onSendReset: (user: UserRecord) => void;
+  onEditAccess: (user: UserRecord) => void;
 }
 
 export function getUserColumns({
@@ -30,6 +31,7 @@ export function getUserColumns({
   onEdit,
   onToggleStatus,
   onSendReset,
+  onEditAccess,
 }: GetUserColumnsArgs): Column<UserRecord>[] {
   return [
     {
@@ -87,6 +89,13 @@ export function getUserColumns({
               onClick={() => onEdit(user)}
               tone="sky"
               icon={<Pencil className="h-3.5 w-3.5" />}
+            />
+            <IconActionButton
+              label={`Configurar accesos de ${user.name}`}
+              tooltip="Accesos y tabs (vistas fuera de su rol)"
+              onClick={() => onEditAccess(user)}
+              tone="indigo"
+              icon={<KeyRound className="h-3.5 w-3.5" />}
             />
             <IconActionButton
               label={isInactive ? `Activar ${user.name}` : `Desactivar ${user.name}`}

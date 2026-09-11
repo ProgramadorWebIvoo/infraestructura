@@ -21,12 +21,14 @@ import Card from "@/components/UI/Card";
 import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import UserFormModal from "./components/UserFormModal";
+import UserAccessModal from "./components/UserAccessModal";
 import { getUserColumns } from "./columns";
 import { EMPTY_FORM, type UserForm } from "./types";
 import { getErrorMessage } from "@/services/logger";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { userFormSchema } from "@/schemas/userAccount.schema";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
+import { useUserAccess } from "@/hooks/useUserAccess";
 
 interface UsuariosPanelProps {
   authToken: string;
@@ -66,6 +68,11 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
 
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [sendingId, setSendingId] = useState<number | string | null>(null);
+
+  // ---- Access modal state ----
+  const { catalog: accessCatalog, isLoading: isLoadingAccess, isSaving: isSavingAccess, loadAccess, saveAccess, resetCatalog } = useUserAccess(showToast);
+  const [accessUser, setAccessUser] = useState<UserRecord | null>(null);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
@@ -172,6 +179,29 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     }
   }, [handleSendPasswordReset]);
 
+  const handleOpenAccess = useCallback((user: UserRecord) => {
+    setAccessUser(user);
+    setIsAccessModalOpen(true);
+    loadAccess(user.id);
+  }, [loadAccess]);
+
+  const handleCloseAccess = () => {
+    if (isSavingAccess) return;
+    setIsAccessModalOpen(false);
+    setAccessUser(null);
+    resetCatalog();
+  };
+
+  const handleSaveAccess = async (payload: Parameters<typeof saveAccess>[1]) => {
+    if (!accessUser) return;
+    try {
+      await saveAccess(accessUser.id, payload);
+      handleCloseAccess();
+    } catch {
+      // Toast already shown by hook
+    }
+  };
+
   // useMemo: sin esto, `columns` es un array nuevo en CADA render de este
   // panel (incluido cualquier cambio de searchQuery/statusFilter que no
   // toca la tabla), y Table.tsx usa `columns` como dependencia de su propio
@@ -184,7 +214,8 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
     onEdit: handleOpenEdit,
     onToggleStatus: handleToggle,
     onSendReset: handleSendReset,
-  }), [togglingId, sendingId, handleOpenEdit, handleToggle, handleSendReset]);
+    onEditAccess: handleOpenAccess,
+  }), [togglingId, sendingId, handleOpenEdit, handleToggle, handleSendReset, handleOpenAccess]);
 
   return (
     <motion.div
@@ -273,6 +304,16 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
           isSaving={isSaving}
           onClose={handleCloseModal}
           onSave={handleSave}
+        />
+
+        <UserAccessModal
+          isOpen={isAccessModalOpen}
+          user={accessUser}
+          catalog={accessCatalog}
+          isLoading={isLoadingAccess}
+          isSaving={isSavingAccess}
+          onClose={handleCloseAccess}
+          onSave={handleSaveAccess}
         />
       </div>
 

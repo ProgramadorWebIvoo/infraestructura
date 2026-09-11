@@ -25,12 +25,15 @@ import ProyectosTab from "./components/ProyectTab";
 import ProyectHistoryTab from "./components/ProyectHistoryTab";
 import ProyectCreateTab from "./components/ProyectCreateTab";
 import type { MarketingProject, MarketingProjectFormInput } from "./types";
+import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "proyectos" | "crear" | "historial";
 
 interface MarketingPanelProps {
   /** Opcional con default [] — así <MarketingPanel /> sigue compilando mientras se conecta useMarketingProjects. */
   projects?: MarketingProject[];
+  /** Opcional con default "" — solo se usa para resolver tabs dinámicas (GET /auth/tabs); sin token, todas las tabs quedan visibles. */
+  authToken?: string;
   isLoading?: boolean;
   onView?: (project: MarketingProject) => void;
   /** POST /marketing-projects (+ subida de adjuntos) — a cargo del consumidor. Al resolver, vuelve a la tab "Proyectos". */
@@ -38,7 +41,8 @@ interface MarketingPanelProps {
   isCreating?: boolean;
 }
 
-export default function MarketingPanel({ projects = [], isLoading = false, onView, onCreate, isCreating = false }: MarketingPanelProps) {
+export default function MarketingPanel({ projects = [], authToken = "", isLoading = false, onView, onCreate, isCreating = false }: MarketingPanelProps) {
+  const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("proyectos");
 
   const handleCreate = async (data: MarketingProjectFormInput, files: File[]) => {
@@ -56,13 +60,14 @@ export default function MarketingPanel({ projects = [], isLoading = false, onVie
     [projects],
   );
 
-  if (isLoading) return <MarketingSkeleton />;
-
-  const tabs = [
+  const tabs = filterTabs("/marketing", [
     { key: "proyectos", label: "Proyectos", count: projects.length },
     { key: "crear", label: "Crear" },
     { key: "historial", label: "Historial de Proyectos" },
-  ];
+  ]);
+  useSyncActiveTab(tabs, activeTab, setActiveTab);
+
+  if (isLoading || isLoadingTabs) return <MarketingSkeleton />;
 
   return (
     <motion.div
