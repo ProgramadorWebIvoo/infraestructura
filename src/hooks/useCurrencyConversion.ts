@@ -46,13 +46,18 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
   const exchangeRates = context?.rates ?? [];
   const isLoading = context?.isLoading ?? false;
 
-  // Construir mapa de tasas por moneda (ej: "USD" → 794.99)
+  // Construir mapa de tasas por moneda (ej: "USD" → 794.99), tomando la más
+  // reciente de cada una — el backend (/exchange-rates) ya devuelve una sola
+  // fila por moneda, pero esto queda a prueba de que algún consumidor futuro
+  // pase el histórico completo.
   const rates = useMemo(() => {
+    const latestEffectiveAt: Record<string, string> = {};
     const ratesByCode: Record<string, number> = {};
 
     for (const rate of exchangeRates) {
-      // Tomar la tasa más reciente de cada moneda
-      if (!ratesByCode[rate.currency_code] || new Date(rate.effective_at) > new Date(exchangeRates.find(r => r.currency_code === rate.currency_code)?.effective_at || "")) {
+      const current = latestEffectiveAt[rate.currency_code];
+      if (!current || new Date(rate.effective_at) > new Date(current)) {
+        latestEffectiveAt[rate.currency_code] = rate.effective_at;
         ratesByCode[rate.currency_code] = rate.rate_to_usd;
       }
     }

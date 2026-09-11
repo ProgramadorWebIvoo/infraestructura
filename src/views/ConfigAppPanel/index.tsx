@@ -22,6 +22,7 @@ import {
   TrendingUp,
   BarChart3,
   Settings as SettingsIcon,
+  Lock,
   Check,
   RotateCcw,
 } from "lucide-react";
@@ -55,6 +56,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
   alertas: { title: "Alertas de precio", description: "Umbral de variación a partir del cual un precio se marca fuera de rango.", icon: <TrendingUp className="h-5 w-5" />, color: "rose" },
   inflacion: { title: "Inflación", description: "Tasa de inflación de referencia para el análisis de precios.", icon: <BarChart3 className="h-5 w-5" />, color: "slate" },
   app: { title: "Aplicación", description: "Umbrales operativos, límites de carga de archivos, vigencia de invitaciones y tiempo de sesión.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
+  congelacion_tasa: { title: "Congelación de tasa de cambio", description: "Qué triggers de negocio fijan la tasa BCV vigente, para que los montos en Bs. ya contratados/pagados dejen de recalcularse con la tasa del día.", icon: <Lock className="h-5 w-5" />, color: "indigo" },
 };
 
 /**
@@ -67,7 +69,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
  */
 const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
   { key: "negocio", title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "fiscal"] },
-  { key: "monedas", title: "Monedas", groups: ["__currencies__"] },
+  { key: "monedas", title: "Monedas", groups: ["__currencies__", "congelacion_tasa"] },
   { key: "notificaciones", title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
   { key: "aplicacion", title: "Aplicación", groups: ["app"] },
 ];

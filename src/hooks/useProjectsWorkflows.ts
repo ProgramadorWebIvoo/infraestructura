@@ -562,6 +562,40 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     [optimisticUpdate],
   );
 
+  /**
+   * Override manual de tasa de cambio — exclusivo SUPERADMIN (ver
+   * routes/api.php). El endpoint devuelve solo la fila de congelación
+   * creada (no el Project completo, a diferencia del resto de estos
+   * handlers), así que se refresca el proyecto con un GET para que
+   * `project.rateFreezes` quede consistente con el servidor (incluye el
+   * `supersededById` que el backend acaba de setear en la fila anterior).
+   */
+  const handleFreezeRateManually = useCallback(
+    async (
+      projectId: string,
+      payload: { trigger: "CONTRATADO" | "PAGO_ANTICIPO" | "PAGO_FINIQUITO"; reason: string; amountBase?: number },
+    ) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        await apiFetch(`/projects/${projectId}/rate-freezes`, {
+          method: "POST",
+          token,
+          body: JSON.stringify(payload),
+        });
+        const project = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(project);
+        show("Tasa de cambio congelada manualmente.", "success");
+      } catch (error) {
+        logError("handleFreezeRateManually", error);
+        show("No se pudo congelar la tasa manualmente.", "error");
+        throw error;
+      }
+    },
+    [],
+  );
+
   // ── Cierre de Obra ───────────────────────────────────────────────
   const handleVerifyCompletion = useCallback(
     async (projectId: string) => {
@@ -610,5 +644,6 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     handlePayAdvance,
     handleVerifyCompletion,
     handlePayFinal,
+    handleFreezeRateManually,
   };
 }

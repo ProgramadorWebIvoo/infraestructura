@@ -4,15 +4,18 @@
  *
  * Resumen financiero agregado del departamento: donut de progreso de fondos
  * liberados vs presupuesto aprobado + métricas claras (aprobado, comprometido,
- * liberado, pendiente) + indicadores de negociación (anticipo y plazo promedio).
+ * liberado, pendiente) + indicadores de negociación (anticipo y plazo promedio)
+ * + top contratistas por monto liberado + tendencia mensual de desembolsos.
  */
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign } from "lucide-react";
+import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign, Award, BarChart3 } from "lucide-react";
 import type { Project } from "@/types";
 import { itemVariants } from "@/animations";
 import { computeDashboardSummary } from "@/utils/dashboardSummary";
+import RankBar from "@/components/UI/RankBar";
+import type { LedgerEntry } from "./LedgerSection";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -82,9 +85,22 @@ function MetricCard({ icon, label, amount, sub, accent, iconBg }: MetricCardProp
 
 interface FinancialSummarySectionProps {
   projects: Project[];
+  /** Diario de egresos ya calculado por FinanzasPanel — reusado para la tendencia mensual de desembolsos, sin duplicar su derivación. */
+  paidLedger: LedgerEntry[];
 }
 
-export default function FinancialSummarySection({ projects }: FinancialSummarySectionProps) {
+function SectionTitle({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <span className="text-indigo-500">{icon}</span>
+      <h3 className="font-mono font-bold text-[10px] uppercase tracking-widest text-slate-400">{label}</h3>
+    </div>
+  );
+}
+
+const CARD = "bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all duration-300";
+
+export default function FinancialSummarySection({ projects, paidLedger }: FinancialSummarySectionProps) {
   const summary = computeDashboardSummary(projects);
   const { totalApprovedInvestment, totalCommittedAmount, totalReleasedFunds, pendingFunds, excessReleased } = summary;
   const base = totalApprovedInvestment || 1;
@@ -92,10 +108,26 @@ export default function FinancialSummarySection({ projects }: FinancialSummarySe
   const committedPct = Math.min(100, (totalCommittedAmount / base) * 100);
   const pendingPct = Math.min(100, (pendingFunds / base) * 100);
   const overBudget = excessReleased > 0;
+  const maxContractor = Math.max(1, ...summary.topContractors.map((c) => c.totalAmount));
+
+  // Tendencia mensual de desembolsos reales (no de creación de obras) —
+  // derivada del diario de egresos, últimos 6 meses con actividad.
+  const monthlyDisbursements = (() => {
+    const byMonth = new Map<string, number>();
+    for (const tx of paidLedger) {
+      const month = tx.date.slice(0, 7);
+      byMonth.set(month, (byMonth.get(month) ?? 0) + tx.amount);
+    }
+    return [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+  })();
+  const maxMonth = Math.max(1, ...monthlyDisbursements.map(([, amount]) => amount));
 
   return (
+    <div className="flex-1 min-h-0 overflow-y-auto scroll-smooth space-y-4 pr-1">
     <motion.div
       variants={itemVariants}
+      initial="hidden"
+      animate="visible"
       className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-all duration-300 border-l-4 border-l-indigo-400"
     >
       <div className="flex items-center gap-3 mb-6">
@@ -190,5 +222,62 @@ export default function FinancialSummarySection({ projects }: FinancialSummarySe
         </div>
       </div>
     </motion.div>
+
+    {/* Top contratistas por monto liberado */}
+    <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
+      <SectionTitle icon={<Award className="h-4 w-4" />} label="Top Contratistas por Monto Liberado" />
+      <div className="space-y-3">
+        {summary.topContractors.length === 0 ? (
+          <p className="text-[11px] text-slate-400 italic">Aún no hay contratos adjudicados.</p>
+        ) : (
+          summary.topContractors.map((c, i) => (
+            <RankBar
+              key={c.contractorCode}
+              label={`${i + 1}. ${c.contractorName}`}
+              value={`$${fmtMoney(c.totalAmount)} · ${c.projectCount} obra${c.projectCount === 1 ? "" : "s"}`}
+              amount={c.totalAmount}
+              max={maxContractor}
+            />
+          ))
+        )}
+      </div>
+    </motion.div>
+
+    {/* Tendencia mensual de desembolsos reales (anticipos + finiquitos pagados) */}
+    <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
+      <div className="flex items-center justify-between mb-4">
+        <SectionTitle icon={<BarChart3 className="h-4 w-4" />} label="Desembolsos por Mes (últimos 6)" />
+        <span className="text-[10px] font-mono font-bold text-slate-400">Máximo: ${fmtMoney(maxMonth)}</span>
+      </div>
+
+      {monthlyDisbursements.length === 0 ? (
+        <p className="text-[11px] text-slate-400 italic">Sin desembolsos registrados todavía.</p>
+      ) : (
+        <div
+          role="img"
+          aria-label={`Gráfico de desembolsos por mes. ${monthlyDisbursements.map(([m, amount]) => `${m}: $${fmtMoney(amount)}`).join(", ")}`}
+        >
+          <div className="flex items-end gap-3 h-36 border-b border-slate-100 pb-4">
+            {monthlyDisbursements.map(([month, amount]) => (
+              <div
+                key={month}
+                className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full"
+                title={`${month}: $${fmtMoney(amount)}`}
+              >
+                <span className="text-[9px] text-slate-500 font-mono font-bold whitespace-nowrap">${fmtMoney(amount)}</span>
+                <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">
+                  <div
+                    className="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-md transition-all duration-700"
+                    style={{ height: `${Math.max(4, (amount / maxMonth) * 100)}%` }}
+                  />
+                </div>
+                <span className="text-[9px] text-slate-400 font-mono font-medium">{month}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </motion.div>
+    </div>
   );
 }

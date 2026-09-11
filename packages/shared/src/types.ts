@@ -128,6 +128,27 @@ export interface Proposal {
   motivoAnticipoExcedido?: string | null;
 }
 
+/**
+ * Snapshot inmutable de la tasa BCV de un proyecto en el momento de un
+ * trigger de negocio (adjudicación, pago de anticipo, pago de finiquito) —
+ * ver RateFreezeService (backend). `supersededById` no-null significa que
+ * esta fila fue reemplazada por una corrección manual posterior y ya no es
+ * la vigente para su trigger.
+ */
+export interface RateFreeze {
+  id: number;
+  trigger: "CONTRATADO" | "PAGO_ANTICIPO" | "PAGO_FINIQUITO";
+  baseCurrency: string;
+  /** Bs. por unidad de baseCurrency — null si no había tasa BCV cargada al momento de congelar. */
+  frozenRate: number | null;
+  frozenAmountBase: number | null;
+  source: "AUTO" | "MANUAL";
+  reason: string | null;
+  frozenAt: string;
+  frozenByName: string | null;
+  supersededById: number | null;
+}
+
 export interface ProjectDocument {
   id: number;
   documentType: "CALC" | "PLANO" | "FOTO" | "CORRECCION";
@@ -195,6 +216,8 @@ export interface Project {
   finalPaidDate?: string;
   qualityVerified?: boolean;
   completionVerifiedDate?: string;
+  /** Congelaciones de tasa de cambio — ver RateFreeze. Solo viene poblado cuando el backend carga la relación (detailRelations()). */
+  rateFreezes?: RateFreeze[];
 }
 
 // ---------------------------------------------------------------------------

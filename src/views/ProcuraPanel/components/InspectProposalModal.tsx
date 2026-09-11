@@ -24,6 +24,8 @@ import type { Project, Proposal, ProposalMaterialItem } from "@/types";
 import { apiDownload } from "@/services/api";
 import { formatProposalDuration } from "@/views/AnalistasPanel/components/RegisterProposalModal";
 import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import { useFrozenBsAmount } from "@/hooks/useFrozenBsAmount";
+import FrozenRateBadge from "@/components/UI/FrozenRateBadge";
 import BsAmount from "@/components/UI/BsAmount";
 
 interface InspectProposalModalProps {
@@ -146,6 +148,20 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, "USD"))}` : undefined);
 
+  // Los montos de esta propuesta solo quedan "congelados" si es la que
+  // realmente se adjudicó (CONTRATADO) — las demás ofertas del comparativo
+  // nunca se contrataron, así que siguen mostrando la tasa en vivo.
+  const isAwardedProposal = project.selectedProposalId === proposal.id;
+  const totalFrozen = useFrozenBsAmount(proposal.totalCost, project.rateFreezes, "CONTRATADO");
+  const materialFrozen = useFrozenBsAmount(proposal.materialCost, project.rateFreezes, "CONTRATADO");
+  const laborFrozen = useFrozenBsAmount(proposal.laborCost, project.rateFreezes, "CONTRATADO");
+
+  /** Bs. congelado (con badge) si esta propuesta fue la adjudicada y hay freeze vigente; si no, la tasa en vivo de siempre. */
+  const bsOrFrozen = (amount: number, frozen: ReturnType<typeof useFrozenBsAmount>) =>
+    isAwardedProposal && frozen.isFrozen
+      ? <span className="inline-flex items-center gap-1">{frozen.formatted}<FrozenRateBadge freeze={frozen.freeze!} /></span>
+      : bsOf(amount);
+
   // El backend solo puebla estos campos cuando realmente convirtió (moneda
   // del proveedor ≠ moneda base al importar) — ver SupplierProposalImportService.
   const wasConverted =
@@ -170,9 +186,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
       <div className="space-y-4">
         {/* Resumen de costos */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOf(proposal.materialCost)} />
-          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOf(proposal.laborCost)} />
-          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOf(proposal.totalCost)} emphasize />
+          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOrFrozen(proposal.materialCost, materialFrozen)} />
+          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOrFrozen(proposal.laborCost, laborFrozen)} />
+          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOrFrozen(proposal.totalCost, totalFrozen)} emphasize />
           <SummaryStat label="Plazo" value={formatProposalDuration(proposal)} />
         </div>
 

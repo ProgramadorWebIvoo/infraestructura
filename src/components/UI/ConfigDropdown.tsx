@@ -120,7 +120,7 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-ia"
                   id="sidebar-config-ia"
                   onClick={onClose}
-                  className={navLinkClass("warning", isCollapsed)}
+                  className={navLinkClass("brand", isCollapsed)}
                 >
                   {({ isActive }) => (
                     <>

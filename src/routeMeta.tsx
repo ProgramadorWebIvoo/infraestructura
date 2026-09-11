@@ -31,7 +31,7 @@ interface RouteMeta {
 
 export const ROUTE_META: Record<string, RouteMeta> = {
   [ROUTES.PRESIDENCIA]: { label: "Presidencia", icon: TrendingUp, color: "#38BDF8" },
-  [ROUTES.MARKETING]: {label: "Marketing", icon: BanknoteArrowDown, color: "#ffffff"},
+  [ROUTES.MARKETING]: {label: "Marketing", icon: BanknoteArrowDown, color: "#f59e0b"},
   [ROUTES.INFRAESTRUCTURA]: { label: "Infra / Mant", icon: Building2, color: "#0EA5E9" },
   [ROUTES.CIERRE_OBRA]: { label: "Cierre de Obra", icon: CheckSquare, color: "#2563EB" },
   [ROUTES.PROCURA]: { label: "Procura", icon: FileSearch, color: "#9333EA" },
@@ -41,7 +41,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   [ROUTES.USUARIOS]: { label: "Usuarios", icon: Users, color: "#38BDF8" },
   [ROUTES.CONFIG_PROVEEDORES]: { label: "Proveedores", icon: UserCog, color: "#818CF8" },
   [ROUTES.CONFIG_MATERIALES]: { label: "Material", icon: Package, color: "#059669" },
-  [ROUTES.CONFIG_IA]: { label: "Modelos de IA", icon: Brain, color: "#A78BFA" },
+  [ROUTES.CONFIG_IA]: { label: "Modelos de IA", icon: Brain, color: "#0284c7" },
   [ROUTES.CONFIG_APP]: { label: "Configuración App", icon: SlidersHorizontal, color: "#64748B" },
 };
 

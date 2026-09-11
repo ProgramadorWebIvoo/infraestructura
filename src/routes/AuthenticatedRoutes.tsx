@@ -34,6 +34,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
+    marketingProjects, isLoadingMarketing, isCreatingMarketing, onCreateMarketingProject,
   } = props;
 
   const homeAnnouncement = useHomeAnnouncement();
@@ -63,8 +64,13 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
         <Route
           path={ROUTES.MARKETING}
           element={
-            <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
-              <MarketingPanel />
+            <ProtectedRoute canAccess={canAccess(ROUTES.MARKETING)} redirectTo={fallbackRoute}>
+              <MarketingPanel
+                projects={marketingProjects}
+                isLoading={isLoadingMarketing}
+                isCreating={isCreatingMarketing}
+                onCreate={onCreateMarketingProject}
+              />
             </ProtectedRoute>
           }
         />

@@ -15,6 +15,7 @@ export type {
   ProposalOrigin,
   ProjectDocument,
   Project,
+  RateFreeze,
   Contractor,
   AuditLog,
   SupplierMaterialProposalItem,

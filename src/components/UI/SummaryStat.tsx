@@ -9,14 +9,17 @@
  * del mismo patrón, DRY roto). Fuente de verdad única de ahora en más.
  */
 
+import type { ReactNode } from "react";
+
 interface SummaryStatProps {
   label: string;
   value: string;
   emphasize?: boolean;
   compact?: boolean;
   tone?: "success" | "danger" | "indigo";
-  /** Línea secundaria bajo el valor — ej. conversión a Bs. de un monto en USD. */
-  subValue?: string;
+  /** Línea secundaria bajo el valor — ej. conversión a Bs. de un monto en
+   * USD, o un badge (ej. FrozenRateBadge) junto al monto congelado. */
+  subValue?: ReactNode;
 }
 
 export default function SummaryStat({ label, value, emphasize = false, compact = false, tone, subValue }: SummaryStatProps) {
@@ -25,7 +28,11 @@ export default function SummaryStat({ label, value, emphasize = false, compact =
     <div className={`rounded-lg border border-slate-100 bg-slate-50 ${compact ? "px-2.5 py-2" : "px-3 py-2.5"}`}>
       <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</span>
       <span className={`font-mono font-black ${emphasize ? "text-sm" : "text-xs"} ${toneClass}`}>{value}</span>
-      {subValue && <span className="block font-mono text-[10px] font-semibold text-slate-400 mt-0.5">{subValue}</span>}
+      {subValue && (
+        typeof subValue === "string"
+          ? <span className="block font-mono text-[10px] font-semibold text-slate-400 mt-0.5">{subValue}</span>
+          : <span className="block mt-1">{subValue}</span>
+      )}
     </div>
   );
 }

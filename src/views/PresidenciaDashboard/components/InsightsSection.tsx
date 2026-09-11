@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import { Award, MapPinned, TrendingUp } from "lucide-react";
 import type { DashboardSummary } from "@/types";
 import { itemVariants } from "@/animations";
+import RankBar from "@/components/UI/RankBar";
 
 interface InsightsSectionProps {
   summary: DashboardSummary;
@@ -27,27 +28,6 @@ function MiniSectionTitle({ icon, label }: { icon: React.ReactNode; label: strin
     <div className={CARD_HEADER}>
       <span className="text-sky-500">{icon}</span>
       <h3 className="font-mono font-bold text-[10px] uppercase tracking-widest text-slate-400">{label}</h3>
-    </div>
-  );
-}
-
-/** Barra de ranking: el ancho es proporcional a `amount` (monto real). */
-function RankBar({ label, value, amount, max }: { label: string; value: string; amount: number; max: number }) {
-  const pct = max > 0 ? Math.min(100, (amount / max) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3 group">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[11px] font-bold text-slate-700 truncate group-hover:text-slate-900">{label}</span>
-          <span className="text-[10px] font-mono font-black text-slate-600 whitespace-nowrap">{value}</span>
-        </div>
-        <div className="bg-slate-100 rounded-full h-1.5 overflow-hidden mt-1">
-          <div
-            className="bg-gradient-to-r from-sky-400 to-sky-600 h-1.5 rounded-full transition-all duration-700"
-            style={{ width: `${pct}%`, opacity: label === "Sin ubicación" ? 0.5 : 1 }}
-          />
-        </div>
-      </div>
     </div>
   );
 }
@@ -94,6 +74,7 @@ export default function InsightsSection({ summary }: InsightsSectionProps) {
                 value={`$${fmtMoney(l.approvedAmount)} · ${l.count} obra${l.count === 1 ? "" : "s"}`}
                 amount={l.approvedAmount}
                 max={maxLocation}
+                muted={l.location === "Sin ubicación"}
               />
             ))
           )}

@@ -2,36 +2,38 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Panel de Finanzas: liberación de anticipos + liquidaciones finales + diario de egresos.
+ * Panel de Finanzas: diario de egresos + ejecución financiera del
+ * portafolio + liberación de anticipos + liquidaciones finales,
+ * organizados por tabs — mismo patrón que Procura/Infraestructura (Tabs +
+ * KpiPill de contexto compacto debajo + TabPanel con scroll interno propio
+ * por sección), en vez de apilar las 4 secciones en un solo scroll largo.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Banknote, CircleCheckBig, Coins, HandCoins, Wallet, Hourglass } from "lucide-react";
-import { ProjectStatus } from "@/types";
-import type { Project } from "@/types";
-import { SkeletonCard, SkeletonTable, SkeletonBlock, SkeletonStats } from "@/components/SkeletonLoader";
+import { BookText, CheckCircle2, Hourglass, Wallet } from "lucide-react";
+import { ProjectStatus, type Project } from "@/types";
+import { SkeletonCard, SkeletonTable, SkeletonBlock } from "@/components/SkeletonLoader";
 import { containerVariants, itemVariants } from "@/animations";
-import KpiCard from "@/components/UI/KpiCard";
+import KpiPill from "@/components/UI/KpiPill";
+import Tabs from "@/components/UI/Tabs";
+import TabPanel from "@/components/UI/TabPanel";
 import FinancialSummarySection from "./components/FinancialSummarySection";
 import AdvancesSection from "./components/AdvancesSection";
 import FinalSettlementsSection from "./components/FinalSettlementsSection";
-import LedgerSection from "./components/LedgerSection";
+import LedgerSection, { type LedgerEntry } from "./components/LedgerSection";
+
+type TabKey = "book" | "stats" | "advances" | "settlements";
 
 interface FinanzasPanelProps {
   projects: Project[];
-  onPayAdvance: (projectId: string, amount: number) => void;
-  onPayFinal: (projectId: string, amount: number) => void;
+  onPayAdvance: (projectId: string, amount: number) => Promise<void>;
+  onPayFinal: (projectId: string, amount: number) => Promise<void>;
   isLoading?: boolean;
 }
 
-export default function FinanzasPanel({
-  projects,
-  onPayAdvance,
-  onPayFinal,
-  isLoading = false,
-}: FinanzasPanelProps) {
-  if (isLoading) return <FinanzasSkeleton />;
+export default function FinanzasPanel({ projects, onPayAdvance, onPayFinal, isLoading = false }: FinanzasPanelProps) {
+  const [activeTab, setActiveTab] = useState<TabKey>("stats");
 
   const pendingAdvances = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.CONTRATADO),
@@ -54,113 +56,84 @@ export default function FinanzasPanel({
     [projects, pendingAdvances, pendingFinalPayments],
   );
 
-  // Completed transactions ledger
-  const paidLedger: {
-    id: string;
-    projectId: string;
-    title: string;
-    contractorCode: string;
-    type: "ANTICIPO" | "LIQUIDACIÓN_FINAL";
-    amount: number;
-    date: string;
-    voucher: string;
-  }[] = [];
+  // Diario de egresos: reconstruido a partir de los pagos ya registrados en
+  // cada proyecto (advancePaidAmount/finalPaidAmount), sin necesitar una
+  // tabla de transacciones propia en el backend.
+  const paidLedger = useMemo<LedgerEntry[]>(() => {
+    const entries: LedgerEntry[] = [];
 
-  projects.forEach((p, idx) => {
-    const winner = p.proposals?.find(pr => pr.contractorCode === p.selectedContractorCode);
-    const contractor = winner ? winner.contractorCode : "CON-301";
+    for (const p of projects) {
+      const winner = p.proposals?.find(pr => pr.contractorCode === p.selectedContractorCode);
+      const contractorCode = winner?.contractorCode ?? p.selectedContractorCode ?? "—";
 
-    if (p.advancePaidAmount && p.advancePaidDate) {
-      paidLedger.push({
-        id: `TXN-ADV-${idx}-${p.id}`,
-        projectId: p.id,
-        title: p.title,
-        contractorCode: contractor,
-        type: "ANTICIPO",
-        amount: p.advancePaidAmount,
-        date: p.advancePaidDate,
-        voucher: `VCH-${1000 + idx}A`,
-      });
+      if (p.advancePaidAmount && p.advancePaidDate) {
+        entries.push({
+          id: `TXN-ADV-${p.id}`,
+          projectId: p.id,
+          title: p.title,
+          contractorCode,
+          type: "ANTICIPO",
+          amount: p.advancePaidAmount,
+          date: p.advancePaidDate,
+          voucher: `VCH-${p.id}-A`,
+        });
+      }
+      if (p.finalPaidAmount && p.finalPaidDate) {
+        entries.push({
+          id: `TXN-FIN-${p.id}`,
+          projectId: p.id,
+          title: p.title,
+          contractorCode,
+          type: "LIQUIDACIÓN_FINAL",
+          amount: p.finalPaidAmount,
+          date: p.finalPaidDate,
+          voucher: `VCH-${p.id}-F`,
+        });
+      }
     }
-    if (p.finalPaidAmount && p.finalPaidDate) {
-      paidLedger.push({
-        id: `TXN-FIN-${idx}-${p.id}`,
-        projectId: p.id,
-        title: p.title,
-        contractorCode: contractor,
-        type: "LIQUIDACIÓN_FINAL",
-        amount: p.finalPaidAmount,
-        date: p.finalPaidDate,
-        voucher: `VCH-${1000 + idx}F`,
-      });
-    }
-  });
-  paidLedger.sort((a, b) => b.date.localeCompare(a.date));
+
+    return entries.sort((a, b) => b.date.localeCompare(a.date));
+  }, [projects]);
+
+  if (isLoading) return <FinanzasSkeleton />;
 
   return (
-    <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
       <h1 className="sr-only">Finanzas</h1>
 
-      {/* Header del departamento */}
-      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-2xl shadow-sm">
-            <Banknote className="h-6 w-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="font-brand text-xl font-black tracking-tight text-slate-900">Gerencia de Finanzas</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Libere anticipos, liquide finiquitos y controle el flujo de desembolsos del portafolio.
-            </p>
-          </div>
-        </div>
+      {/* Tabs primero — barra de navegación principal, mismo criterio que
+          Procura/Infraestructura. */}
+      <motion.div variants={itemVariants} className="shrink-0">
+        <Tabs
+          ariaLabel="Secciones de Finanzas"
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as TabKey)}
+          fullWidth
+          tabs={[
+            { key: "stats", label: "Estadisticas" },
+            { key: "book", label: "Diario de Egresos", count: paidLedger.length },
+            { key: "advances", label: "Anticipos", count: kpis.pendingAdvances },
+            { key: "settlements", label: "Finiquitos", count: kpis.pendingFinal },
+          ]}
+        />
       </motion.div>
 
-      {/* KPIs operativos del departamento — stagger propio (containerVariants
-          en el grid, itemVariants por tarjeta) para que las 4 entren en
-          secuencia en vez de todas a la vez. */}
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<HandCoins className="h-5 w-5" />} label="Anticipos por Liberar" accent="text-rose-600" borderAccent="border-l-rose-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-rose-700 to-rose-500 bg-clip-text text-transparent">{kpis.pendingAdvances}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Inicio de obra pendiente</p>
-          </KpiCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<Wallet className="h-5 w-5" />} label="Finiquitos por Liquidar" accent="text-sky-600" borderAccent="border-l-sky-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{kpis.pendingFinal}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Cierre financiero pendiente</p>
-          </KpiCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<Hourglass className="h-5 w-5" />} label="En Ejecución" accent="text-amber-600" borderAccent="border-l-amber-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-amber-700 to-amber-500 bg-clip-text text-transparent">{kpis.inExecution}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Obras con fondos activos</p>
-          </KpiCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <KpiCard icon={<CircleCheckBig className="h-5 w-5" />} label="Obras Completadas" accent="text-emerald-600" borderAccent="border-l-emerald-400">
-            <span className="text-2xl font-black font-mono bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">{kpis.completed}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Ciclo financiero cerrado</p>
-          </KpiCard>
-        </motion.div>
+      {/* KPIs operativos del departamento — contexto secundario compacto
+          debajo de las tabs, no cards grandes compitiendo por atención. */}
+      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
+        <KpiPill icon={<Wallet className="h-3.5 w-3.5" />} label="Anticipos por Liberar" value={kpis.pendingAdvances} accent="danger" />
+        <KpiPill icon={<BookText className="h-3.5 w-3.5" />} label="Finiquitos por Liquidar" value={kpis.pendingFinal} accent="info" />
+        <KpiPill icon={<Hourglass className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="warning" />
+        <KpiPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Obras Completadas" value={kpis.completed} accent="success" />
       </motion.div>
 
-      {/* Ejecución financiera del portafolio */}
-      <FinancialSummarySection projects={projects} />
-
-      {/* Operaciones: anticipos (izq) + liquidaciones (der) */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} />
-        <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} />
-      </motion.div>
-
-      {/* Diario de egresos */}
-      <motion.div variants={itemVariants}>
-        <LedgerSection paidLedger={paidLedger} />
+      <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
+        <TabPanel activeKey={activeTab}>
+          {activeTab === "book" && <LedgerSection paidLedger={paidLedger} />}
+          {activeTab === "stats" && <FinancialSummarySection projects={projects} paidLedger={paidLedger} />}
+          {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} />}
+          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} />}
+        </TabPanel>
       </motion.div>
     </motion.div>
   );
@@ -169,24 +142,20 @@ export default function FinanzasPanel({
 /* ─── Skeleton Loader ─── */
 function FinanzasSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3.5">
-        <SkeletonBlock className="h-12 w-12 rounded-2xl bg-slate-200" />
-        <div className="space-y-2">
-          <SkeletonBlock className="h-5 w-56" />
-          <SkeletonBlock className="h-3 w-96" />
-        </div>
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <SkeletonBlock className="h-11 w-44 rounded-2xl" />
+        <SkeletonBlock className="h-11 w-44 rounded-2xl" />
+        <SkeletonBlock className="h-11 w-44 rounded-2xl" />
+        <SkeletonBlock className="h-11 w-44 rounded-2xl" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonStats key={i} />
-        ))}
+      <div className="flex flex-wrap gap-2">
+        <SkeletonBlock className="h-8 w-36 rounded-full" />
+        <SkeletonBlock className="h-8 w-36 rounded-full" />
+        <SkeletonBlock className="h-8 w-32 rounded-full" />
+        <SkeletonBlock className="h-8 w-36 rounded-full" />
       </div>
       <SkeletonCard />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SkeletonCard />
-        <SkeletonCard />
-      </div>
       <SkeletonTable rows={4} columns={6} />
     </div>
   );

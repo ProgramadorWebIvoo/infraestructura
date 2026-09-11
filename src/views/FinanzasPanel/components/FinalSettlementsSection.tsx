@@ -2,104 +2,170 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Sección 2 de Finanzas: finiquitos y liquidaciones de cierre — extraída de
- * FinanzasPanel.
+ * Sección de Finanzas: finiquitos y liquidaciones de cierre — lista de
+ * obras con calidad verificada (LISTO_PAGO_FINAL) esperando el saldo final.
+ *
+ * Table/GridView con toggle (mismo patrón que InvestmentApprovalSection en
+ * Procura / AdvancesSection en Finanzas) en vez de una lista de <div> hecha
+ * a mano.
  */
 
-import { useState } from "react";
-import { CheckCircle, CreditCard, DollarSign } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { CheckCircle, CreditCard, DollarSign, SearchX, Wallet } from "lucide-react";
 import Button from "@/components/UI/Button";
-import type { Project } from "@/types";
+import type { Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import TableToolbar from "@/components/UI/TableToolbar";
+import { Table, type Column } from "@/components/UI/Table";
+import GridView from "@/components/UI/GridView/GridView";
+import { renderFinalSettlementCard } from "./FinalSettlementsGridCard";
+import { useContainerRows } from "@/hooks/useContainerRows";
+import { useTableViewMode } from "@/hooks/useTableViewMode";
+import { viewSwitchVariants } from "@/animations";
 import { formatNumber } from "@/utils";
 
 interface FinalSettlementsSectionProps {
   pendingFinalPayments: Project[];
-  onPayFinal: (projectId: string, amount: number) => void;
+  onPayFinal: (projectId: string, amount: number) => Promise<void>;
+}
+
+interface SettlementRow {
+  project: Project;
+  winner: Proposal;
+  paidAdvance: number;
+  balanceDue: number;
 }
 
 export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal }: FinalSettlementsSectionProps) {
   const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+  const [query, setQuery] = useState("");
+  const { viewMode, viewToggle } = useTableViewMode("grid");
+  const { containerRef, rows: pageSize } = useContainerRows();
+
+  // Orden por saldo pendiente descendente: la liquidación más grande primero.
+  const rows = useMemo<SettlementRow[]>(() => {
+    return pendingFinalPayments
+      .map((project) => {
+        const winner = project.proposals?.find(p => p.contractorCode === project.selectedContractorCode);
+        if (!winner) return null;
+        const paidAdvance = project.advancePaidAmount || 0;
+        return { project, winner, paidAdvance, balanceDue: winner.totalCost - paidAdvance };
+      })
+      .filter((row): row is SettlementRow => row !== null)
+      .sort((a, b) => b.balanceDue - a.balanceDue);
+  }, [pendingFinalPayments]);
+
+  const totalPending = useMemo(() => rows.reduce((sum, r) => sum + r.balanceDue, 0), [rows]);
+
+  const visibleRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      ({ project, winner }) =>
+        project.title.toLowerCase().includes(q) ||
+        project.id.toLowerCase().includes(q) ||
+        winner.contractorName.toLowerCase().includes(q) ||
+        winner.contractorCode.toLowerCase().includes(q),
+    );
+  }, [rows, query]);
+
+  const columns: Column<SettlementRow>[] = useMemo(() => [
+    { key: "id", label: "ID", width: "6.5rem", sortable: true, render: ({ project }) => <span className="font-mono font-bold text-[10px] text-sky-600 whitespace-nowrap">{project.id}</span> },
+    { key: "title", label: "Obra", sortable: true, render: ({ project }) => <div className="min-w-0 font-bold text-slate-800 truncate">{project.title}</div> },
+    { key: "contractor", label: "Contratista", sortable: true, render: ({ winner }) => <div className="min-w-0 font-bold text-slate-800 truncate">{winner.contractorName}</div> },
+    { key: "paidAdvance", label: "Anticipo Pagado", width: "9rem", align: "right", sortable: true, render: ({ paidAdvance }) => <span className="font-mono font-bold text-slate-600">${paidAdvance.toLocaleString()}</span> },
+    { key: "totalCost", label: "Total Obra", width: "9rem", align: "right", sortable: true, render: ({ winner }) => <span className="font-mono font-bold text-slate-600">${winner.totalCost.toLocaleString()}</span> },
+    { key: "balanceDue", label: "Saldo Pendiente", width: "10rem", align: "right", sortable: true, render: ({ balanceDue }) => <span className="font-mono font-black text-slate-900">${formatNumber(balanceDue)}</span> },
+    { key: "action", label: "", width: "11rem", render: ({ project, balanceDue }) => (
+      <Button
+        id={`btn-pay-final-${project.id}`}
+        onClick={() => setConfirmPayFinal({ projectId: project.id, amount: balanceDue, title: project.title })}
+        variant="primary"
+        colorScheme="sky"
+        size="sm"
+        className="w-full"
+        icon={<CreditCard className="h-3.5 w-3.5" />}
+      >
+        Aprobar
+      </Button>
+    ) },
+  ], []);
+
+  const emptyMessage = rows.length === 0
+    ? "No hay liquidaciones pendientes."
+    : "No hay liquidaciones que coincidan con la búsqueda.";
+  const emptyState = <EmptyState message={emptyMessage} icon={rows.length === 0 ? <CheckCircle className="h-8 w-8 text-slate-300" /> : <SearchX className="h-8 w-8" />} />;
 
   return (
-    <Card className="border-l-4 border-l-sky-400 h-full flex flex-col">
-      <SectionHeader
-        icon={<DollarSign className="h-5 w-5" />}
-        title="Finiquitos y Liquidaciones de Cierre (100%)"
-        description="Cierre el ciclo financiero de la obra pagando el saldo restante, previa certificación de calidad por Cierre de Obra."
-        color="sky"
+    <Card accent="info" fillHeight className="min-h-0 flex-1 p-0 overflow-hidden flex flex-col">
+      <div className="px-6 pt-6 shrink-0">
+        <SectionHeader
+          icon={<DollarSign className="h-5 w-5" />}
+          title="Finiquitos y Liquidaciones de Cierre (100%)"
+          description="Cierre el ciclo financiero de la obra pagando el saldo restante, previa certificación de calidad por Cierre de Obra."
+          color="sky"
+        />
+
+        {rows.length > 0 && (
+          <div className="flex items-center gap-2.5 mt-4 p-3.5 rounded-xl border border-sky-100 bg-gradient-to-br from-sky-50/60 to-white">
+            <div className="p-1.5 rounded-lg bg-sky-100">
+              <Wallet className="h-4 w-4 text-sky-600" />
+            </div>
+            <div>
+              <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-sky-500 block">Total Pendiente por Liquidar</span>
+              <span className="text-lg font-black font-mono text-sky-900">${formatNumber(totalPending)}</span>
+            </div>
+            <span className="ml-auto text-[10px] font-mono font-bold text-sky-400">{rows.length} obra{rows.length === 1 ? "" : "s"}</span>
+          </div>
+        )}
+      </div>
+
+      <TableToolbar
+        searchId="finanzas-settlements-search"
+        searchValue={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="Buscar por obra, contratista o ID..."
+        searchAriaLabel="Buscar liquidaciones pendientes"
+        countIcon={<DollarSign />}
+        filteredCount={visibleRows.length}
+        totalCount={rows.length}
+        noun="liquidación pendiente"
+        nounPlural="liquidaciones pendientes"
+        viewToggle={viewToggle}
       />
 
-      {pendingFinalPayments.length === 0 ? (
-        <div className="flex-1 flex items-center">
-          <EmptyState
-            className="w-full"
-            message="No hay liquidaciones pendientes."
-            icon={<CheckCircle className="h-8 w-8 text-slate-300" />}
-          />
-        </div>
-      ) : (
-        <div className="flex-1 space-y-4 overflow-y-auto scroll-smooth max-h-115 pr-1">
-          {pendingFinalPayments.map((p) => {
-            const winner = p.proposals?.find(prop => prop.contractorCode === p.selectedContractorCode);
-            if (!winner) return null;
-            const paidAdvance = p.advancePaidAmount || 0;
-            const balanceDue = winner.totalCost - paidAdvance;
-
-            return (
-              <div key={p.id} className="p-4 border border-slate-100 bg-slate-50/50 rounded-xl space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[9px] font-mono font-bold text-slate-400">{p.id}</span>
-                    <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h4>
-                  </div>
-                  <span className="text-[9px] font-mono bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded-lg font-bold">
-                    Aprobación de Calidad OK
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-gradient-to-br from-sky-50/40 to-white border border-sky-100/60 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Contratista ejecutor:</span>
-                    <span className="font-bold text-slate-800">{winner.contractorName}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-bold block mb-0.5">Anticipo ya pagado:</span>
-                    <span className="font-mono font-bold text-slate-600">${paidAdvance.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-slate-200/60 pt-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block">Monto total de obra:</span>
-                    <span className="font-mono font-bold text-slate-600">${winner.totalCost.toLocaleString()}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] text-slate-400 font-bold block uppercase font-mono tracking-wider text-sky-600 mb-0.5">Saldo Pendiente a Liquidar:</span>
-                    <span className="font-mono font-black text-slate-900 text-base">${formatNumber(balanceDue)}</span>
-                  </div>
-                </div>
-
-                <Button
-                  id={`btn-pay-final-${p.id}`}
-                  onClick={() => setConfirmPayFinal({ projectId: p.id, amount: balanceDue, title: p.title })}
-                  variant="primary"
-                  colorScheme="sky"
-                  size="md"
-                  className="w-full"
-                  icon={<CreditCard className="h-4 w-4" />}
-                >
-                  Aprobar y Transferir Finiquito de Obra
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {viewMode === "table" ? (
+          <motion.div key="table" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" ref={containerRef} className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <Table
+              columns={columns}
+              data={visibleRows}
+              rowKey={(row) => row.project.id}
+              pageSize={pageSize}
+              fillViewport
+              stickyHeader
+              emptyState={emptyState}
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="grid" variants={viewSwitchVariants} initial="hidden" animate="visible" exit="hidden" className="flex-1 min-h-0 px-6 pb-6 pt-4">
+            <GridView
+              items={visibleRows}
+              rowKey={(row) => row.project.id}
+              renderCard={({ project, winner, paidAdvance, balanceDue }) =>
+                renderFinalSettlementCard(project, winner, balanceDue, paidAdvance, () => setConfirmPayFinal({ projectId: project.id, amount: balanceDue, title: project.title }))
+              }
+              cardAccent={() => "info"}
+              emptyState={emptyState}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmDialog
         isOpen={!!confirmPayFinal}

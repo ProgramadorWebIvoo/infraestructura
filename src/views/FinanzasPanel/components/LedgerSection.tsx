@@ -12,8 +12,9 @@ import SectionHeader from "@/components/UI/SectionHeader";
 import { Table, type Column } from "@/components/UI/Table";
 import ExportButton, { type ExportColumn, type ExportRow } from "@/components/UI/ExportButton";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useContainerRows } from "@/hooks/useContainerRows";
 
-interface LedgerEntry {
+export interface LedgerEntry {
   id: string;
   projectId: string;
   title: string;
@@ -56,6 +57,7 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
   const [ledgerSearch, setLedgerSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("TODOS");
   const debouncedLedgerSearch = useDebounce(ledgerSearch, 300);
+  const { containerRef, rows: pageSize } = useContainerRows();
 
   const filteredLedger = useMemo(() => {
     const q = debouncedLedgerSearch.toLowerCase();
@@ -125,103 +127,107 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
   };
 
   return (
-    <Card className="border-l-4 border-l-slate-400">
-      <SectionHeader
-        icon={<ArrowUpRight className="h-5 w-5" />}
-        title="Diario de Egresos y Transferencias"
-        description="Historial detallado de desembolsos bancarios directos realizados por el sistema."
-        color="slate"
-        actions={
-          <>
-            <ExportButton
-              format="excel"
-              {...exportProps}
-              icon={<FileSpreadsheet className="h-3.5 w-3.5" />}
-              aria-label="Exportar diario a Excel"
-              className="px-3 py-2 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100"
-            >
-              Exportar Excel
-            </ExportButton>
-            <ExportButton
-              format="pdf"
-              {...exportProps}
-              icon={<FileText className="h-3.5 w-3.5" />}
-              aria-label="Exportar diario a PDF"
-              className="px-3 py-2 text-[11px] text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100"
-            >
-              Exportar PDF
-            </ExportButton>
-          </>
-        }
-      />
+    <Card fillHeight className="min-h-0 flex-1 border-l-4 border-l-slate-400 flex flex-col">
+      <div className="shrink-0">
+        <SectionHeader
+          icon={<ArrowUpRight className="h-5 w-5" />}
+          title="Diario de Egresos y Transferencias"
+          description="Historial detallado de desembolsos bancarios directos realizados por el sistema."
+          color="slate"
+          actions={
+            <>
+              <ExportButton
+                format="excel"
+                {...exportProps}
+                icon={<FileSpreadsheet className="h-3.5 w-3.5" />}
+                aria-label="Exportar diario a Excel"
+                className="px-3 py-2 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100"
+              >
+                Exportar Excel
+              </ExportButton>
+              <ExportButton
+                format="pdf"
+                {...exportProps}
+                icon={<FileText className="h-3.5 w-3.5" />}
+                aria-label="Exportar diario a PDF"
+                className="px-3 py-2 text-[11px] text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100"
+              >
+                Exportar PDF
+              </ExportButton>
+            </>
+          }
+        />
 
-      {/* Mini-stats del diario */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Wallet className="h-4 w-4 text-slate-500" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Total Desembolsado</span>
+        {/* Mini-stats del diario */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Wallet className="h-4 w-4 text-slate-500" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Total Desembolsado</span>
+            </div>
+            <p className="text-lg font-black font-mono text-slate-800">${fmtMoney(stats.total)}</p>
+            <p className="text-[10px] text-slate-400 font-medium">{stats.count} movimiento(s)</p>
           </div>
-          <p className="text-lg font-black font-mono text-slate-800">${fmtMoney(stats.total)}</p>
-          <p className="text-[10px] text-slate-400 font-medium">{stats.count} movimiento(s)</p>
+          <div className="p-3.5 rounded-xl border border-rose-100 bg-rose-50/40">
+            <div className="flex items-center gap-2 mb-1.5">
+              <HandCoins className="h-4 w-4 text-rose-500" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-400">Anticipos Liberados</span>
+            </div>
+            <p className="text-lg font-black font-mono text-rose-700">${fmtMoney(stats.advancesTotal)}</p>
+            <p className="text-[10px] text-rose-400/80 font-medium">{stats.advancesCount} desembolso(s)</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-sky-100 bg-sky-50/40">
+            <div className="flex items-center gap-2 mb-1.5">
+              <ReceiptText className="h-4 w-4 text-sky-500" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-sky-400">Finiquitos Liquidados</span>
+            </div>
+            <p className="text-lg font-black font-mono text-sky-700">${fmtMoney(stats.finalsTotal)}</p>
+            <p className="text-[10px] text-sky-400/80 font-medium">{stats.finalsCount} liquidación(es)</p>
+          </div>
         </div>
-        <div className="p-3.5 rounded-xl border border-rose-100 bg-rose-50/40">
-          <div className="flex items-center gap-2 mb-1.5">
-            <HandCoins className="h-4 w-4 text-rose-500" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-400">Anticipos Liberados</span>
+
+        {/* Filtros + búsqueda */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por obra, proveedor, ID, voucher..."
+              value={ledgerSearch}
+              onChange={(e) => setLedgerSearch(e.target.value)}
+              className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-slate-400 bg-white font-medium"
+              aria-label="Buscar en diario de egresos"
+            />
           </div>
-          <p className="text-lg font-black font-mono text-rose-700">${fmtMoney(stats.advancesTotal)}</p>
-          <p className="text-[10px] text-rose-400/80 font-medium">{stats.advancesCount} desembolso(s)</p>
-        </div>
-        <div className="p-3.5 rounded-xl border border-sky-100 bg-sky-50/40">
-          <div className="flex items-center gap-2 mb-1.5">
-            <ReceiptText className="h-4 w-4 text-sky-500" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-sky-400">Finiquitos Liquidados</span>
+          <div className="flex items-center gap-1.5" role="group" aria-label="Filtrar por tipo de egreso">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setTypeFilter(f.key)}
+                className={`px-3 py-2 rounded-lg border text-[10px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                  typeFilter === f.key
+                    ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
-          <p className="text-lg font-black font-mono text-sky-700">${fmtMoney(stats.finalsTotal)}</p>
-          <p className="text-[10px] text-sky-400/80 font-medium">{stats.finalsCount} liquidación(es)</p>
         </div>
       </div>
 
-      {/* Filtros + búsqueda */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por obra, proveedor, ID, voucher..."
-            value={ledgerSearch}
-            onChange={(e) => setLedgerSearch(e.target.value)}
-            className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-slate-400 bg-white font-medium"
-            aria-label="Buscar en diario de egresos"
-          />
-        </div>
-        <div className="flex items-center gap-1.5" role="group" aria-label="Filtrar por tipo de egreso">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setTypeFilter(f.key)}
-              className={`px-3 py-2 rounded-lg border text-[10px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                typeFilter === f.key
-                  ? "bg-slate-800 text-white border-slate-800 shadow-sm"
-                  : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="max-h-96 overflow-y-auto scroll-smooth">
+      <div ref={containerRef} className="flex-1 min-h-0">
         <Table
           columns={ledgerColumns}
           data={filteredLedger}
           rowKey={(tx) => tx.id}
           emptyMessage="Ninguna transferencia financiera ha sido efectuada aún."
           isLoading={false}
-          pageSize={20}
+          pageSize={pageSize}
+          fillViewport
+          stickyHeader
           footer={
             <tr>
               <td colSpan={5} className="py-3 px-4 text-[11px] uppercase tracking-wider text-slate-500">

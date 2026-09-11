@@ -28,6 +28,7 @@ import { useRoleAccess } from "./hooks/useRouting";
 import { useDocumentHead } from "./hooks/useDocumentHead";
 import { ROUTES, isPublicRoute } from "./routes";
 import { useProjects } from "./hooks/useProjects";
+import { useMarketingProjects } from "./hooks/useMarketingProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
 import { NotificationsProvider } from "./components/UI/NotificationsProvider";
@@ -267,6 +268,14 @@ function AppRoutes() {
     resetData,
   } = useProjects(authToken, showToast);
 
+  // ---- Marketing ----
+  const {
+    projects: marketingProjects,
+    isLoading: isLoadingMarketing,
+    isCreating: isCreatingMarketing,
+    createProject: handleCreateMarketingProject,
+  } = useMarketingProjects(authToken, showToast);
+
   // ---- Logout compuesto (limpia auth + datos) ----
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   // useCallback: se pasa como onLogout a SidebarNav (memo()) — sin referencia
@@ -389,6 +398,10 @@ function AppRoutes() {
         onPayFinal={handlePayFinal}
         authToken={authToken}
         location={location}
+        marketingProjects={marketingProjects}
+        isLoadingMarketing={isLoadingMarketing}
+        isCreatingMarketing={isCreatingMarketing}
+        onCreateMarketingProject={handleCreateMarketingProject}
       />
       </ExchangeRatesProvider>
     </NotificationsProvider>
