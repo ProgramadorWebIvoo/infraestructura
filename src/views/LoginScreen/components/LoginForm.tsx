@@ -18,11 +18,16 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [shakeKey, setShakeKey] = useState(0);
   const { blockTimer, isBlocked, recordAttempt, resetAttempts } = useRateLimit();
   const reduceMotion = useReducedMotion();
+
+  const handlePasswordKeyEvent = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    setIsCapsLockOn(event.getModifierState("CapsLock"));
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -104,7 +109,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           />
         </div>
 
-        {/* Campo password con toggle de visibilidad */}
+        {/* Campo password con toggle de visibilidad e indicador de Caps Lock */}
         <div>
           <label
             htmlFor="login-password"
@@ -120,6 +125,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handlePasswordKeyEvent}
+              onKeyUp={handlePasswordKeyEvent}
               placeholder="••••••••"
               disabled={isBlocked}
               className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-3 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-hidden transition-all duration-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
@@ -147,6 +154,24 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               </AnimatePresence>
             </motion.button>
           </div>
+
+          {/* Indicador de Caps Lock */}
+          <AnimatePresence>
+            {isCapsLockOn && (
+              <motion.div
+                initial={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="mt-2 flex items-center gap-2 text-xs font-semibold text-amber-600"
+                role="status"
+                aria-live="polite"
+              >
+                <AlertCircle className="h-[14px] w-[14px] shrink-0 stroke-[2.5]" aria-hidden="true" />
+                <span>Mayúsculas activadas</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Mensaje de error */}
