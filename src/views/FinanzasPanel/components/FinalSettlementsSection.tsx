@@ -18,19 +18,21 @@ import type { Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
-import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import PayWithProofModal from "./PayWithProofModal";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
 import { renderFinalSettlementCard } from "./FinalSettlementsGridCard";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
+import { useToast } from "@/components/UI/Toast";
 import { viewSwitchVariants } from "@/animations";
 import { formatNumber } from "@/utils";
 
 interface FinalSettlementsSectionProps {
   pendingFinalPayments: Project[];
-  onPayFinal: (projectId: string, amount: number) => Promise<void>;
+  /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liquidación. */
+  onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
 }
 
 interface SettlementRow {
@@ -42,8 +44,10 @@ interface SettlementRow {
 
 export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal }: FinalSettlementsSectionProps) {
   const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
+  const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [isPaying, setIsPaying] = useState(false);
   const [query, setQuery] = useState("");
+  const { showToast } = useToast();
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
 
@@ -167,15 +171,16 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         )}
       </AnimatePresence>
 
-      <ConfirmDialog
+      <PayWithProofModal
         isOpen={!!confirmPayFinal}
-        onClose={() => setConfirmPayFinal(null)}
+        onClose={() => { setConfirmPayFinal(null); setProofFiles([]); }}
         onConfirm={async () => {
-          if (!confirmPayFinal) return;
+          if (!confirmPayFinal || proofFiles.length === 0) return;
           setIsPaying(true);
           try {
-            await onPayFinal(confirmPayFinal.projectId, confirmPayFinal.amount);
+            await onPayFinal(confirmPayFinal.projectId, confirmPayFinal.amount, proofFiles[0]);
             setConfirmPayFinal(null);
+            setProofFiles([]);
           } finally {
             setIsPaying(false);
           }
@@ -185,6 +190,9 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         variant="warning"
         confirmLabel="Aprobar finiquito"
         isLoading={isPaying}
+        proofFiles={proofFiles}
+        onProofFilesChange={setProofFiles}
+        onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
     </Card>
   );

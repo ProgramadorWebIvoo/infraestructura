@@ -693,15 +693,22 @@ describe("useProjectsWorkflows", () => {
   });
 
   // ── Finanzas ───────────────────────────────────────────────────────────────
+  const fakeProofFile = () => new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
+
   describe("handlePayAdvance", () => {
-    it("POSTs to /projects/{id}/payments with ADVANCE type", async () => {
+    it("uploads the payment proof and then POSTs to /projects/{id}/payments with ADVANCE type", async () => {
       const project = createMockProject({ status: ProjectStatus.EN_EJECUCION });
       mockApiFetch.mockResolvedValue(project);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayAdvance("PRJ-001", 5000);
+      await result.current.handlePayAdvance("PRJ-001", 5000, fakeProofFile());
 
+      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
+        method: "POST",
+        token: "valid-token",
+        body: expect.any(FormData),
+      }));
       expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/payments", {
         method: "POST",
         token: "valid-token",
@@ -710,12 +717,26 @@ describe("useProjectsWorkflows", () => {
       expect(syncProject).toHaveBeenCalledWith(project);
     });
 
-    it("shows error toast on failure", async () => {
-      mockApiFetch.mockRejectedValue(new Error("fail"));
+    it("does not register the payment when the proof upload fails", async () => {
+      mockApiFetch.mockRejectedValueOnce(new Error("upload failed"));
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayAdvance("PRJ-001", 1000);
+      await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile());
+
+      expect(mockApiFetch).toHaveBeenCalledTimes(1);
+      expect(showToast).toHaveBeenCalledWith(
+        expect.stringContaining("No se pudo adjuntar el comprobante"),
+        "error",
+      );
+    });
+
+    it("shows error toast when the payment fails after the proof was uploaded", async () => {
+      mockApiFetch.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("fail"));
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile());
 
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo registrar el anticipo"),
@@ -725,14 +746,19 @@ describe("useProjectsWorkflows", () => {
   });
 
   describe("handlePayFinal", () => {
-    it("POSTs to /projects/{id}/payments with FINAL type", async () => {
+    it("uploads the payment proof and then POSTs to /projects/{id}/payments with FINAL type", async () => {
       const project = createMockProject({ status: ProjectStatus.COMPLETADO_PAGADO });
       mockApiFetch.mockResolvedValue(project);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayFinal("PRJ-001", 10000);
+      await result.current.handlePayFinal("PRJ-001", 10000, fakeProofFile());
 
+      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
+        method: "POST",
+        token: "valid-token",
+        body: expect.any(FormData),
+      }));
       expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/payments", {
         method: "POST",
         token: "valid-token",
@@ -741,12 +767,26 @@ describe("useProjectsWorkflows", () => {
       expect(syncProject).toHaveBeenCalledWith(project);
     });
 
-    it("shows error toast on failure", async () => {
-      mockApiFetch.mockRejectedValue(new Error("fail"));
+    it("does not register the payment when the proof upload fails", async () => {
+      mockApiFetch.mockRejectedValueOnce(new Error("upload failed"));
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayFinal("PRJ-001", 1000);
+      await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile());
+
+      expect(mockApiFetch).toHaveBeenCalledTimes(1);
+      expect(showToast).toHaveBeenCalledWith(
+        expect.stringContaining("No se pudo adjuntar el comprobante"),
+        "error",
+      );
+    });
+
+    it("shows error toast when the payment fails after the proof was uploaded", async () => {
+      mockApiFetch.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("fail"));
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile());
 
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo registrar el pago final"),

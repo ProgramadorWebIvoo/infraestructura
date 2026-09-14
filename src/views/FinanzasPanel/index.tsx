@@ -30,8 +30,8 @@ interface FinanzasPanelProps {
   projects: Project[];
   /** Opcional con default "" — solo se usa para resolver tabs dinámicas (GET /auth/tabs); sin token, todas las tabs quedan visibles. */
   authToken?: string;
-  onPayAdvance: (projectId: string, amount: number) => Promise<void>;
-  onPayFinal: (projectId: string, amount: number) => Promise<void>;
+  onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
+  onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   isLoading?: boolean;
 }
 

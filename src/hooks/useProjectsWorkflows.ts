@@ -518,11 +518,35 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   );
 
   // ── Finanzas ──────────────────────────────────────────────────────
+  /** Sube el comprobante bancario ANTES de confirmar el pago — si el
+   * comprobante falla, el pago nunca se registra (evita un anticipo/
+   * finiquito "liberado" sin evidencia adjunta). */
+  const uploadPaymentProof = async (
+    projectId: string,
+    documentType: "COMPROBANTE_ANTICIPO" | "COMPROBANTE_FINIQUITO",
+    proofFile: File,
+    token: string,
+  ) => {
+    const form = new FormData();
+    form.append("document_type", documentType);
+    form.append("files[]", proofFile);
+    await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+  };
+
   const handlePayAdvance = useCallback(
-    async (projectId: string, amount: number) => {
+    async (projectId: string, amount: number, proofFile: File) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+
+      try {
+        await uploadPaymentProof(projectId, "COMPROBANTE_ANTICIPO", proofFile, token);
+      } catch (error) {
+        logError("handlePayAdvance:uploadProof", error);
+        show("No se pudo adjuntar el comprobante de pago. El anticipo no fue liberado.", "error");
+        return;
+      }
+
       const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_EJECUCION, advancePaidAmount: amount });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
@@ -541,10 +565,19 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   );
 
   const handlePayFinal = useCallback(
-    async (projectId: string, amount: number) => {
+    async (projectId: string, amount: number, proofFile: File) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
+
+      try {
+        await uploadPaymentProof(projectId, "COMPROBANTE_FINIQUITO", proofFile, token);
+      } catch (error) {
+        logError("handlePayFinal:uploadProof", error);
+        show("No se pudo adjuntar el comprobante de pago. El finiquito no fue liquidado.", "error");
+        return;
+      }
+
       const previous = optimisticUpdate(projectId, { status: ProjectStatus.COMPLETADO_PAGADO, finalPaidAmount: amount });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {

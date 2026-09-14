@@ -51,8 +51,14 @@ interface FileDropZoneProps {
   fileIcon?: React.ReactNode;
   /** ID para el input */
   id?: string;
-  /** Requerido (asterisco rojo) */
+  /** Requerido (asterisco rojo estático por defecto) */
   required?: boolean;
+  /** Reemplaza el asterisco estático de `required` por un indicador propio
+   * (ej. `<RequiredMark filled={...} />` de HintSignals.tsx) — mismo
+   * vocabulario dinámico obligatorio/válido que TextField/NumericInput/
+   * Select. No cambia el comportamiento por defecto de los llamadores
+   * existentes que solo pasan `required`. */
+  requiredIndicator?: React.ReactNode;
   /** Texto de contador (ej. "planos adjuntos") */
   countLabel?: string;
   /** Tamaño máximo en bytes (default: 10 MB). 0 = sin límite. */
@@ -155,6 +161,7 @@ export default function FileDropZone({
   fileIcon,
   id,
   required = false,
+  requiredIndicator,
   countLabel,
   maxSizeBytes = DEFAULT_MAX_SIZE,
   maxFileCount,
@@ -243,7 +250,7 @@ export default function FileDropZone({
       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
         {fileIcon}
         {label}
-        {required && <span className="text-rose-500">*</span>}
+        {requiredIndicator ?? (required && <span className="text-rose-500">*</span>)}
       </label>
 
       {/* Drop zone — su propio contenido cambia cuando ya hay archivos, para

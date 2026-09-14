@@ -19,19 +19,21 @@ import type { Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
-import ConfirmDialog from "@/components/UI/ConfirmDialog";
+import PayWithProofModal from "./PayWithProofModal";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
 import { renderAdvanceCard } from "./AdvancesGridCard";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
+import { useToast } from "@/components/UI/Toast";
 import { viewSwitchVariants } from "@/animations";
 import { formatNumber } from "@/utils";
 
 interface AdvancesSectionProps {
   pendingAdvances: Project[];
-  onPayAdvance: (projectId: string, amount: number) => Promise<void>;
+  /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liberación. */
+  onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
 }
 
 interface AdvanceRow {
@@ -42,8 +44,10 @@ interface AdvanceRow {
 
 export default function AdvancesSection({ pendingAdvances, onPayAdvance }: AdvancesSectionProps) {
   const [confirmPayAdvance, setConfirmPayAdvance] = useState<{ projectId: string; amount: number; title: string } | null>(null);
+  const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [isPaying, setIsPaying] = useState(false);
   const [query, setQuery] = useState("");
+  const { showToast } = useToast();
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
 
@@ -174,15 +178,16 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
         )}
       </AnimatePresence>
 
-      <ConfirmDialog
+      <PayWithProofModal
         isOpen={!!confirmPayAdvance}
-        onClose={() => setConfirmPayAdvance(null)}
+        onClose={() => { setConfirmPayAdvance(null); setProofFiles([]); }}
         onConfirm={async () => {
-          if (!confirmPayAdvance) return;
+          if (!confirmPayAdvance || proofFiles.length === 0) return;
           setIsPaying(true);
           try {
-            await onPayAdvance(confirmPayAdvance.projectId, confirmPayAdvance.amount);
+            await onPayAdvance(confirmPayAdvance.projectId, confirmPayAdvance.amount, proofFiles[0]);
             setConfirmPayAdvance(null);
+            setProofFiles([]);
           } finally {
             setIsPaying(false);
           }
@@ -192,6 +197,9 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
         variant="warning"
         confirmLabel="Liberar anticipo"
         isLoading={isPaying}
+        proofFiles={proofFiles}
+        onProofFilesChange={setProofFiles}
+        onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
     </Card>
   );

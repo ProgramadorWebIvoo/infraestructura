@@ -151,7 +151,7 @@ export interface RateFreeze {
 
 export interface ProjectDocument {
   id: number;
-  documentType: "CALC" | "PLANO" | "FOTO" | "CORRECCION";
+  documentType: "CALC" | "PLANO" | "FOTO" | "CORRECCION" | "COMPROBANTE_ANTICIPO" | "COMPROBANTE_FINIQUITO";
   originalName: string;
   mimeType?: string;
   sizeBytes?: number;

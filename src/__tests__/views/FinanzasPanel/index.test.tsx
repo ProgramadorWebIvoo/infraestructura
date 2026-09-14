@@ -207,9 +207,15 @@ describe("FinanzasPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /Liberar$/ }));
 
       const dialog = await screen.findByRole("dialog");
+      // El comprobante es obligatorio: sin adjuntar nada, confirmar debe estar deshabilitado.
+      expect(within(dialog).getByRole("button", { name: /Liberar anticipo/ })).toBeDisabled();
+
+      const proofFile = new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
+      fireEvent.change(within(dialog).getByTestId("file-input"), { target: { files: [proofFile] } });
+      expect(within(dialog).getByRole("button", { name: /Liberar anticipo/ })).toBeEnabled();
       fireEvent.click(within(dialog).getByRole("button", { name: /Liberar anticipo/ }));
 
-      await waitFor(() => expect(onPayAdvance).toHaveBeenCalledWith("PRJ-1", 3000));
+      await waitFor(() => expect(onPayAdvance).toHaveBeenCalledWith("PRJ-1", 3000, proofFile));
     } finally {
       restoreSize();
       restoreRO();
@@ -239,9 +245,11 @@ describe("FinanzasPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /Aprobar$/ }));
 
       const dialog = await screen.findByRole("dialog");
+      const proofFile = new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
+      fireEvent.change(within(dialog).getByTestId("file-input"), { target: { files: [proofFile] } });
       fireEvent.click(within(dialog).getByRole("button", { name: /Aprobar finiquito/ }));
 
-      await waitFor(() => expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 7000));
+      await waitFor(() => expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 7000, proofFile));
     } finally {
       restoreSize();
       restoreRO();
