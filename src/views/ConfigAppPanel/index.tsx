@@ -41,12 +41,15 @@ import { useNotificationActionsCatalog } from "@/hooks/useNotificationActionsCat
 import { useNotificationRules, type NotificationRuleChannels } from "@/hooks/useNotificationRules";
 import { useCurrencies, type CurrencyRecord } from "@/hooks/useCurrencies";
 import { useExchangeRates } from "@/hooks/useExchangeRates";
+import { useExchangeRateSyncLogs } from "@/hooks/useExchangeRateSyncLogs";
 import { useDraftState } from "@/hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
 import ExchangeRateHistoryModal from "./components/ExchangeRateHistoryModal";
+import ExchangeRateSyncLogsPanel from "./components/ExchangeRateSyncLogsPanel";
+import ExchangeRateEditModal from "./components/ExchangeRateEditModal";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
@@ -124,6 +127,13 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
     isSyncing,
     syncNow,
   } = useExchangeRates(authToken, isSuperadmin);
+
+  const {
+    logs: syncLogs,
+    lastSync,
+    isLoading: isLoadingSyncLogs,
+    loadLogs: refreshSyncLogs,
+  } = useExchangeRateSyncLogs(authToken, isSuperadmin);
 
   const handleAddCurrency = async (input: { code: string; name: string; symbol: string }) => {
     const created = await addCurrency(input);
@@ -211,6 +221,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   const [savingAll, setSavingAll] = useState(false);
   const [exchangeRateModalOpen, setExchangeRateModalOpen] = useState(false);
   const [selectedCurrencyForModal, setSelectedCurrencyForModal] = useState<string>("");
+  const [exchangeRateEditModalOpen, setExchangeRateEditModalOpen] = useState(false);
 
   const hasSettingsFor = (group: string) => settings[group]?.length > 0;
   const hasPendingChanges = settingsDraft.dirtyKeys.length > 0 || rulesDraft.dirtyKeys.length > 0;
@@ -347,18 +358,25 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                     silencedChannelsFor={silencedChannelsFor}
                   />
                 ) : group === "__currencies__" ? (
-                  <CurrencyCard
-                    key={group}
-                    currencies={currencies}
-                    isLoading={isLoadingCurrencies}
-                    onAdd={handleAddCurrency}
-                    onUpdate={handleUpdateCurrency}
-                    onDelete={handleDeleteCurrency}
-                    onViewExchangeRates={(code) => {
-                      setSelectedCurrencyForModal(code);
-                      setExchangeRateModalOpen(true);
-                    }}
-                  />
+                  <div key={group} className="space-y-6">
+                    <CurrencyCard
+                      currencies={currencies}
+                      isLoading={isLoadingCurrencies}
+                      onAdd={handleAddCurrency}
+                      onUpdate={handleUpdateCurrency}
+                      onDelete={handleDeleteCurrency}
+                      onViewExchangeRates={(code) => {
+                        setSelectedCurrencyForModal(code);
+                        setExchangeRateModalOpen(true);
+                      }}
+                    />
+                    <ExchangeRateSyncLogsPanel
+                      logs={syncLogs}
+                      lastSync={lastSync}
+                      isLoading={isLoadingSyncLogs}
+                      onEditRate={() => setExchangeRateEditModalOpen(true)}
+                    />
+                  </div>
                 ) : (
                   <SettingGroupCard
                     key={group}
@@ -386,6 +404,18 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
           isLoading={isLoadingRates}
           isSyncing={isSyncing}
           onSyncNow={syncNow}
+        />
+
+        {/* Modal para editar tasa */}
+        <ExchangeRateEditModal
+          isOpen={exchangeRateEditModalOpen}
+          onClose={() => setExchangeRateEditModalOpen(false)}
+          currencies={currencies}
+          authToken={authToken}
+          onRateAdded={() => {
+            setExchangeRateEditModalOpen(false);
+            refreshSyncLogs();
+          }}
         />
 
         {isSuperadmin && (
