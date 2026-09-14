@@ -5,6 +5,7 @@ import { PROVIDER_LABELS, providerColor } from "@/constants/aiProviders";
 import type { AiUsageByProvider, AiUsageData, AiUsageTotals } from "@/hooks/useAIConfig";
 import KpiCard from "@/components/UI/KpiCard";
 import Card from "@/components/UI/Card";
+import Tooltip from "@/components/UI/Tooltip";
 import { SkeletonBlock, SkeletonStats, SkeletonBarChart, SkeletonProviderList, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import Select from "@/components/UI/Select";
@@ -60,6 +61,7 @@ function UsageKpis({ totals }: { totals: AiUsageTotals | null }) {
           value={(totals?.total_requests ?? 0).toLocaleString()}
           sub={`${(totals?.successful_requests ?? 0).toLocaleString()} exitosas`}
           borderAccent={SEMANTIC_COLOR_MAP.info.borderL400}
+          tooltip="Total de llamadas a proveedores de IA en el período seleccionado, exitosas y fallidas."
         />
       </motion.div>
       <motion.div variants={kpiCardVariants}>
@@ -69,6 +71,7 @@ function UsageKpis({ totals }: { totals: AiUsageTotals | null }) {
           value={(totals?.total_tokens ?? 0).toLocaleString()}
           sub={`${(totals?.prompt_tokens ?? 0).toLocaleString()} prompt / ${(totals?.completion_tokens ?? 0).toLocaleString()} completion`}
           borderAccent={SEMANTIC_COLOR_MAP.brand.borderL400}
+          tooltip="Suma de tokens de entrada (prompt) y salida (completion) consumidos por todos los proveedores en el período."
         />
       </motion.div>
       <motion.div variants={kpiCardVariants}>
@@ -77,6 +80,7 @@ function UsageKpis({ totals }: { totals: AiUsageTotals | null }) {
           label="Costo estimado"
           value={formatAiCost(totals?.total_cost)}
           borderAccent={SEMANTIC_COLOR_MAP.success.borderL400}
+          tooltip="Costo estimado en USD según las tarifas configuradas por proveedor y modelo — no es un monto facturado real."
         />
       </motion.div>
       <motion.div variants={kpiCardVariants}>
@@ -86,6 +90,7 @@ function UsageKpis({ totals }: { totals: AiUsageTotals | null }) {
           value={successRate}
           sub={`${failedRequests.toLocaleString()} fallidas`}
           borderAccent={SEMANTIC_COLOR_MAP.warning.borderL400}
+          tooltip="Porcentaje de peticiones a IA que completaron sin error sobre el total del período."
         />
       </motion.div>
     </motion.div>
@@ -113,14 +118,16 @@ function ProviderUsageBar({ provider }: { provider: ProviderUsage }) {
           {provider.provider.total_tokens.toLocaleString()} tokens
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
-        <motion.div
-          className={`h-full rounded-full bg-linear-to-r ${semantic.gradientFrom} ${semantic.gradientTo}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${provider.pctOfTotal * 100}%` }}
-          transition={springs.gentle}
-        />
-      </div>
+      <Tooltip content={`${(provider.pctOfTotal * 100).toFixed(1)}% del total de tokens — ${provider.provider.total_tokens.toLocaleString()} tokens`} placement="top">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised cursor-help">
+          <motion.div
+            className={`h-full rounded-full bg-linear-to-r ${semantic.gradientFrom} ${semantic.gradientTo}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${provider.pctOfTotal * 100}%` }}
+            transition={springs.gentle}
+          />
+        </div>
+      </Tooltip>
       <div className="flex justify-between text-[10px] text-text-muted">
         <span>{provider.provider.requests} peticiones</span>
         <span>{formatAiCost(provider.provider.cost)}</span>

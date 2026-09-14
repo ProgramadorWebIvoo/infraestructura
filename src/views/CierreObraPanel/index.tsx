@@ -91,10 +91,10 @@ export default function CierreObraPanel({
         </motion.div>
 
         <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
-          <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="Por Revisar" value={kpis.pendingReview} accent="info" />
-          <KpiPill icon={<HardHat className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="brand" />
-          <KpiPill icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Auditoría" value={kpis.underAudit} accent="warning" />
-          <KpiPill icon={<FileStack className="h-3.5 w-3.5" />} label="Revisados" value={kpis.revised} accent="success" />
+          <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="Por Revisar" value={kpis.pendingReview} accent="info" tooltip="Peticiones de obra recién creadas, pendientes de la primera revisión de expediente." />
+          <KpiPill icon={<HardHat className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="brand" tooltip="Proyectos contratados que ya están en obra." />
+          <KpiPill icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Auditoría" value={kpis.underAudit} accent="warning" tooltip="Proyectos en verificación de finalización, previos al pago final." />
+          <KpiPill icon={<FileStack className="h-3.5 w-3.5" />} label="Revisados" value={kpis.revised} accent="success" tooltip="Expedientes que ya pasaron la revisión de Cierre de Obra." />
         </motion.div>
 
         <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">

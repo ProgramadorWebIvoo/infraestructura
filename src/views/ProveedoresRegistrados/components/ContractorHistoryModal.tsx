@@ -239,14 +239,16 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
               <SummaryStat
                 label="Rating"
                 value={history.stats.rating != null ? `★ ${history.stats.rating.toFixed(1)}` : "—"}
+                tooltip="Calificación actual del proveedor en el catálogo maestro (0-10)."
               />
-              <SummaryStat label="Cotizaciones" value={String(history.stats.totalQuoteCount)} />
-              <SummaryStat label="Productos" value={String(history.stats.distinctProductCount)} />
+              <SummaryStat label="Cotizaciones" value={String(history.stats.totalQuoteCount)} tooltip="Total de líneas de propuestas de materiales cotizadas por este proveedor en los últimos 12 meses." />
+              <SummaryStat label="Productos" value={String(history.stats.distinctProductCount)} tooltip="Cantidad de productos distintos que este proveedor ha cotizado en el período." />
               <SummaryStat
                 label="Tendencia"
                 value={history.stats.trendPercent != null ? `${history.stats.trendPercent >= 0 ? "+" : ""}${history.stats.trendPercent.toFixed(1)}%` : "—"}
                 tone={history.stats.trendPercent != null ? (history.stats.trendPercent > 5 ? "danger" : history.stats.trendPercent < -5 ? "success" : undefined) : undefined}
                 emphasize
+                tooltip="Variación del precio promedio entre el primer y el último mes con cotizaciones en el período."
               />
             </div>
           ) : null}

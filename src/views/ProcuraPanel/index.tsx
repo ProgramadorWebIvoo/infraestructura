@@ -87,10 +87,10 @@ export default function ProcuraPanel({
           debajo de las tabs (mismo patrón que Infraestructura/Cierre de
           Obra), no cards grandes compitiendo por atención con las tabs. */}
       <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
-        <KpiPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Por Autorizar" value={kpis.pendingApproval} accent="brand" />
-        <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="info" />
-        <KpiPill icon={<Scale className="h-3.5 w-3.5" />} label="Comparativa" value={kpis.comparative} accent="success" />
-        <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" />
+        <KpiPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Por Autorizar" value={kpis.pendingApproval} accent="brand" tooltip="Proyectos confirmados por Procura, pendientes de abrir a licitación." />
+        <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="info" tooltip="Proyectos abiertos, recibiendo propuestas de proveedores." />
+        <KpiPill icon={<Scale className="h-3.5 w-3.5" />} label="Comparativa" value={kpis.comparative} accent="success" tooltip="Proyectos con cuadro comparativo enviado, listos para adjudicar." />
+        <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" tooltip="Proyectos ya adjudicados y contratados con un proveedor." />
       </motion.div>
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">

@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
-import { Search } from "lucide-react";
+import { Search, Info } from "lucide-react";
 import { SEMANTIC_COLOR_MAP } from "./colorTokens";
+import Tooltip from "./Tooltip";
 
 interface KpiCardProps {
   icon: ReactNode;
@@ -15,6 +16,9 @@ interface KpiCardProps {
   color?: string;
   /** Callback opcional: si se provee, muestra un botón de inspección al hover */
   onInspect?: () => void;
+  /** Explicación breve del KPI — se muestra en un ícono de info con Tooltip
+   * junto a la etiqueta, sin competir con el botón de inspección. */
+  tooltip?: ReactNode;
 }
 
 export default function KpiCard({
@@ -28,6 +32,7 @@ export default function KpiCard({
   borderAccent,
   color,
   onInspect,
+  tooltip,
 }: KpiCardProps) {
   const dark = variant === "dark";
   const brand = SEMANTIC_COLOR_MAP.brand;
@@ -74,6 +79,17 @@ export default function KpiCard({
           >
             {label}
           </span>
+          {tooltip && (
+            <Tooltip content={tooltip} placement="top">
+              <button
+                type="button"
+                aria-label={`Información sobre ${label}`}
+                className={`cursor-help rounded-full ${dark ? "text-text-muted hover:text-text-inverted" : "text-text-muted hover:text-text-secondary"}`}
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </Tooltip>
+          )}
         </div>
       </div>
       <div className="mt-3">

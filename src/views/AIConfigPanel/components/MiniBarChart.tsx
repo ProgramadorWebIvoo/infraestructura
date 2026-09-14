@@ -2,7 +2,13 @@ import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
+import Tooltip from "@/components/UI/Tooltip";
 import type { AiUsageDaily } from "@/hooks/useAIConfig";
+
+function formatFullDate(iso: string) {
+  const [year, month, day] = iso.split("-");
+  return `${day}/${month}/${year}`;
+}
 
 type ViewMode = "daily" | "weekly";
 
@@ -89,14 +95,16 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
                 <div key={d.date} className="flex items-center gap-2 text-[10px]">
                   <span className="text-text-muted w-14 text-right shrink-0 font-mono">{shortDate}</span>
                   <span className="text-text-tertiary w-18 text-right shrink-0 font-mono font-bold">{tokensStr}</span>
-                  <div className="flex-1 h-5 rounded-md bg-surface-raised overflow-hidden">
-                    <motion.div
-                      className={`h-full rounded-md bg-linear-to-r ${brand.gradientFrom} ${brand.gradientTo}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ ...springs.gentle, delay: i * 0.02 }}
-                    />
-                  </div>
+                  <Tooltip content={`${formatFullDate(d.date)}: ${tokensStr} tokens`} placement="top">
+                    <div className="flex-1 h-5 rounded-md bg-surface-raised overflow-hidden cursor-help">
+                      <motion.div
+                        className={`h-full rounded-md bg-linear-to-r ${brand.gradientFrom} ${brand.gradientTo}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ ...springs.gentle, delay: i * 0.02 }}
+                      />
+                    </div>
+                  </Tooltip>
                 </div>
               );
             })}
@@ -113,15 +121,16 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
               return (
                 <div key={d.date} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
                   <span className="text-[9px] text-text-tertiary font-mono font-bold">{tokensStr}</span>
-                  <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden">
-                    <motion.div
-                      className={`w-full rounded-t-md bg-linear-to-t ${brand.gradientFrom} ${brand.gradientTo}`}
-                      initial={{ height: 0 }}
-                      animate={{ height: barHeightPx }}
-                      transition={{ ...springs.gentle, delay: i * 0.03 }}
-                      title={`${d.date}: ${tokensStr} tokens (${Math.round(pct)}% del máximo)`}
-                    />
-                  </div>
+                  <Tooltip content={`${formatFullDate(d.date)}: ${tokensStr} tokens (${Math.round(pct)}% del máximo)`} placement="top">
+                    <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden cursor-help">
+                      <motion.div
+                        className={`w-full rounded-t-md bg-linear-to-t ${brand.gradientFrom} ${brand.gradientTo}`}
+                        initial={{ height: 0 }}
+                        animate={{ height: barHeightPx }}
+                        transition={{ ...springs.gentle, delay: i * 0.03 }}
+                      />
+                    </div>
+                  </Tooltip>
                   <span className="text-[9px] text-text-muted font-mono">{shortDate}</span>
                 </div>
               );

@@ -88,10 +88,10 @@ export default function ProveedoresRegistrados({
             (ninguna vista fuera de CONFIG APP usa SectionHeader a este nivel). ── */}
         <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
-            <KpiPill icon={<Users className="h-3.5 w-3.5" />} label="Proveedores" value={contractors.length} accent="brand" />
-            <KpiPill icon={<Star className="h-3.5 w-3.5" />} label="Rating Promedio" value={avgRating.toFixed(1)} accent="warning" />
-            <KpiPill icon={<Package className="h-3.5 w-3.5" />} label="Propuestas Recibidas" value={proposals.length} accent="info" />
-            <KpiPill icon={<PackageSearch className="h-3.5 w-3.5" />} label="Proyectos Activos" value={new Set(proposals.map(p => p.projectId)).size} accent="info" />
+            <KpiPill icon={<Users className="h-3.5 w-3.5" />} label="Proveedores" value={contractors.length} accent="brand" tooltip="Total de proveedores registrados en el catálogo, sin importar su estado (activo, inactivo o pendiente)." />
+            <KpiPill icon={<Star className="h-3.5 w-3.5" />} label="Rating Promedio" value={avgRating.toFixed(1)} accent="warning" tooltip="Promedio simple del rating (0-10) de todos los proveedores registrados." />
+            <KpiPill icon={<Package className="h-3.5 w-3.5" />} label="Propuestas Recibidas" value={proposals.length} accent="info" tooltip="Cotizaciones de materiales enviadas por proveedores a través del portal público." />
+            <KpiPill icon={<PackageSearch className="h-3.5 w-3.5" />} label="Proyectos Activos" value={new Set(proposals.map(p => p.projectId)).size} accent="info" tooltip="Cantidad de proyectos distintos con al menos una propuesta de materiales recibida." />
           </div>
           <a
             id="link-open-public-provider-registration"

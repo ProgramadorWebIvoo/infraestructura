@@ -90,10 +90,10 @@ export default function MarketingPanel({ projects = [], authToken = "", isLoadin
       </motion.div>
 
       <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
-        <KpiPill icon={<FileEdit className="h-3.5 w-3.5" />} label="Borrador" value={kpis.borrador} accent="neutral" />
-        <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="En Revisión" value={kpis.enRevision} accent="warning" />
-        <KpiPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Aprobados" value={kpis.aprobado} accent="success" />
-        <KpiPill icon={<XCircle className="h-3.5 w-3.5" />} label="Rechazados" value={kpis.rechazado} accent="danger" />
+        <KpiPill icon={<FileEdit className="h-3.5 w-3.5" />} label="Borrador" value={kpis.borrador} accent="neutral" tooltip="Proyectos de piezas publicitarias en edición, aún no enviados a revisión." />
+        <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="En Revisión" value={kpis.enRevision} accent="warning" tooltip="Proyectos enviados y pendientes de aprobación." />
+        <KpiPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Aprobados" value={kpis.aprobado} accent="success" tooltip="Proyectos ya aprobados y listos para producción/publicación." />
+        <KpiPill icon={<XCircle className="h-3.5 w-3.5" />} label="Rechazados" value={kpis.rechazado} accent="danger" tooltip="Proyectos devueltos con observaciones para corrección." />
       </motion.div>
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">

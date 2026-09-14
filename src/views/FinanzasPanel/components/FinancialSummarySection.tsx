@@ -13,11 +13,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign, Award, BarChart3, Building2, MapPin, Timer, Receipt, Gauge } from "lucide-react";
+import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign, Award, BarChart3, Building2, MapPin, Timer, Receipt, Gauge, Info } from "lucide-react";
 import type { Project } from "@/types";
 import { itemVariants } from "@/animations";
 import { computeDashboardSummary, approvedOf, releasedOf, daysBetween, STALLED_THRESHOLD_DAYS } from "@/utils/dashboardSummary";
 import RankBar from "@/components/UI/RankBar";
+import Tooltip from "@/components/UI/Tooltip";
 import type { LedgerEntry } from "./LedgerSection";
 
 const fmtMoney = (n: number) =>
@@ -71,14 +72,24 @@ interface MetricCardProps {
   sub: string;
   accent: string;
   iconBg: string;
+  tooltip?: string;
 }
 
-function MetricCard({ icon, label, amount, sub, accent, iconBg }: MetricCardProps) {
+function MetricCard({ icon, label, amount, sub, accent, iconBg, tooltip }: MetricCardProps) {
   return (
     <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
       <div className="flex items-center gap-2 mb-2">
         <div className={`p-1.5 rounded-lg ${iconBg}`}>{icon}</div>
-        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">{label}</span>
+        <span className="flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
+          {label}
+          {tooltip && (
+            <Tooltip content={tooltip} placement="top">
+              <button type="button" aria-label={`Información sobre ${label}`} className="cursor-help text-slate-300 hover:text-slate-500">
+                <Info className="h-2.5 w-2.5" />
+              </button>
+            </Tooltip>
+          )}
+        </span>
       </div>
       <p className={`text-lg font-black font-mono ${accent}`}>${fmtMoney(amount)}</p>
       <p className="text-[10px] text-slate-400 font-medium">{sub}</p>
@@ -99,15 +110,25 @@ interface StatPillProps {
   sub: string;
   accent: string;
   iconBg: string;
+  tooltip?: string;
 }
 
 /** Pill compacto para KPIs financieros secundarios (fila superior de contexto). */
-function StatPill({ icon, label, value, sub, accent, iconBg }: StatPillProps) {
+function StatPill({ icon, label, value, sub, accent, iconBg, tooltip }: StatPillProps) {
   return (
     <div className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
       <div className={`p-2 rounded-lg shrink-0 ${iconBg}`}>{icon}</div>
       <div className="min-w-0">
-        <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 truncate">{label}</p>
+        <p className="flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 truncate">
+          {label}
+          {tooltip && (
+            <Tooltip content={tooltip} placement="top">
+              <button type="button" aria-label={`Información sobre ${label}`} className="cursor-help text-slate-300 hover:text-slate-500 shrink-0">
+                <Info className="h-2.5 w-2.5" />
+              </button>
+            </Tooltip>
+          )}
+        </p>
         <p className={`text-base font-black font-mono leading-tight ${accent}`}>{value}</p>
         <p className="text-[9px] text-slate-400 font-medium truncate">{sub}</p>
       </div>
@@ -239,6 +260,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             amount={totalApprovedInvestment}
             sub="Referencia del total (100%)"
             accent="text-sky-700"
+            tooltip="Suma del monto aprobado de todos los proyectos del portafolio — es la base (100%) sobre la que se calculan los demás porcentajes."
           />
           <MetricCard
             icon={<TrendingUp className="h-4 w-4 text-indigo-600" />}
@@ -247,6 +269,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             amount={totalCommittedAmount}
             sub={`${Math.round(committedPct)}% del presupuesto aprobado`}
             accent="text-indigo-700"
+            tooltip="Monto contractual comprometido con proveedores (adjudicado), aunque aún no se haya desembolsado."
           />
           <MetricCard
             icon={<Wallet className="h-4 w-4 text-emerald-600" />}
@@ -255,6 +278,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             amount={totalReleasedFunds}
             sub={overBudget ? "Excede lo aprobado" : `${Math.round(releasedPct)}% del presupuesto aprobado`}
             accent="text-emerald-700"
+            tooltip="Total efectivamente desembolsado (anticipos + finiquitos pagados) hasta la fecha."
           />
           <MetricCard
             icon={<Lock className="h-4 w-4 text-amber-600" />}
@@ -263,6 +287,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             amount={pendingFunds}
             sub={overBudget ? "No hay pendiente" : `${Math.round(pendingPct)}% del presupuesto aprobado`}
             accent="text-amber-700"
+            tooltip="Diferencia entre lo aprobado y lo liberado — dinero todavía disponible para desembolsar."
           />
         </div>
       </div>
@@ -272,7 +297,14 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
         <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2 mb-2">
             <HandCoins className="h-4 w-4 text-indigo-500" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Anticipo Promedio</span>
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
+              Anticipo Promedio
+              <Tooltip content="Promedio del porcentaje de anticipo pactado en las propuestas adjudicadas." placement="top">
+                <button type="button" aria-label="Información sobre Anticipo Promedio" className="cursor-help text-slate-300 hover:text-slate-500">
+                  <Info className="h-2.5 w-2.5" />
+                </button>
+              </Tooltip>
+            </span>
           </div>
           <p className="text-xl font-black font-mono text-slate-800">{summary.negotiationMetrics.avgAdvancePercent}%</p>
           <p className="text-[10px] text-slate-400 font-medium">sobre propuestas adjudicadas</p>
@@ -280,7 +312,14 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
         <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="h-4 w-4 text-indigo-500" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Plazo Promedio</span>
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
+              Plazo Promedio
+              <Tooltip content="Promedio de semanas de entrega estimada pactadas en los contratos adjudicados." placement="top">
+                <button type="button" aria-label="Información sobre Plazo Promedio" className="cursor-help text-slate-300 hover:text-slate-500">
+                  <Info className="h-2.5 w-2.5" />
+                </button>
+              </Tooltip>
+            </span>
           </div>
           <p className="text-xl font-black font-mono text-slate-800">
             {summary.negotiationMetrics.avgDeliveryWeeks} <span className="text-xs text-slate-500">semanas</span>
@@ -298,6 +337,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           value={`$${fmtMoney(avgApprovedPerProject)}`}
           sub={`sobre ${projectsWithBudget.length} obra(s) con presupuesto`}
           accent="text-violet-700"
+          tooltip="Presupuesto aprobado total dividido entre la cantidad de obras que tienen presupuesto asignado."
         />
         <StatPill
           icon={<Gauge className="h-4 w-4 text-emerald-600" />}
@@ -306,6 +346,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           value={`${Math.round(executionEfficiencyPct)}%`}
           sub="liberado sobre lo comprometido"
           accent="text-emerald-700"
+          tooltip="Qué porción de lo comprometido con proveedores ya se ha desembolsado efectivamente."
         />
         <StatPill
           icon={<AlertTriangle className="h-4 w-4 text-rose-600" />}
@@ -314,6 +355,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           value={String(overrunProjects.length)}
           sub="liberado supera lo aprobado"
           accent="text-rose-700"
+          tooltip="Cantidad de obras donde el monto liberado superó el presupuesto originalmente aprobado."
         />
         <StatPill
           icon={<Timer className="h-4 w-4 text-amber-600" />}
@@ -322,6 +364,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           value={`$${fmtMoney(totalAtRiskAmount)}`}
           sub={`${allAtRiskProjects.length} obra(s) estancada(s)`}
           accent="text-amber-700"
+          tooltip={`Fondos aprobados y aún no liberados en obras sin actividad reciente (${STALLED_THRESHOLD_DAYS}+ días sin actualización).`}
         />
       </div>
     </motion.div>
@@ -452,18 +495,16 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
         >
           <div className="flex items-end gap-3 h-36 border-b border-slate-100 pb-4">
             {monthlyDisbursements.map(([month, amount]) => (
-              <div
-                key={month}
-                className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full"
-                title={`${month}: $${fmtMoney(amount)}`}
-              >
+              <div key={month} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
                 <span className="text-[9px] text-slate-500 font-mono font-bold whitespace-nowrap">${fmtMoney(amount)}</span>
-                <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">
-                  <div
-                    className="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-md transition-all duration-700"
-                    style={{ height: `${Math.max(4, (amount / maxMonth) * 100)}%` }}
-                  />
-                </div>
+                <Tooltip content={`${month}: $${fmtMoney(amount)} (${Math.round((amount / maxMonth) * 100)}% del máximo)`} placement="top">
+                  <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50 cursor-help">
+                    <div
+                      className="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-md transition-all duration-700"
+                      style={{ height: `${Math.max(4, (amount / maxMonth) * 100)}%` }}
+                    />
+                  </div>
+                </Tooltip>
                 <span className="text-[9px] text-slate-400 font-mono font-medium">{month}</span>
               </div>
             ))}

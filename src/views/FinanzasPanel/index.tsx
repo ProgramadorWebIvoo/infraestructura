@@ -128,10 +128,10 @@ export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, 
       {/* KPIs operativos del departamento — contexto secundario compacto
           debajo de las tabs, no cards grandes compitiendo por atención. */}
       <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
-        <KpiPill icon={<Wallet className="h-3.5 w-3.5" />} label="Anticipos por Liberar" value={kpis.pendingAdvances} accent="danger" />
-        <KpiPill icon={<BookText className="h-3.5 w-3.5" />} label="Finiquitos por Liquidar" value={kpis.pendingFinal} accent="info" />
-        <KpiPill icon={<Hourglass className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="warning" />
-        <KpiPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Obras Completadas" value={kpis.completed} accent="success" />
+        <KpiPill icon={<Wallet className="h-3.5 w-3.5" />} label="Anticipos por Liberar" value={kpis.pendingAdvances} accent="danger" tooltip="Proyectos contratados cuyo anticipo pactado aún no fue liberado al proveedor." />
+        <KpiPill icon={<BookText className="h-3.5 w-3.5" />} label="Finiquitos por Liquidar" value={kpis.pendingFinal} accent="info" tooltip="Proyectos listos para pago final, pendientes de liquidar el finiquito." />
+        <KpiPill icon={<Hourglass className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="warning" tooltip="Proyectos en obra con pagos parciales ya en curso." />
+        <KpiPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Obras Completadas" value={kpis.completed} accent="success" tooltip="Proyectos con todos sus pagos completados y liquidados." />
       </motion.div>
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
