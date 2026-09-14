@@ -52,6 +52,11 @@ vi.mock("@/components/UI/PublicSettingsProvider", () => ({
   }),
 }));
 
+const mockIsAiFeatureEnabled = vi.fn(() => true);
+vi.mock("@/hooks/useAiFeatureGate", () => ({
+  useAiFeatureGate: () => ({ isAiFeatureEnabled: mockIsAiFeatureEnabled, isLoading: false }),
+}));
+
 function stubSyncResizeObserver() {
   const OriginalRO = window.ResizeObserver;
   class SyncResizeObserver {
@@ -176,6 +181,42 @@ describe("BidEvaluationSection — vista Grid (default)", () => {
       expect(screen.getByText("Costo Total")).toBeInTheDocument();
       expect(screen.getAllByText("Constructora ABC").length).toBeGreaterThan(0);
     } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("muestra el botón 'Evaluación IA' cuando el gate de Config IA está habilitado (default)", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const projects = [makeProject({ id: "P1", title: "Remodelación de oficinas" })];
+      renderSection({ projects });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+
+      expect(screen.getByText("Evaluación IA")).toBeInTheDocument();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("oculta el botón 'Evaluación IA' cuando el departamento PROCURA tiene la IA desactivada en Config IA", () => {
+    mockIsAiFeatureEnabled.mockReturnValue(false);
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const projects = [makeProject({ id: "P1", title: "Remodelación de oficinas" })];
+      renderSection({ projects });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+
+      expect(screen.queryByText("Evaluación IA")).not.toBeInTheDocument();
+      // El resto de la funcionalidad (adjudicar, rechazar) no depende del gate de IA.
+      expect(screen.getByText("Adjudicar")).toBeInTheDocument();
+    } finally {
+      mockIsAiFeatureEnabled.mockReturnValue(true);
       restoreSize();
       restoreRO();
     }

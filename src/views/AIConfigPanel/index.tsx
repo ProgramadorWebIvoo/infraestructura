@@ -13,6 +13,7 @@ import {
 } from "@/hooks/useAIConfig";
 import UsageDashboard from "./components/UsageDashboard";
 import AIConfigTable from "./components/AIConfigTable";
+import AiFeatureMatrix from "./components/AiFeatureMatrix";
 import { validateConfigForm, buildUpdatePayload } from "./aiConfigForm";
 import AIConfigFormModal from "@/components/Modals/AIConfigFormModal";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
@@ -207,6 +208,13 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
           onSync={handleSync}
           onCreateNew={handleOpenCreate}
         />
+
+        {isSuperadmin && (
+          <div>
+            <h2 className="text-sm font-bold text-text-primary mb-3">Control por Departamento</h2>
+            <AiFeatureMatrix authToken={authToken} />
+          </div>
+        )}
 
         {/* ── Confirm Delete ── */}
         <ConfirmDialog

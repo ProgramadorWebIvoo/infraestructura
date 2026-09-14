@@ -35,6 +35,9 @@ interface EvaluacionInteligenteModalProps {
   proposals: Proposal[];
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   authToken: string;
+  /** Vista previa de Analistas (antes de enviar el cuadro a Procura): oculta
+   * el botón "Adjudicar" — esa decisión sigue siendo exclusiva de Procura. */
+  readOnly?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -48,6 +51,7 @@ export default function EvaluacionInteligenteModal({
   proposals,
   onSelectContractor,
   authToken,
+  readOnly = false,
 }: EvaluacionInteligenteModalProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "result" | "error">("idle");
   const [result, setResult] = useState<AIEvaluationResult | null>(null);
@@ -196,7 +200,7 @@ export default function EvaluacionInteligenteModal({
             acceptError={acceptError}
             cachedEvaluatedAt={project.bidEvaluationAi?.evaluatedAt ?? null}
           />
-          {acceptSuccess ? (
+          {readOnly ? null : acceptSuccess ? (
             <AcceptedBadge />
           ) : status === "result" && !accepting && !acceptError ? (
             <AcceptButton onClick={handleAccept} />

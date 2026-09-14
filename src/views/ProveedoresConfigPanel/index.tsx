@@ -303,6 +303,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
           <ContractorDetailModal
             contractor={detailContractor}
             onClose={() => setDetailContractor(null)}
+            authToken={authToken}
           />
 
           {/* ── Confirm Toggle Status ── */}

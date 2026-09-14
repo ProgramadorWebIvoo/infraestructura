@@ -47,6 +47,11 @@ vi.mock("@/components/UI/PublicSettingsProvider", () => ({
   }),
 }));
 
+const mockIsAiFeatureEnabled = vi.fn(() => true);
+vi.mock("@/hooks/useAiFeatureGate", () => ({
+  useAiFeatureGate: () => ({ isAiFeatureEnabled: mockIsAiFeatureEnabled, isLoading: false }),
+}));
+
 function stubSyncResizeObserver() {
   const OriginalRO = window.ResizeObserver;
   class SyncResizeObserver {
@@ -503,6 +508,41 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
 
       expect(screen.getByRole("button", { name: "Traer del portal" })).toBeDisabled();
     } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+});
+
+describe("AnalistasWorkspace — vista previa IA", () => {
+  it("muestra el botón 'Vista previa IA' cuando el gate de Config IA está habilitado (default)", () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      renderWorkspace({ pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })] });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+
+      expect(screen.getByText("Vista previa IA")).toBeInTheDocument();
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
+  it("oculta el botón 'Vista previa IA' cuando el departamento ANALISTA tiene la IA desactivada en Config IA", () => {
+    mockIsAiFeatureEnabled.mockReturnValue(false);
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      renderWorkspace({ pendingLicitacion: [makeProject({ id: "P1", title: "Remodelación de oficinas" })] });
+
+      fireEvent.click(screen.getByText("Remodelación de oficinas"));
+
+      expect(screen.queryByText("Vista previa IA")).not.toBeInTheDocument();
+      expect(screen.getByText("Enviar Cuadro a Procura")).toBeInTheDocument();
+    } finally {
+      mockIsAiFeatureEnabled.mockReturnValue(true);
       restoreSize();
       restoreRO();
     }

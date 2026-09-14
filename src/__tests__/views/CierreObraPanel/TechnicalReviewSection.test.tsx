@@ -52,6 +52,11 @@ vi.mock("@/services/aiEvaluationService", () => ({
   evaluateDossier: vi.fn().mockRejectedValue(new Error("not configured in this test")),
 }));
 
+const mockIsAiFeatureEnabled = vi.fn(() => true);
+vi.mock("@/hooks/useAiFeatureGate", () => ({
+  useAiFeatureGate: () => ({ isAiFeatureEnabled: mockIsAiFeatureEnabled, isLoading: false }),
+}));
+
 afterEach(() => vi.restoreAllMocks());
 
 // GridView (vista por defecto de TechnicalReviewSection) usa
@@ -253,6 +258,30 @@ describe("TechnicalReviewSection — revisión (auditoría, sin subida de archiv
     fireEvent.click(screen.getByRole("button", { name: /Guardar y Enviar a Procura/ }));
 
     expect(onReviewProject).toHaveBeenCalledWith("PRJ-020", "");
+  });
+
+  it("muestra el panel de evaluación IA del expediente cuando el gate de Config IA está habilitado (default)", async () => {
+    renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+
+    expect(await screen.findByText(/Evaluación IA no disponible para este expediente\./)).toBeInTheDocument();
+  });
+
+  it("oculta el panel de evaluación IA del expediente cuando el departamento CIERRE_DE_OBRA tiene la IA desactivada en Config IA", () => {
+    mockIsAiFeatureEnabled.mockReturnValue(false);
+    try {
+      renderSection();
+
+      fireEvent.click(screen.getByText(pendingProject.title));
+
+      expect(screen.queryByText(/Analizando expediente con IA/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Evaluación IA no disponible para este expediente\./)).not.toBeInTheDocument();
+      // El resto del wizard sigue disponible — el gate solo apaga la IA.
+      expect(screen.getByLabelText("Notas de Revisión y Corrección (opcional)")).toBeInTheDocument();
+    } finally {
+      mockIsAiFeatureEnabled.mockReturnValue(true);
+    }
   });
 
   it("el paso 2 no ofrece subir archivos — es de solo revisión", () => {

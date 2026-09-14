@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   Award,
   Bell,
+  BrainCircuit,
   Eye,
   FileSpreadsheet,
   Handshake,
@@ -32,6 +33,8 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import EvaluacionInteligenteModal from "@/components/Modals/EvaluacionInteligenteModal";
+import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
@@ -320,6 +323,9 @@ function ExpedienteWorkspaceModal({
   const [renegotiatingProposal, setRenegotiatingProposal] = useState<Proposal | null>(null);
   const [inspectingProposal, setInspectingProposal] = useState<Proposal | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [showAiPreview, setShowAiPreview] = useState(false);
+  const { isAiFeatureEnabled } = useAiFeatureGate();
+  const showAiPreviewButton = isAiFeatureEnabled("ANALISTA", "ia.analistas.evaluacion_propuestas");
 
   const proposals = project.proposals ?? [];
   const approvedBudget = project.approvedInvestmentAmount ?? 0;
@@ -484,16 +490,31 @@ function ExpedienteWorkspaceModal({
             <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
               Al enviar, se consolida la terna comparativa para la adjudicación por parte de Procura.
             </span>
-            <Button
-              id="btn-analistas-submit-comparative"
-              onClick={handleSubmit}
-              variant="primary"
-              colorScheme="sky"
-              disabled={proposals.length === 0}
-              icon={<Send className="h-4 w-4" />}
-            >
-              Enviar Cuadro a Procura
-            </Button>
+            <div className="flex items-center gap-2">
+              {showAiPreviewButton && (
+                <Button
+                  id="btn-analistas-ai-preview"
+                  onClick={() => setShowAiPreview(true)}
+                  variant="secondary"
+                  size="sm"
+                  disabled={proposals.length === 0}
+                  className="text-warning-600 bg-warning-50 hover:bg-warning-100 border-warning-200 hover:border-warning-300"
+                  icon={<BrainCircuit className="h-3.5 w-3.5" />}
+                >
+                  Vista previa IA
+                </Button>
+              )}
+              <Button
+                id="btn-analistas-submit-comparative"
+                onClick={handleSubmit}
+                variant="primary"
+                colorScheme="sky"
+                disabled={proposals.length === 0}
+                icon={<Send className="h-4 w-4" />}
+              >
+                Enviar Cuadro a Procura
+              </Button>
+            </div>
           </div>
         }
       >
@@ -591,6 +612,21 @@ function ExpedienteWorkspaceModal({
         variant="info"
         confirmLabel="Enviar a Procura"
       />
+
+      {/* Vista previa IA — misma evaluación que Procura dispara oficialmente,
+          en modo lectura (sin botón "Adjudicar": esa decisión sigue siendo
+          exclusiva de Procura). */}
+      {showAiPreview && (
+        <EvaluacionInteligenteModal
+          isOpen={showAiPreview}
+          onClose={() => setShowAiPreview(false)}
+          project={project}
+          proposals={proposals}
+          onSelectContractor={async () => {}}
+          authToken={authToken}
+          readOnly
+        />
+      )}
     </>
   );
 }

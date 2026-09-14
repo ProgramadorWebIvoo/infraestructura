@@ -29,6 +29,22 @@ export async function evaluateDossier(projectId: string, authToken: string): Pro
 }
 
 // ---------------------------------------------------------------------------
+// Sugerencia de rating de proveedor (Proveedores/Catálogos)
+// ---------------------------------------------------------------------------
+
+/** Sugerencia informativa — no modifica Contractor.rating, el admin decide si la aplica. */
+export interface ContractorRatingSuggestion {
+  suggestedRating: number | null;
+  confidenceScore: number;
+  rationale: string;
+  providerUsed: AIProviderUsed;
+}
+
+export async function getContractorRatingSuggestion(contractorCode: string, authToken: string): Promise<ContractorRatingSuggestion> {
+  return apiFetch<ContractorRatingSuggestion>(`/contractors/${contractorCode}/rating-suggestion`, { token: authToken });
+}
+
+// ---------------------------------------------------------------------------
 // Tipos públicos
 // ---------------------------------------------------------------------------
 

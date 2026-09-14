@@ -26,6 +26,7 @@ import EvaluacionInteligenteModal from "@/components/Modals/EvaluacionInteligent
 import HireConfirmDialog from "@/components/Modals/HireConfirmDialog";
 import InspectProposalModal from "./InspectProposalModal";
 import { useBudgetSemaphore, SEMAPHORE_COLORS, type SemaphoreLevel } from "@/hooks/useBudgetSemaphore";
+import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
 import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
@@ -56,6 +57,7 @@ function BidEvaluationDetail({
   convert,
   hasRates,
   isLoadingRates,
+  showAiEval,
 }: {
   project: Project;
   onClose: () => void;
@@ -68,6 +70,7 @@ function BidEvaluationDetail({
   convert: (amount: number, fromCode: string) => number;
   hasRates: boolean;
   isLoadingRates: boolean;
+  showAiEval: boolean;
 }) {
   const proposals = project.proposals ?? [];
   const best = proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]);
@@ -251,16 +254,18 @@ function BidEvaluationDetail({
             Seleccione el contratista idóneo desde la columna "Contratación" de la tabla.
           </span>
           <div className="flex items-center gap-2">
-            <Button
-              id={`btn-ai-eval-${project.id}`}
-              onClick={onOpenAiEval}
-              variant="secondary"
-              size="sm"
-              className="text-warning-600 bg-warning-50 hover:bg-warning-100 border-warning-200 hover:border-warning-300"
-              icon={<BrainCircuit className="h-3.5 w-3.5" />}
-            >
-              Evaluación IA
-            </Button>
+            {showAiEval && (
+              <Button
+                id={`btn-ai-eval-${project.id}`}
+                onClick={onOpenAiEval}
+                variant="secondary"
+                size="sm"
+                className="text-warning-600 bg-warning-50 hover:bg-warning-100 border-warning-200 hover:border-warning-300"
+                icon={<BrainCircuit className="h-3.5 w-3.5" />}
+              >
+                Evaluación IA
+              </Button>
+            )}
             <Button
               onClick={onOpenReject}
               variant="secondary"
@@ -307,6 +312,8 @@ export default function BidEvaluationSection({
 }: BidEvaluationSectionProps) {
   const { levelOf } = useBudgetSemaphore();
   const maxAdvancePercent = useMaxAdvancePercent();
+  const { isAiFeatureEnabled } = useAiFeatureGate();
+  const showAiEval = isAiFeatureEnabled("PROCURA", "ia.procura.evaluacion_propuestas");
 
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
@@ -504,6 +511,7 @@ export default function BidEvaluationSection({
           convert={convert}
           hasRates={hasRates}
           isLoadingRates={isLoadingRates}
+          showAiEval={showAiEval}
         />
       )}
 

@@ -34,6 +34,7 @@ import { useCatalog } from "./hooks/useCatalog";
 import { NotificationsProvider } from "./components/UI/NotificationsProvider";
 import { PublicSettingsProvider } from "./components/UI/PublicSettingsProvider";
 import { ExchangeRatesProvider } from "./components/UI/ExchangeRatesProvider";
+import { AiFeatureGateProvider } from "./components/UI/AiFeatureGateProvider";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -192,7 +193,9 @@ export default function App({ router: Router = BrowserRouter, ...routerProps }: 
               NotificationsProvider NO vive aquí a propósito — ver su montaje
               dentro de AppRoutes, después de resolver la sesión real. */}
           <PublicSettingsProvider>
-            <AppRoutes />
+            <AiFeatureGateProvider>
+              <AppRoutes />
+            </AiFeatureGateProvider>
           </PublicSettingsProvider>
         </ToastProvider>
       </Router>

@@ -44,6 +44,7 @@ import { downloadProjectDocument } from "@/services/api";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
 import BsAmount from "@/components/UI/BsAmount";
 
 const WIZARD_STEPS: StepDefinition[] = [
@@ -69,6 +70,8 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { isAiFeatureEnabled } = useAiFeatureGate();
+  const showAiEval = isAiFeatureEnabled("CIERRE_DE_OBRA", "ia.cierre_obra.evaluacion_expediente");
 
   const brand = SEMANTIC_COLOR_MAP.brand;
   const activeDocuments = project?.documents ?? [];
@@ -174,11 +177,13 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
       >
         {project && (
           <div className="space-y-6">
-            <DossierEvaluationPanel
-              project={project}
-              authToken={authToken}
-              onEvaluated={onSyncProject}
-            />
+            {showAiEval && (
+              <DossierEvaluationPanel
+                project={project}
+                authToken={authToken}
+                onEvaluated={onSyncProject}
+              />
+            )}
 
             <Stepper
               steps={WIZARD_STEPS}
