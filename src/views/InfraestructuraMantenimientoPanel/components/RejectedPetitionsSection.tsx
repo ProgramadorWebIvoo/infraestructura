@@ -29,7 +29,7 @@ import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
 import RequestWizardCard from "./RequestWizardCard";
 import RejectedPetitionDetailModal from "./RejectedPetitionDetailModal";
-import { renderRejectedPetitionCard } from "./RejectedPetitionGridCard";
+import RejectedPetitionGridCard from "./RejectedPetitionGridCard";
 import { useRequestForm } from "@/hooks/useRequestForm";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "@/hooks/useTableViewMode";
@@ -269,7 +269,9 @@ export default function RejectedPetitionsSection({
               <GridView
                 items={rejected}
                 rowKey={({ project: p }) => p.id}
-                renderCard={(row) => renderRejectedPetitionCard(row, setViewingProject, setEditingProject)}
+                renderCard={(row) => (
+                  <RejectedPetitionGridCard item={row} onView={setViewingProject} onResubmit={setEditingProject} />
+                )}
                 cardAccent={() => "danger"}
                 onSelect={({ project: p }) => setViewingProject(p)}
                 emptyState={

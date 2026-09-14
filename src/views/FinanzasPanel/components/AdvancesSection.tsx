@@ -11,7 +11,7 @@
  * TableToolbar + Table + GridView, sin reinventar el layout.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle, Coins, CreditCard, SearchX, Wallet } from "lucide-react";
 import Button from "@/components/UI/Button";
@@ -23,7 +23,7 @@ import PayWithProofModal from "./PayWithProofModal";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
-import { renderAdvanceCard } from "./AdvancesGridCard";
+import AdvancesGridCard from "./AdvancesGridCard";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { useToast } from "@/components/UI/Toast";
@@ -107,6 +107,10 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
     ) },
   ], []);
 
+  const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {
+    setConfirmPayAdvance({ projectId, amount, title });
+  }, []);
+
   const emptyMessage = rows.length === 0
     ? "No hay anticipos pendientes por liberar."
     : "No hay anticipos que coincidan con la búsqueda.";
@@ -168,9 +172,14 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
             <GridView
               items={visibleRows}
               rowKey={(row) => row.project.id}
-              renderCard={({ project, winner, advAmount }) =>
-                renderAdvanceCard(project, winner, advAmount, () => setConfirmPayAdvance({ projectId: project.id, amount: advAmount, title: project.title }))
-              }
+              renderCard={({ project, winner, advAmount }) => (
+                <AdvancesGridCard
+                  project={project}
+                  winner={winner}
+                  advAmount={advAmount}
+                  onOpenConfirm={() => handleOpenConfirm(project.id, advAmount, project.title)}
+                />
+              )}
               cardAccent={() => "danger"}
               emptyState={emptyState}
             />

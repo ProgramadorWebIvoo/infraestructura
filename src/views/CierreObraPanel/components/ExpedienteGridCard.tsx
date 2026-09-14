@@ -8,11 +8,17 @@
  * tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { AlertTriangle, FileStack, MapPin } from "lucide-react";
 import type { Project } from "@/types";
 import StatusBadge from "@/components/UI/StatusBadge";
 
-export function renderExpedienteCard(project: Project, rejectionCount: number) {
+interface ExpedienteGridCardProps {
+  project: Project;
+  rejectionCount: number;
+}
+
+function ExpedienteGridCard({ project, rejectionCount }: ExpedienteGridCardProps) {
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
@@ -43,3 +49,5 @@ export function renderExpedienteCard(project: Project, rejectionCount: number) {
     </div>
   );
 }
+
+export default memo(ExpedienteGridCard);

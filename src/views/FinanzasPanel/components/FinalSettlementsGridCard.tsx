@@ -8,12 +8,21 @@
  * de cada tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { CreditCard } from "lucide-react";
 import Button from "@/components/UI/Button";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
 
-export function renderFinalSettlementCard(project: Project, winner: Proposal, balanceDue: number, paidAdvance: number, onOpenConfirm: () => void) {
+interface FinalSettlementsGridCardProps {
+  project: Project;
+  winner: Proposal;
+  balanceDue: number;
+  paidAdvance: number;
+  onOpenConfirm: () => void;
+}
+
+function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, onOpenConfirm }: FinalSettlementsGridCardProps) {
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -62,3 +71,5 @@ export function renderFinalSettlementCard(project: Project, winner: Proposal, ba
     </div>
   );
 }
+
+export default memo(FinalSettlementsGridCard);

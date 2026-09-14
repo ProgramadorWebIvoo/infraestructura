@@ -46,7 +46,7 @@ import Button from "@/components/UI/Button";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 import ProposalSummary from "@/components/ProposalSummary";
 import Tooltip from "@/components/UI/Tooltip";
-import { renderAnalistasCard } from "./AnalistasGridCard";
+import AnalistasGridCard from "./AnalistasGridCard";
 import RegisterProposalModal, { formatProposalDuration } from "./RegisterProposalModal";
 import RenegotiateProposalModal from "./RenegotiateProposalModal";
 import InspectProposalModal from "@/views/ProcuraPanel/components/InspectProposalModal";
@@ -254,7 +254,15 @@ export default function AnalistasWorkspace({
               <GridView
                 items={visibleProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderAnalistasCard(p, portalProposalsByProject[p.id] ?? [], convert, hasRates, isLoadingRates)}
+                renderCard={(p) => (
+                  <AnalistasGridCard
+                    project={p}
+                    portalProposals={portalProposalsByProject[p.id] ?? []}
+                    convert={convert}
+                    hasRates={hasRates}
+                    isLoadingRates={isLoadingRates}
+                  />
+                )}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}
                 cardAccent={() => "success"}

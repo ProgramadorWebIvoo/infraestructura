@@ -10,12 +10,20 @@
  * su propia acción primaria, no abre un detalle aparte.
  */
 
+import { memo } from "react";
 import { CreditCard } from "lucide-react";
 import Button from "@/components/UI/Button";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
 
-export function renderAdvanceCard(project: Project, winner: Proposal, advAmount: number, onOpenConfirm: () => void) {
+interface AdvancesGridCardProps {
+  project: Project;
+  winner: Proposal;
+  advAmount: number;
+  onOpenConfirm: () => void;
+}
+
+function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm }: AdvancesGridCardProps) {
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -65,3 +73,5 @@ export function renderAdvanceCard(project: Project, winner: Proposal, advAmount:
     </div>
   );
 }
+
+export default memo(AdvancesGridCard);

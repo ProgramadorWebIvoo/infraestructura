@@ -23,7 +23,7 @@ import EmptyState from "@/components/UI/EmptyState";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
-import { renderTechnicalReviewCard } from "./TechnicalReviewGridCard";
+import TechnicalReviewGridCard from "./TechnicalReviewGridCard";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -192,7 +192,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
                 <GridView
                   items={visibleProjects}
                   rowKey={(p) => p.id}
-                  renderCard={(p) => renderTechnicalReviewCard(p, convert, hasRates, isLoadingRates)}
+                  renderCard={(p) => <TechnicalReviewGridCard project={p} convert={convert} hasRates={hasRates} isLoadingRates={isLoadingRates} />}
                   onSelect={(p) => setSelectedProjectId(p.id)}
                   selectedKey={selectedProjectId}
                   cardAccent={() => "brand"}

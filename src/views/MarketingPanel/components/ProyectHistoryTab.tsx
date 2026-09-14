@@ -15,7 +15,7 @@ import StatusBadge from "@/components/UI/StatusBadge";
 import IconActionButton from "@/components/UI/IconActionButton";
 import { type Column } from "@/components/UI/Table";
 import MarketingProjectsTableView from "./MarketingProjectsTableView";
-import { renderMarketingHistoryCard } from "./ProyectGridCard";
+import { MarketingHistoryGridCard } from "./ProyectGridCard";
 import { MARKETING_TYPE_LABELS, type MarketingProject } from "../types";
 
 interface ProyectHistoryTabProps {
@@ -158,7 +158,7 @@ export default function ProyectHistoryTab({ projects, isLoading = false, onView 
       description="Registro completo de propuestas de Marketing con su trazabilidad de revisión y aprobación."
       color="slate"
       columns={columns}
-      renderCard={renderMarketingHistoryCard}
+      renderCard={(item) => <MarketingHistoryGridCard project={item} />}
       searchId="marketing-history-search"
       searchPlaceholder="Buscar por título, ID o sede..."
       searchAriaLabel="Buscar en el historial de marketing"

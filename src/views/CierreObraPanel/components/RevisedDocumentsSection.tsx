@@ -37,7 +37,7 @@ import { ProjectStatus } from "@/types";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
 import ProjectIterationsTimeline from "./ProjectIterationsTimeline";
 import ExpedienteDetailTab from "./ExpedienteDetailTab";
-import { renderExpedienteCard } from "./ExpedienteGridCard";
+import ExpedienteGridCard from "./ExpedienteGridCard";
 import { rejectionCountOf } from "./rejectionAudit";
 
 type ModalTabKey = "detalle" | "historial" | "archivos";
@@ -266,7 +266,9 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
               <GridView
                 items={revisedProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderExpedienteCard(p, rejectionCountOf(p.id, auditLogs))}
+                renderCard={(p) => (
+                  <ExpedienteGridCard project={p} rejectionCount={rejectionCountOf(p.id, auditLogs)} />
+                )}
                 cardAccent={(p) => (rejectionCountOf(p.id, auditLogs) > 0 ? "danger" : undefined)}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}

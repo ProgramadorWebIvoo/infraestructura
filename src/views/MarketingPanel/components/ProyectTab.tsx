@@ -22,7 +22,7 @@ import IconActionButton from "@/components/UI/IconActionButton";
 import { type Column } from "@/components/UI/Table";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import MarketingProjectsTableView from "./MarketingProjectsTableView";
-import { renderMarketingProjectCard } from "./ProyectGridCard";
+import { MarketingProjectGridCard } from "./ProyectGridCard";
 import {
   MARKETING_PRIORITY_ACCENT,
   MARKETING_PRIORITY_LABELS,
@@ -178,7 +178,7 @@ export default function ProyectosTab({ projects, isLoading = false, onView }: Pr
       description="Piezas publicitarias creadas por el equipo de Marketing y su estado de aprobación."
       color="amber"
       columns={columns}
-      renderCard={renderMarketingProjectCard}
+      renderCard={(item) => <MarketingProjectGridCard project={item} />}
       searchId="marketing-projects-search"
       searchPlaceholder="Buscar por título, ID o sede..."
       searchAriaLabel="Buscar proyectos de marketing"

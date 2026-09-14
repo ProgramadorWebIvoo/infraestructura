@@ -8,18 +8,21 @@
  * dentro de cada tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { Layers, MapPin } from "lucide-react";
 import type { Project, BaseCurrency } from "@/types";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import BsAmount from "@/components/UI/BsAmount";
 
-export function renderTechnicalReviewCard(
-  project: Project,
-  convert?: (amount: number, fromCode: string) => number,
-  hasRates?: boolean,
-  isLoadingRates?: boolean,
-  baseCurrency?: BaseCurrency | null,
-) {
+interface TechnicalReviewGridCardProps {
+  project: Project;
+  convert?: (amount: number, fromCode: string) => number;
+  hasRates?: boolean;
+  isLoadingRates?: boolean;
+  baseCurrency?: BaseCurrency | null;
+}
+
+function TechnicalReviewGridCard({ project, convert, hasRates, isLoadingRates, baseCurrency }: TechnicalReviewGridCardProps) {
   const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
     <div className="p-3.5 space-y-2.5">
@@ -54,3 +57,5 @@ export function renderTechnicalReviewCard(
     </div>
   );
 }
+
+export default memo(TechnicalReviewGridCard);

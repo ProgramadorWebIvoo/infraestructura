@@ -7,19 +7,28 @@
  * ProcuraPanel/components/BidEvaluationGridCard.tsx.
  */
 
+import { memo } from "react";
 import { AlertTriangle, MapPin, Trophy, Wallet } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import type { Project, SupplierMaterialProposal } from "@/types";
 import { calculatePendingPortalProposals } from "@/views/AnalistasPanel/utils/portalProposalUtils";
 import BsAmount from "@/components/UI/BsAmount";
 
-export function renderAnalistasCard(
-  project: Project,
-  portalProposals: SupplierMaterialProposal[] = [],
-  convert?: (amount: number, fromCode: string) => number,
-  hasRates?: boolean,
-  isLoadingRates?: boolean,
-) {
+interface AnalistasGridCardProps {
+  project: Project;
+  portalProposals?: SupplierMaterialProposal[];
+  convert?: (amount: number, fromCode: string) => number;
+  hasRates?: boolean;
+  isLoadingRates?: boolean;
+}
+
+function AnalistasGridCard({
+  project,
+  portalProposals = [],
+  convert,
+  hasRates,
+  isLoadingRates,
+}: AnalistasGridCardProps) {
   const proposals = project.proposals ?? [];
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
   const pendingFromPortal = calculatePendingPortalProposals(portalProposals.length, proposals);
@@ -82,3 +91,5 @@ export function renderAnalistasCard(
     </div>
   );
 }
+
+export default memo(AnalistasGridCard);

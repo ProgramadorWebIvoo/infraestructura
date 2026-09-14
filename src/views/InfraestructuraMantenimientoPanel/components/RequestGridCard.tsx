@@ -8,6 +8,7 @@
  * tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { Eye, MapPin } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import type { Project } from "@/types";
@@ -24,13 +25,15 @@ function TypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export function renderRequestCard(
-  project: Project,
-  onInspect: (p: Project) => void,
-  convert?: (amount: number, fromCode: string) => number,
-  hasRates?: boolean,
-  isLoadingRates?: boolean,
-) {
+interface RequestGridCardProps {
+  item: Project;
+  onInspect: (p: Project) => void;
+  convert?: (amount: number, fromCode: string) => number;
+  hasRates?: boolean;
+  isLoadingRates?: boolean;
+}
+
+function RequestGridCard({ item: project, onInspect, convert, hasRates, isLoadingRates }: RequestGridCardProps) {
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
@@ -71,3 +74,5 @@ export function renderRequestCard(
     </div>
   );
 }
+
+export default memo(RequestGridCard);

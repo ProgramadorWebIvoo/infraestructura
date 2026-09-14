@@ -21,7 +21,7 @@ import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
 import { RequiredMark } from "@/components/UI/HintSignals";
 import ProposalSummary from "@/components/ProposalSummary";
-import { renderBidEvaluationCard } from "./BidEvaluationGridCard";
+import BidEvaluationGridCard from "./BidEvaluationGridCard";
 import EvaluacionInteligenteModal from "@/components/Modals/EvaluacionInteligenteModal";
 import HireConfirmDialog from "@/components/Modals/HireConfirmDialog";
 import InspectProposalModal from "./InspectProposalModal";
@@ -481,7 +481,9 @@ export default function BidEvaluationSection({
               <GridView
                 items={visibleProjects}
                 rowKey={(p) => p.id}
-                renderCard={(p) => renderBidEvaluationCard(p, convert, hasRates, isLoadingRates)}
+                renderCard={(p) => (
+                  <BidEvaluationGridCard project={p} convert={convert} hasRates={hasRates} isLoadingRates={isLoadingRates} />
+                )}
                 onSelect={(p) => setSelectedId(p.id)}
                 selectedKey={selectedId}
                 cardAccent={() => "success"}

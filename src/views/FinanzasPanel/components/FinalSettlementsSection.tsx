@@ -10,7 +10,7 @@
  * a mano.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle, CreditCard, DollarSign, SearchX, Wallet } from "lucide-react";
 import Button from "@/components/UI/Button";
@@ -22,7 +22,7 @@ import PayWithProofModal from "./PayWithProofModal";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
-import { renderFinalSettlementCard } from "./FinalSettlementsGridCard";
+import FinalSettlementsGridCard from "./FinalSettlementsGridCard";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { useToast } from "@/components/UI/Toast";
@@ -100,6 +100,10 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
     ) },
   ], []);
 
+  const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {
+    setConfirmPayFinal({ projectId, amount, title });
+  }, []);
+
   const emptyMessage = rows.length === 0
     ? "No hay liquidaciones pendientes."
     : "No hay liquidaciones que coincidan con la búsqueda.";
@@ -161,9 +165,15 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
             <GridView
               items={visibleRows}
               rowKey={(row) => row.project.id}
-              renderCard={({ project, winner, paidAdvance, balanceDue }) =>
-                renderFinalSettlementCard(project, winner, balanceDue, paidAdvance, () => setConfirmPayFinal({ projectId: project.id, amount: balanceDue, title: project.title }))
-              }
+              renderCard={({ project, winner, paidAdvance, balanceDue }) => (
+                <FinalSettlementsGridCard
+                  project={project}
+                  winner={winner}
+                  balanceDue={balanceDue}
+                  paidAdvance={paidAdvance}
+                  onOpenConfirm={() => handleOpenConfirm(project.id, balanceDue, project.title)}
+                />
+              )}
               cardAccent={() => "info"}
               emptyState={emptyState}
             />

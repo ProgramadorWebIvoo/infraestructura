@@ -23,7 +23,7 @@ import GridView from "@/components/UI/GridView/GridView";
 import { viewSwitchVariants } from "@/animations";
 import { filterByStage } from "@/views/InfraestructuraMantenimientoPanel/pipeline";
 import PipelineOverview from "./PipelineOverview";
-import { renderRequestCard } from "./RequestGridCard";
+import RequestGridCard from "./RequestGridCard";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "@/hooks/useTableViewMode";
@@ -188,7 +188,15 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
             <GridView
               items={visibleProjects}
               rowKey={(p) => p.id}
-              renderCard={(p) => renderRequestCard(p, setInspectedRequest, convert, hasRates, isLoadingRates)}
+              renderCard={(p) => (
+                <RequestGridCard
+                  item={p}
+                  onInspect={setInspectedRequest}
+                  convert={convert}
+                  hasRates={hasRates}
+                  isLoadingRates={isLoadingRates}
+                />
+              )}
               onSelect={(p) => setInspectedRequest(p)}
               emptyState={
                 <EmptyState

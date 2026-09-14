@@ -8,6 +8,7 @@
  * decide qué pintar dentro de cada tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { Eye, MapPin, Pencil } from "lucide-react";
 import type { AuditLog, Project } from "@/types";
 
@@ -16,11 +17,13 @@ interface RejectedRow {
   log?: AuditLog;
 }
 
-export function renderRejectedPetitionCard(
-  { project: p, log }: RejectedRow,
-  onView: (p: Project) => void,
-  onResubmit: (p: Project) => void,
-) {
+interface RejectedPetitionGridCardProps {
+  item: RejectedRow;
+  onView: (p: Project) => void;
+  onResubmit: (p: Project) => void;
+}
+
+function RejectedPetitionGridCard({ item: { project: p, log }, onView, onResubmit }: RejectedPetitionGridCardProps) {
   return (
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
@@ -68,3 +71,5 @@ export function renderRejectedPetitionCard(
     </div>
   );
 }
+
+export default memo(RejectedPetitionGridCard);

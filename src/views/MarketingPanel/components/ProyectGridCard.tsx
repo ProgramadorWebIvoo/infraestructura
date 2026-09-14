@@ -8,6 +8,7 @@
  * que InvestmentApprovalGridCard.tsx (Procura).
  */
 
+import { memo } from "react";
 import { CalendarRange, MapPin, Paperclip, UserCheck } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import StatusBadge from "@/components/UI/StatusBadge";
@@ -36,7 +37,11 @@ function PriorityBadge({ priority }: { priority: MarketingProject["priority"] })
   );
 }
 
-export function renderMarketingProjectCard(project: MarketingProject) {
+interface MarketingProjectGridCardProps {
+  project: MarketingProject;
+}
+
+export const MarketingProjectGridCard = memo(function MarketingProjectGridCard({ project }: MarketingProjectGridCardProps) {
   return (
     <div className="p-3.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -74,6 +79,10 @@ export function renderMarketingProjectCard(project: MarketingProject) {
       </div>
     </div>
   );
+});
+
+interface MarketingHistoryGridCardProps {
+  project: MarketingProject;
 }
 
 /**
@@ -82,7 +91,7 @@ export function renderMarketingProjectCard(project: MarketingProject) {
  * (quién revisó y cuándo, o el motivo si fue rechazado), que es lo
  * relevante en una vista de historial.
  */
-export function renderMarketingHistoryCard(project: MarketingProject) {
+export const MarketingHistoryGridCard = memo(function MarketingHistoryGridCard({ project }: MarketingHistoryGridCardProps) {
   return (
     <div className="p-3.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -117,4 +126,4 @@ export function renderMarketingHistoryCard(project: MarketingProject) {
       </div>
     </div>
   );
-}
+});

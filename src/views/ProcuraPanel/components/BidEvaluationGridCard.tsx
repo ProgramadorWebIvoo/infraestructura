@@ -8,17 +8,20 @@
  * pintar dentro de cada tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { MapPin, Trophy } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import type { Project } from "@/types";
 import BsAmount from "@/components/UI/BsAmount";
 
-export function renderBidEvaluationCard(
-  project: Project,
-  convert?: (amount: number, fromCode: string) => number,
-  hasRates?: boolean,
-  isLoadingRates?: boolean,
-) {
+interface BidEvaluationGridCardProps {
+  project: Project;
+  convert?: (amount: number, fromCode: string) => number;
+  hasRates?: boolean;
+  isLoadingRates?: boolean;
+}
+
+function BidEvaluationGridCard({ project, convert, hasRates, isLoadingRates }: BidEvaluationGridCardProps) {
   const proposals = project.proposals ?? [];
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
 
@@ -55,3 +58,5 @@ export function renderBidEvaluationCard(
     </div>
   );
 }
+
+export default memo(BidEvaluationGridCard);

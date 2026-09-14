@@ -8,6 +8,7 @@
  * tarjeta, vía la prop `renderCard`.
  */
 
+import { memo } from "react";
 import { MapPin } from "lucide-react";
 import type { Project, BaseCurrency } from "@/types";
 import { ProjectStatus } from "@/types";
@@ -15,13 +16,15 @@ import StatusBadge from "@/components/UI/StatusBadge";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import BsAmount from "@/components/UI/BsAmount";
 
-export function renderAuditCard(
-  project: Project,
-  convert?: (amount: number, fromCode: string) => number,
-  hasRates?: boolean,
-  isLoadingRates?: boolean,
-  baseCurrency?: BaseCurrency | null,
-) {
+interface AuditGridCardProps {
+  project: Project;
+  convert?: (amount: number, fromCode: string) => number;
+  hasRates?: boolean;
+  isLoadingRates?: boolean;
+  baseCurrency?: BaseCurrency | null;
+}
+
+function AuditGridCard({ project, convert, hasRates, isLoadingRates, baseCurrency }: AuditGridCardProps) {
   const isUnderAudit = project.status === ProjectStatus.VERIFICANDO_FINALIZACION;
   const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -56,3 +59,5 @@ export function renderAuditCard(
     </div>
   );
 }
+
+export default memo(AuditGridCard);

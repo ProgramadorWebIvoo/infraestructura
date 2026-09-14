@@ -27,7 +27,7 @@ import { viewSwitchVariants } from "@/animations";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "@/hooks/useTableViewMode";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import { renderAuditCard } from "./AuditGridCard";
+import AuditGridCard from "./AuditGridCard";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
 
@@ -177,7 +177,9 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
                 <GridView
                   items={pendingCompletionVerify}
                   rowKey={(p) => p.id}
-                  renderCard={(p) => renderAuditCard(p, convert, hasRates, isLoadingRates)}
+                  renderCard={(p) => (
+                    <AuditGridCard project={p} convert={convert} hasRates={hasRates} isLoadingRates={isLoadingRates} />
+                  )}
                   onSelect={(p) => setDetailProjectId(p.id)}
                   selectedKey={detailProjectId}
                   emptyState={<EmptyState message="No hay obras que coincidan con la búsqueda." />}
