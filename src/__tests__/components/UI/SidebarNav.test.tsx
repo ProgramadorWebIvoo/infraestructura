@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SidebarNav from "@/components/UI/SidebarNav";
 
 vi.mock("../../../components/UI/NotificationsProvider", () => ({
@@ -21,14 +22,22 @@ function renderSidebar(props: Partial<Parameters<typeof SidebarNav>[0]> = {}) {
     activeRole: "ANALISTA",
     onLogout: vi.fn(),
     canAccess: vi.fn(() => true),
+    authToken: "authenticated",
     isCollapsed: false,
     onToggleCollapse: vi.fn(),
   };
 
+  // usePrefetchOnIntent (hover/focus prefetch de datos, ver
+  // src/hooks/usePrefetchOnIntent.ts) necesita un QueryClient ancestro —
+  // una instancia nueva por render, sin retry, para no reintentar en tests.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
   return render(
-    <MemoryRouter>
-      <SidebarNav {...defaultProps} {...props} />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <SidebarNav {...defaultProps} {...props} />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

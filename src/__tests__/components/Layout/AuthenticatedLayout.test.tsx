@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 vi.mock("motion/react", () => ({
@@ -52,6 +53,7 @@ describe("AuthenticatedLayout", () => {
     user: { name: "Admin User", email: "admin@ivoo.com" },
     activeRole: "SUPERADMIN",
     canAccess: vi.fn(() => true),
+    authToken: "authenticated",
     inspectedProject: null,
     onCloseInspectedProject: vi.fn(),
     onLogout: vi.fn(),
@@ -63,12 +65,18 @@ describe("AuthenticatedLayout", () => {
     localStorage.clear();
   });
 
-  const renderLayout = (props: Partial<typeof defaultProps> = {}) =>
-    render(
-      <MemoryRouter initialEntries={["/presidencia"]}>
-        <AuthenticatedLayout {...defaultProps} {...props} />
-      </MemoryRouter>,
+  // usePrefetchOnIntent, usado por SidebarNav (ver ese hook), necesita un
+  // QueryClient ancestro — instancia nueva por render, sin retry.
+  const renderLayout = (props: Partial<typeof defaultProps> = {}) => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={["/presidencia"]}>
+          <AuthenticatedLayout {...defaultProps} {...props} />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
+  };
 
   it("renders children content", () => {
     renderLayout();

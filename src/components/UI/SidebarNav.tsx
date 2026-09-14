@@ -36,6 +36,8 @@ import RoleBadge from "./RoleBadge";
 import ExchangeRatesSidebarSection from "./ExchangeRatesSidebarSection";
 import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
 import { getUserInitials } from "@/utils";
+import { usePrefetchOnIntent } from "@/hooks/usePrefetchOnIntent";
+import { ROUTES } from "@/routes";
 
 interface SidebarNavProps {
   isOpen: boolean;
@@ -44,12 +46,29 @@ interface SidebarNavProps {
   activeRole: string;
   onLogout: () => void;
   canAccess: (path: string) => boolean;
+  /** Sentinel en memoria de useAuth() — ver usePrefetchOnIntent para por qué hace falta acá. */
+  authToken: string;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
-function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, isCollapsed, onToggleCollapse }: SidebarNavProps) {
+function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, authToken, isCollapsed, onToggleCollapse }: SidebarNavProps) {
+  // Pre-fetch en hover/focus: un handler por ruta del sidebar (ver
+  // usePrefetchOnIntent — debounced, respeta saveData/2G, no compite con la
+  // navegación real). Los hooks de React no pueden llamarse condicionalmente
+  // (ver CLAUDE.md §7 error #1), así que se piden TODOS acá arriba, sin
+  // importar si `canAccess` termina ocultando ese link — el propio hook ya
+  // es un no-op barato si nunca se dispara el hover.
+  const prefetchPresidencia = usePrefetchOnIntent(ROUTES.PRESIDENCIA, authToken);
+  const prefetchMarketing = usePrefetchOnIntent(ROUTES.MARKETING, authToken);
+  const prefetchInfraestructura = usePrefetchOnIntent(ROUTES.INFRAESTRUCTURA, authToken);
+  const prefetchCierreObra = usePrefetchOnIntent(ROUTES.CIERRE_OBRA, authToken);
+  const prefetchProcura = usePrefetchOnIntent(ROUTES.PROCURA, authToken);
+  const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
+  const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
+  const prefetchCatalogos = usePrefetchOnIntent(ROUTES.CATALOGOS, authToken);
+
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
   const collapseLabel = isCollapsed ? "Expandir barra de navegación" : "Minimizar barra de navegación";
   const collapseButtonRef = useRef<HTMLButtonElement>(null);
@@ -194,6 +213,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/presidencia"
                 id="sidebar-presidencia"
                 onClick={onClose}
+                onMouseEnter={prefetchPresidencia.onMouseEnter}
+                onFocus={prefetchPresidencia.onFocus}
+                onMouseLeave={prefetchPresidencia.onMouseLeave}
+                onBlur={prefetchPresidencia.onBlur}
                 className={navLinkClass("brand", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -208,10 +231,14 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
 
           {canAccess("/marketing") && (
             <SidebarTip label='Marketing' disabled={!effectiveCollapsed}>
-              <NavLink 
+              <NavLink
                 to='/marketing'
                 id="sidebar-marketing"
                 onClick={onClose}
+                onMouseEnter={prefetchMarketing.onMouseEnter}
+                onFocus={prefetchMarketing.onFocus}
+                onMouseLeave={prefetchMarketing.onMouseLeave}
+                onBlur={prefetchMarketing.onBlur}
                 className={navLinkClass('warning', effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -230,6 +257,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/infraestructura"
                 id="sidebar-infraestructura"
                 onClick={onClose}
+                onMouseEnter={prefetchInfraestructura.onMouseEnter}
+                onFocus={prefetchInfraestructura.onFocus}
+                onMouseLeave={prefetchInfraestructura.onMouseLeave}
+                onBlur={prefetchInfraestructura.onBlur}
                 className={navLinkClass("info", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -248,6 +279,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/cierre-obra"
                 id="sidebar-cierre"
                 onClick={onClose}
+                onMouseEnter={prefetchCierreObra.onMouseEnter}
+                onFocus={prefetchCierreObra.onFocus}
+                onMouseLeave={prefetchCierreObra.onMouseLeave}
+                onBlur={prefetchCierreObra.onBlur}
                 className={navLinkClass("brand", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -266,6 +301,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/procura"
                 id="sidebar-procura"
                 onClick={onClose}
+                onMouseEnter={prefetchProcura.onMouseEnter}
+                onFocus={prefetchProcura.onFocus}
+                onMouseLeave={prefetchProcura.onMouseLeave}
+                onBlur={prefetchProcura.onBlur}
                 className={navLinkClass("info", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -284,6 +323,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/analistas"
                 id="sidebar-analistas"
                 onClick={onClose}
+                onMouseEnter={prefetchAnalistas.onMouseEnter}
+                onFocus={prefetchAnalistas.onFocus}
+                onMouseLeave={prefetchAnalistas.onMouseLeave}
+                onBlur={prefetchAnalistas.onBlur}
                 className={navLinkClass("success", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -302,6 +345,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/finanzas"
                 id="sidebar-finanzas"
                 onClick={onClose}
+                onMouseEnter={prefetchFinanzas.onMouseEnter}
+                onFocus={prefetchFinanzas.onFocus}
+                onMouseLeave={prefetchFinanzas.onMouseLeave}
+                onBlur={prefetchFinanzas.onBlur}
                 className={navLinkClass("danger", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -320,6 +367,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
                 to="/catalogos"
                 id="sidebar-catalogos"
                 onClick={onClose}
+                onMouseEnter={prefetchCatalogos.onMouseEnter}
+                onFocus={prefetchCatalogos.onFocus}
+                onMouseLeave={prefetchCatalogos.onMouseLeave}
+                onBlur={prefetchCatalogos.onBlur}
                 className={navLinkClass("neutral", effectiveCollapsed)}
               >
                 {({ isActive }) => (
@@ -333,7 +384,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, is
           )}
 
           {/* ── Configuration Dropdown ────────────────────────────────────── */}
-          {canAccess("/usuarios") && <ConfigDropdown isCollapsed={effectiveCollapsed} onClose={onClose} />}
+          {canAccess("/usuarios") && <ConfigDropdown isCollapsed={effectiveCollapsed} onClose={onClose} authToken={authToken} />}
         </nav>
 
         {/* ── Exchange Rates Section ───────────────────────────────────────── */}

@@ -1,24 +1,29 @@
 import { lazy } from "react";
 import { Location, Navigate, Route, Routes } from "react-router-dom";
 import { ROUTES, ProtectedRoute } from "@/routes.tsx";
+import { ROUTE_PREFETCH } from "@/routes/prefetchRegistry";
 import AuthenticatedLayout from "@/components/Layout/AuthenticatedLayout";
 import { useHomeAnnouncement } from "@/hooks/useHomeAnnouncement";
 // Types are enforced at the leaf view component level; this shell passes through any props.
 
-const HomePanel = lazy(() => import("@/views/HomePanel"));
-const PresidenciaDashboard = lazy(() => import("@/views/PresidenciaDashboard"));
-const MarketingPanel = lazy(() => import("@/views/MarketingPanel"));
-const InfraestructuraMantenimientoPanel = lazy(() => import("@/views/InfraestructuraMantenimientoPanel"));
-const CierreObraPanel = lazy(() => import("@/views/CierreObraPanel"));
-const ProcuraPanel = lazy(() => import("@/views/ProcuraPanel"));
-const AnalistasPanel = lazy(() => import("@/views/AnalistasPanel"));
-const FinanzasPanel = lazy(() => import("@/views/FinanzasPanel"));
-const ProveedoresRegistrados = lazy(() => import("@/views/ProveedoresRegistrados"));
-const ProveedoresConfigPanel = lazy(() => import("@/views/ProveedoresConfigPanel"));
-const MaterialConfigPanel = lazy(() => import("@/views/MaterialConfigPanel"));
-const AIConfigPanel = lazy(() => import("@/views/AIConfigPanel"));
-const ConfigAppPanel = lazy(() => import("@/views/ConfigAppPanel"));
-const UsuariosPanel = lazy(() => import("@/views/UsuariosPanel"));
+// Cada `lazy()` reusa el MISMO loader que el registro de pre-fetch
+// (src/routes/prefetchRegistry.ts) — una sola lista de `import()` en vez de
+// dos mantenidas en paralelo (la de acá y la que antes vivía hardcodeada en
+// SidebarNav para hover-prefetch).
+const HomePanel = lazy(ROUTE_PREFETCH[ROUTES.HOME]!.loadChunk);
+const PresidenciaDashboard = lazy(ROUTE_PREFETCH[ROUTES.PRESIDENCIA]!.loadChunk);
+const MarketingPanel = lazy(ROUTE_PREFETCH[ROUTES.MARKETING]!.loadChunk);
+const InfraestructuraMantenimientoPanel = lazy(ROUTE_PREFETCH[ROUTES.INFRAESTRUCTURA]!.loadChunk);
+const CierreObraPanel = lazy(ROUTE_PREFETCH[ROUTES.CIERRE_OBRA]!.loadChunk);
+const ProcuraPanel = lazy(ROUTE_PREFETCH[ROUTES.PROCURA]!.loadChunk);
+const AnalistasPanel = lazy(ROUTE_PREFETCH[ROUTES.ANALISTAS]!.loadChunk);
+const FinanzasPanel = lazy(ROUTE_PREFETCH[ROUTES.FINANZAS]!.loadChunk);
+const ProveedoresRegistrados = lazy(ROUTE_PREFETCH[ROUTES.CATALOGOS]!.loadChunk);
+const ProveedoresConfigPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_PROVEEDORES]!.loadChunk);
+const MaterialConfigPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_MATERIALES]!.loadChunk);
+const AIConfigPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_IA]!.loadChunk);
+const ConfigAppPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_APP]!.loadChunk);
+const UsuariosPanel = lazy(ROUTE_PREFETCH[ROUTES.USUARIOS]!.loadChunk);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AuthenticatedRoutesProps = Record<string, any>;
@@ -44,6 +49,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
       user={user}
       activeRole={activeRole}
       canAccess={canAccess}
+      authToken={authToken}
       inspectedProject={inspectedProject}
       onCloseInspectedProject={onCloseInspectedProject}
       onLogout={onLogout}

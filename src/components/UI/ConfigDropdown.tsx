@@ -14,15 +14,24 @@ import { AnimatePresence, motion } from "motion/react";
 import { Settings, ChevronDown, Users, UserCog, Package, Brain, SlidersHorizontal } from "lucide-react";
 import SidebarTip from "./SidebarTip";
 import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
+import { usePrefetchOnIntent } from "@/hooks/usePrefetchOnIntent";
+import { ROUTES } from "@/routes";
 
 interface ConfigDropdownProps {
   isCollapsed: boolean;
   onClose: () => void;
+  /** Sentinel en memoria de useAuth() — ver usePrefetchOnIntent. */
+  authToken: string;
 }
 
 const CONFIG_PATHS = ["/usuarios", "/config-proveedores", "/config-materiales", "/config-ia", "/config-app"];
 
-function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
+function ConfigDropdown({ isCollapsed, onClose, authToken }: ConfigDropdownProps) {
+  const prefetchUsuarios = usePrefetchOnIntent(ROUTES.USUARIOS, authToken);
+  const prefetchConfigProveedores = usePrefetchOnIntent(ROUTES.CONFIG_PROVEEDORES, authToken);
+  const prefetchConfigMateriales = usePrefetchOnIntent(ROUTES.CONFIG_MATERIALES, authToken);
+  const prefetchConfigIA = usePrefetchOnIntent(ROUTES.CONFIG_IA, authToken);
+  const prefetchConfigApp = usePrefetchOnIntent(ROUTES.CONFIG_APP, authToken);
   const location = useLocation();
   const isConfigActive = CONFIG_PATHS.some((path) => location.pathname.startsWith(path));
   const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
@@ -69,6 +78,10 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/usuarios"
                   id="sidebar-usuarios"
                   onClick={onClose}
+                  onMouseEnter={prefetchUsuarios.onMouseEnter}
+                  onFocus={prefetchUsuarios.onFocus}
+                  onMouseLeave={prefetchUsuarios.onMouseLeave}
+                  onBlur={prefetchUsuarios.onBlur}
                   className={navLinkClass("info", isCollapsed)}
                 >
                   {({ isActive }) => (
@@ -86,6 +99,10 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-proveedores"
                   id="sidebar-config-proveedores"
                   onClick={onClose}
+                  onMouseEnter={prefetchConfigProveedores.onMouseEnter}
+                  onFocus={prefetchConfigProveedores.onFocus}
+                  onMouseLeave={prefetchConfigProveedores.onMouseLeave}
+                  onBlur={prefetchConfigProveedores.onBlur}
                   className={navLinkClass("brand", isCollapsed)}
                 >
                   {({ isActive }) => (
@@ -103,6 +120,10 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-materiales"
                   id="sidebar-config-materiales"
                   onClick={onClose}
+                  onMouseEnter={prefetchConfigMateriales.onMouseEnter}
+                  onFocus={prefetchConfigMateriales.onFocus}
+                  onMouseLeave={prefetchConfigMateriales.onMouseLeave}
+                  onBlur={prefetchConfigMateriales.onBlur}
                   className={navLinkClass("success", isCollapsed)}
                 >
                   {({ isActive }) => (
@@ -120,6 +141,10 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-ia"
                   id="sidebar-config-ia"
                   onClick={onClose}
+                  onMouseEnter={prefetchConfigIA.onMouseEnter}
+                  onFocus={prefetchConfigIA.onFocus}
+                  onMouseLeave={prefetchConfigIA.onMouseLeave}
+                  onBlur={prefetchConfigIA.onBlur}
                   className={navLinkClass("brand", isCollapsed)}
                 >
                   {({ isActive }) => (
@@ -137,6 +162,10 @@ function ConfigDropdown({ isCollapsed, onClose }: ConfigDropdownProps) {
                   to="/config-app"
                   id="sidebar-config-app"
                   onClick={onClose}
+                  onMouseEnter={prefetchConfigApp.onMouseEnter}
+                  onFocus={prefetchConfigApp.onFocus}
+                  onMouseLeave={prefetchConfigApp.onMouseLeave}
+                  onBlur={prefetchConfigApp.onBlur}
                   className={navLinkClass("neutral", isCollapsed)}
                 >
                   {({ isActive }) => (

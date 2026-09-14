@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import type { ConfigAuditLogFilters, ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
@@ -208,6 +208,13 @@ describe("ConfigAuditLogPanel", () => {
     });
 
     it("dispara onFilterChange al elegir fecha desde/hasta", () => {
+      // DatePicker (calendario custom, no <input type="date">) abre su vista
+      // por defecto en "hoy" — se fija la fecha del sistema para poder
+      // clickear un día concreto (1 y 20 de agosto 2026) sin depender de
+      // cuántos clicks de "mes siguiente" haría falta si corriera en otra fecha.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 7, 15));
+
       const onFilterChange = vi.fn();
       render(
         <ConfigAuditLogPanel
@@ -219,11 +226,25 @@ describe("ConfigAuditLogPanel", () => {
       );
 
       fireEvent.click(screen.getByLabelText("Filtros avanzados"));
-      fireEvent.change(screen.getByLabelText("Fecha desde"), { target: { value: "2026-08-01" } });
+
+      // Se acota la búsqueda del día al panel de CADA DatePicker (vía su
+      // aria-controls) en vez de screen.getByLabelText a secas: el panel
+      // saliente (AnimatePresence) puede seguir en el DOM un instante tras
+      // cerrarse, y ambos calendarios muestran Agosto 2026 — sin acotar,
+      // "20 de Agosto de 2026" sería ambiguo entre los dos.
+      const fromTrigger = screen.getByLabelText("Fecha desde");
+      fireEvent.click(fromTrigger);
+      const fromPanel = within(document.getElementById(fromTrigger.getAttribute("aria-controls")!)!);
+      fireEvent.click(fromPanel.getByLabelText("1 de Agosto de 2026"));
       expect(onFilterChange).toHaveBeenCalledWith("dateFrom", "2026-08-01");
 
-      fireEvent.change(screen.getByLabelText("Fecha hasta"), { target: { value: "2026-08-20" } });
+      const toTrigger = screen.getByLabelText("Fecha hasta");
+      fireEvent.click(toTrigger);
+      const toPanel = within(document.getElementById(toTrigger.getAttribute("aria-controls")!)!);
+      fireEvent.click(toPanel.getByLabelText("20 de Agosto de 2026"));
       expect(onFilterChange).toHaveBeenCalledWith("dateTo", "2026-08-20");
+
+      vi.useRealTimers();
     });
 
     it("muestra 'Limpiar filtros' solo cuando hay filtros activos, y llama a onClearFilters", () => {

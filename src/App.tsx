@@ -31,6 +31,7 @@ import { useProjects } from "./hooks/useProjects";
 import { useMarketingProjects } from "./hooks/useMarketingProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
+import { useIdleRoutePrefetch } from "./hooks/useIdleRoutePrefetch";
 import { NotificationsProvider } from "./components/UI/NotificationsProvider";
 import { PublicSettingsProvider } from "./components/UI/PublicSettingsProvider";
 import { ExchangeRatesProvider } from "./components/UI/ExchangeRatesProvider";
@@ -225,6 +226,9 @@ function AppRoutes() {
 
   // ---- Role Access ----
   const { activeRole, canAccess, firstAllowedRoute, isLoadingPermissions } = useRoleAccess(authUser?.role);
+
+  // ---- Pre-fetching inteligente: heurística "próxima ruta probable por rol" ----
+  useIdleRoutePrefetch(activeRole, canAccess);
 
   // ---- Contractors ----
   const {

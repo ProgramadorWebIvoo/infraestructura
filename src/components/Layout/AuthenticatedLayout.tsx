@@ -26,6 +26,8 @@ interface AuthenticatedLayoutProps {
   user: { name: string; email: string } | null;
   activeRole: string;
   canAccess: (path: string) => boolean;
+  /** Sentinel en memoria de useAuth() ("authenticated", no un secreto) — necesario para componer la queryKey del pre-fetch de datos en hover, ver usePrefetchOnIntent. */
+  authToken: string;
   inspectedProject: Project | null;
   onCloseInspectedProject: () => void;
   onLogout: () => void;
@@ -75,6 +77,7 @@ export default function AuthenticatedLayout({
   user,
   activeRole,
   canAccess,
+  authToken,
   inspectedProject,
   onCloseInspectedProject,
   onLogout,
@@ -116,6 +119,7 @@ export default function AuthenticatedLayout({
           activeRole={activeRole}
           onLogout={onLogout}
           canAccess={canAccess}
+          authToken={authToken}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleOnToggleCollapsed}
         />
