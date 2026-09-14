@@ -22,11 +22,19 @@ export interface ExchangeRateRecord {
   updated_at: string;
 }
 
+export interface SyncDebugTraceEntry {
+  source: string;
+  success: boolean;
+  duration_ms: number;
+  message: string;
+}
+
 export interface SyncResponse {
   success: boolean;
   message: string;
   rates?: ExchangeRateRecord[];
   source?: string;
+  debug?: SyncDebugTraceEntry[] | null;
 }
 
 export function useExchangeRates(authToken: string, enabled: boolean) {

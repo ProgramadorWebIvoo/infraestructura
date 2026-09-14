@@ -25,6 +25,7 @@ import {
   Lock,
   Check,
   RotateCcw,
+  RefreshCw,
 } from "lucide-react";
 import { itemVariants, springs } from "@/animations";
 import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
@@ -47,7 +48,6 @@ import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
-import ExchangeRateHistoryModal from "./components/ExchangeRateHistoryModal";
 import ExchangeRateSyncLogsPanel from "./components/ExchangeRateSyncLogsPanel";
 import ExchangeRateEditModal from "./components/ExchangeRateEditModal";
 
@@ -60,6 +60,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
   inflacion: { title: "Inflación", description: "Tasa de inflación de referencia para el análisis de precios.", icon: <BarChart3 className="h-5 w-5" />, color: "slate" },
   app: { title: "Aplicación", description: "Umbrales operativos, límites de carga de archivos, vigencia de invitaciones y tiempo de sesión.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
   congelacion_tasa: { title: "Congelación de tasa de cambio", description: "Qué triggers de negocio fijan la tasa BCV vigente, para que los montos en Bs. ya contratados/pagados dejen de recalcularse con la tasa del día.", icon: <Lock className="h-5 w-5" />, color: "indigo" },
+  sincronizacion_tasa: { title: "Sincronización de tasa", description: "Hora, activación y modo debug del cronjob que sincroniza las tasas BCV.", icon: <RefreshCw className="h-5 w-5" />, color: "sky" },
 };
 
 /**
@@ -72,7 +73,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
  */
 const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
   { key: "negocio", title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "fiscal"] },
-  { key: "monedas", title: "Monedas", groups: ["__currencies__", "congelacion_tasa"] },
+  { key: "monedas", title: "Monedas", groups: ["sincronizacion_tasa", "__currencies__", "congelacion_tasa"] },
   { key: "notificaciones", title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
   { key: "aplicacion", title: "Aplicación", groups: ["app"] },
 ];
@@ -116,28 +117,22 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   const {
     currencies,
     isLoading: isLoadingCurrencies,
-    addCurrency,
     updateCurrency,
     deleteCurrency,
   } = useCurrencies(authToken, isSuperadmin);
 
-  const {
-    rates,
-    isLoading: isLoadingRates,
-    isSyncing,
-    syncNow,
-  } = useExchangeRates(authToken, isSuperadmin);
+  const { isSyncing, syncNow } = useExchangeRates(authToken, isSuperadmin);
 
   const {
     logs: syncLogs,
     lastSync,
     isLoading: isLoadingSyncLogs,
-    loadLogs: refreshSyncLogs,
+    loadLogs: refreshSyncLogsList,
+    loadLastSync: refreshLastSync,
   } = useExchangeRateSyncLogs(authToken, isSuperadmin);
 
-  const handleAddCurrency = async (input: { code: string; name: string; symbol: string }) => {
-    const created = await addCurrency(input);
-    if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
+  const refreshSyncLogs = async () => {
+    await Promise.all([refreshSyncLogsList(), refreshLastSync()]);
   };
 
   const handleUpdateCurrency = async (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => {
@@ -151,6 +146,8 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   };
 
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
+  const cronHour = allSettings.find(s => s.key === "tasa_cambio_cron_hora")?.value || "10:00";
+  const cronEnabled = allSettings.find(s => s.key === "tasa_cambio_cron_habilitado")?.value !== "false";
   const settingById = useMemo(() => new Map(allSettings.map(s => [s.id, s])), [allSettings]);
 
   const settingLabelByKey = useMemo(() => {
@@ -219,8 +216,6 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
   });
 
   const [savingAll, setSavingAll] = useState(false);
-  const [exchangeRateModalOpen, setExchangeRateModalOpen] = useState(false);
-  const [selectedCurrencyForModal, setSelectedCurrencyForModal] = useState<string>("");
   const [exchangeRateEditModalOpen, setExchangeRateEditModalOpen] = useState(false);
 
   const hasSettingsFor = (group: string) => settings[group]?.length > 0;
@@ -362,19 +357,22 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                     <CurrencyCard
                       currencies={currencies}
                       isLoading={isLoadingCurrencies}
-                      onAdd={handleAddCurrency}
                       onUpdate={handleUpdateCurrency}
                       onDelete={handleDeleteCurrency}
-                      onViewExchangeRates={(code) => {
-                        setSelectedCurrencyForModal(code);
-                        setExchangeRateModalOpen(true);
-                      }}
                     />
                     <ExchangeRateSyncLogsPanel
                       logs={syncLogs}
                       lastSync={lastSync}
                       isLoading={isLoadingSyncLogs}
                       onEditRate={() => setExchangeRateEditModalOpen(true)}
+                      onSyncNow={async () => {
+                        const result = await syncNow();
+                        await refreshSyncLogs();
+                        return result;
+                      }}
+                      isSyncing={isSyncing}
+                      cronHour={cronHour}
+                      cronEnabled={cronEnabled}
                     />
                   </div>
                 ) : (
@@ -393,18 +391,6 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             </div>
           </TabPanel>
         </div>
-
-        {/* Modal de histórico de tasas */}
-        <ExchangeRateHistoryModal
-          isOpen={exchangeRateModalOpen}
-          onClose={() => setExchangeRateModalOpen(false)}
-          currencyCode={selectedCurrencyForModal}
-          currencyName={currencies.find(c => c.code === selectedCurrencyForModal)?.name || ""}
-          rates={rates}
-          isLoading={isLoadingRates}
-          isSyncing={isSyncing}
-          onSyncNow={syncNow}
-        />
 
         {/* Modal para editar tasa */}
         <ExchangeRateEditModal

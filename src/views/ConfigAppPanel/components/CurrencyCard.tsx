@@ -10,37 +10,28 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Coins, CheckCircle, XCircle, Pencil, Trash2, Plus, X, Check, Landmark, TrendingUp } from "lucide-react";
-import { itemVariants, bannerVariants } from "@/animations";
+import { Coins, CheckCircle, XCircle, Pencil, Trash2, X, Check, Landmark } from "lucide-react";
+import { itemVariants } from "@/animations";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
-import Button from "@/components/UI/Button";
 import { SkeletonCatalogRow, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
 import IconActionButton from "@/components/UI/IconActionButton";
-import { RequiredMark } from "@/components/UI/HintSignals";
 import { useToast } from "@/components/UI/Toast";
 import { getErrorMessage } from "@/services/logger";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { CurrencyRecord } from "@/hooks/useCurrencies";
-import { currencyAddSchema, currencyEditSchema } from "@/schemas/currency.schema";
+import { currencyEditSchema } from "@/schemas/currency.schema";
 
 interface CurrencyCardProps {
   currencies: CurrencyRecord[];
   isLoading: boolean;
-  onAdd: (input: { code: string; name: string; symbol: string }) => Promise<void>;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
-  onViewExchangeRates?: (currencyCode: string) => void;
 }
 
-export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, onDelete, onViewExchangeRates }: CurrencyCardProps) {
+export default function CurrencyCard({ currencies, isLoading, onUpdate, onDelete }: CurrencyCardProps) {
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [symbol, setSymbol] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -78,27 +69,6 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
     setEditingId(null);
   };
 
-  const handleAdd = async () => {
-    const result = currencyAddSchema.safeParse({ code, name, symbol });
-    if (!result.success) {
-      showToast(result.error.issues[0].message, "error");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await onAdd({ code: code.trim(), name: name.trim(), symbol: symbol.trim() });
-      setCode("");
-      setName("");
-      setSymbol("");
-      setFormOpen(false);
-      showToast("Moneda agregada.", "success");
-    } catch (err) {
-      showToast(getErrorMessage(err, "No se pudo agregar la moneda."), "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <motion.div variants={itemVariants}>
       <Card>
@@ -107,69 +77,7 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
           title="Moneda"
           description="Moneda base para montos registrados en la app y monedas aceptadas como tasas referenciales de proveedores."
           color="amber"
-          actions={
-            !formOpen && (
-              <Button size="sm" icon={<Plus className="h-3.5 w-3.5" />} onClick={() => setFormOpen(true)}>
-                Agregar moneda
-              </Button>
-            )
-          }
         />
-
-        <AnimatePresence initial={false}>
-          {formOpen && (
-            <motion.div
-              variants={bannerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="overflow-hidden"
-            >
-              <div className="mb-4 flex flex-wrap items-end gap-2 rounded-control border border-border-subtle bg-surface-sunken/50 p-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-text-tertiary uppercase mb-1">
-                    Código (ISO 4217) <RequiredMark filled={code.trim().length > 0} />
-                  </label>
-                  <input
-                    value={code}
-                    onChange={e => setCode(e.target.value.toUpperCase().slice(0, 3))}
-                    maxLength={3}
-                    placeholder="EUR"
-                    className="w-20 rounded-control border border-border-default px-2.5 py-1.5 text-xs font-mono uppercase focus:outline-hidden focus:ring-2 focus:ring-warning-400/40 transition-shadow"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-text-tertiary uppercase mb-1">
-                    Nombre <RequiredMark filled={name.trim().length > 0} />
-                  </label>
-                  <input
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Euro"
-                    className="w-40 rounded-control border border-border-default px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-warning-400/40 transition-shadow"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-text-tertiary uppercase mb-1">
-                    Símbolo <RequiredMark filled={symbol.trim().length > 0} />
-                  </label>
-                  <input
-                    value={symbol}
-                    onChange={e => setSymbol(e.target.value)}
-                    placeholder="€"
-                    className="w-16 rounded-control border border-border-default px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-warning-400/40 transition-shadow"
-                  />
-                </div>
-                <Button size="sm" variant="primary" colorScheme="amber" isLoading={submitting} onClick={handleAdd}>
-                  Guardar
-                </Button>
-                <Button size="sm" variant="secondary" disabled={submitting} onClick={() => setFormOpen(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {isLoading ? (
           <SkeletonGroup className="space-y-2">
@@ -205,7 +113,6 @@ export default function CurrencyCard({ currencies, isLoading, onAdd, onUpdate, o
                         run={run}
                         onUpdate={onUpdate}
                         onDelete={onDelete}
-                        onViewExchangeRates={onViewExchangeRates}
                       />
                     ))}
                   </AnimatePresence>
@@ -263,7 +170,6 @@ interface CurrencyRowProps {
   run: (id: number, action: () => Promise<void>) => void;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
-  onViewExchangeRates?: (currencyCode: string) => void;
 }
 
 /** Fila de moneda — comportamiento idéntico para oficiales/custom salvo qué botones se muestran (una oficial nunca expone editar/eliminar). */
@@ -281,7 +187,6 @@ function CurrencyRow({
   run,
   onUpdate,
   onDelete,
-  onViewExchangeRates,
 }: CurrencyRowProps) {
   const isEditing = editingId === currency.id;
 
@@ -335,17 +240,6 @@ function CurrencyRow({
         </span>
       </div>
       <div className="flex items-center gap-1.5">
-        {/* Botón de histórico de tasas para monedas oficiales */}
-        {currency.is_official && onViewExchangeRates && (
-          <IconActionButton
-            label={`Ver histórico de ${currency.code}`}
-            tooltip="Ver histórico de tasas"
-            onClick={() => onViewExchangeRates(currency.code)}
-            tone="sky"
-            icon={<TrendingUp className="h-3.5 w-3.5" />}
-          />
-        )}
-
         {/* Moneda oficial BCV: nunca editable/eliminable — solo activar/desactivar (salvo si es la base, ver abajo). */}
         {!currency.is_official && (
           isEditing ? (

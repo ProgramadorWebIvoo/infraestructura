@@ -10,6 +10,7 @@
 
 import { motion } from "motion/react";
 import NumericInput from "@/components/UI/NumericInput";
+import TimeInput from "@/components/UI/TimeInput";
 import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
 import TagMultiSelect, { type TagOption } from "@/components/UI/TagMultiSelect";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
@@ -43,6 +44,7 @@ interface SettingRowProps {
 export default function SettingRow({ setting, value, onChange, error, notificationActionsCatalog }: SettingRowProps) {
   const isNumeric = setting.type === "integer" || setting.type === "float";
   const isActionList = setting.type === "json" && ACTION_LIST_KEYS.has(setting.key) && !!notificationActionsCatalog;
+  const isCronHour = setting.key === "tasa_cambio_cron_hora";
 
   const rangeHint =
     isNumeric && (setting.min_value !== null || setting.max_value !== null)
@@ -87,6 +89,17 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               onChange={e => onChange(setting.id, e.target.value)}
               rows={2}
               className={`flex-1 min-w-0 text-xs font-mono px-3 py-2 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors ${errorClasses}`}
+            />
+          ) : isCronHour ? (
+            <TimeInput
+              id={`setting-${setting.id}-time`}
+              value={value}
+              onChange={v => onChange(setting.id, v)}
+              accent="brand"
+              size="sm"
+              hasError={!!error}
+              ariaLabel={setting.label}
+              className="w-32"
             />
           ) : isNumeric ? (
             <NumericInput

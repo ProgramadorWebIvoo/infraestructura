@@ -25,7 +25,6 @@ function makeCurrency(overrides: Partial<CurrencyRecord> = {}): CurrencyRecord {
 
 describe("CurrencyCard", () => {
   const handlers = {
-    onAdd: vi.fn(),
     onUpdate: vi.fn(),
     onDelete: vi.fn(),
   };
@@ -39,7 +38,6 @@ describe("CurrencyCard", () => {
       <CurrencyCard
         currencies={currencies}
         isLoading={isLoading}
-        onAdd={overrides.onAdd ?? handlers.onAdd}
         onUpdate={overrides.onUpdate ?? handlers.onUpdate}
         onDelete={overrides.onDelete ?? handlers.onDelete}
       />,
@@ -71,74 +69,9 @@ describe("CurrencyCard", () => {
     expect(screen.getByText("Inactiva")).toBeInTheDocument();
   });
 
-  // ── Formulario "Agregar moneda" ──────────────────────────────────────────
-
-  it("abre el formulario al hacer click en Agregar moneda y marca los 3 campos como obligatorios", () => {
+  it("ya no ofrece agregar monedas personalizadas", () => {
     renderCard([makeCurrency()]);
-    fireEvent.click(screen.getByRole("button", { name: "Agregar moneda" }));
-
-    expect(screen.getByPlaceholderText("EUR")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Euro")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("€")).toBeInTheDocument();
-    // RequiredMark renderiza una alerta por campo obligatorio mientras está vacío.
-    expect(screen.getAllByLabelText("Campo obligatorio pendiente")).toHaveLength(3);
-  });
-
-  it("no llama onAdd y muestra un toast si se intenta guardar con campos vacíos", async () => {
-    renderCard([makeCurrency()]);
-    fireEvent.click(screen.getByRole("button", { name: "Agregar moneda" }));
-    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
-
-    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith("Completa código, nombre y símbolo.", "error"));
-    expect(handlers.onAdd).not.toHaveBeenCalled();
-  });
-
-  it("agrega una moneda con código, nombre y símbolo completos", async () => {
-    handlers.onAdd.mockResolvedValueOnce(undefined);
-    renderCard([makeCurrency()]);
-    fireEvent.click(screen.getByRole("button", { name: "Agregar moneda" }));
-
-    fireEvent.change(screen.getByPlaceholderText("EUR"), { target: { value: "eur" } });
-    fireEvent.change(screen.getByPlaceholderText("Euro"), { target: { value: "Euro" } });
-    fireEvent.change(screen.getByPlaceholderText("€"), { target: { value: "€" } });
-    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
-
-    await waitFor(() =>
-      expect(handlers.onAdd).toHaveBeenCalledWith({ code: "EUR", name: "Euro", symbol: "€" }),
-    );
-    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith("Moneda agregada.", "success"));
-  });
-
-  it("el código se fuerza a mayúsculas y se recorta a 3 caracteres", () => {
-    renderCard([makeCurrency()]);
-    fireEvent.click(screen.getByRole("button", { name: "Agregar moneda" }));
-
-    const codeInput = screen.getByPlaceholderText("EUR") as HTMLInputElement;
-    fireEvent.change(codeInput, { target: { value: "usdx" } });
-
-    expect(codeInput.value).toBe("USD");
-  });
-
-  it("muestra un toast de error si onAdd falla", async () => {
-    handlers.onAdd.mockRejectedValueOnce(new Error("fallo de red"));
-    renderCard([makeCurrency()]);
-    fireEvent.click(screen.getByRole("button", { name: "Agregar moneda" }));
-
-    fireEvent.change(screen.getByPlaceholderText("EUR"), { target: { value: "eur" } });
-    fireEvent.change(screen.getByPlaceholderText("Euro"), { target: { value: "Euro" } });
-    fireEvent.change(screen.getByPlaceholderText("€"), { target: { value: "€" } });
-    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
-
-    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith("fallo de red", "error"));
-  });
-
-  it("cancela el formulario y lo oculta", async () => {
-    renderCard([makeCurrency()]);
-    fireEvent.click(screen.getByRole("button", { name: "Agregar moneda" }));
-    expect(screen.getByPlaceholderText("EUR")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
-    await waitFor(() => expect(screen.queryByPlaceholderText("EUR")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "Agregar moneda" })).not.toBeInTheDocument();
   });
 
   // ── Edición inline ────────────────────────────────────────────────────────
