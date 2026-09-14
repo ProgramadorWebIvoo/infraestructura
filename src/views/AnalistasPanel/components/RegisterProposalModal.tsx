@@ -19,6 +19,7 @@ import Modal from "@/components/UI/Modal";
 import SelectModal from "@/components/UI/SelectModal";
 import NumericInput from "@/components/UI/NumericInput";
 import Select from "@/components/UI/Select";
+import DatePicker from "@/components/UI/DatePicker";
 import Button from "@/components/UI/Button";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 import { HelpHint, RequiredMark } from "@/components/UI/HintSignals";
@@ -313,13 +314,12 @@ export default function RegisterProposalModal({
                       Fecha de la Oferta
                       <RequiredMark filled={fechaOferta.trim().length > 0} />
                     </label>
-                    <input
+                    <DatePicker
                       id="analistas-fecha-oferta"
-                      type="date"
                       value={fechaOferta}
-                      onChange={(e) => setFechaOferta(e.target.value)}
+                      onChange={setFechaOferta}
                       max={todayISODate()}
-                      className="w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 focus:ring-brand-500 bg-surface font-mono font-bold text-text-secondary"
+                      accent="brand"
                     />
                   </div>
                 </div>

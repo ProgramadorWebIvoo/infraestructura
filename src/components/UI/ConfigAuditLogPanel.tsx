@@ -23,6 +23,7 @@ import { X } from "lucide-react";
 import AuditLogPanel from "./AuditLogPanel";
 import AuditLogValueDiff from "./AuditLogValueDiff";
 import Select from "./Select";
+import DatePicker from "./DatePicker";
 import type { ConfigAuditLogFilters, ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
 interface ConfigAuditLogPanelProps {
@@ -146,24 +147,24 @@ export default function ConfigAuditLogPanel({
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
           <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Desde</span>
-          <input
-            type="date"
+          <DatePicker
             value={filters.dateFrom}
-            onChange={(e) => onFilterChange("dateFrom", e.target.value)}
+            onChange={(v) => onFilterChange("dateFrom", v)}
             max={filters.dateTo || undefined}
-            aria-label="Fecha desde"
-            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-700 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+            ariaLabel="Fecha desde"
+            size="sm"
+            accent="brand"
           />
         </label>
         <label className="block">
           <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Hasta</span>
-          <input
-            type="date"
+          <DatePicker
             value={filters.dateTo}
-            onChange={(e) => onFilterChange("dateTo", e.target.value)}
+            onChange={(v) => onFilterChange("dateTo", v)}
             min={filters.dateFrom || undefined}
-            aria-label="Fecha hasta"
-            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-700 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+            ariaLabel="Fecha hasta"
+            size="sm"
+            accent="brand"
           />
         </label>
       </div>

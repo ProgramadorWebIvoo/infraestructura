@@ -18,6 +18,7 @@ import { formatCurrency } from "@ivoo/shared";
 import Modal from "@/components/UI/Modal";
 import NumericInput from "@/components/UI/NumericInput";
 import Select from "@/components/UI/Select";
+import DatePicker from "@/components/UI/DatePicker";
 import Button from "@/components/UI/Button";
 import { HelpHint, RequiredMark } from "@/components/UI/HintSignals";
 import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
@@ -381,14 +382,13 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
               <RequiredMark filled={fechaOferta.trim().length > 0} />
               <HelpHint content={`Debe ser igual o posterior a la fecha de la oferta original (${minFechaOferta}).`} />
             </label>
-            <input
+            <DatePicker
               id="renegotiate-fecha-oferta"
-              type="date"
               value={fechaOferta}
-              onChange={(e) => setFechaOferta(e.target.value)}
+              onChange={setFechaOferta}
               min={minFechaOferta}
               max={todayISODate()}
-              className="w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 focus:ring-brand-500 bg-surface font-mono font-bold text-text-secondary"
+              accent="brand"
             />
           </div>
 

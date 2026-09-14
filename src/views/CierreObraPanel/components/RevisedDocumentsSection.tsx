@@ -26,6 +26,7 @@ import TabPanel from "@/components/UI/TabPanel";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
 import TableToolbar from "@/components/UI/TableToolbar";
+import DatePicker from "@/components/UI/DatePicker";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { viewSwitchVariants } from "@/animations";
 import { useContainerRows } from "@/hooks/useContainerRows";
@@ -213,23 +214,23 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
       {/* Rango de fechas: no encaja en las props fijas de TableToolbar (un
           único `filter` select) — se queda como control adicional aparte. */}
       <div className="shrink-0 flex flex-wrap items-center gap-2.5 px-5 py-3 border-b border-slate-100 bg-slate-50/30">
-        <input
+        <DatePicker
           id="revised-docs-date-from"
-          type="date"
           value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          aria-label="Fecha desde"
-          className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-          title="Fecha desde"
+          onChange={setDateFrom}
+          max={dateTo || undefined}
+          ariaLabel="Fecha desde"
+          accent="success"
+          className="w-36"
         />
-        <input
+        <DatePicker
           id="revised-docs-date-to"
-          type="date"
           value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          aria-label="Fecha hasta"
-          className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-          title="Fecha hasta"
+          onChange={setDateTo}
+          min={dateFrom || undefined}
+          ariaLabel="Fecha hasta"
+          accent="success"
+          className="w-36"
         />
       </div>
 

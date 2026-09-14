@@ -14,6 +14,7 @@ import type { AuditLog } from "@/types";
 import { Table, type Column } from "@/components/UI/Table";
 import EmptyState from "@/components/UI/EmptyState";
 import { SearchInput, SelectFilter } from "@/components/UI/FilterBar";
+import DatePicker from "@/components/UI/DatePicker";
 import { getRoleColor } from "@/utils";
 import AuditInspectModal from "@/components/Modals/AuditInspectModal";
 import { itemVariants } from "@/animations";
@@ -132,23 +133,19 @@ export default function AuditLogSection({ auditLogs, lastSync = null }: AuditLog
             placeholder="Buscar por acción, proyecto, usuario o detalles..."
             ariaLabel="Buscar en auditoría"
           />
-          <input
+          <DatePicker
             id="audit-date-from"
-            type="date"
             value={auditDateFrom}
-            onChange={(e) => setAuditDateFrom(e.target.value)}
-            aria-label="Fecha desde"
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-            title="Fecha desde"
+            onChange={setAuditDateFrom}
+            ariaLabel="Fecha desde"
+            className="w-36"
           />
-          <input
+          <DatePicker
             id="audit-date-to"
-            type="date"
             value={auditDateTo}
-            onChange={(e) => setAuditDateTo(e.target.value)}
-            aria-label="Fecha hasta"
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-600 focus:outline-hidden focus:ring-1 focus:ring-sky-500 font-bold cursor-pointer"
-            title="Fecha hasta"
+            onChange={setAuditDateTo}
+            ariaLabel="Fecha hasta"
+            className="w-36"
           />
           <SelectFilter
             id="audit-filter-role"

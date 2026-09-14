@@ -17,6 +17,7 @@ import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import TextField from "@/components/UI/TextField";
 import NumericInput from "@/components/UI/NumericInput";
+import DatePicker from "@/components/UI/DatePicker";
 import SegmentedControl, { type SegmentedOption } from "@/components/UI/SegmentedControl";
 import FileDropZone from "@/components/UI/FileDropZone";
 import Button from "@/components/UI/Button";
@@ -185,23 +186,21 @@ export default function ProyectCreateTab({ onSubmit, isSubmitting = false, onCan
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <FieldLabel htmlFor="mkt-start-date">Fecha de Inicio</FieldLabel>
-              <input
+              <DatePicker
                 id="mkt-start-date"
-                type="date"
                 value={form.startDate}
-                onChange={(e) => setField("startDate", e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-800 outline-hidden focus:ring-2 focus:ring-brand-100 focus:border-brand-400"
+                onChange={(v) => setField("startDate", v)}
+                accent="brand"
               />
             </div>
             <div>
               <FieldLabel htmlFor="mkt-end-date">Fecha de Finalización</FieldLabel>
-              <input
+              <DatePicker
                 id="mkt-end-date"
-                type="date"
                 value={form.endDate}
                 min={form.startDate || undefined}
-                onChange={(e) => setField("endDate", e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-lg border border-slate-200 bg-white font-bold text-slate-800 outline-hidden focus:ring-2 focus:ring-brand-100 focus:border-brand-400"
+                onChange={(v) => setField("endDate", v)}
+                accent="brand"
               />
             </div>
             <div>
