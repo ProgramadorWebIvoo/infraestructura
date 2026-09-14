@@ -19,12 +19,23 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, ArrowUpRight, CheckCircle2, Clock, Megaphone, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Banknote,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Megaphone,
+  Sparkles,
+  Wallet,
+} from "lucide-react";
 import { SkeletonBlock, SkeletonStats } from "@/components/SkeletonLoader";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import EmptyState from "@/components/UI/EmptyState";
 import { roleLabel } from "@/constants/roles";
-import { getUserInitials, getRoleColor } from "@/utils";
+import { getUserInitials, getRoleColor, formatCurrency } from "@/utils";
+import { computeDashboardSummary } from "@/utils/dashboardSummary";
 import { getRoleHomeConfig } from "./roleHomeConfig";
 import type { AuditLog, Project } from "@/types";
 
@@ -125,6 +136,10 @@ export default function HomePanel({ user, activeRole, projects, auditLogs = [], 
   );
 
   const statusMessage = useMemo(() => buildStatusMessage(kpiValues), [kpiValues]);
+  /** Pulso general del portafolio — mismo cómputo cliente que respalda a
+      Presidencia (`computeDashboardSummary`), aquí solo 3 cifras totales
+      visibles para todos los roles, no el dashboard completo. */
+  const portfolio = useMemo(() => computeDashboardSummary(projects), [projects]);
   const allCaughtUp = kpiValues.length > 0 && kpiValues.every((k) => k.matches.length === 0);
 
   const recentActivity = useMemo(() => auditLogs.slice(0, MAX_ACTIVITY), [auditLogs]);
@@ -222,6 +237,61 @@ export default function HomePanel({ user, activeRole, projects, auditLogs = [], 
         </div>
       </motion.div>
 
+      {/* ── Pulso del portafolio — mismas 3 cifras para todos los roles, dan
+          contexto del sistema completo antes de entrar a lo específico ── */}
+      {portfolio.totalProjects > 0 && (
+        <motion.div
+          variants={reduceMotion ? undefined : sectionReveal}
+          initial={reduceMotion ? undefined : "hidden"}
+          animate={reduceMotion ? undefined : "show"}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+        >
+          {[
+            {
+              key: "total",
+              icon: <Building2 className="h-4 w-4" strokeWidth={2.25} />,
+              label: "Obras en el sistema",
+              value: portfolio.totalProjects.toLocaleString("es"),
+              accent: "neutral" as const,
+            },
+            {
+              key: "approved",
+              icon: <Wallet className="h-4 w-4" strokeWidth={2.25} />,
+              label: "Inversión aprobada",
+              value: formatCurrency(portfolio.totalApprovedInvestment),
+              accent: "brand" as const,
+            },
+            {
+              key: "released",
+              icon: <Banknote className="h-4 w-4" strokeWidth={2.25} />,
+              label: `Fondos liberados (${portfolio.releasedPercent}%)`,
+              value: formatCurrency(portfolio.totalReleasedFunds),
+              accent: "success" as const,
+            },
+          ].map((stat) => {
+            const semantic = SEMANTIC_COLOR_MAP[stat.accent];
+            return (
+              <div
+                key={stat.key}
+                className="flex items-center gap-3.5 rounded-container border border-border-default/80 bg-surface px-5 py-4 shadow-sm"
+              >
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${semantic.bg100}`}>
+                  <span className={semantic.icon500}>{stat.icon}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+                    {stat.label}
+                  </p>
+                  <p className="mt-0.5 truncate text-xl font-black tracking-tight text-text-primary tabular-nums">
+                    {stat.value}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </motion.div>
+      )}
+
       {/* ── Cuerpo: KPIs + módulos (principal) / actividad reciente (lateral) ── */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
@@ -247,6 +317,7 @@ export default function HomePanel({ user, activeRole, projects, auditLogs = [], 
                   const semantic = SEMANTIC_COLOR_MAP[k.accent];
                   const preview = k.matches.slice(0, MAX_PREVIEW);
                   const showRoute = moduleRoutes.has(k.route) ? k.route : null;
+                  const amountValue = k.amount ? k.amount(k.matches) : undefined;
 
                   return (
                     <motion.div
@@ -265,9 +336,19 @@ export default function HomePanel({ user, activeRole, projects, auditLogs = [], 
                             {k.label}
                           </span>
                         </div>
-                        <p className="shrink-0 text-3xl font-black leading-none tracking-tight text-text-primary tabular-nums">
-                          {k.matches.length}
-                        </p>
+                        <div className="shrink-0 text-right">
+                          <p className="text-3xl font-black leading-none tracking-tight text-text-primary tabular-nums">
+                            {k.matches.length}
+                          </p>
+                          {!!amountValue && (
+                            <p
+                              className={`mt-1 text-[11px] font-bold tabular-nums ${semantic.icon500}`}
+                              title={k.amountLabel}
+                            >
+                              {formatCurrency(amountValue)}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Lista real de hasta 3 proyectos — el KPI deja de ser

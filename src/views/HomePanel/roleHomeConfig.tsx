@@ -32,6 +32,7 @@ import { ROUTES } from "@/routes.tsx";
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
 import type { SemanticColor } from "@/components/UI/colorTokens";
+import { approvedOf, releasedOf } from "@/utils/dashboardSummary";
 
 export interface HomeKpi {
   key: string;
@@ -43,6 +44,23 @@ export interface HomeKpi {
   accent: SemanticColor;
   /** Ruta del módulo dueño de este corte — usada por "ver todos". */
   route: string;
+  /**
+   * Monto real en juego detrás del conteo (misma fuente que Presidencia:
+   * `approvedOf`, no un dato nuevo) — opcional, solo para KPIs donde el
+   * monto es tan relevante como la cantidad de expedientes.
+   */
+  amount?: (matches: Project[]) => number;
+  amountLabel?: string;
+}
+
+/** Suma de inversión aprobada de un conjunto de proyectos — mismo criterio que Presidencia. */
+function sumApproved(matches: Project[]): number {
+  return matches.reduce((sum, p) => sum + approvedOf(p), 0);
+}
+
+/** Fondos aprobados aún no liberados — mismo criterio que Presidencia (`pendingFunds`). */
+function sumPendingFunds(matches: Project[]): number {
+  return matches.reduce((sum, p) => sum + Math.max(0, approvedOf(p) - releasedOf(p)), 0);
 }
 
 export interface HomeModuleLink {
@@ -145,6 +163,8 @@ const kpiInfraestructura: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.EN_EJECUCION),
     accent: "brand",
     route: ROUTES.INFRAESTRUCTURA,
+    amount: sumApproved,
+    amountLabel: "Inversión en obra",
   }),
 ];
 
@@ -164,6 +184,8 @@ const kpiCierreObra: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.VERIFICANDO_FINALIZACION),
     accent: "success",
     route: ROUTES.CIERRE_OBRA,
+    amount: sumApproved,
+    amountLabel: "Inversión en cierre",
   }),
 ];
 
@@ -175,6 +197,8 @@ const kpiProcura: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.REVISADO_CIERRE),
     accent: "info",
     route: ROUTES.PROCURA,
+    amount: sumApproved,
+    amountLabel: "Pendiente de autorizar",
   }),
   kpi({
     key: "comparative",
@@ -183,6 +207,8 @@ const kpiProcura: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.COMPARATIVA_ENVIADA),
     accent: "brand",
     route: ROUTES.PROCURA,
+    amount: sumApproved,
+    amountLabel: "Monto en comparativa",
   }),
 ];
 
@@ -194,6 +220,8 @@ const kpiAnalistas: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.CONFIRMADO_PROCURA),
     accent: "success",
     route: ROUTES.ANALISTAS,
+    amount: sumApproved,
+    amountLabel: "Monto en licitación",
   }),
 ];
 
@@ -205,6 +233,8 @@ const kpiFinanzas: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.CONTRATADO),
     accent: "danger",
     route: ROUTES.FINANZAS,
+    amount: sumPendingFunds,
+    amountLabel: "Por desembolsar",
   }),
   kpi({
     key: "pending-final",
@@ -213,6 +243,8 @@ const kpiFinanzas: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.LISTO_PAGO_FINAL),
     accent: "warning",
     route: ROUTES.FINANZAS,
+    amount: sumPendingFunds,
+    amountLabel: "Por liquidar",
   }),
 ];
 
@@ -224,6 +256,8 @@ const kpiGlobal: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status !== ProjectStatus.COMPLETADO_PAGADO),
     accent: "brand",
     route: ROUTES.PRESIDENCIA,
+    amount: sumApproved,
+    amountLabel: "Inversión aprobada",
   }),
   kpi({
     key: "completed",
@@ -232,6 +266,8 @@ const kpiGlobal: HomeKpi[] = [
     filter: (p) => p.filter((x) => x.status === ProjectStatus.COMPLETADO_PAGADO),
     accent: "success",
     route: ROUTES.PRESIDENCIA,
+    amount: (matches) => matches.reduce((sum, p) => sum + releasedOf(p), 0),
+    amountLabel: "Fondos liberados",
   }),
 ];
 
