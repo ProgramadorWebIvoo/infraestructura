@@ -50,12 +50,21 @@ function SidebarTip({ label, disabled = false, children }: SidebarTipProps) {
 
   const hide = useCallback(() => setIsVisible(false), []);
 
-  const trigger = cloneElement(Children.only(children) as ReactElement<TipTargetProps>, {
+  // Compone con los handlers que el hijo ya traiga (ej. prefetch en hover
+  // de usePrefetchOnIntent en SidebarNav/ConfigDropdown) en vez de
+  // sobrescribirlos: un `cloneElement({ onMouseEnter: show })` sin más
+  // DESCARTA silenciosamente cualquier onMouseEnter que el elemento
+  // original ya tuviera — bug real que dejaba el pre-fetching por hover
+  // completamente inerte para cualquier link envuelto acá (prácticamente
+  // todos los del sidebar).
+  const originalChild = Children.only(children) as ReactElement<TipTargetProps>;
+  const original = originalChild.props;
+  const trigger = cloneElement(originalChild, {
     ref: anchorRef,
-    onMouseEnter: show,
-    onMouseLeave: hide,
-    onFocus: show,
-    onBlur: hide,
+    onMouseEnter: () => { original.onMouseEnter?.(); show(); },
+    onMouseLeave: () => { original.onMouseLeave?.(); hide(); },
+    onFocus: () => { original.onFocus?.(); show(); },
+    onBlur: () => { original.onBlur?.(); hide(); },
   });
 
   return (

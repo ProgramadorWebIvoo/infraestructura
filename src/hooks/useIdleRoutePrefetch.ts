@@ -39,6 +39,7 @@ const ROLE_LIKELY_NEXT: Partial<Record<string, string[]>> = {
 
 type IdleWindow = Window & {
   requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  cancelIdleCallback?: (handle: number) => void;
 };
 
 /**
@@ -66,9 +67,10 @@ export function useIdleRoutePrefetch(activeRole: string | undefined, canAccess: 
 
     const idleWindow = window as IdleWindow;
     if (idleWindow.requestIdleCallback) {
-      idleWindow.requestIdleCallback(run, { timeout: 4000 });
-    } else {
-      setTimeout(run, 2000);
+      const handle = idleWindow.requestIdleCallback(run, { timeout: 4000 });
+      return () => idleWindow.cancelIdleCallback?.(handle);
     }
+    const timer = setTimeout(run, 2000);
+    return () => clearTimeout(timer);
   }, [activeRole]);
 }

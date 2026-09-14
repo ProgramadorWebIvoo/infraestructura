@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SidebarNav from "@/components/UI/SidebarNav";
+import { __resetPrefetchStateForTests } from "@/hooks/usePrefetchOnIntent";
 
 vi.mock("../../../components/UI/NotificationsProvider", () => ({
   useNotifications: () => ({
@@ -11,6 +12,19 @@ vi.mock("../../../components/UI/NotificationsProvider", () => ({
     markRead: vi.fn(),
     markAllRead: vi.fn(),
   }),
+}));
+
+// Mock del registro real de pre-fetch: los NavLink de este sidebar disparan
+// usePrefetchOnIntent en hover/focus (ver SidebarNav.tsx) — acá se verifica
+// que el enganche real (evento DOM -> handler -> loadChunk) funciona, sin
+// importar de verdad los chunks pesados de cada vista.
+const { loadChunkPresidencia } = vi.hoisted(() => ({
+  loadChunkPresidencia: vi.fn(() => Promise.resolve({ default: () => null })),
+}));
+vi.mock("@/routes/prefetchRegistry", () => ({
+  ROUTE_PREFETCH: {
+    "/presidencia": { loadChunk: loadChunkPresidencia },
+  },
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -45,6 +59,37 @@ function renderSidebar(props: Partial<Parameters<typeof SidebarNav>[0]> = {}) {
 describe("SidebarNav", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetPrefetchStateForTests();
+    // jsdom reporta document.hidden = true por defecto (no refleja el
+    // comportamiento real de un navegador, donde una pestaña cargada y
+    // visible es hidden=false) — sin esto, el guard de "pestaña en
+    // background" de usePrefetchOnIntent bloquearía todo prefetch en tests.
+    Object.defineProperty(document, "hidden", { value: false, configurable: true });
+  });
+
+  it("precarga el chunk de la ruta al pasar el mouse sobre su link (debounced)", async () => {
+    vi.useFakeTimers();
+    renderSidebar();
+
+    const presidenciaLink = screen.getByText("Presidencia").closest("a")!;
+    fireEvent.mouseEnter(presidenciaLink);
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(loadChunkPresidencia).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("un hover fugaz (mouseLeave antes del debounce) no precarga nada", async () => {
+    vi.useFakeTimers();
+    renderSidebar();
+
+    const presidenciaLink = screen.getByText("Presidencia").closest("a")!;
+    fireEvent.mouseEnter(presidenciaLink);
+    fireEvent.mouseLeave(presidenciaLink);
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(loadChunkPresidencia).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it("renders the IVOO brand (company logo + Gestión label)", () => {

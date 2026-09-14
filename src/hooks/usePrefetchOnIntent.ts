@@ -38,9 +38,29 @@ import { ROUTE_PREFETCH } from "@/routes/prefetchRegistry";
 
 const HOVER_DELAY_MS = 180;
 const MAX_CONCURRENT_CHUNK_LOADS = 2;
+/**
+ * Cota de seguridad para el semáforo: si un `import()` nunca resuelve (red
+ * colgada, no un simple 404/500 que sí rechaza la promesa), sin esto
+ * `chunkLoadsInFlight` quedaría decrementado de menos para siempre — cada
+ * chunk trabado le restaría 1 slot de capacidad al resto de la sesión, sin
+ * forma de recuperarlo. Vencido el timeout liberamos el slot igual (la
+ * carga real puede seguir en curso en background; solo dejamos de contarla
+ * para el semáforo).
+ */
+const CHUNK_LOAD_TIMEOUT_MS = 10_000;
 
 let chunkLoadsInFlight = 0;
 const warmedChunks = new Set<string>();
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("prefetch chunk timeout")), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
 
 interface NetworkInformationLike {
   saveData?: boolean;
@@ -83,7 +103,12 @@ export function usePrefetchOnIntent(path: string, authToken: string) {
       if (!warmedChunks.has(path) && chunkLoadsInFlight < MAX_CONCURRENT_CHUNK_LOADS) {
         warmedChunks.add(path);
         chunkLoadsInFlight++;
-        entry.loadChunk()
+        withTimeout(entry.loadChunk(), CHUNK_LOAD_TIMEOUT_MS)
+          // Falla real O timeout: se borra de warmedChunks para permitir
+          // reintentar en el próximo hover. Si fue timeout y el import()
+          // real termina resolviendo más tarde, el navegador/bundler ya lo
+          // tiene cacheado — un eventual reintento es gratis, no un doble
+          // download.
           .catch(() => warmedChunks.delete(path))
           .finally(() => { chunkLoadsInFlight = Math.max(0, chunkLoadsInFlight - 1); });
       }
