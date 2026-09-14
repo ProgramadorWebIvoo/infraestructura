@@ -4,11 +4,13 @@
  *
  * Histórico de tasas de cambio sincronizadas (DolarVZLA API + BCV scraping fallback)
  * Permite obtener el histórico, filtrar por moneda, y triggear sync manual.
+ * Escucha eventos Pusher para actualizaciones dinámicas en tiempo real.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/services/api";
 import { logError } from "@/services/logger";
+import { createEchoClient } from "@/services/echo";
 
 export interface ExchangeRateRecord {
   id: number;
@@ -50,6 +52,24 @@ export function useExchangeRates(authToken: string, enabled: boolean) {
   useEffect(() => {
     if (enabled && !hasLoaded) load();
   }, [enabled, hasLoaded, load]);
+
+  // Escuchar actualizaciones de tasas en tiempo real vía WebSocket
+  useEffect(() => {
+    if (!enabled) return;
+
+    const echo = createEchoClient();
+    if (!echo) return;
+
+    const channel = echo.private("exchange-rates");
+
+    channel.listen(".exchange-rates.updated", () => {
+      load();
+    });
+
+    return () => {
+      echo.leaveChannel("exchange-rates");
+    };
+  }, [enabled, load]);
 
   const syncNow = useCallback(async (): Promise<SyncResponse> => {
     if (!authToken) throw new Error("Auth token required");

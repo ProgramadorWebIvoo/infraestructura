@@ -26,7 +26,7 @@ interface ExchangeRateHistoryModalProps {
   rates: ExchangeRateRecord[];
   isLoading: boolean;
   isSyncing: boolean;
-  onSyncNow: () => Promise<void>;
+  onSyncNow: () => Promise<{ success: boolean; message: string } | void>;
 }
 
 const SOURCE_BADGE_CLASSES: Record<string, string> = {
@@ -126,8 +126,7 @@ export default function ExchangeRateHistoryModal({
         {filteredRates.length === 0 ? (
           <EmptyState
             icon={<TrendingUp className="h-12 w-12" />}
-            title="Sin histórico de tasas"
-            description="No hay registros todavía. Ejecuta una sincronización manual para obtener las tasas."
+            message="No hay registros todavía. Ejecuta una sincronización manual para obtener las tasas."
           />
         ) : (
           <Table<ExchangeRateRecord>
