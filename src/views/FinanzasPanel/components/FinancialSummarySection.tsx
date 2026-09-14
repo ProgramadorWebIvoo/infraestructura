@@ -5,15 +5,18 @@
  * Resumen financiero agregado del departamento: donut de progreso de fondos
  * liberados vs presupuesto aprobado + métricas claras (aprobado, comprometido,
  * liberado, pendiente) + indicadores de negociación (anticipo y plazo promedio)
- * + top contratistas por monto liberado + tendencia mensual de desembolsos.
+ * + KPIs secundarios (ticket promedio, eficiencia de pago, sobrecostos, fondos
+ * en riesgo) + distribución de inversión por tipo de obra y ubicación + obras
+ * estancadas con fondos comprometidos + comportamiento de desembolsos + top
+ * contratistas por monto liberado + tendencia mensual de desembolsos.
  */
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign, Award, BarChart3 } from "lucide-react";
+import { Wallet, HandCoins, CalendarClock, AlertTriangle, TrendingUp, Lock, CircleDollarSign, Award, BarChart3, Building2, MapPin, Timer, Receipt, Gauge } from "lucide-react";
 import type { Project } from "@/types";
 import { itemVariants } from "@/animations";
-import { computeDashboardSummary } from "@/utils/dashboardSummary";
+import { computeDashboardSummary, approvedOf, releasedOf, daysBetween, STALLED_THRESHOLD_DAYS } from "@/utils/dashboardSummary";
 import RankBar from "@/components/UI/RankBar";
 import type { LedgerEntry } from "./LedgerSection";
 
@@ -89,6 +92,29 @@ interface FinancialSummarySectionProps {
   paidLedger: LedgerEntry[];
 }
 
+interface StatPillProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+  accent: string;
+  iconBg: string;
+}
+
+/** Pill compacto para KPIs financieros secundarios (fila superior de contexto). */
+function StatPill({ icon, label, value, sub, accent, iconBg }: StatPillProps) {
+  return (
+    <div className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
+      <div className={`p-2 rounded-lg shrink-0 ${iconBg}`}>{icon}</div>
+      <div className="min-w-0">
+        <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 truncate">{label}</p>
+        <p className={`text-base font-black font-mono leading-tight ${accent}`}>{value}</p>
+        <p className="text-[9px] text-slate-400 font-medium truncate">{sub}</p>
+      </div>
+    </div>
+  );
+}
+
 function SectionTitle({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
@@ -109,6 +135,47 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
   const pendingPct = Math.min(100, (pendingFunds / base) * 100);
   const overBudget = excessReleased > 0;
   const maxContractor = Math.max(1, ...summary.topContractors.map((c) => c.totalAmount));
+
+  // Métricas financieras secundarias — derivadas de los mismos proyectos,
+  // sin duplicar reglas de negocio ya resueltas en computeDashboardSummary.
+  const projectsWithBudget = projects.filter((p) => approvedOf(p) > 0);
+  const avgApprovedPerProject = projectsWithBudget.length
+    ? projectsWithBudget.reduce((s, p) => s + approvedOf(p), 0) / projectsWithBudget.length
+    : 0;
+  const overrunProjects = projects.filter((p) => releasedOf(p) > approvedOf(p) && approvedOf(p) > 0);
+  const executionEfficiencyPct = totalCommittedAmount > 0
+    ? Math.min(100, (totalReleasedFunds / totalCommittedAmount) * 100)
+    : 0;
+
+  // Obras con fondos comprometidos en riesgo: estancadas (sin actividad) y
+  // con dinero aprobado que aún no se libera por completo. Se recalcula
+  // estancamiento directamente sobre `projects` (no sobre
+  // summary.stalledProjects, que ya viene recortado a las 10 obras con más
+  // días de inactividad) para no perder obras con menor antigüedad pero
+  // mayor exposición financiera.
+  const allAtRiskProjects = projects
+    .filter((p) => p.status !== "COMPLETADO_PAGADO")
+    .map((p) => {
+      const referenceDate = p.updatedAt ? p.updatedAt.slice(0, 10) : p.createdDate;
+      const daysSinceUpdate = daysBetween(referenceDate);
+      const exposedAmount = Math.max(0, approvedOf(p) - releasedOf(p));
+      return { id: p.id, title: p.title, daysSinceUpdate, exposedAmount };
+    })
+    .filter((sp) => sp.daysSinceUpdate >= STALLED_THRESHOLD_DAYS && sp.exposedAmount > 0)
+    .sort((a, b) => b.exposedAmount - a.exposedAmount);
+  const totalAtRiskAmount = allAtRiskProjects.reduce((s, sp) => s + sp.exposedAmount, 0);
+  const atRiskProjects = allAtRiskProjects.slice(0, 5);
+  const maxAtRisk = Math.max(1, ...atRiskProjects.map((sp) => sp.exposedAmount));
+  const maxType = Math.max(1, ...summary.typeBreakdown.map((t) => t.approvedAmount));
+  const maxLocation = Math.max(1, ...summary.locationBreakdown.map((l) => l.approvedAmount));
+
+  const avgDisbursement = paidLedger.length
+    ? paidLedger.reduce((s, tx) => s + tx.amount, 0) / paidLedger.length
+    : 0;
+  const largestDisbursement = paidLedger.reduce(
+    (max, tx) => (tx.amount > max.amount ? tx : max),
+    { amount: 0, title: "—", date: "" } as Pick<LedgerEntry, "amount" | "title" | "date">,
+  );
 
   // Tendencia mensual de desembolsos reales (no de creación de obras) —
   // derivada del diario de egresos, últimos 6 meses con actividad.
@@ -219,6 +286,132 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             {summary.negotiationMetrics.avgDeliveryWeeks} <span className="text-xs text-slate-500">semanas</span>
           </p>
           <p className="text-[10px] text-slate-400 font-medium">entrega estimada de contratos</p>
+        </div>
+      </div>
+
+      {/* KPIs financieros secundarios */}
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatPill
+          icon={<Building2 className="h-4 w-4 text-violet-600" />}
+          iconBg="bg-violet-50"
+          label="Inversión Promedio por Obra"
+          value={`$${fmtMoney(avgApprovedPerProject)}`}
+          sub={`sobre ${projectsWithBudget.length} obra(s) con presupuesto`}
+          accent="text-violet-700"
+        />
+        <StatPill
+          icon={<Gauge className="h-4 w-4 text-emerald-600" />}
+          iconBg="bg-emerald-50"
+          label="Eficiencia de Pago"
+          value={`${Math.round(executionEfficiencyPct)}%`}
+          sub="liberado sobre lo comprometido"
+          accent="text-emerald-700"
+        />
+        <StatPill
+          icon={<AlertTriangle className="h-4 w-4 text-rose-600" />}
+          iconBg="bg-rose-50"
+          label="Obras con Sobrecosto"
+          value={String(overrunProjects.length)}
+          sub="liberado supera lo aprobado"
+          accent="text-rose-700"
+        />
+        <StatPill
+          icon={<Timer className="h-4 w-4 text-amber-600" />}
+          iconBg="bg-amber-50"
+          label="Fondos en Riesgo"
+          value={`$${fmtMoney(totalAtRiskAmount)}`}
+          sub={`${allAtRiskProjects.length} obra(s) estancada(s)`}
+          accent="text-amber-700"
+        />
+      </div>
+    </motion.div>
+
+    {/* Distribución de inversión por tipo de obra y ubicación */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
+        <SectionTitle icon={<Building2 className="h-4 w-4" />} label="Inversión por Tipo de Obra" />
+        <div className="space-y-3">
+          {summary.typeBreakdown.length === 0 ? (
+            <p className="text-[11px] text-slate-400 italic">Sin obras registradas todavía.</p>
+          ) : (
+            summary.typeBreakdown
+              .slice()
+              .sort((a, b) => b.approvedAmount - a.approvedAmount)
+              .map((t) => (
+                <RankBar
+                  key={t.type}
+                  label={t.type}
+                  value={`$${fmtMoney(t.approvedAmount)} · ${t.count} obra${t.count === 1 ? "" : "s"}`}
+                  amount={t.approvedAmount}
+                  max={maxType}
+                />
+              ))
+          )}
+        </div>
+      </motion.div>
+
+      <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
+        <SectionTitle icon={<MapPin className="h-4 w-4" />} label="Inversión por Ubicación (Top 8)" />
+        <div className="space-y-3">
+          {summary.locationBreakdown.length === 0 ? (
+            <p className="text-[11px] text-slate-400 italic">Sin obras registradas todavía.</p>
+          ) : (
+            summary.locationBreakdown.map((l) => (
+              <RankBar
+                key={l.location}
+                label={l.location}
+                value={`$${fmtMoney(l.approvedAmount)} · ${l.count} obra${l.count === 1 ? "" : "s"}`}
+                amount={l.approvedAmount}
+                max={maxLocation}
+                muted={l.location === "Sin ubicación"}
+              />
+            ))
+          )}
+        </div>
+      </motion.div>
+    </div>
+
+    {/* Obras con fondos comprometidos en riesgo (estancadas + presupuesto pendiente) */}
+    <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
+      <SectionTitle icon={<AlertTriangle className="h-4 w-4" />} label="Fondos en Riesgo por Obras Estancadas" />
+      <div className="space-y-3">
+        {atRiskProjects.length === 0 ? (
+          <p className="text-[11px] text-slate-400 italic">Ninguna obra estancada tiene fondos pendientes de liberar.</p>
+        ) : (
+          atRiskProjects.map((sp) => (
+            <RankBar
+              key={sp.id}
+              label={sp.title}
+              value={`$${fmtMoney(sp.exposedAmount)} · ${sp.daysSinceUpdate}d sin actividad`}
+              amount={sp.exposedAmount}
+              max={maxAtRisk}
+            />
+          ))
+        )}
+      </div>
+    </motion.div>
+
+    {/* Estadísticas del diario de egresos */}
+    <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
+      <SectionTitle icon={<Receipt className="h-4 w-4" />} label="Comportamiento de Desembolsos" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Receipt className="h-4 w-4 text-indigo-500" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Monto Promedio por Desembolso</span>
+          </div>
+          <p className="text-xl font-black font-mono text-slate-800">${fmtMoney(avgDisbursement)}</p>
+          <p className="text-[10px] text-slate-400 font-medium">sobre {paidLedger.length} movimiento(s)</p>
+        </div>
+        <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Award className="h-4 w-4 text-indigo-500" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Mayor Desembolso Registrado</span>
+          </div>
+          <p className="text-xl font-black font-mono text-slate-800">${fmtMoney(largestDisbursement.amount)}</p>
+          <p className="text-[10px] text-slate-400 font-medium truncate">
+            {largestDisbursement.amount > 0 ? `${largestDisbursement.title} · ${largestDisbursement.date}` : "Sin desembolsos aún"}
+          </p>
         </div>
       </div>
     </motion.div>
