@@ -11,7 +11,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { History, Link2, Mail, Pencil, SearchX, Star, Users } from "lucide-react";
+import { Eye, History, Link2, Mail, Pencil, SearchX, Star, Users } from "lucide-react";
 import { itemVariants } from "@/animations";
 import Card from "@/components/UI/Card";
 import TableToolbar from "@/components/UI/TableToolbar";
@@ -23,6 +23,7 @@ import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { renderContractorGridCard } from "./ContractorGridCard";
+import SupplierDetailModal from "./SupplierDetailModal";
 import type { Contractor } from "@/types";
 
 interface ContractorsSectionProps {
@@ -41,6 +42,7 @@ export default function ContractorsSection({
   onOpenHistory,
 }: ContractorsSectionProps) {
   const [query, setQuery] = useState("");
+  const [detailSupplier, setDetailSupplier] = useState<Contractor | null>(null);
   const filteredContractors = useMemo(() => {
     const q = query.trim().toLowerCase();
     return contractors.filter(
@@ -76,10 +78,17 @@ export default function ContractorsSection({
     {
       key: "actions",
       label: "Acciones",
-      width: "7rem",
+      width: "9rem",
       align: "center",
       render: (c) => (
         <div className="flex items-center justify-center gap-1.5">
+          <IconActionButton
+            label={`Ver detalle de ${c.name}`}
+            tooltip="Ver detalle"
+            onClick={() => setDetailSupplier(c)}
+            tone="slate"
+            icon={<Eye className="h-3.5 w-3.5" />}
+          />
           <IconActionButton
             label={`Ver histórico de ${c.name}`}
             tooltip="Ver histórico"
@@ -146,7 +155,7 @@ export default function ContractorsSection({
             <GridView
               items={filteredContractors}
               rowKey={(c) => c.code}
-              renderCard={(c) => renderContractorGridCard(c, { onOpenEdit, onOpenInvite, onOpenHistory })}
+              renderCard={(c) => renderContractorGridCard(c, { onOpenDetail: setDetailSupplier, onOpenEdit, onOpenInvite, onOpenHistory })}
               cardAccent={() => "brand"}
               emptyState={
                 <EmptyState
@@ -158,6 +167,8 @@ export default function ContractorsSection({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SupplierDetailModal supplier={detailSupplier} onClose={() => setDetailSupplier(null)} />
     </Card>
   );
 }

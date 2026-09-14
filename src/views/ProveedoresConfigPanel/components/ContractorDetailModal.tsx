@@ -9,10 +9,11 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { Mail, Phone, Info, BrainCircuit, RefreshCw } from "lucide-react";
+import { Mail, Phone, Info, BrainCircuit, RefreshCw, Building2, Calendar, Star } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
 import Spinner from "@/components/UI/Spinner";
+import Card from "@/components/UI/Card";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "@/views/ProveedoresConfigPanel/types";
 import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
@@ -52,11 +53,11 @@ function AiRatingSuggestion({ contractorCode, authToken }: { contractorCode: str
   };
 
   return (
-    <div className={`col-span-2 rounded-2xl border p-3.5 ${warning.border100} ${warning.bg50}`}>
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider ${warning.text700}`}>
-          <BrainCircuit className="h-3.5 w-3.5" />
-          Sugerencia IA de rating
+    <Card hoverable={false} className={`p-4 ${warning.borderL500} ${warning.border100} ${warning.bg50}`}>
+      <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-border-200">
+        <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${warning.text700}`}>
+          <BrainCircuit className="h-4 w-4" />
+          Análisis IA
         </div>
         {!isLoading && (
           <Button variant="secondary" size="sm" onClick={load} icon={<RefreshCw className="h-3 w-3" />}>
@@ -66,44 +67,60 @@ function AiRatingSuggestion({ contractorCode, authToken }: { contractorCode: str
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+        <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
           <Spinner size="sm" />
           Analizando historial del proveedor...
         </div>
       )}
 
-      {error && !isLoading && <p className="text-xs text-danger-600 font-medium">{error}</p>}
+      {error && !isLoading && (
+        <p className="text-xs text-danger-600 font-medium">{error}</p>
+      )}
 
       {suggestion && !isLoading && (
-        <div className="space-y-1.5">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Rating sugerido:{" "}
-            <strong className="font-mono text-sm text-slate-800">
+        <div className="space-y-2.5">
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs font-semibold text-text-secondary">Rating sugerido:</span>
+            <span className={`font-mono text-base font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
               {suggestion.suggestedRating !== null ? suggestion.suggestedRating.toFixed(1) : "N/A"}
-            </strong>{" "}
-            <span className="text-[10px] text-slate-400">(confianza: {suggestion.confidenceScore}%)</span>
+            </span>
+            <span className="text-[10px] text-text-tertiary">(confianza: {suggestion.confidenceScore}%)</span>
+          </div>
+          <p className="text-xs text-text-secondary leading-relaxed bg-white/50 rounded-control p-2">
+            {suggestion.rationale}
           </p>
-          <p className="text-[11px] text-slate-500 leading-relaxed">{suggestion.rationale}</p>
-          <p className="text-[9px] text-slate-400 font-medium italic">
-            Informativa — no modifica el rating actual. Ajústelo manualmente si está de acuerdo.
+          <p className="text-[10px] text-text-tertiary font-medium italic">
+            💡 Recomendación — revisa y aplica manualmente si lo consideras apropiado.
           </p>
         </div>
       )}
 
       {!suggestion && !isLoading && !error && (
-        <p className="text-xs text-slate-500 font-medium">
-          Sugiere un ajuste de rating basado en tendencia de precios y tasa de adjudicación — no reemplaza tu criterio.
+        <p className="text-xs text-text-secondary font-medium">
+          Analiza la tendencia de precios y tasa de adjudicación para sugerir un ajuste de rating.
         </p>
       )}
+    </Card>
+  );
+}
+
+function DetailField({ label, children, icon }: { label: string; children: ReactNode; icon?: ReactNode }) {
+  return (
+    <div className="flex gap-3">
+      {icon && <div className="shrink-0 text-text-muted mt-1">{icon}</div>}
+      <div className="flex-1 min-w-0">
+        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
+        <div className="text-sm font-semibold text-text-primary break-words">{children}</div>
+      </div>
     </div>
   );
 }
 
-function DetailField({ label, children }: { label: string; children: ReactNode }) {
+function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
   return (
-    <div>
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
-      <div className="text-sm font-semibold text-text-primary">{children}</div>
+    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-200">
+      {icon && <div className="text-brand-600">{icon}</div>}
+      <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{children}</h3>
     </div>
   );
 }
@@ -122,66 +139,108 @@ export default function ContractorDetailModal({ contractor, onClose, authToken }
       onClose={onClose}
       title={contractor?.name}
       badge={contractor?.code}
-      icon={<Info className="h-5 w-5" />}
+      icon={<Building2 className="h-5 w-5" />}
       iconColor="indigo"
-      maxWidth="max-w-md"
+      maxWidth="max-w-lg"
     >
       {contractor && source && sourceSemantic && status && statusSemantic && (
-        <div className="grid grid-cols-2 gap-4">
-          <DetailField label="Código">
-            <span className={`inline-block rounded-control border ${SEMANTIC_COLOR_MAP.info.border100} ${SEMANTIC_COLOR_MAP.info.bg50} px-2 py-0.5 font-mono text-xs ${SEMANTIC_COLOR_MAP.info.text600}`}>
-              {contractor.code}
-            </span>
-          </DetailField>
+        <div className="space-y-5">
+          {/* ── Información Básica ── */}
+          <Card hoverable={false} className="p-4 bg-surface-raised">
+            <SectionTitle icon={<Building2 className="h-4 w-4" />}>Información General</SectionTitle>
+            <div className="space-y-3">
+              <DetailField label="Código">
+                <span className={`inline-block rounded-control border ${SEMANTIC_COLOR_MAP.info.border100} ${SEMANTIC_COLOR_MAP.info.bg50} px-2.5 py-1 font-mono text-xs font-semibold ${SEMANTIC_COLOR_MAP.info.text600}`}>
+                  {contractor.code}
+                </span>
+              </DetailField>
 
-          <DetailField label="RIF">
-            <span className="font-mono text-xs">{contractor.rif}</span>
-          </DetailField>
+              <DetailField label="Razón Social / Nombre">
+                <span className="font-semibold">{contractor.name}</span>
+              </DetailField>
 
-          <DetailField label="Origen">
-            <span className={`inline-block rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${sourceSemantic.border100} ${sourceSemantic.bg50} ${sourceSemantic.text700}`}>
-              {source.label}
-            </span>
-          </DetailField>
+              <DetailField label="RIF / ID Fiscal">
+                <span className="font-mono text-sm font-semibold">{contractor.rif}</span>
+              </DetailField>
 
-          <DetailField label="Email">
-            {contractor.email ? (
-              <span className="flex items-center gap-1.5 font-mono text-xs">
-                <Mail className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-                {contractor.email}
-              </span>
-            ) : (
-              <span className="text-text-muted italic">—</span>
-            )}
-          </DetailField>
+              <DetailField label="Especialidad">
+                <span className="inline-block rounded-control bg-surface-sunken px-2.5 py-1 font-semibold text-text-secondary text-xs">
+                  {contractor.specialty}
+                </span>
+              </DetailField>
+            </div>
+          </Card>
 
-          <DetailField label="Teléfono">
-            {contractor.phone ? (
-              <span className="flex items-center gap-1.5 font-mono text-xs">
-                <Phone className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-                {contractor.phone}
-              </span>
-            ) : (
-              <span className="text-text-muted italic">—</span>
-            )}
-          </DetailField>
+          {/* ── Contacto ── */}
+          <Card hoverable={false} className="p-4 bg-surface-raised">
+            <SectionTitle icon={<Mail className="h-4 w-4" />}>Contacto</SectionTitle>
+            <div className="space-y-3">
+              <DetailField label="Email" icon={<Mail className="h-4 w-4" />}>
+                {contractor.email ? (
+                  <a href={`mailto:${contractor.email}`} className="text-brand-600 hover:underline font-mono text-sm">
+                    {contractor.email}
+                  </a>
+                ) : (
+                  <span className="text-text-muted italic">No registrado</span>
+                )}
+              </DetailField>
 
-          <DetailField label="Estado">
-            <span className={`inline-block rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${statusSemantic.border100} ${statusSemantic.bg50} ${statusSemantic.text700}`}>
-              {status.label}
-            </span>
-          </DetailField>
+              <DetailField label="Teléfono" icon={<Phone className="h-4 w-4" />}>
+                {contractor.phone ? (
+                  <a href={`tel:${contractor.phone}`} className="text-brand-600 hover:underline font-mono text-sm">
+                    {contractor.phone}
+                  </a>
+                ) : (
+                  <span className="text-text-muted italic">No registrado</span>
+                )}
+              </DetailField>
+            </div>
+          </Card>
 
-          <DetailField label="Rating">
-            <span className={`font-mono text-sm font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
-              {contractor.rating.toFixed(1)}
-            </span>
-          </DetailField>
+          {/* ── Estado y Calificación ── */}
+          <Card hoverable={false} className="p-4 bg-surface-raised">
+            <SectionTitle icon={<Star className="h-4 w-4" />}>Desempeño y Estado</SectionTitle>
+            <div className="space-y-3">
+              <DetailField label="Calificación (Rating)">
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono text-lg font-black ${SEMANTIC_COLOR_MAP.warning.text600}`}>
+                    {contractor.rating.toFixed(1)}
+                  </span>
+                  <span className="text-text-tertiary text-xs">/ 10</span>
+                </div>
+              </DetailField>
 
-          <DetailField label="Registrado">{contractor.createdAt}</DetailField>
-          <DetailField label="Actualizado">{contractor.updatedAt}</DetailField>
+              <DetailField label="Estado">
+                <span className={`inline-block rounded-pill border px-3 py-1 text-xs font-bold ${statusSemantic.border100} ${statusSemantic.bg50} ${statusSemantic.text700}`}>
+                  {status.label}
+                </span>
+              </DetailField>
 
-          {showAiSuggestion && <AiRatingSuggestion contractorCode={contractor.code} authToken={authToken} />}
+              <DetailField label="Origen de Registro">
+                <span className={`inline-block rounded-pill border px-3 py-1 text-xs font-bold ${sourceSemantic.border100} ${sourceSemantic.bg50} ${sourceSemantic.text700}`}>
+                  {source.label}
+                </span>
+              </DetailField>
+            </div>
+          </Card>
+
+          {/* ── Auditoría ── */}
+          <Card hoverable={false} className="p-4 bg-surface-raised">
+            <SectionTitle icon={<Calendar className="h-4 w-4" />}>Historial</SectionTitle>
+            <div className="space-y-3">
+              <DetailField label="Registrado el">
+                <span className="font-mono text-sm">{contractor.createdAt}</span>
+              </DetailField>
+              <DetailField label="Última actualización">
+                <span className="font-mono text-sm">{contractor.updatedAt}</span>
+              </DetailField>
+            </div>
+          </Card>
+
+          {/* ── Sugerencia IA ── */}
+          {showAiSuggestion && (
+            <AiRatingSuggestion contractorCode={contractor.code} authToken={authToken} />
+          )}
         </div>
       )}
     </Modal>
