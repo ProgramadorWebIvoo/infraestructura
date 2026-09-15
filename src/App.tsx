@@ -8,13 +8,16 @@
 
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider, removeOldestQuery } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 // Views — lazy-loaded for route-level code-splitting
 const LoginScreen = lazy(() => import("./views/LoginScreen"));
+// Único punto de App.tsx que necesita motion/react — lazy para que un
+// visitante anónimo (login, portal público) nunca la descargue/ejecute; ver
+// docblock de LoggingOutOverlay.tsx.
+const LoggingOutOverlay = lazy(() => import("./components/LoggingOutOverlay"));
 
 import Spinner from "./components/UI/Spinner";
 import { ToastProvider, useToast } from "./components/UI/Toast";
@@ -74,48 +77,6 @@ function SessionValidationScreen() {
         <span className="text-sm font-medium text-slate-400">Cargando…</span>
       </div>
     </div>
-  );
-}
-
-/**
- * Pantalla de despedida durante el logout. Antes handleLogout() era
- * instantáneo — la app saltaba de golpe al login en cuanto resolvía la
- * llamada a /logout, sin ningún acuse de que la acción se había registrado.
- * Se monta apenas se hace click en "Cerrar Sesión" (antes de que la llamada
- * a red siquiera empiece) para que el feedback sea inmediato, y permanece un
- * beat mínimo (ver MIN_DISPLAY_MS en handleLogout) para que no sea un flash
- * ilegible en conexiones rápidas.
- */
-function LoggingOutScreen() {
-  return (
-    <motion.div
-      key="logging-out"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-100 flex items-center justify-center bg-[#F8FAFC]"
-    >
-      <div className="flex flex-col items-center gap-3">
-        <motion.span
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="text-5xl font-black tracking-tight text-slate-300 select-none"
-        >
-          IVOO
-        </motion.span>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15, duration: 0.3 }}
-          className="flex items-center gap-2 text-slate-400"
-        >
-          <Spinner size="sm" />
-          <span className="text-sm font-medium">Cerrando sesión…</span>
-        </motion.div>
-      </div>
-    </motion.div>
   );
 }
 
@@ -355,12 +316,12 @@ function AppRoutes() {
     return <PublicRouteShell contractorsCount={contractors.length} onAddContractor={handleAddContractor} />;
   }
 
-  // ---- Cerrando sesión — overlay de despedida, ver LoggingOutScreen ----
+  // ---- Cerrando sesión — overlay de despedida, ver LoggingOutOverlay ----
   if (isLoggingOut) {
     return (
-      <AnimatePresence>
-        <LoggingOutScreen />
-      </AnimatePresence>
+      <Suspense fallback={null}>
+        <LoggingOutOverlay />
+      </Suspense>
     );
   }
 
