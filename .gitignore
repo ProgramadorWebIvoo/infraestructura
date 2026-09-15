@@ -13,3 +13,4 @@ graphify-out
 docs/.obsidian
 CLAUDE.md
 graphify-policy.yaml
+lighthouse-*.json
