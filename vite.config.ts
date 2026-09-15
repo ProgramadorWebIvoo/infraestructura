@@ -63,10 +63,23 @@ export default defineConfig(({mode}) => {
           // cacheando react-vendor/motion-vendor entre releases que no los
           // tocan, y evita que pdfjs-dist (grande, usado solo en
           // DocumentPreviewModal) infle el chunk que carga toda la app.
+          //
+          // `/scheduler/` DEBE ir en el mismo chunk que react-dom: es su
+          // dependencia interna de bajo nivel, pero vive en su propia
+          // carpeta de node_modules (no matchea `/react-dom/`) — sin este
+          // match caía en el bucket genérico 'vendor', y como 'vendor'
+          // importa bindings de 'react-vendor' (para lucide-react, etc.),
+          // eso creaba una dependencia circular entre chunks: react-dom
+          // (react-vendor) necesita scheduler (vendor) para inicializarse,
+          // pero vendor necesita React ya inicializado — en producción
+          // (bundleado) esto rompía con "Cannot read properties of
+          // undefined (reading 'forwardRef')" en carga real, no detectado
+          // en dev porque Vite sirve ESM sin bundlear ahí. Ver
+          // PERFORMANCE-AUDIT-2026-09-15.md — sesión de Core Web Vitals.
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined;
             if (id.includes('pdfjs-dist')) return 'pdf-vendor';
-            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('react-router')) {
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/') || id.includes('react-router')) {
               return 'react-vendor';
             }
             if (id.includes('motion')) return 'motion-vendor';
