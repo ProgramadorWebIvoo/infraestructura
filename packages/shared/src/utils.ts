@@ -66,6 +66,7 @@ export const STATUS_LABELS: Record<string, string> = {
   CREADO: "Creado",
   RECHAZADO_CIERRE: "Rechazado",
   REVISADO_CIERRE: "Revisado (Cierre)",
+  EN_REEVALUACION_CIERRE: "En Reevaluación (Cierre)",
   CONFIRMADO_PROCURA: "Confirmado (Procura)",
   COMPARATIVA_ENVIADA: "Comparativa Enviada",
   CONTRATADO: "Contratado",

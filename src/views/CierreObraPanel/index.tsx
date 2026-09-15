@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Clock, FileStack, HardHat, ShieldCheck } from "lucide-react";
+import { Clock, FileStack, HardHat, ShieldCheck, Undo2 } from "lucide-react";
 import type { AuditLog, Project } from "@/types";
 import { ProjectStatus } from "@/types";
 import { containerVariants, itemVariants } from "@/animations";
@@ -17,11 +17,12 @@ import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import InfoBanner from "@/components/UI/InfoBanner";
 import TechnicalReviewSection from "./components/TechnicalReviewSection";
+import ReevaluationSection from "./components/ReevaluationSection";
 import CompletionAuditSection from "./components/CompletionAuditSection";
 import RevisedDocumentsSection from "./components/RevisedDocumentsSection";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
-type TabKey = "revision" | "auditoria" | "documentos";
+type TabKey = "revision" | "reevaluacion" | "auditoria" | "documentos";
 
 interface CierreObraPanelProps {
   projects: Project[];
@@ -34,6 +35,7 @@ interface CierreObraPanelProps {
     observations?: string,
     correctionFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
+  onResolveReevaluation: (projectId: string, notes?: string) => Promise<void> | void;
   onVerifyCompletion: (projectId: string) => void;
   onSyncProject: (project: Project) => void;
   isLoading?: boolean;
@@ -45,6 +47,7 @@ export default function CierreObraPanel({
   authToken,
   onReviewProject,
   onRejectProject,
+  onResolveReevaluation,
   onVerifyCompletion,
   onSyncProject,
   isLoading = false,
@@ -55,6 +58,7 @@ export default function CierreObraPanel({
   const kpis = useMemo(
     () => ({
       pendingReview: projects.filter((p) => p.status === ProjectStatus.CREADO).length,
+      pendingReevaluation: projects.filter((p) => p.status === ProjectStatus.EN_REEVALUACION_CIERRE).length,
       inExecution: projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION).length,
       underAudit: projects.filter((p) => p.status === ProjectStatus.VERIFICANDO_FINALIZACION).length,
       revised: projects.filter((p) => p.status !== ProjectStatus.CREADO).length,
@@ -64,6 +68,7 @@ export default function CierreObraPanel({
 
   const visibleTabs = filterTabs("/cierre-obra", [
     { key: "revision", label: "Revisión de Cálculos y Planos", count: kpis.pendingReview, showDot: kpis.pendingReview > 0 && activeTab !== "revision" },
+    { key: "reevaluacion", label: "Reevaluaciones de Procura", count: kpis.pendingReevaluation, showDot: kpis.pendingReevaluation > 0 && activeTab !== "reevaluacion" },
     { key: "auditoria", label: "Auditoría de Fin de Obra", count: kpis.inExecution + kpis.underAudit },
     { key: "documentos", label: "Historial de Expedientes", count: kpis.revised },
   ]);
@@ -92,6 +97,7 @@ export default function CierreObraPanel({
 
         <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
           <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="Por Revisar" value={kpis.pendingReview} accent="info" tooltip="Peticiones de obra recién creadas, pendientes de la primera revisión de expediente." />
+          <KpiPill icon={<Undo2 className="h-3.5 w-3.5" />} label="Reevaluación" value={kpis.pendingReevaluation} accent="warning" tooltip="Expedientes devueltos por Procura con un motivo, antes de autorizar inversión." />
           <KpiPill icon={<HardHat className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="brand" tooltip="Proyectos contratados que ya están en obra." />
           <KpiPill icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Auditoría" value={kpis.underAudit} accent="warning" tooltip="Proyectos en verificación de finalización, previos al pago final." />
           <KpiPill icon={<FileStack className="h-3.5 w-3.5" />} label="Revisados" value={kpis.revised} accent="success" tooltip="Expedientes que ya pasaron la revisión de Cierre de Obra." />
@@ -111,6 +117,11 @@ export default function CierreObraPanel({
                 <div className="min-h-0 flex-1 flex flex-col">
                   <TechnicalReviewSection projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onSyncProject={onSyncProject} />
                 </div>
+              </div>
+            )}
+            {activeTab === "reevaluacion" && (
+              <div className="min-h-0 flex flex-col flex-1">
+                <ReevaluationSection projects={projects} auditLogs={auditLogs} authToken={authToken} onResolveReevaluation={onResolveReevaluation} onSyncProject={onSyncProject} />
               </div>
             )}
             {activeTab === "auditoria" && (

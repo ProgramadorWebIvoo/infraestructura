@@ -14,6 +14,7 @@ export const ProjectStatus = {
   CREADO: "CREADO",
   REVISADO_CIERRE: "REVISADO_CIERRE",
   RECHAZADO_CIERRE: "RECHAZADO_CIERRE",
+  EN_REEVALUACION_CIERRE: "EN_REEVALUACION_CIERRE",
   CONFIRMADO_PROCURA: "CONFIRMADO_PROCURA",
   COMPARATIVA_ENVIADA: "COMPARATIVA_ENVIADA",
   CONTRATADO: "CONTRATADO",
@@ -151,7 +152,7 @@ export interface RateFreeze {
 
 export interface ProjectDocument {
   id: number;
-  documentType: "CALC" | "PLANO" | "FOTO" | "CORRECCION" | "COMPROBANTE_ANTICIPO" | "COMPROBANTE_FINIQUITO";
+  documentType: "CALC" | "PLANO" | "FOTO" | "CORRECCION" | "REEVALUACION" | "COMPROBANTE_ANTICIPO" | "COMPROBANTE_FINIQUITO";
   originalName: string;
   mimeType?: string;
   sizeBytes?: number;

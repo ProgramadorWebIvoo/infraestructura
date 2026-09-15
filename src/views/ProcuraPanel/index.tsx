@@ -32,6 +32,12 @@ type TabKey = "autorizacion" | "comparativa";
 interface ProcuraPanelProps {
   projects: Project[];
   onApproveInvestment: (projectId: string, notes: string, approvedAmount: number) => void;
+  onSendToReevaluation: (
+    projectId: string,
+    reason: string,
+    observations?: string,
+    evidenceFiles?: File[],
+  ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   onRejectProposals: (projectId: string, reason: string) => void;
   authToken: string;
@@ -41,6 +47,7 @@ interface ProcuraPanelProps {
 export default function ProcuraPanel({
   projects,
   onApproveInvestment,
+  onSendToReevaluation,
   onSelectContractor,
   onRejectProposals,
   authToken,
@@ -100,6 +107,7 @@ export default function ProcuraPanel({
               projects={projects}
               authToken={authToken}
               onApproveInvestment={onApproveInvestment}
+              onSendToReevaluation={onSendToReevaluation}
             />
           )}
           {activeTab === "comparativa" && (

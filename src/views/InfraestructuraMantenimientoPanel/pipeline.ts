@@ -42,7 +42,7 @@ export const PIPELINE_STAGES: readonly PipelineStage[] = [
     key: "cierre",
     label: "Cierre de Obra",
     description: "Revisión técnica",
-    statuses: [ProjectStatus.REVISADO_CIERRE],
+    statuses: [ProjectStatus.REVISADO_CIERRE, ProjectStatus.EN_REEVALUACION_CIERRE],
     icon: Calculator,
     color: "bg-blue-50 text-blue-600 border-blue-100",
     active: "border-blue-500 bg-blue-50 text-blue-700 shadow-sm shadow-blue-200/50",

@@ -409,6 +409,85 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     [optimisticUpdate],
   );
 
+  /** Procura devuelve a Cierre de Obra, con motivo obligatorio, un expediente
+   * recién llegado (REVISADO_CIERRE) antes de autorizar inversión — mismo
+   * shape de dos fases que handleRejectProject (JSON de motivo + upload
+   * multipart opcional de evidencia + refetch). */
+  const handleSendToReevaluation = useCallback(
+    async (
+      projectId: string,
+      reason: string,
+      observations?: string,
+      evidenceFiles: File[] = [],
+    ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_REEVALUACION_CIERRE });
+      try {
+        const project = await apiFetch<Project>(`/projects/${projectId}/send-to-reevaluation`, {
+          method: "POST",
+          token,
+          body: JSON.stringify({ reason, observations: observations || undefined }),
+        });
+        sync(project);
+      } catch (error) {
+        logError("handleSendToReevaluation", error);
+        if (previous) sync(previous);
+        show("No se pudo enviar el expediente a reevaluación.", "error");
+        return { ok: false, partial: false, failedGroups: [] };
+      }
+
+      if (evidenceFiles.length === 0) {
+        show("Expediente enviado a reevaluación de Cierre de Obra.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
+      }
+
+      try {
+        const form = new FormData();
+        form.append("document_type", "REEVALUACION");
+        evidenceFiles.forEach(f => form.append("files[]", f));
+        await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+
+        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
+        sync(refreshed);
+        show("Expediente enviado a reevaluación y evidencia adjuntada correctamente.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
+      } catch (error) {
+        logError("handleSendToReevaluation:uploadEvidence", error);
+        show("Expediente enviado a reevaluación, pero no se pudo adjuntar la evidencia.", "warning");
+        return { ok: true, partial: true, failedGroups: ["evidencia"] };
+      }
+    },
+    [optimisticUpdate],
+  );
+
+  /** Cierre de Obra resuelve una reevaluación solicitada por Procura y
+   * reenvía el expediente a REVISADO_CIERRE. */
+  const handleResolveReevaluation = useCallback(
+    async (projectId: string, notes?: string) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      const sync = syncProjectRef.current;
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_CIERRE });
+      try {
+        const project = await apiFetch<Project>(`/projects/${projectId}/resolve-reevaluation`, {
+          method: "POST",
+          token,
+          body: JSON.stringify({ notes: notes || undefined }),
+        });
+        sync(project);
+        show("Expediente reenviado a Procura.", "success");
+      } catch (error) {
+        logError("handleResolveReevaluation", error);
+        if (previous) sync(previous);
+        show("No se pudo reenviar el expediente a Procura.", "error");
+      }
+    },
+    [optimisticUpdate],
+  );
+
   // ── Analistas ──────────────────────────────────────────────────────
   const handleAddProposal = useCallback(
     async (projectId: string, proposal: Omit<Proposal, "id">) => {
@@ -695,6 +774,8 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     handleAddProject,
     handleReviewProject,
     handleRejectProject,
+    handleSendToReevaluation,
+    handleResolveReevaluation,
     handleResubmitProject,
     handleDeleteDocument,
     handleApproveInvestment,

@@ -207,7 +207,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
       <ReviewWizardModal
         project={activeProject}
         authToken={authToken}
-        onReviewProject={onReviewProject}
+        onConfirm={onReviewProject}
         onSyncProject={onSyncProject}
         onClose={closeReview}
         onOpenRejectModal={() => setShowRejectModal(true)}

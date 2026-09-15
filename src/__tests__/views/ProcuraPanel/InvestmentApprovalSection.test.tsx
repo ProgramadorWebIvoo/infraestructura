@@ -76,10 +76,10 @@ function stubContainerSize(width: number, height: number) {
   };
 }
 
-function renderSection(props: React.ComponentProps<typeof InvestmentApprovalSection>) {
+function renderSection(props: Partial<React.ComponentProps<typeof InvestmentApprovalSection>> & { projects: Project[]; authToken: string; onApproveInvestment: () => void }) {
   return render(
     <ToastProvider>
-      <InvestmentApprovalSection {...props} />
+      <InvestmentApprovalSection onSendToReevaluation={vi.fn()} {...props} />
     </ToastProvider>,
   );
 }

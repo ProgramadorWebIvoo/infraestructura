@@ -56,6 +56,7 @@ const GROUPS: { type: ProjectDocument["documentType"]; label: string; icon: type
   { type: "CALC", label: "Hojas de Cálculo", icon: FileSpreadsheet, accent: "brand", accept: ".pdf,.xlsx,.xls,.csv,.ods" },
   { type: "FOTO", label: "Fotos del Sitio", icon: ImageIcon, accent: "neutral", accept: ".png,.jpg,.jpeg,.webp" },
   { type: "CORRECCION", label: "Correcciones de Cierre de Obra", icon: AlertTriangle, accent: "danger", accept: "" },
+  { type: "REEVALUACION", label: "Evidencia de Reevaluación (Procura)", icon: AlertTriangle, accent: "warning", accept: "" },
 ];
 
 /** Busca en auditLogs el rechazo más cercano en el tiempo a una versión dada

@@ -47,22 +47,43 @@ import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
 import BsAmount from "@/components/UI/BsAmount";
 
-const WIZARD_STEPS: StepDefinition[] = [
-  { id: "revisar", label: "Revisar", description: "Inversión y materiales" },
-  { id: "documentacion", label: "Documentación", description: "Planos y cálculos" },
-  { id: "confirmar", label: "Confirmar", description: "Enviar a Procura" },
-];
+/**
+ * "review": primera revisión de un expediente CREADO, terminando en envío a
+ * Procura. "reevaluation": mismo wizard (dossier IA, materiales, documentos)
+ * pero para un expediente que Procura devolvió con un motivo
+ * (EN_REEVALUACION_CIERRE) — sin botón de rechazo (ver
+ * ReevaluationSection.tsx) y terminando en reenvío a Procura, no en un envío
+ * inicial.
+ */
+type WizardMode = "review" | "reevaluation";
+
+const WIZARD_STEPS: Record<WizardMode, StepDefinition[]> = {
+  review: [
+    { id: "revisar", label: "Revisar", description: "Inversión y materiales" },
+    { id: "documentacion", label: "Documentación", description: "Planos y cálculos" },
+    { id: "confirmar", label: "Confirmar", description: "Enviar a Procura" },
+  ],
+  reevaluation: [
+    { id: "revisar", label: "Revisar", description: "Inversión y materiales" },
+    { id: "documentacion", label: "Documentación", description: "Planos y cálculos" },
+    { id: "confirmar", label: "Confirmar", description: "Reenviar a Procura" },
+  ],
+};
 
 interface ReviewWizardModalProps {
   project: Project | undefined;
   authToken: string;
-  onReviewProject: (projectId: string, notes: string) => void;
+  mode?: WizardMode;
+  /** Motivo (+ observaciones opcionales) indicado por Procura — solo en mode="reevaluation". */
+  reevaluationContext?: { reason: string; observations?: string };
+  onConfirm: (projectId: string, notes: string) => void | Promise<void>;
   onSyncProject: (project: Project) => void;
   onClose: () => void;
-  onOpenRejectModal: () => void;
+  /** Requerido en mode="review" — mode="reevaluation" no ofrece rechazar, ver docblock arriba. */
+  onOpenRejectModal?: () => void;
 }
 
-export default function ReviewWizardModal({ project, authToken, onReviewProject, onSyncProject, onClose, onOpenRejectModal }: ReviewWizardModalProps) {
+export default function ReviewWizardModal({ project, authToken, mode = "review", reevaluationContext, onConfirm, onSyncProject, onClose, onOpenRejectModal }: ReviewWizardModalProps) {
   const { showToast } = useToast();
   const [stepIndex, setStepIndex] = useState(0);
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
@@ -101,7 +122,7 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
     if (!project || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onReviewProject(project.id, cierreNotes);
+      await onConfirm(project.id, cierreNotes);
       resetWizard();
       onClose();
     } finally {
@@ -125,21 +146,23 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
                 {stepIndex === 2
-                  ? "Expediente listo para enviar a Procura"
+                  ? (mode === "reevaluation" ? "Expediente listo para reenviar a Procura" : "Expediente listo para enviar a Procura")
                   : stepIndex === 1
                     ? "Revise los adjuntos de la petición"
                     : "Revisa el detalle de la inversión"}
               </span>
               <div className="flex items-center gap-2">
-                <Button
-                  id="btn-cierre-reject-project"
-                  variant="danger"
-                  disabled={isSubmitting}
-                  onClick={onOpenRejectModal}
-                  icon={<XCircle className="h-4 w-4" />}
-                >
-                  Rechazar
-                </Button>
+                {onOpenRejectModal && (
+                  <Button
+                    id="btn-cierre-reject-project"
+                    variant="danger"
+                    disabled={isSubmitting}
+                    onClick={onOpenRejectModal}
+                    icon={<XCircle className="h-4 w-4" />}
+                  >
+                    Rechazar
+                  </Button>
+                )}
                 {stepIndex > 0 && (
                   <Button variant="secondary" disabled={isSubmitting} onClick={() => setStepIndex(s => s - 1)}>
                     Atrás
@@ -167,7 +190,9 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                     onClick={handleSubmitReview}
                     icon={<Upload className="h-4 w-4" />}
                   >
-                    {isSubmitting ? "Enviando..." : "Guardar y Enviar a Procura"}
+                    {isSubmitting
+                      ? (mode === "reevaluation" ? "Reenviando..." : "Enviando...")
+                      : (mode === "reevaluation" ? "Reenviar a Procura" : "Guardar y Enviar a Procura")}
                   </Button>
                 )}
               </div>
@@ -177,6 +202,21 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
       >
         {project && (
           <div className="space-y-6">
+            {reevaluationContext && (
+              <AlertBanner
+                type="warning"
+                icon={<XCircle className="h-4 w-4 shrink-0" />}
+                message={(
+                  <>
+                    <strong>Motivo indicado por Procura:</strong> {reevaluationContext.reason}
+                    {reevaluationContext.observations && (
+                      <span className="block italic mt-0.5">{reevaluationContext.observations}</span>
+                    )}
+                  </>
+                )}
+              />
+            )}
+
             {showAiEval && (
               <DossierEvaluationPanel
                 project={project}
@@ -186,7 +226,7 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
             )}
 
             <Stepper
-              steps={WIZARD_STEPS}
+              steps={WIZARD_STEPS[mode]}
               currentIndex={stepIndex}
               furthestVisitedIndex={furthestStepIndex}
               onStepClick={setStepIndex}
@@ -314,7 +354,9 @@ export default function ReviewWizardModal({ project, authToken, onReviewProject,
                 <AlertBanner
                   type="success"
                   icon={<Award className="h-4 w-4 shrink-0" />}
-                  message="Al enviar, el expediente pasará a Procura para la aprobación de inversión."
+                  message={mode === "reevaluation"
+                    ? "Al reenviar, el expediente vuelve a Procura para que revise la autorización de inversión nuevamente."
+                    : "Al enviar, el expediente pasará a Procura para la aprobación de inversión."}
                 />
               </div>
             )}

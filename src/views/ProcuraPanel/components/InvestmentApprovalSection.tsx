@@ -12,7 +12,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, CheckSquare, MapPin, SearchX, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckSquare, MapPin, SearchX, TrendingUp, Undo2 } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import Button from "@/components/UI/Button";
 import { useToast } from "@/components/UI/Toast";
@@ -32,6 +32,7 @@ import GridView from "@/components/UI/GridView/GridView";
 import Stepper, { type StepDefinition } from "@/components/UI/Stepper";
 import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
 import { renderInvestmentApprovalCard } from "./InvestmentApprovalGridCard";
+import ReevaluationModal from "./ReevaluationModal";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { viewSwitchVariants, springs } from "@/animations";
@@ -48,9 +49,15 @@ interface InvestmentApprovalSectionProps {
   projects: Project[];
   authToken: string;
   onApproveInvestment: (projectId: string, notes: string, approvedAmount: number) => void;
+  onSendToReevaluation: (
+    projectId: string,
+    reason: string,
+    observations?: string,
+    evidenceFiles?: File[],
+  ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
 }
 
-export default function InvestmentApprovalSection({ projects, authToken, onApproveInvestment }: InvestmentApprovalSectionProps) {
+export default function InvestmentApprovalSection({ projects, authToken, onApproveInvestment, onSendToReevaluation }: InvestmentApprovalSectionProps) {
   const { showToast } = useToast();
   const [selectedReviewId, setSelectedReviewId] = useState("");
   const [stepIndex, setStepIndex] = useState(0);
@@ -58,6 +65,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   const [procuraNotes, setProcuraNotes] = useState("");
   const [approvedAmount, setApprovedAmount] = useState<number | "">("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
+  const [showReevaluationModal, setShowReevaluationModal] = useState(false);
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
@@ -252,6 +260,16 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                 {stepIndex === 0 ? "Revisa el expediente y la documentación de Cierre de Obra" : "Confirma el monto autorizado para licitación"}
               </span>
               <div className="flex items-center gap-2">
+                {stepIndex === 0 && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowReevaluationModal(true)}
+                    className="text-warning-600 bg-warning-50 hover:bg-warning-100 border-warning-200 hover:border-warning-300"
+                    icon={<Undo2 className="h-3.5 w-3.5" />}
+                  >
+                    Enviar a Reevaluación
+                  </Button>
+                )}
                 {stepIndex > 0 && (
                   <Button variant="secondary" onClick={() => setStepIndex(i => i - 1)}>
                     Atrás
@@ -421,6 +439,17 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
           onDownload={handleDownload}
         />
       )}
+
+      <ReevaluationModal
+        project={activeReviewProject}
+        isOpen={showReevaluationModal}
+        onClose={() => setShowReevaluationModal(false)}
+        onSendToReevaluation={onSendToReevaluation}
+        onSent={() => {
+          setShowReevaluationModal(false);
+          closeReview();
+        }}
+      />
     </Card>
   );
 }

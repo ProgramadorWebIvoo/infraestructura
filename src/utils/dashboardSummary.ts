@@ -24,6 +24,7 @@ export const COMMITTED_STATUSES: ReadonlySet<string> = new Set([
 export const STATUS_ORDER: readonly string[] = [
   "CREADO",
   "REVISADO_CIERRE",
+  "EN_REEVALUACION_CIERRE",
   "CONFIRMADO_PROCURA",
   "COMPARATIVA_ENVIADA",
   "CONTRATADO",
