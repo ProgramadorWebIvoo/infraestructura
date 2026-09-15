@@ -35,8 +35,10 @@
  * de las 3 piezas juntas (tabs Crear/Tabla/Rechazadas).
  */
 
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { springs } from "@/animations";
+import Tooltip from "./Tooltip";
 
 export interface TabDefinition {
   key: string;
@@ -58,6 +60,83 @@ interface TabsProps {
   fullWidth?: boolean;
 }
 
+interface TabButtonProps {
+  tab: TabDefinition;
+  isActive: boolean;
+  onClick: () => void;
+  layoutId: string;
+  fullWidth: boolean;
+}
+
+/**
+ * Componente propio (no inline en el `.map()` de Tabs) porque necesita su
+ * propio hook de truncamiento por instancia — llamar hooks dentro de un
+ * callback de `.map()` es válido en React solo si la cantidad de iteraciones
+ * nunca cambia entre renders, y acá `tabs` sí puede cambiar (tabs que
+ * aparecen/desaparecen según rol/permisos).
+ */
+function TabButton({ tab, isActive, onClick, layoutId, fullWidth }: TabButtonProps) {
+  const labelRef = useRef<HTMLSpanElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  // El tooltip solo debe aparecer si el texto realmente está cortado por
+  // `truncate` (scrollWidth > clientWidth) — mostrarlo siempre sería
+  // redundante (repite lo que ya se lee en pantalla) para cualquier tab que
+  // sí entra completa. ResizeObserver en vez de un solo chequeo al montar:
+  // el ancho de cada tab cambia con el viewport (fullWidth es flex-1) y con
+  // cuántas tabs hay en total, así que el mismo label puede pasar de
+  // truncado a completo (o viceversa) sin que el componente se remonte.
+  useEffect(() => {
+    const el = labelRef.current;
+    if (!el) return;
+    const check = () => setIsTruncated(el.scrollWidth > el.clientWidth);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tab.label]);
+
+  return (
+    <Tooltip content={tab.label} placement="bottom" delay={300} disabled={!isTruncated}>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={isActive}
+        onClick={onClick}
+        className={`relative rounded-xl font-bold transition-colors duration-200 cursor-pointer min-w-0 ${
+          fullWidth ? "flex-1 px-5 py-3 text-sm" : "px-4 py-2 text-xs"
+        } ${isActive ? "text-sky-700" : "text-slate-500 hover:text-slate-700"}`}
+      >
+        {isActive && (
+          <motion.div
+            layoutId={layoutId}
+            className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/80"
+            transition={springs.gentle}
+          />
+        )}
+        <span className="relative flex items-center justify-center gap-2 min-w-0">
+          <span ref={labelRef} className="truncate">{tab.label}</span>
+          {tab.count !== undefined && (
+            <span
+              className={`font-mono rounded-full ${fullWidth ? "text-[11px] px-2 py-0.5" : "text-[10px] px-1.5 py-0.5"} ${
+                isActive ? "bg-sky-50 text-sky-600" : "bg-slate-200/70 text-slate-500"
+              }`}
+            >
+              {tab.count}
+            </span>
+          )}
+          {tab.showDot && (
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-danger-500" />
+            </span>
+          )}
+        </span>
+      </button>
+    </Tooltip>
+  );
+}
+
 export default function Tabs({ tabs, activeKey, onChange, layoutId = "tabs-indicator", ariaLabel, fullWidth = false }: TabsProps) {
   return (
     <div
@@ -65,47 +144,16 @@ export default function Tabs({ tabs, activeKey, onChange, layoutId = "tabs-indic
       aria-label={ariaLabel}
       className={`flex gap-1.5 p-1.5 bg-slate-100/60 rounded-2xl ${fullWidth ? "w-full" : "w-fit"}`}
     >
-      {tabs.map((tab) => {
-        const isActive = tab.key === activeKey;
-        return (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onChange(tab.key)}
-            className={`relative rounded-xl font-bold transition-colors duration-200 cursor-pointer ${
-              fullWidth ? "flex-1 px-5 py-3 text-sm" : "px-4 py-2 text-xs"
-            } ${isActive ? "text-sky-700" : "text-slate-500 hover:text-slate-700"}`}
-          >
-            {isActive && (
-              <motion.div
-                layoutId={layoutId}
-                className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/80"
-                transition={springs.gentle}
-              />
-            )}
-            <span className="relative flex items-center justify-center gap-2">
-              {tab.label}
-              {tab.count !== undefined && (
-                <span
-                  className={`font-mono rounded-full ${fullWidth ? "text-[11px] px-2 py-0.5" : "text-[10px] px-1.5 py-0.5"} ${
-                    isActive ? "bg-sky-50 text-sky-600" : "bg-slate-200/70 text-slate-500"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-              {tab.showDot && (
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-danger-500" />
-                </span>
-              )}
-            </span>
-          </button>
-        );
-      })}
+      {tabs.map((tab) => (
+        <TabButton
+          key={tab.key}
+          tab={tab}
+          isActive={tab.key === activeKey}
+          onClick={() => onChange(tab.key)}
+          layoutId={layoutId}
+          fullWidth={fullWidth}
+        />
+      ))}
     </div>
   );
 }

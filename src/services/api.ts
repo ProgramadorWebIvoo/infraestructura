@@ -127,6 +127,28 @@ export async function downloadProjectDocument(
 }
 
 /**
+ * Descarga la exportación CSV de auditoría (proyectos o config) con los
+ * mismos filtros activos en la vista — el backend arma el archivo completo
+ * (sin paginar) vía `AuditLogController::export`/`ConfigAuditLogController::
+ * export`, así que esto siempre exporta TODO lo que coincide con el filtro,
+ * no solo la página cargada en pantalla.
+ */
+export async function downloadAuditLogsExport(
+  scope: "audit-logs" | "config-audit-logs",
+  queryString: string,
+  authToken: string,
+): Promise<void> {
+  const path = queryString ? `/${scope}/export?${queryString}` : `/${scope}/export`;
+  const blob = await apiDownload(path, { token: authToken });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${scope === "audit-logs" ? "auditoria-proyectos" : "auditoria-configuracion"}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Todas las versiones (histórico completo) del grupo al que pertenece un
  * documento. `apiFetch` ya desenvuelve `response.data` internamente
  * (convención Laravel) — pedir `{ data: ProjectDocument[] }` y desestructurar

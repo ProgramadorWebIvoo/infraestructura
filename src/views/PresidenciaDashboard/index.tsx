@@ -88,6 +88,8 @@ function ConnectionStatusBadge({ isExact }: { isExact: boolean }) {
 interface PresidenciaDashboardProps {
   projects: Project[];
   auditLogs: AuditLog[];
+  /** Requerido por la tab Auditoría: trae su propio historial paginado/filtrado server-side (useAuditLogs), independiente del `auditLogs` de arriba. */
+  authToken: string;
   onSelectProject: (project: Project) => void;
   /** Refresca proyectos + auditoría desde el backend — opcional: sin esto, las tablas no muestran el botón de refresco. */
   onRefreshData?: () => Promise<void> | void;
@@ -97,6 +99,7 @@ interface PresidenciaDashboardProps {
 export default function PresidenciaDashboard({
   projects,
   auditLogs,
+  authToken,
   onSelectProject,
   onRefreshData,
   isLoading = false,
@@ -196,7 +199,7 @@ export default function PresidenciaDashboard({
             className="flex flex-col min-h-0"
             style={{ height: "calc(100vh - 14rem)" }}
           >
-            <AuditLogSection auditLogs={auditLogs} lastSync={lastSync} onRefresh={onRefreshData} />
+            <AuditLogSection authToken={authToken} />
           </motion.div>
         )}
 

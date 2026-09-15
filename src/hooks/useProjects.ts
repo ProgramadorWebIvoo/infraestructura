@@ -21,11 +21,15 @@ export function useProjects(authToken: string, showToast: ShowToast) {
 
   const [inspectedProject, setInspectedProject] = useState<Project | null>(null);
 
-  // Sync tras mutación: reemplaza el proyecto y refresca audit logs
+  // Sync tras mutación: reemplaza el proyecto y refresca audit logs.
+  // /audit-logs devuelve `data: { items, currentPage, ... }` (mismo shape
+  // enveloped que /config-audit-logs, no un array plano — ver docblock de
+  // AuditLogController::index) — se extrae `.items` acá, no se cambia el
+  // tipo que consume el resto de la app (AuditLog[]).
   const refreshAuditLogs = useCallback(async () => {
     try {
-      const audit = await apiFetch<AuditLog[]>("/audit-logs", { token: authToken });
-      setAuditLogs(() => audit);
+      const audit = await apiFetch<{ items: AuditLog[] }>("/audit-logs", { token: authToken });
+      setAuditLogs(() => audit.items ?? []);
     } catch {
       // silent fail on poll
     }

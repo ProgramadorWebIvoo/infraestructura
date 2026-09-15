@@ -86,7 +86,7 @@ describe("useProjectsData", () => {
       const audits = [createMockAuditLog("LOG-001")];
       mockApiFetch.mockImplementation((url: string) => {
         if (url === "/projects") return Promise.resolve(projects);
-        if (url === "/audit-logs") return Promise.resolve(audits);
+        if (url === "/audit-logs") return Promise.resolve({ items: audits });
         return Promise.reject(new Error("unexpected"));
       });
 
@@ -174,7 +174,7 @@ describe("useProjectsData", () => {
       const audits = [createMockAuditLog()];
       mockApiFetch.mockImplementation((url: string) => {
         if (url === "/projects") return Promise.resolve(projects);
-        if (url === "/audit-logs") return Promise.resolve(audits);
+        if (url === "/audit-logs") return Promise.resolve({ items: audits });
         return Promise.reject(new Error("unexpected"));
       });
 

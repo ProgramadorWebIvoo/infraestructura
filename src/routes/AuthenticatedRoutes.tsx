@@ -59,7 +59,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.PRESIDENCIA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
-              <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={onSelectProject} onRefreshData={onRefreshData} isLoading={isLoadingApi} />
+              <PresidenciaDashboard projects={projects} auditLogs={auditLogs} authToken={authToken} onSelectProject={onSelectProject} onRefreshData={onRefreshData} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />

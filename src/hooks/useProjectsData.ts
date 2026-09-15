@@ -54,9 +54,17 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
     retry: false,
   });
 
+  // /audit-logs devuelve `data: { items, currentPage, ... }` (shape
+  // enveloped, no array plano — ver docblock de AuditLogController::index).
+  // La caché RAW de esta query se mantiene en ese mismo shape `{ items }`
+  // (no desenvuelto con `select`): así `setQueryData`/`setAuditLogs` más
+  // abajo escriben y leen la misma forma consistentemente — desenvolver acá
+  // con `select` pero seguir escribiendo arrays planos en setQueryData
+  // rompería el fallback dev y refreshAuditLogs en silencio (`data.items`
+  // sobre un array plano da `undefined`).
   const auditLogsQuery = useQuery({
     queryKey: auditLogsKey(authToken),
-    queryFn: () => apiFetch<AuditLog[]>("/audit-logs", { token: authToken }),
+    queryFn: () => apiFetch<{ items: AuditLog[] }>("/audit-logs", { token: authToken }),
     enabled,
     refetchInterval: enabled ? POLL_MS : false,
     staleTime: POLL_MS - 5000,
@@ -64,7 +72,7 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
   });
 
   const projects = projectsQuery.data ?? [];
-  const auditLogs = auditLogsQuery.data ?? [];
+  const auditLogs = auditLogsQuery.data?.items ?? [];
   // isPending (sin data aún) en vez de isFetching: replica isLoading=true
   // mientras no hay token (fetch deshabilitado) hasta el primer fetch real.
   const isLoading = projectsQuery.isPending || auditLogsQuery.isPending;
@@ -81,11 +89,11 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
     logError("useProjectsData", error);
     if (import.meta.env.DEV) {
       queryClient.setQueryData(projectsKey(authToken), INITIAL_PROJECTS);
-      queryClient.setQueryData(auditLogsKey(authToken), INITIAL_AUDIT_LOGS);
+      queryClient.setQueryData(auditLogsKey(authToken), { items: INITIAL_AUDIT_LOGS });
       showToastRef.current("No se pudo conectar con la API. Cargando datos locales de respaldo.", "warning");
     } else {
       queryClient.setQueryData(projectsKey(authToken), []);
-      queryClient.setQueryData(auditLogsKey(authToken), []);
+      queryClient.setQueryData(auditLogsKey(authToken), { items: [] });
       showToastRef.current("No se pudo conectar con el servidor. Intenta nuevamente en unos minutos.", "error");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,8 +105,10 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
   }, [authToken, queryClient]);
 
   const setAuditLogs = useCallback((updater: ArrayUpdater<AuditLog>) => {
-    queryClient.setQueryData<AuditLog[]>(auditLogsKey(authToken), (prev = []) =>
-      typeof updater === "function" ? updater(prev) : updater);
+    queryClient.setQueryData<{ items: AuditLog[] }>(auditLogsKey(authToken), (prev) => {
+      const prevItems = prev?.items ?? [];
+      return { items: typeof updater === "function" ? updater(prevItems) : updater };
+    });
   }, [authToken, queryClient]);
 
   const loadProjects = useCallback(async () => {
