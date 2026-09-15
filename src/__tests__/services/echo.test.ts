@@ -77,7 +77,14 @@ describe("createEchoClient", () => {
 
     expect(result).toBeNull();
     expect(echoConstructorSpy).not.toHaveBeenCalled();
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("VITE_PUSHER_APP_KEY"));
+    // Pasa por logError() (services/logger.ts) — antepone "[IVOO] echo:" y
+    // pasa el mensaje + detalle como argumentos separados, ya no un único
+    // string armado a mano.
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("echo"),
+      expect.stringContaining("VITE_PUSHER_APP_KEY"),
+      expect.anything(),
+    );
 
     consoleErrorSpy.mockRestore();
   });

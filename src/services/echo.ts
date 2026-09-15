@@ -11,6 +11,7 @@ import Echo from "laravel-echo";
 import Pusher from "pusher-js";
 import type { ChannelAuthorizerGenerator } from "pusher-js/types/src/core/auth/deprecated_channel_authorizer";
 import { ensureCsrfCookie, readCookie, getApiBaseUrl } from "./api";
+import { logError } from "./logger";
 
 // pusher-js espera Pusher en window (requisito histórico de la librería,
 // laravel-echo lo asume presente incluso en v2).
@@ -81,9 +82,10 @@ export function createEchoClient(): Echo<"pusher"> | null {
   // seguía siendo la versión vieja sin este chequeo) y el crash volvió
   // exactamente por eso, no porque el guard estuviera mal escrito.
   if (!key) {
-    console.error(
-      "[echo] VITE_PUSHER_APP_KEY no está definida: las notificaciones en " +
-        "tiempo real (WebSocket) están deshabilitadas. Defínela en el build de PRD.",
+    logError(
+      "echo",
+      "VITE_PUSHER_APP_KEY no está definida",
+      "las notificaciones en tiempo real (WebSocket) están deshabilitadas. Defínela en el build de PRD.",
     );
     return null;
   }
@@ -108,7 +110,7 @@ export function createEchoClient(): Echo<"pusher"> | null {
       })) satisfies ChannelAuthorizerGenerator,
     });
   } catch (error) {
-    console.error("[echo] No se pudo inicializar el cliente WebSocket — notificaciones en tiempo real deshabilitadas.", error);
+    logError("echo", error, "No se pudo inicializar el cliente WebSocket — notificaciones en tiempo real deshabilitadas.");
     return null;
   }
 }

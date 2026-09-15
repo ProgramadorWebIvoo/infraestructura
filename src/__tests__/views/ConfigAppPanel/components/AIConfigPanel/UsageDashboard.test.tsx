@@ -19,8 +19,19 @@ vi.mock("motion/react", () => ({
       // Aplica `animate` como estilo final directo (sin animación real) para
       // que los tests puedan leer el valor "de llegada" (ej. width de una
       // barra) sin depender del motor de Framer Motion.
-      const style = animate && typeof animate === "object" ? (animate as Record<string, unknown>) : undefined;
-      return <div {...rest} style={style}>{children}</div>;
+      const animateObj = animate && typeof animate === "object" ? (animate as Record<string, unknown>) : undefined;
+      // scaleX/scaleY no son propiedades CSS válidas como claves sueltas de
+      // `style` (jsdom las rechaza con un TypeError al asignarlas) — se
+      // excluyen del `style` inline y se exponen en un data-attribute para
+      // que los tests que animan con transform (barras de progreso — ver
+      // ProviderBar acá y componentes similares) puedan leer el valor "de
+      // llegada" sin depender del motor de Framer Motion.
+      const { scaleX: _scaleX, scaleY: _scaleY, ...style } = animateObj ?? {};
+      return (
+        <div {...rest} style={animateObj ? style : undefined} data-motion-animate={animateObj ? JSON.stringify(animateObj) : undefined}>
+          {children}
+        </div>
+      );
     },
     ul: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
       const { initial, animate, exit, variants, transition, ...rest } = props;
@@ -88,10 +99,15 @@ describe("UsageDashboard", () => {
     expect(screen.getByText(/1[.,]500 tokens/)).toBeInTheDocument();
     expect(screen.getByText("750 tokens")).toBeInTheDocument();
 
-    // OpenAI = 1500/2250 = 66.7% de la barra
+    // OpenAI = 1500/2250 = 66.7% de la barra — animado con scaleX (transform),
+    // no width, para no disparar layout/reflow en cada frame (ver
+    // UsageDashboard.tsx). scaleX no es una propiedad CSS válida como clave
+    // suelta de `style`, así que el mock de motion.div la expone en
+    // data-motion-animate en vez de aplicarla como inline style.
     const openaiBar = screen.getByText(/1[.,]500 tokens/).closest("div")?.nextElementSibling
       ?.firstElementChild as HTMLElement;
-    expect(openaiBar.style.width).toBe("66.66666666666666%");
+    const animate = JSON.parse(openaiBar.getAttribute("data-motion-animate") ?? "{}");
+    expect(animate.scaleX).toBeCloseTo(2 / 3, 5);
   });
 
   it("muestra 'Sin actividad registrada' cuando no hay providers", () => {

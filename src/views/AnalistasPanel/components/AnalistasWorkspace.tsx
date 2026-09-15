@@ -108,23 +108,18 @@ export default function AnalistasWorkspace({
   const [query, setQuery] = useState("");
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
-  const { fetchForProject } = useSupplierProposalsForProject(authToken);
+  const { fetchAllGroupedByProject } = useSupplierProposalsForProject(authToken);
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const [portalProposalsByProject, setPortalProposalsByProject] = useState<Record<string, SupplierMaterialProposal[]>>({});
 
   const selectedProject = pendingLicitacion.find(p => p.id === selectedId) ?? null;
 
   // Cargar propuestas del portal una sola vez al montar (para mostrar badges en grid)
+  // — una sola request agrupada client-side, no una por proyecto (ver
+  // useSupplierProposalsForProject).
   React.useEffect(() => {
-    const loadSupplierProposals = async () => {
-      const result: Record<string, SupplierMaterialProposal[]> = {};
-      for (const project of pendingLicitacion) {
-        result[project.id] = await fetchForProject(project.id);
-      }
-      setPortalProposalsByProject(result);
-    };
-    loadSupplierProposals();
-  }, [pendingLicitacion, fetchForProject]);
+    fetchAllGroupedByProject().then(setPortalProposalsByProject);
+  }, [fetchAllGroupedByProject]);
 
   const visibleProjects = useMemo(() => {
     const q = query.trim().toLowerCase();

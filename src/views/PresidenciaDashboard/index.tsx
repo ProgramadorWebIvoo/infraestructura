@@ -105,7 +105,7 @@ export default function PresidenciaDashboard({
   isLoading = false,
 }: PresidenciaDashboardProps) {
   // Resumen ejecutivo: endpoint oficial con fallback a cálculo cliente.
-  const { summary, isExact, lastSync } = useDashboardSummary(projects);
+  const { summary, isExact, lastSync } = useDashboardSummary(projects, authToken);
   const [activeTab, setActiveTab] = useState<PresidenciaTabKey>("estadisticas");
 
   const tabs: TabDefinition[] = [

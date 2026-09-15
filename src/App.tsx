@@ -10,7 +10,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { PersistQueryClientProvider, removeOldestQuery } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 // Views — lazy-loaded for route-level code-splitting
@@ -167,7 +167,22 @@ const CACHE_SCHEMA_VERSION = "1";
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
   key: "ivoo-query-cache",
+  // localStorage tiene una cuota (~5-10MB por origen, según navegador). Sin
+  // `retry`, un `setItem` que la exceda falla en silencio (la librería lo
+  // atrapa internamente) y esa sesión simplemente deja de persistir cache —
+  // no crashea, pero tampoco se recupera. `removeOldestQuery` es la
+  // estrategia documentada de TanStack: en caso de fallo, descarta la query
+  // persistida más vieja y reintenta el guardado, en vez de rendirse.
+  retry: removeOldestQuery,
 });
+
+// Colecciones que pueden crecer mucho con datos reales de producción
+// (catálogo de materiales, propuestas de proveedores) — se excluyen de la
+// persistencia en localStorage porque compiten por la cuota compartida con
+// el resto del cache sin aportar tanto (revalidan rápido igual, por
+// staleTime corto). El resto de queries sí persiste para hidratar
+// instantáneo al recargar (ver comentario de PERSIST_OPTIONS más abajo).
+const LARGE_QUERY_KEY_PREFIXES = ["catalogProducts", "supplierMaterialProposals"];
 
 const PERSIST_OPTIONS = {
   persister,
@@ -176,7 +191,10 @@ const PERSIST_OPTIONS = {
   dehydrateOptions: {
     // No persistir queries en estado de error: al rehidratar no queremos
     // que un fetch fallido de la última sesión se muestre como dato válido.
-    shouldDehydrateQuery: (query: { state: { status: string } }) => query.state.status === "success",
+    // Tampoco las colecciones grandes (ver LARGE_QUERY_KEY_PREFIXES).
+    shouldDehydrateQuery: (query: { state: { status: string }; queryKey: readonly unknown[] }) =>
+      query.state.status === "success" &&
+      !LARGE_QUERY_KEY_PREFIXES.includes(query.queryKey[0] as string),
   },
 };
 
@@ -309,6 +327,16 @@ function AppRoutes() {
     setIsLoggingOut(false);
   }, [authLogout, resetData, resetContractors, resetCatalog, queryClientInstance, navigate, showToast]);
 
+  // ---- Handlers de inspección de proyecto ----
+  // useCallback: se pasan a AuthenticatedRoutes -> paneles con memo() (ej.
+  // Table.tsx) — sin referencia estable, esos memo() no evitan re-render en
+  // cada cambio de ruta/proyectos (error conocido #2 del CLAUDE.md frontend).
+  const handleCloseInspectedProject = useCallback(() => setInspectedProject(null), [setInspectedProject]);
+  const handleSelectProject = useCallback(
+    (p: Record<string, unknown>) => { setInspectedProject(p as never); },
+    [setInspectedProject],
+  );
+
   // ---- Login wrapper con toast de bienvenida ----
   const handleLoginWithToast = useCallback(async (email: string, password: string) => {
     await handleLogin(email, password);
@@ -382,8 +410,8 @@ function AppRoutes() {
         onRefreshData={loadApiData}
         isLoadingApi={isLoadingApi}
         inspectedProject={inspectedProject}
-        onCloseInspectedProject={() => setInspectedProject(null)}
-        onSelectProject={(p: Record<string, unknown>) => { setInspectedProject(p as never); }}
+        onCloseInspectedProject={handleCloseInspectedProject}
+        onSelectProject={handleSelectProject}
         onLogout={handleLogout}
         contractors={contractors}
         onUpdateContractorRating={handleUpdateContractorRating}

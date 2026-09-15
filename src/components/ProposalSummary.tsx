@@ -64,11 +64,14 @@ export default function ProposalSummary({ project }: { project: Project }) {
         {authorized > 0 && (
           <div className="relative mt-3 space-y-1">
             <div className="h-1.5 rounded-full bg-success-100 overflow-hidden">
+              {/* scaleX en vez de width: transform no dispara layout/reflow
+                  (width sí), más barato para el compositor en cada frame. */}
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${bestPctOfAuthorized}%` }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: bestPctOfAuthorized / 100 }}
                 transition={{ ...springs.gentle, delay: 0.15 }}
-                className="h-full rounded-full bg-gradient-to-r from-success-400 to-success-600"
+                style={{ transformOrigin: "left" }}
+                className="h-full w-full rounded-full bg-gradient-to-r from-success-400 to-success-600"
               />
             </div>
             <div className="flex justify-between text-[9px] font-mono font-bold text-slate-400">

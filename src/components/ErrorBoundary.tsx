@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { AlertCircle, RefreshCw, Clipboard, Check } from "lucide-react";
 import { SEMANTIC_COLOR_MAP } from "./UI/colorTokens";
 import { copyToClipboard } from "@/utils/clipboard";
+import { logError } from "@/services/logger";
 import Button from "./UI/Button";
 
 
@@ -41,8 +42,8 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error("[ErrorBounday]", error, errorInfo.componentStack);
-  }  
+    logError("ErrorBoundary", error, errorInfo.componentStack);
+  }
 
   componentWillUnmount(): void {
     if (this.copyTimeout) clearTimeout(this.copyTimeout);

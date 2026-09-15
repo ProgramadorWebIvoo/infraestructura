@@ -67,7 +67,9 @@ describe("ContractorDetailModal — Sugerencia IA", () => {
   it("muestra el bloque de sugerencia IA cuando el gate de Config IA está habilitado (default)", () => {
     render(<ContractorDetailModal contractor={contractor} onClose={vi.fn()} authToken="token" />);
 
-    expect(screen.getByText("Sugerencia IA de rating")).toBeInTheDocument();
+    // Encabezado real del bloque (ver AiRatingSuggestion en ContractorDetailModal.tsx) — el
+    // texto "Sugerencia IA de rating" que este test buscaba antes ya no existe en el componente.
+    expect(screen.getByText("Análisis IA")).toBeInTheDocument();
   });
 
   it("oculta el bloque de sugerencia IA cuando el departamento CATALOGOS tiene la IA desactivada en Config IA", () => {
@@ -75,9 +77,12 @@ describe("ContractorDetailModal — Sugerencia IA", () => {
 
     render(<ContractorDetailModal contractor={contractor} onClose={vi.fn()} authToken="token" />);
 
-    expect(screen.queryByText("Sugerencia IA de rating")).not.toBeInTheDocument();
-    // El resto del detalle del proveedor sigue disponible.
-    expect(screen.getByText("Constructora ABC")).toBeInTheDocument();
+    expect(screen.queryByText("Análisis IA")).not.toBeInTheDocument();
+    // El resto del detalle del proveedor sigue disponible — el nombre
+    // aparece dos veces en el DOM (título del Modal + cuerpo del detalle),
+    // así que se verifica con getAllByText en vez de getByText (que exige
+    // un único match).
+    expect(screen.getAllByText("Constructora ABC").length).toBeGreaterThan(0);
   });
 
   it("carga y muestra la sugerencia al pedir el análisis", async () => {

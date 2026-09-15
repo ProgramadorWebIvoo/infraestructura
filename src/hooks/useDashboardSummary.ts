@@ -20,7 +20,6 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { DashboardSummary, Project } from "@/types";
 import { apiFetch } from "@/services/api";
-import { useAuth } from "./useAuth";
 import { usePollingSettings } from "./usePollingSettings";
 import { computeDashboardSummary } from "@/utils/dashboardSummary";
 
@@ -32,8 +31,16 @@ export interface UseDashboardSummaryResult {
   lastSync: Date | null;
 }
 
-export function useDashboardSummary(projects: Project[]): UseDashboardSummaryResult {
-  const { authToken } = useAuth();
+/**
+ * `authToken` se recibe como parámetro (viene de la única instancia real de
+ * `useAuth()` en `AppRoutes`, prop-drilleada hasta acá vía `PresidenciaDashboard`)
+ * en vez de llamar a `useAuth()` acá adentro — ese segundo llamado disparaba su
+ * propio `GET /api/user` de validación de sesión cada vez que este componente
+ * remonta (ej. al navegar fuera de /presidencia y volver), redundante con la
+ * validación que ya hizo la instancia real. Mismo criterio que
+ * `NotificationsProvider`/`ExchangeRatesProvider` (ver comentarios ahí).
+ */
+export function useDashboardSummary(projects: Project[], authToken: string): UseDashboardSummaryResult {
   const { dashboardIntervalMs } = usePollingSettings();
   const enabled = !!authToken;
 

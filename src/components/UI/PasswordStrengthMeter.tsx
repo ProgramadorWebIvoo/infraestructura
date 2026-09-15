@@ -68,11 +68,13 @@ export default function PasswordStrengthMeter({ password, requirements }: Passwo
             </motion.span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-pill bg-neutral-200/70">
+            {/* scaleX en vez de width: evita layout/reflow en cada frame. */}
             <motion.div
               initial={false}
-              animate={{ width: `${fillPercent}%` }}
+              animate={{ scaleX: fillPercent / 100 }}
               transition={springs.snappy}
-              className={`h-full rounded-pill ${strength.barClass}`}
+              style={{ transformOrigin: "left" }}
+              className={`h-full w-full rounded-pill ${strength.barClass}`}
             />
           </div>
         </div>

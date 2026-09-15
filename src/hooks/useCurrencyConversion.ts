@@ -10,6 +10,7 @@
 import { useCallback, useMemo } from "react";
 import { truncateToDecimals } from "@ivoo/shared";
 import { useExchangeRatesContext } from "@/components/UI/ExchangeRatesProvider";
+import { logWarn } from "@/services/logger";
 
 /** Formatea un monto en Bs.: separador de miles ".", decimales ",", siempre 2 decimales, truncado (no redondeado). */
 export function formatBs(value: number): string {
@@ -70,7 +71,7 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
     (amount: number, fromCode: string): number => {
       const rate = rates[fromCode];
       if (!rate) {
-        console.warn(`useCurrencyConversion: No hay tasa para ${fromCode}, devolviendo 0`);
+        logWarn("useCurrencyConversion", `No hay tasa para ${fromCode}, devolviendo 0`);
         return 0;
       }
       return amount * rate;
@@ -85,7 +86,7 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
       const fromRate = rates[fromCode];
       const toRate = rates[toCode];
       if (!fromRate || !toRate) {
-        console.warn(`useCurrencyConversion: falta tasa para ${fromCode} o ${toCode}, devolviendo 0`);
+        logWarn("useCurrencyConversion", `falta tasa para ${fromCode} o ${toCode}, devolviendo 0`);
         return 0;
       }
       return (amount * fromRate) / toRate;

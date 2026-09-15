@@ -10,11 +10,6 @@ vi.mock("@/hooks/usePollingSettings", () => ({
   usePollingSettings: () => ({ dashboardIntervalMs: 25_000 }),
 }));
 
-const mockUseAuth = vi.fn(() => ({ authToken: "token" }));
-vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => mockUseAuth(),
-}));
-
 const mockApiFetch = vi.fn();
 vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
@@ -53,18 +48,17 @@ const serverSummary: DashboardSummary = {
   updatedAt: "2026-07-31T12:00:00.000000Z",
 };
 
-function renderWithClient(projects: Project[]) {
+function renderWithClient(projects: Project[], authToken = "token") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  return renderHook(() => useDashboardSummary(projects), { wrapper });
+  return renderHook(() => useDashboardSummary(projects, authToken), { wrapper });
 }
 
 describe("useDashboardSummary", () => {
   beforeEach(() => {
     mockApiFetch.mockClear();
-    mockUseAuth.mockReturnValue({ authToken: "token" });
   });
 
   it("con fetch exitoso usa el summary del servidor (isExact) y registra lastSync", async () => {
@@ -94,9 +88,7 @@ describe("useDashboardSummary", () => {
   });
 
   it("sin authToken no consulta el endpoint y usa fallback cliente", async () => {
-    mockUseAuth.mockReturnValue({ authToken: "" });
-
-    const { result } = renderWithClient([makeProject()]);
+    const { result } = renderWithClient([makeProject()], "");
 
     expect(mockApiFetch).not.toHaveBeenCalled();
     expect(result.current.summary.totalProjects).toBe(1);

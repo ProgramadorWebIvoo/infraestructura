@@ -97,10 +97,12 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
                   <span className="text-text-tertiary w-18 text-right shrink-0 font-mono font-bold">{tokensStr}</span>
                   <Tooltip content={`${formatFullDate(d.date)}: ${tokensStr} tokens`} placement="top">
                     <div className="flex-1 h-5 rounded-md bg-surface-raised overflow-hidden cursor-help">
+                      {/* scaleX en vez de width: evita layout/reflow por barra en cada frame. */}
                       <motion.div
-                        className={`h-full rounded-md bg-linear-to-r ${brand.gradientFrom} ${brand.gradientTo}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
+                        className={`h-full w-full rounded-md bg-linear-to-r ${brand.gradientFrom} ${brand.gradientTo}`}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: pct / 100 }}
+                        style={{ transformOrigin: "left" }}
                         transition={{ ...springs.gentle, delay: i * 0.02 }}
                       />
                     </div>
@@ -123,10 +125,14 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
                   <span className="text-[9px] text-text-tertiary font-mono font-bold">{tokensStr}</span>
                   <Tooltip content={`${formatFullDate(d.date)}: ${tokensStr} tokens (${Math.round(pct)}% del máximo)`} placement="top">
                     <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden cursor-help">
+                      {/* Altura final fijada de una (no animada, no dispara
+                          layout) — solo `scaleY` (transform) anima el
+                          crecimiento visual desde abajo. */}
                       <motion.div
                         className={`w-full rounded-t-md bg-linear-to-t ${brand.gradientFrom} ${brand.gradientTo}`}
-                        initial={{ height: 0 }}
-                        animate={{ height: barHeightPx }}
+                        style={{ height: barHeightPx, transformOrigin: "bottom" }}
+                        initial={{ scaleY: 0 }}
+                        animate={{ scaleY: 1 }}
                         transition={{ ...springs.gentle, delay: i * 0.03 }}
                       />
                     </div>

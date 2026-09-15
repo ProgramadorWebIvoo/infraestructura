@@ -2,9 +2,15 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import {visualizer} from 'rollup-plugin-visualizer';
 
 export default defineConfig(({mode}) => {
   const isDev = mode === 'development';
+  // ANALYZE=true npm run build → genera dist/stats.html con el treemap de
+  // tamaño por chunk (gzip/brotli). No corre en builds normales de CI/deploy
+  // — el propósito es detectar regresiones de bundle a demanda, no agregar
+  // costo a cada build.
+  const shouldAnalyze = process.env.ANALYZE === 'true';
 
   const csp = [
     "default-src 'self';",
@@ -26,7 +32,13 @@ export default defineConfig(({mode}) => {
   ].join(' ');
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      ...(shouldAnalyze
+        ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true, open: false })]
+        : []),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

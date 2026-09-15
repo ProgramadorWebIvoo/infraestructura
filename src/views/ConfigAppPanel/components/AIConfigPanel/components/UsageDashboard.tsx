@@ -120,10 +120,12 @@ function ProviderUsageBar({ provider }: { provider: ProviderUsage }) {
       </div>
       <Tooltip content={`${(provider.pctOfTotal * 100).toFixed(1)}% del total de tokens — ${provider.provider.total_tokens.toLocaleString()} tokens`} placement="top">
         <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised cursor-help">
+          {/* scaleX en vez de width: evita layout/reflow en cada frame. */}
           <motion.div
-            className={`h-full rounded-full bg-linear-to-r ${semantic.gradientFrom} ${semantic.gradientTo}`}
-            initial={{ width: 0 }}
-            animate={{ width: `${provider.pctOfTotal * 100}%` }}
+            className={`h-full w-full rounded-full bg-linear-to-r ${semantic.gradientFrom} ${semantic.gradientTo}`}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: provider.pctOfTotal }}
+            style={{ transformOrigin: "left" }}
             transition={springs.gentle}
           />
         </div>
