@@ -7,9 +7,9 @@
  * (honesta: el dashboard se actualiza cada 25s, no es "EN VIVO").
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, Eye, RefreshCw } from "lucide-react";
+import { Activity, Eye } from "lucide-react";
 import type { AuditLog } from "@/types";
 import { Table, type Column } from "@/components/UI/Table";
 import EmptyState from "@/components/UI/EmptyState";
@@ -29,15 +29,6 @@ const AUDIT_ROLE_OPTIONS = [
   { value: "FINANZAS", label: "Finanzas" },
   { value: "SISTEMA", label: "Sistema" },
 ];
-
-function timeAgo(date: Date | null): string {
-  if (!date) return "sin datos";
-  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-  if (seconds < 60) return `hace ${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `hace ${minutes} min`;
-  return `hace ${Math.floor(minutes / 60)} h`;
-}
 
 function getAuditColumns(onInspect: (log: AuditLog) => void): Column<AuditLog>[] {
   return [
@@ -66,21 +57,15 @@ function getAuditColumns(onInspect: (log: AuditLog) => void): Column<AuditLog>[]
 interface AuditLogSectionProps {
   auditLogs: AuditLog[];
   lastSync?: Date | null;
+  onRefresh?: () => Promise<void> | void;
 }
 
-export default function AuditLogSection({ auditLogs, lastSync = null }: AuditLogSectionProps) {
+export default function AuditLogSection({ auditLogs, lastSync = null, onRefresh }: AuditLogSectionProps) {
   const [inspectedAuditLog, setInspectedAuditLog] = useState<AuditLog | null>(null);
   const [auditSearchTerm, setAuditSearchTerm] = useState("");
   const [auditRoleFilter, setAuditRoleFilter] = useState<string>("ALL");
   const [auditDateFrom, setAuditDateFrom] = useState("");
   const [auditDateTo, setAuditDateTo] = useState("");
-
-  // Refresca el texto "hace Xs" del badge de sincronización sin re-render pesado
-  const [, setNow] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(id);
-  }, []);
 
   const auditColumns = useMemo(() => getAuditColumns(setInspectedAuditLog), []);
 
@@ -100,8 +85,8 @@ export default function AuditLogSection({ auditLogs, lastSync = null }: AuditLog
   }), [auditLogs, auditSearchTerm, auditRoleFilter, auditDateFrom, auditDateTo]);
 
   return (
-    <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
-      <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+    <motion.div variants={itemVariants} className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden border-l-4 border-l-sky-400">
+      <div className="p-5 border-b border-slate-100 bg-slate-50/50 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-sky-50 rounded-xl border border-sky-100">
@@ -112,17 +97,9 @@ export default function AuditLogSection({ auditLogs, lastSync = null }: AuditLog
               <p className="text-[11px] text-slate-500 font-medium">Auditoría Base de Datos • Logs de Control del Sistema</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5">
-              <RefreshCw className="h-3 w-3 text-sky-500" />
-              <span className="text-[10px] font-mono text-slate-500 font-bold">
-                Actualizado {timeAgo(lastSync)}
-              </span>
-            </span>
-            <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold border border-slate-200">
-              {filteredAuditLogs.length}/{auditLogs.length} registros
-            </span>
-          </div>
+          <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold border border-slate-200">
+            {filteredAuditLogs.length}/{auditLogs.length} registros
+          </span>
         </div>
         {/* ── Search + filter bar ── */}
         <div className="flex flex-wrap gap-2.5 mt-4">
@@ -162,11 +139,13 @@ export default function AuditLogSection({ auditLogs, lastSync = null }: AuditLog
         rowKey={(log) => log.id}
         emptyMessage="No hay logs registrados todavía."
         emptyState={<EmptyState message="No hay logs que coincidan con los filtros aplicados." />}
-        maxHeight="350px"
+        fillViewport
         stickyHeader
-        containerClassName="border border-slate-100 rounded-lg"
+        containerClassName="border border-slate-100 rounded-lg mx-5 mb-5 flex-1 min-h-0"
         rowHoverClass="hover:bg-sky-50/30"
         pageSize={25}
+        onRefresh={onRefresh}
+        lastUpdated={lastSync}
       />
 
       <AuditInspectModal

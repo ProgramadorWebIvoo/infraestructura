@@ -57,7 +57,15 @@ export default function KpiSection({
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <motion.div variants={itemVariants}>
-        <KpiCard icon={<DollarSign className="h-5 w-5" />} label="Presupuesto Aprobado" accent="text-sky-400" borderAccent="border-l-sky-500" variant="dark" onInspect={() => setInspecting("approved")}>
+        <KpiCard
+          icon={<DollarSign className="h-5 w-5" />}
+          label="Presupuesto Aprobado"
+          accent="text-sky-400"
+          borderAccent="border-l-sky-500"
+          variant="dark"
+          onInspect={() => setInspecting("approved")}
+          tooltip="Suma de la inversión aprobada en todos los proyectos activos e históricos, sin restar lo ya liquidado."
+        >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">${fmt(totalApprovedInvestment)}</span>
           <div className="flex items-center gap-1.5 mt-2">
             <TrendingUp className="h-3 w-3 text-sky-400" />
@@ -67,7 +75,14 @@ export default function KpiSection({
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} label="Fondos Liquidados" accent={overBudget ? "text-rose-400" : "text-sky-600"} borderAccent={overBudget ? "border-l-rose-400" : "border-l-sky-400"} onInspect={() => setInspecting("released")}>
+        <KpiCard
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          label="Fondos Liquidados"
+          accent={overBudget ? "text-rose-400" : "text-sky-600"}
+          borderAccent={overBudget ? "border-l-rose-400" : "border-l-sky-400"}
+          onInspect={() => setInspecting("released")}
+          tooltip="Monto efectivamente pagado a contratistas. Si supera lo aprobado, se marca en rojo el exceso liberado."
+        >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">${fmt(totalReleasedFunds)}</span>
           {overBudget ? (
             <div className="flex items-center gap-1.5 mt-2.5 px-2 py-1 rounded-lg bg-rose-50 border border-rose-100 w-fit">
@@ -88,7 +103,14 @@ export default function KpiSection({
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <KpiCard icon={<Clock className="h-5 w-5" />} label="Compromisos Pendientes" accent="text-rose-500" borderAccent="border-l-rose-400" onInspect={() => setInspecting("pending")}>
+        <KpiCard
+          icon={<Clock className="h-5 w-5" />}
+          label="Compromisos Pendientes"
+          accent="text-rose-500"
+          borderAccent="border-l-rose-400"
+          onInspect={() => setInspecting("pending")}
+          tooltip="Diferencia entre lo aprobado y lo liquidado: fondos comprometidos que aún no se han pagado."
+        >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent">${fmt(pendingFunds)}</span>
           <div className="flex items-center gap-1.5 mt-2">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
@@ -98,7 +120,14 @@ export default function KpiSection({
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <KpiCard icon={<Layers className="h-5 w-5" />} label="Estado de Proyectos" accent="text-sky-600" borderAccent="border-l-sky-400" onInspect={() => setInspecting("projects")}>
+        <KpiCard
+          icon={<Layers className="h-5 w-5" />}
+          label="Estado de Proyectos"
+          accent="text-sky-600"
+          borderAccent="border-l-sky-400"
+          onInspect={() => setInspecting("projects")}
+          tooltip="Distribución del total de proyectos entre activos (en ejecución) y pagados (cierre completo)."
+        >
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">{totalProjectsCount}</span>
             <span className="text-[10px] text-slate-400 font-bold uppercase">Totales</span>

@@ -12,6 +12,7 @@ import { Award, MapPinned, TrendingUp } from "lucide-react";
 import type { DashboardSummary } from "@/types";
 import { itemVariants } from "@/animations";
 import RankBar from "@/components/UI/RankBar";
+import Tooltip from "@/components/UI/Tooltip";
 
 interface InsightsSectionProps {
   summary: DashboardSummary;
@@ -102,20 +103,18 @@ export default function InsightsSection({ summary }: InsightsSectionProps) {
           >
             <div className="flex items-end gap-2 h-36 border-b border-slate-100 pb-4">
               {months.map((m) => (
-                <div
-                  key={m.month}
-                  className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full"
-                  title={`${m.month}: ${m.count} obra${m.count === 1 ? "" : "s"}`}
-                >
-                  <span className="text-[9px] text-slate-500 font-mono font-bold">{m.count}</span>
-                  <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">
-                    <div
-                      className="w-full rounded-t-md bg-gradient-to-t from-sky-500 to-sky-400 transition-all duration-700"
-                      style={{ height: `${Math.max(4, (m.count / maxMonth) * 96)}px` }}
-                    />
+                <Tooltip key={m.month} content={`${m.month}: ${m.count} obra${m.count === 1 ? "" : "s"}`} placement="top">
+                  <div className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
+                    <span className="text-[9px] text-slate-500 font-mono font-bold">{m.count}</span>
+                    <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">
+                      <div
+                        className="w-full rounded-t-md bg-gradient-to-t from-sky-500 to-sky-400 transition-all duration-700"
+                        style={{ height: `${Math.max(4, (m.count / maxMonth) * 96)}px` }}
+                      />
+                    </div>
+                    <span className="text-[9px] text-slate-400 font-mono">{m.month.slice(2)}</span>
                   </div>
-                  <span className="text-[9px] text-slate-400 font-mono">{m.month.slice(2)}</span>
-                </div>
+                </Tooltip>
               ))}
             </div>
           </div>

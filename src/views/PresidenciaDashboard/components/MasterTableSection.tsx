@@ -133,6 +133,8 @@ function getProjectColumns(onSelectProject: (p: Project) => void): Column<Projec
 interface MasterTableSectionProps {
   projects: Project[];
   onSelectProject: (project: Project) => void;
+  onRefresh?: () => Promise<void> | void;
+  lastUpdated?: Date | null;
 }
 
 const TYPE_OPTIONS = [
@@ -154,7 +156,7 @@ const EXPORT_HEADERS = [
   "contractorName", "contractorRating",
 ];
 
-export default function MasterTableSection({ projects, onSelectProject }: MasterTableSectionProps) {
+export default function MasterTableSection({ projects, onSelectProject, onRefresh, lastUpdated }: MasterTableSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -196,8 +198,8 @@ export default function MasterTableSection({ projects, onSelectProject }: Master
   };
 
   return (
-    <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 border-l-sky-400">
-      <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+    <motion.div variants={itemVariants} className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden border-l-4 border-l-sky-400">
+      <div className="p-5 border-b border-slate-100 bg-slate-50/50 shrink-0">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-sky-50 rounded-xl border border-sky-100">
@@ -268,9 +270,11 @@ export default function MasterTableSection({ projects, onSelectProject }: Master
         rowKey={(p) => p.id}
         emptyMessage="No se encontraron obras con los filtros aplicados."
         emptyState={<EmptyState message="No se encontraron obras con los filtros aplicados." />}
-        maxHeight="350px"
-        containerClassName="border border-slate-100 rounded-lg"
+        fillViewport
+        containerClassName="border border-slate-100 rounded-lg mx-5 mb-5 flex-1 min-h-0"
         pageSize={15}
+        onRefresh={onRefresh}
+        lastUpdated={lastUpdated}
       />
     </motion.div>
   );

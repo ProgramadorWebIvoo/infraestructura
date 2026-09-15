@@ -2,11 +2,14 @@
 // Encapsulates: header styling, loading skeleton, empty state, row hover/alternating,
 // footer, scroll containers, sorting, pagination
 
-import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Eye, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { SkeletonBlock } from "@/components/SkeletonLoader";
 import { itemVariants } from "@/animations";
+import { useToastStore } from "@/stores/toastStore";
+import Tooltip from "./Tooltip";
+import { SEMANTIC_COLOR_MAP } from "./colorTokens";
 
 // ─── Types ───
 
@@ -89,7 +92,95 @@ export interface TableProps<T> {
   /** Optional: custom class for selected row */
   selectedRowKey?: string | number;
   selectedRowClass?: string;
+
+  // Refresh toolbar (opt-in: solo se renderiza si se pasa `onRefresh`)
+  /** Refresca los datos de la tabla. Puede ser async — errores se notifican con un toast, no relanzados. */
+  onRefresh?: () => Promise<void> | void;
+  /** Momento del último refresco exitoso, para el label "Actualizado hace Ns". */
+  lastUpdated?: Date | null;
 }
+
+/** "hace Ns" / "hace Nmin" / "hace Nh" — mismo criterio que el resto del dashboard. */
+function timeAgo(date: Date): string {
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 5) return "un instante";
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} h`;
+}
+
+// ─── Toolbar de refresco (extraída para no perder su identidad de tipo en
+// cada render de Table, igual que SortIcon/PaginationBar) ───
+
+interface RefreshToolbarProps {
+  onRefresh: () => Promise<void> | void;
+  lastUpdated?: Date | null;
+}
+
+const RefreshToolbar = memo(function RefreshToolbar({ onRefresh, lastUpdated }: RefreshToolbarProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [justUpdated, setJustUpdated] = useState(false);
+  // Fuerza un re-render por segundo para que "Actualizado hace Ns" avance sin recalcular nada más.
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const id = setInterval(() => tick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+      setJustUpdated(true);
+      setTimeout(() => setJustUpdated(false), 1800);
+    } catch {
+      useToastStore.getState().showToast("No se pudo actualizar la tabla. Intenta de nuevo.", "error");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const success = SEMANTIC_COLOR_MAP.success;
+
+  return (
+    <div className="flex items-center justify-end gap-2.5 px-4 py-2 border-b border-slate-100 bg-slate-50/40 shrink-0">
+      {lastUpdated && (
+        <span className="text-[10px] font-mono font-semibold text-slate-400">
+          Actualizado hace {timeAgo(lastUpdated)}
+        </span>
+      )}
+      <AnimatePresence>
+        {justUpdated && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.85, x: 6 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 420, damping: 26 }}
+            className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold rounded-full px-2 py-0.5 border ${success.text700} ${success.bg50} ${success.border100}`}
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            ¡Actualizado!
+          </motion.span>
+        )}
+      </AnimatePresence>
+      <Tooltip content="Actualizar datos" placement="top">
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          aria-label="Actualizar datos"
+          className="cursor-pointer p-1.5 rounded-control border border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+        </button>
+      </Tooltip>
+    </div>
+  );
+});
 
 // ─── Sort icon (extraído del cuerpo de Table: definir un componente ahí
 // dentro le da una identidad de tipo nueva en cada render, forzando a React
@@ -224,6 +315,8 @@ export function Table<T>({
   onRowDoubleClick,
   selectedRowKey,
   selectedRowClass = "bg-sky-50 ring-1 ring-inset ring-sky-300",
+  onRefresh,
+  lastUpdated,
 }: TableProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -323,6 +416,7 @@ export function Table<T>({
 
   return (
     <div className={`rounded-control overflow-hidden ${fillViewport ? "flex h-full flex-col min-h-0" : ""} ${containerClassName}`}>
+      {onRefresh && <RefreshToolbar onRefresh={onRefresh} lastUpdated={lastUpdated} />}
       <div
         className={`overflow-x-hidden ${
           fillViewport ? "flex-1 min-h-0 overflow-y-auto" : maxHeight ? "overflow-y-auto" : ""

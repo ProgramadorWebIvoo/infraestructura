@@ -12,6 +12,7 @@ import { motion } from "motion/react";
 import { Landmark } from "lucide-react";
 import type { Project } from "@/types";
 import { itemVariants } from "@/animations";
+import Tooltip from "@/components/UI/Tooltip";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -75,16 +76,18 @@ export default function CashFlowSection({ projects }: CashFlowSectionProps) {
         <div role="img" aria-label={`Flujo de caja mensual. ${months.map((m) => `${m.month}: ${fmtMoney(m.total)}`).join(", ")}`}>
           <div className="flex items-end gap-2 h-40 border-b border-slate-100 pb-4">
             {months.map((m) => (
-              <div key={m.month} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full" title={`${m.month}: ${fmtMoney(m.total)}`}>
-                <span className="text-[9px] text-slate-500 font-mono font-bold">{fmtMoney(m.total)}</span>
-                <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">
-                  <div
-                    className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-700"
-                    style={{ height: `${Math.max(4, (m.total / maxTotal) * 96)}px` }}
-                  />
+              <Tooltip key={m.month} content={`${m.month}: $${fmtMoney(m.total)}`} placement="top">
+                <div className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
+                  <span className="text-[9px] text-slate-500 font-mono font-bold">{fmtMoney(m.total)}</span>
+                  <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">
+                    <div
+                      className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-700"
+                      style={{ height: `${Math.max(4, (m.total / maxTotal) * 96)}px` }}
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-mono">{m.month.slice(2)}</span>
                 </div>
-                <span className="text-[9px] text-slate-400 font-mono">{m.month.slice(2)}</span>
-              </div>
+              </Tooltip>
             ))}
           </div>
           <div className="flex items-center gap-4 mt-3 text-[10px] font-bold text-slate-500">
