@@ -5,7 +5,10 @@
  * Panel de Marketing: creación y aprobación de piezas publicitarias
  * (impresiones, viniles, pendones, ...). Tabs + TabPanel + altura real de
  * viewport, mismo patrón que ProcuraPanel/InfraestructuraMantenimientoPanel
- * — necesario para que ProyectosTab pueda usar <Table fillViewport>.
+ * — necesario para que ProyectHistoryTab pueda usar <Table fillViewport>.
+ *
+ * Sin tab de listado propio: el listado en vivo de proyectos ahora vive en
+ * PROCURA (flujo alterno unido). Este panel conserva Crear e Historial.
  *
  * Presentacional: recibe `projects` ya resueltos del backend
  * (GET /marketing-projects) — el hook que los trae (useMarketingProjects)
@@ -21,13 +24,12 @@ import { SkeletonCard, SkeletonBlock } from "@/components/SkeletonLoader";
 import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import KpiPill from "@/components/UI/KpiPill";
-import ProyectosTab from "./components/ProyectTab";
 import ProyectHistoryTab from "./components/ProyectHistoryTab";
 import ProyectCreateTab from "./components/ProyectCreateTab";
 import type { MarketingProject, MarketingProjectFormInput } from "./types";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
-type TabKey = "proyectos" | "crear" | "historial";
+type TabKey = "crear" | "historial";
 
 interface MarketingPanelProps {
   /** Opcional con default [] — así <MarketingPanel /> sigue compilando mientras se conecta useMarketingProjects. */
@@ -43,11 +45,11 @@ interface MarketingPanelProps {
 
 export default function MarketingPanel({ projects = [], authToken = "", isLoading = false, onView, onCreate, isCreating = false }: MarketingPanelProps) {
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
-  const [activeTab, setActiveTab] = useState<TabKey>("proyectos");
+  const [activeTab, setActiveTab] = useState<TabKey>("historial");
 
   const handleCreate = async (data: MarketingProjectFormInput, files: File[]) => {
     await onCreate?.(data, files);
-    setActiveTab("proyectos");
+    setActiveTab("historial");
   };
 
   const kpis = useMemo(
@@ -61,7 +63,6 @@ export default function MarketingPanel({ projects = [], authToken = "", isLoadin
   );
 
   const tabs = filterTabs("/marketing", [
-    { key: "proyectos", label: "Proyectos", count: projects.length },
     { key: "crear", label: "Crear" },
     { key: "historial", label: "Historial de Proyectos" },
   ]);
@@ -98,11 +99,8 @@ export default function MarketingPanel({ projects = [], authToken = "", isLoadin
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
         <TabPanel activeKey={activeTab}>
-          {activeTab === "proyectos" && (
-            <ProyectosTab projects={projects} isLoading={isLoading} onView={onView} />
-          )}
           {activeTab === "crear" && (
-            <ProyectCreateTab onSubmit={handleCreate} isSubmitting={isCreating} onCancel={() => setActiveTab("proyectos")} />
+            <ProyectCreateTab onSubmit={handleCreate} isSubmitting={isCreating} onCancel={() => setActiveTab("historial")} />
           )}
           {activeTab === "historial" && (
             <ProyectHistoryTab projects={projects} isLoading={isLoading} onView={onView} />

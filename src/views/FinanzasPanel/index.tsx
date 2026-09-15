@@ -110,7 +110,7 @@ export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, 
   if (isLoading || isLoadingTabs) return <FinanzasSkeleton />;
 
   return (
-    <motion.div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }} variants={containerVariants} initial="hidden" animate="visible">
+    <motion.div className="flex min-h-0 flex-col gap-4" variants={containerVariants} initial="hidden" animate="visible">
       <h1 className="sr-only">Finanzas</h1>
 
       {/* Tabs primero — barra de navegación principal, mismo criterio que
