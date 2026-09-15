@@ -4,23 +4,25 @@
  *
  * Settings del grupo "app" (Aplicación) de CONFIG APP, consumidos por
  * componentes fuera del propio panel de configuración — mismo patrón que
- * usePollingSettings.ts (lectura pública vía GET /settings, cualquier
- * autenticado, fallback a los defaults sembrados si el fetch falla o
- * mientras carga).
+ * usePollingSettings.ts (proyección pura sobre `publicSettingsStore`, sin
+ * fetch propio).
+ *
+ * Antes hacía su propio `GET /settings` independiente en un `useEffect` —
+ * como este hook se usa dentro de `useAuth()`, y `useAuth()` se instancia de
+ * forma independiente en varios lugares (AppRoutes, PublicSettingsProvider,
+ * AiFeatureGateProvider — ver PERFORMANCE-AUDIT-2026-09-15.md), cada
+ * instancia disparaba su PROPIO `GET /settings`, duplicando el fetch que
+ * `PublicSettingsProvider`/`publicSettingsStore` ya hace una vez por sesión
+ * y cachea. Confirmado en vivo: `/api/settings` se pedía 2x al navegar a
+ * Config App. Ahora lee del mismo store compartido — cero fetches propios.
  */
 
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/services/api";
-import { logError } from "@/services/logger";
+import { useMemo } from "react";
+import { usePublicSettingsStore } from "@/stores/publicSettingsStore";
 
 const DEFAULT_MAX_FILE_SIZE_MB = 25;
 const DEFAULT_MAX_FILE_COUNT = 10;
 const DEFAULT_SESSION_TIMEOUT_MINUTES = 30;
-
-interface RawSetting {
-  key: string;
-  value: string | null;
-}
 
 export interface AppGroupSettings {
   maxFileSizeBytes: number;
@@ -40,39 +42,26 @@ function parsePositiveInt(raw: string | null | undefined, fallback: number): num
 }
 
 export function useAppGroupSettings(): AppGroupSettings {
-  const [settings, setSettings] = useState<AppGroupSettings>(DEFAULTS);
+  const app = usePublicSettingsStore(s => s.settings.app);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    apiFetch<Record<string, RawSetting[]>>("/settings", { token: "authenticated" })
-      .then(data => {
-        if (cancelled) return;
-        const app = data.app ?? [];
-        const maxFileSizeMb = parsePositiveInt(
-          app.find(s => s.key === "documento_tamano_maximo_mb")?.value,
-          DEFAULT_MAX_FILE_SIZE_MB,
-        );
-        const maxFileCount = parsePositiveInt(
-          app.find(s => s.key === "documento_cantidad_maxima_archivos")?.value,
-          DEFAULT_MAX_FILE_COUNT,
-        );
-        const sessionTimeoutMinutes = parsePositiveInt(
-          app.find(s => s.key === "sesion_inactividad_minutos")?.value,
-          DEFAULT_SESSION_TIMEOUT_MINUTES,
-        );
-        setSettings({
-          maxFileSizeBytes: maxFileSizeMb * 1024 * 1024,
-          maxFileCount,
-          sessionTimeoutMs: sessionTimeoutMinutes * 60_000,
-        });
-      })
-      .catch(err => logError("useAppGroupSettings", err));
-
-    return () => {
-      cancelled = true;
+  return useMemo(() => {
+    if (!app) return DEFAULTS;
+    const maxFileSizeMb = parsePositiveInt(
+      app.find(s => s.key === "documento_tamano_maximo_mb")?.value,
+      DEFAULT_MAX_FILE_SIZE_MB,
+    );
+    const maxFileCount = parsePositiveInt(
+      app.find(s => s.key === "documento_cantidad_maxima_archivos")?.value,
+      DEFAULT_MAX_FILE_COUNT,
+    );
+    const sessionTimeoutMinutes = parsePositiveInt(
+      app.find(s => s.key === "sesion_inactividad_minutos")?.value,
+      DEFAULT_SESSION_TIMEOUT_MINUTES,
+    );
+    return {
+      maxFileSizeBytes: maxFileSizeMb * 1024 * 1024,
+      maxFileCount,
+      sessionTimeoutMs: sessionTimeoutMinutes * 60_000,
     };
-  }, []);
-
-  return settings;
+  }, [app]);
 }

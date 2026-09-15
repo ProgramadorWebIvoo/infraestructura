@@ -1,18 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-
-const mockApiFetch = vi.fn();
-vi.mock("@/services/api", () => ({
-  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
-}));
-
+import { describe, it, expect, beforeEach } from "vitest";
+import { renderHook } from "@testing-library/react";
+import { usePublicSettingsStore } from "@/stores/publicSettingsStore";
 import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
-
-async function flush() {
-  for (let i = 0; i < 5; i++) {
-    await act(async () => { await Promise.resolve(); });
-  }
-}
 
 const DEFAULTS = {
   maxFileSizeBytes: 25 * 1024 * 1024,
@@ -22,29 +11,33 @@ const DEFAULTS = {
 
 describe("useAppGroupSettings", () => {
   beforeEach(() => {
-    mockApiFetch.mockReset();
+    // Proyección pura sobre publicSettingsStore (ver docblock del hook) —
+    // se siembra el store directamente en vez de mockear apiFetch, mismo
+    // criterio que useFrozenBsAmount.test.ts/useCurrencyConversion.test.ts
+    // para exchangeRatesStore.
+    usePublicSettingsStore.setState({ settings: {}, isLoading: false, hasLoaded: false });
   });
 
-  it("usa los defaults (25MB, 10 archivos, 30min) mientras carga", async () => {
-    mockApiFetch.mockResolvedValueOnce({});
-
+  it("usa los defaults (25MB, 10 archivos, 30min) mientras no hay datos en el store", () => {
     const { result } = renderHook(() => useAppGroupSettings());
 
     expect(result.current).toEqual(DEFAULTS);
-    await flush();
   });
 
-  it("carga los valores configurados desde /settings", async () => {
-    mockApiFetch.mockResolvedValueOnce({
-      app: [
-        { key: "documento_tamano_maximo_mb", value: "15" },
-        { key: "documento_cantidad_maxima_archivos", value: "5" },
-        { key: "sesion_inactividad_minutos", value: "60" },
-      ],
+  it("lee los valores configurados desde el store compartido", () => {
+    usePublicSettingsStore.setState({
+      settings: {
+        app: [
+          { key: "documento_tamano_maximo_mb", value: "15" },
+          { key: "documento_cantidad_maxima_archivos", value: "5" },
+          { key: "sesion_inactividad_minutos", value: "60" },
+        ],
+      },
+      isLoading: false,
+      hasLoaded: true,
     });
 
     const { result } = renderHook(() => useAppGroupSettings());
-    await flush();
 
     expect(result.current).toEqual({
       maxFileSizeBytes: 15 * 1024 * 1024,
@@ -53,36 +46,47 @@ describe("useAppGroupSettings", () => {
     });
   });
 
-  it("cae a los defaults si el fetch falla", async () => {
-    mockApiFetch.mockRejectedValueOnce(new Error("network error"));
-
-    const { result } = renderHook(() => useAppGroupSettings());
-    await flush();
-
-    expect(result.current).toEqual(DEFAULTS);
-  });
-
-  it("cae a los defaults si el grupo app no existe en la respuesta", async () => {
-    mockApiFetch.mockResolvedValueOnce({ presupuesto: [] });
-
-    const { result } = renderHook(() => useAppGroupSettings());
-    await flush();
-
-    expect(result.current).toEqual(DEFAULTS);
-  });
-
-  it("cae al default de esa clave si el valor guardado es inválido (0, negativo, no numérico)", async () => {
-    mockApiFetch.mockResolvedValueOnce({
-      app: [
-        { key: "documento_tamano_maximo_mb", value: "0" },
-        { key: "documento_cantidad_maxima_archivos", value: "-1" },
-        { key: "sesion_inactividad_minutos", value: "abc" },
-      ],
+  it("cae a los defaults si el grupo app no existe en el store", () => {
+    usePublicSettingsStore.setState({
+      settings: { presupuesto: [] },
+      isLoading: false,
+      hasLoaded: true,
     });
 
     const { result } = renderHook(() => useAppGroupSettings());
-    await flush();
 
     expect(result.current).toEqual(DEFAULTS);
+  });
+
+  it("cae al default de esa clave si el valor guardado es inválido (0, negativo, no numérico)", () => {
+    usePublicSettingsStore.setState({
+      settings: {
+        app: [
+          { key: "documento_tamano_maximo_mb", value: "0" },
+          { key: "documento_cantidad_maxima_archivos", value: "-1" },
+          { key: "sesion_inactividad_minutos", value: "abc" },
+        ],
+      },
+      isLoading: false,
+      hasLoaded: true,
+    });
+
+    const { result } = renderHook(() => useAppGroupSettings());
+
+    expect(result.current).toEqual(DEFAULTS);
+  });
+
+  it("reacciona cuando el store se actualiza después del mount", () => {
+    const { result, rerender } = renderHook(() => useAppGroupSettings());
+    expect(result.current).toEqual(DEFAULTS);
+
+    usePublicSettingsStore.setState({
+      settings: { app: [{ key: "documento_cantidad_maxima_archivos", value: "3" }] },
+      isLoading: false,
+      hasLoaded: true,
+    });
+    rerender();
+
+    expect(result.current.maxFileCount).toBe(3);
   });
 });
