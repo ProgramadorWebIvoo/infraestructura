@@ -264,6 +264,7 @@ function AppRoutes() {
     handleApproveInvestment,
     handleAddProposal,
     handleRenegotiateProposal,
+    handleSendRenegotiationInvite,
     handleRemoveProposal,
     handleImportSupplierProposals,
     handleSubmitComparative,
@@ -273,6 +274,7 @@ function AppRoutes() {
     handleVerifyCompletion,
     handlePayFinal,
     resetData,
+    loadApiData,
   } = useProjects(authToken, showToast);
 
   // ---- Marketing ----
@@ -377,6 +379,7 @@ function AppRoutes() {
         fallbackRoute={fallbackRoute}
         projects={projects}
         auditLogs={auditLogs}
+        onRefreshData={loadApiData}
         isLoadingApi={isLoadingApi}
         inspectedProject={inspectedProject}
         onCloseInspectedProject={() => setInspectedProject(null)}
@@ -395,6 +398,7 @@ function AppRoutes() {
         onApproveInvestment={handleApproveInvestment}
         onAddProposal={handleAddProposal}
         onRenegotiateProposal={handleRenegotiateProposal}
+        onSendRenegotiationInvite={handleSendRenegotiationInvite}
         onRemoveProposal={handleRemoveProposal}
         onImportSupplierProposals={handleImportSupplierProposals}
         onSubmitComparative={handleSubmitComparative}

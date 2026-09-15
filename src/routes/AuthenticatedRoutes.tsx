@@ -19,11 +19,7 @@ const ProcuraPanel = lazy(ROUTE_PREFETCH[ROUTES.PROCURA]!.loadChunk);
 const AnalistasPanel = lazy(ROUTE_PREFETCH[ROUTES.ANALISTAS]!.loadChunk);
 const FinanzasPanel = lazy(ROUTE_PREFETCH[ROUTES.FINANZAS]!.loadChunk);
 const ProveedoresRegistrados = lazy(ROUTE_PREFETCH[ROUTES.CATALOGOS]!.loadChunk);
-const ProveedoresConfigPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_PROVEEDORES]!.loadChunk);
-const MaterialConfigPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_MATERIALES]!.loadChunk);
-const AIConfigPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_IA]!.loadChunk);
 const ConfigAppPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_APP]!.loadChunk);
-const UsuariosPanel = lazy(ROUTE_PREFETCH[ROUTES.USUARIOS]!.loadChunk);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AuthenticatedRoutesProps = Record<string, any>;
@@ -31,11 +27,11 @@ type AuthenticatedRoutesProps = Record<string, any>;
 export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
   const {
     user, activeRole, canAccess, fallbackRoute,
-    projects, auditLogs, isLoadingApi, inspectedProject, onCloseInspectedProject, onSelectProject,
+    projects, auditLogs, onRefreshData, isLoadingApi, inspectedProject, onCloseInspectedProject, onSelectProject,
     onLogout, contractors, onUpdateContractorRating, onContractorMutated,
     materialsCatalog,
     onAddProject, onResubmitProject, onRejectProject, onReviewProject, onDeleteDocument, onSyncProject, onApproveInvestment, onAddProposal,
-    onRenegotiateProposal,
+    onRenegotiateProposal, onSendRenegotiationInvite,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
@@ -63,7 +59,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.PRESIDENCIA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
-              <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={onSelectProject} isLoading={isLoadingApi} />
+              <PresidenciaDashboard projects={projects} auditLogs={auditLogs} onSelectProject={onSelectProject} onRefreshData={onRefreshData} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />
@@ -109,7 +105,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.ANALISTAS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
-              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} authToken={authToken} isLoading={isLoadingApi} />
+              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onSendRenegotiationInvite={onSendRenegotiationInvite} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} authToken={authToken} isLoading={isLoadingApi} />
             </ProtectedRoute>
           }
         />
@@ -130,42 +126,15 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           }
         />
         <Route
-          path={ROUTES.CONFIG_PROVEEDORES}
-          element={
-            <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_PROVEEDORES)} redirectTo={fallbackRoute}>
-              <ProveedoresConfigPanel authToken={authToken} onContractorMutated={onContractorMutated} activeRole={activeRole} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.CONFIG_MATERIALES}
-          element={
-            <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_MATERIALES)} redirectTo={fallbackRoute}>
-              <MaterialConfigPanel authToken={authToken} activeRole={activeRole} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.CONFIG_IA}
-          element={
-            <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_IA)} redirectTo={fallbackRoute}>
-              <AIConfigPanel authToken={authToken} activeRole={activeRole}/>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path={ROUTES.CONFIG_APP}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CONFIG_APP)} redirectTo={fallbackRoute}>
-              <ConfigAppPanel authToken={authToken} activeRole={activeRole} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.USUARIOS}
-          element={
-            <ProtectedRoute canAccess={canAccess(ROUTES.USUARIOS)} redirectTo={fallbackRoute}>
-              <UsuariosPanel authToken={authToken} activeRole={activeRole} />
+              <ConfigAppPanel
+                authToken={authToken}
+                activeRole={activeRole}
+                canAccess={canAccess}
+                onContractorMutated={onContractorMutated}
+              />
             </ProtectedRoute>
           }
         />
