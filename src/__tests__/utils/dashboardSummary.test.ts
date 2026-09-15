@@ -52,7 +52,7 @@ describe("daysBetween", () => {
 });
 
 describe("computeDashboardSummary", () => {
-  it("lista vacía: totales en cero, funnel completo con 9 estados y sin entradas secundarias", () => {
+  it("lista vacía: totales en cero, funnel completo con 10 estados y sin entradas secundarias", () => {
     const s = computeDashboardSummary([]);
     expect(s.totalProjects).toBe(0);
     expect(s.totalApprovedInvestment).toBe(0);
@@ -63,6 +63,7 @@ describe("computeDashboardSummary", () => {
     expect(s.funnel.map((f) => f.status)).toEqual([
       "CREADO",
       "REVISADO_CIERRE",
+      "EN_REEVALUACION_CIERRE",
       "CONFIRMADO_PROCURA",
       "COMPARATIVA_ENVIADA",
       "CONTRATADO",
