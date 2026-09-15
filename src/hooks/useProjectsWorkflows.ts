@@ -451,6 +451,37 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     [],
   );
 
+  const handleSendRenegotiationInvite = useCallback(
+    async (projectId: string, proposalId: string) => {
+      const token = authTokenRef.current;
+      const show = showToastRef.current;
+      try {
+        const result = await apiFetch<{ url: string; mailSent: boolean }>(
+          `/projects/${projectId}/proposals/${proposalId}/renegotiation-invite`,
+          { method: "POST", token },
+        );
+        if (result.mailSent) {
+          show("Enlace de renegociación enviado al proveedor por correo.", "success");
+        } else {
+          // El correo no salió (ej. mailer sin configurar aún) — el enlace ya
+          // quedó generado igual, así que se copia al portapapeles como
+          // respaldo para que el analista pueda compartirlo manualmente.
+          try {
+            await navigator.clipboard.writeText(result.url);
+            show("No se pudo enviar el correo (revise la configuración de mailer). Enlace copiado al portapapeles.", "warning");
+          } catch {
+            show(`No se pudo enviar el correo. Enlace: ${result.url}`, "warning");
+          }
+        }
+      } catch (error) {
+        logError("handleSendRenegotiationInvite", error);
+        show("No se pudo generar el enlace de renegociación.", "error");
+        throw error;
+      }
+    },
+    [],
+  );
+
   const handleRemoveProposal = useCallback(
     async (projectId: string, proposalId: string) => {
       const token = authTokenRef.current;
@@ -669,6 +700,7 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
     handleApproveInvestment,
     handleAddProposal,
     handleRenegotiateProposal,
+    handleSendRenegotiationInvite,
     handleRemoveProposal,
     handleImportSupplierProposals,
     handleSubmitComparative,

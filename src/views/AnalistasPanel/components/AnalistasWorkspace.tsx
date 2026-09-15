@@ -26,6 +26,8 @@ import {
   Eye,
   FileSpreadsheet,
   Handshake,
+  Loader2,
+  Mail,
   MessageSquareWarning,
   Send,
   SearchX,
@@ -84,6 +86,7 @@ interface AnalistasWorkspaceProps {
   contractors: Contractor[];
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
   onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
+  onSendRenegotiationInvite: (projectId: string, proposalId: string) => Promise<void>;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
@@ -95,6 +98,7 @@ export default function AnalistasWorkspace({
   contractors,
   onAddProposal,
   onRenegotiateProposal,
+  onSendRenegotiationInvite,
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
@@ -286,6 +290,7 @@ export default function AnalistasWorkspace({
           onClose={() => setSelectedId("")}
           onAddProposal={onAddProposal}
           onRenegotiateProposal={onRenegotiateProposal}
+          onSendRenegotiationInvite={onSendRenegotiationInvite}
           onRemoveProposal={onRemoveProposal}
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}
@@ -305,6 +310,7 @@ function ExpedienteWorkspaceModal({
   onClose,
   onAddProposal,
   onRenegotiateProposal,
+  onSendRenegotiationInvite,
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
@@ -317,6 +323,7 @@ function ExpedienteWorkspaceModal({
   onClose: () => void;
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
   onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
+  onSendRenegotiationInvite: (projectId: string, proposalId: string) => Promise<void>;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
@@ -329,6 +336,7 @@ function ExpedienteWorkspaceModal({
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [renegotiatingProposal, setRenegotiatingProposal] = useState<Proposal | null>(null);
+  const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [inspectingProposal, setInspectingProposal] = useState<Proposal | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [showAiPreview, setShowAiPreview] = useState(false);
@@ -348,6 +356,18 @@ function ExpedienteWorkspaceModal({
   };
 
   const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
+
+  const handleSendRenegotiationInvite = async (prop: Proposal) => {
+    if (sendingInviteId) return;
+    setSendingInviteId(prop.id);
+    try {
+      await onSendRenegotiationInvite(project.id, prop.id);
+    } catch {
+      // el toast de error ya lo muestra el handler
+    } finally {
+      setSendingInviteId(null);
+    }
+  };
 
   const proposalColumns: Column<Proposal>[] = [
     {
@@ -467,6 +487,17 @@ function ExpedienteWorkspaceModal({
               aria-label={`Renegociar propuesta de ${prop.contractorName}`}
             >
               <Handshake className="h-4 w-4" />
+            </button>
+          </Tooltip>
+          <Tooltip content="Enviar por correo un enlace público para que el proveedor renegocie esta oferta directamente, con los mismos campos que la renegociación manual.">
+            <button
+              id={`btn-send-renegotiation-invite-${prop.id}`}
+              onClick={() => handleSendRenegotiationInvite(prop)}
+              disabled={sendingInviteId === prop.id}
+              className="text-sky-500 hover:bg-sky-50 hover:text-sky-600 p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={`Enviar enlace público de renegociación a ${prop.contractorName}`}
+            >
+              {sendingInviteId === prop.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
             </button>
           </Tooltip>
           <button

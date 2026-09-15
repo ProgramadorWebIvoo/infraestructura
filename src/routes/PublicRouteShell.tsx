@@ -7,6 +7,7 @@ import type { Contractor } from "@/types";
 
 const MaterialesProveedores = lazy(() => import("@/views/MaterialesProveedores"));
 const PropuestaMaterialesPublica = lazy(() => import("@/views/PropuestaMaterialesPublica"));
+const RenegociacionPublica = lazy(() => import("@/views/RenegociacionPublica"));
 const ResetPasswordScreen = lazy(() => import("@/views/ResetPasswordScreen"));
 
 function FullScreenFallback() {
@@ -40,6 +41,7 @@ export default function PublicRouteShell({ contractorsCount, onAddContractor }: 
             }
           />
           <Route path={ROUTES.PROPUESTA_MATERIALES} element={<PropuestaMaterialesPublica />} />
+          <Route path={ROUTES.RENEGOCIACION_PUBLICA} element={<RenegociacionPublica />} />
           <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordScreen />} />
           <Route path="*" element={<Navigate to={ROUTES.REGISTRO_PROVEEDORES} replace />} />
         </Routes>

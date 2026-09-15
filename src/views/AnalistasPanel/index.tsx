@@ -26,6 +26,7 @@ interface AnalistasPanelProps {
   contractors: Contractor[];
   onAddProposal: (projectId: string, proposal: Omit<Proposal, "id">) => void;
   onRenegotiateProposal: (projectId: string, proposalId: string, renegotiation: RenegotiationPayload) => Promise<void>;
+  onSendRenegotiationInvite: (projectId: string, proposalId: string) => Promise<void>;
   onRemoveProposal: (projectId: string, proposalId: string) => void;
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
@@ -38,6 +39,7 @@ export default function AnalistasPanel({
   contractors,
   onAddProposal,
   onRenegotiateProposal,
+  onSendRenegotiationInvite,
   onRemoveProposal,
   onSubmitComparative,
   onImportSupplierProposals,
@@ -80,6 +82,7 @@ export default function AnalistasPanel({
           contractors={contractors}
           onAddProposal={onAddProposal}
           onRenegotiateProposal={onRenegotiateProposal}
+          onSendRenegotiationInvite={onSendRenegotiationInvite}
           onRemoveProposal={onRemoveProposal}
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}

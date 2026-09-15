@@ -134,6 +134,7 @@ function renderWorkspace(props: Partial<React.ComponentProps<typeof AnalistasWor
         contractors={[makeContractor({ code: "C-001" })]}
         onAddProposal={vi.fn()}
         onRenegotiateProposal={vi.fn().mockResolvedValue(undefined)}
+        onSendRenegotiationInvite={vi.fn().mockResolvedValue(undefined)}
         onRemoveProposal={vi.fn()}
         onSubmitComparative={vi.fn()}
         authToken="test-token"
