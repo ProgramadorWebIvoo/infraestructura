@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { containerVariants } from "@/animations";
 import { useToast } from "@/components/UI/Toast";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
@@ -244,18 +243,6 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
           onShowApiKeyChange={setShowApiKey}
         />
       </motion.div>
-
-      {isSuperadmin && (
-        <ConfigAuditLogPanel
-          logs={auditLogs}
-          isLoading={isLoadingAuditLogs}
-          pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-          filters={auditLogFilters}
-          onFilterChange={updateAuditLogFilter}
-          onClearFilters={clearAuditLogFilters}
-          activeFilterCount={auditLogActiveFilterCount}
-        />
-      )}
     </motion.div>
   );
 }

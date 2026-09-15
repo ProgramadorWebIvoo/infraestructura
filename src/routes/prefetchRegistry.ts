@@ -24,7 +24,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/services/api";
 import { ROUTES } from "@/routes";
-import type { UserRecord } from "@/hooks/useUsuarios";
 import type { SupplierMaterialProposal, CatalogCategory, CatalogProduct } from "@/types";
 
 interface RoutePrefetchEntry {
@@ -76,19 +75,5 @@ export const ROUTE_PREFETCH: Partial<Record<string, RoutePrefetchEntry>> = {
     },
   },
 
-  [ROUTES.USUARIOS]: {
-    loadChunk: () => import("@/views/UsuariosPanel"),
-    // Misma queryKey/fetcher que useUsuarios.ts.
-    prefetchData: (queryClient, authToken) => {
-      queryClient.prefetchQuery({
-        queryKey: withAuthKey("users", authToken),
-        queryFn: () => apiFetch<UserRecord[]>("/users"),
-      });
-    },
-  },
-
-  [ROUTES.CONFIG_PROVEEDORES]: { loadChunk: () => import("@/views/ProveedoresConfigPanel") },
-  [ROUTES.CONFIG_MATERIALES]: { loadChunk: () => import("@/views/MaterialConfigPanel") },
-  [ROUTES.CONFIG_IA]: { loadChunk: () => import("@/views/AIConfigPanel") },
   [ROUTES.CONFIG_APP]: { loadChunk: () => import("@/views/ConfigAppPanel") },
 };

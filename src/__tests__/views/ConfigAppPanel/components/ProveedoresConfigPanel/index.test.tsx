@@ -9,8 +9,8 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ProveedoresConfigPanel from "@/views/ProveedoresConfigPanel";
-import type { ConfigContractor } from "@/views/ProveedoresConfigPanel/types";
+import ProveedoresConfigPanel from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel";
+import type { ConfigContractor } from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel/types";
 
 vi.mock("motion/react", () => ({
   useReducedMotion: () => false,

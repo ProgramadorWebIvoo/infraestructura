@@ -69,17 +69,8 @@ vi.mock("@/views/LoginScreen", () => ({
 vi.mock("@/views/ProveedoresRegistrados", () => ({
   default: () => <div data-testid="view-proveedores-registrados">Proveedores Registrados</div>,
 }));
-vi.mock("@/views/ProveedoresConfigPanel", () => ({
-  default: () => <div data-testid="view-config-proveedores">Config Proveedores</div>,
-}));
-vi.mock("@/views/MaterialConfigPanel", () => ({
-  default: () => <div data-testid="view-config-materiales">Config Materiales</div>,
-}));
-vi.mock("@/views/AIConfigPanel", () => ({
-  default: () => <div data-testid="view-config-ia">Config IA</div>,
-}));
-vi.mock("@/views/UsuariosPanel", () => ({
-  default: () => <div data-testid="view-usuarios">Usuarios Panel</div>,
+vi.mock("@/views/ConfigAppPanel", () => ({
+  default: () => <div data-testid="view-config-app">Config App Panel</div>,
 }));
 
 // Mock motion

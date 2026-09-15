@@ -24,7 +24,6 @@ import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
-import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { providerConfigSchema } from "@/schemas/providerConfig.schema";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
@@ -325,18 +324,6 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
             isLoading={togglingCode === confirmToggleCode}
           />
         </div>
-
-        {isSuperadmin && (
-          <ConfigAuditLogPanel
-            logs={auditLogs}
-            isLoading={isLoadingAuditLogs}
-            pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-            filters={auditLogFilters}
-            onFilterChange={updateAuditLogFilter}
-            onClearFilters={clearAuditLogFilters}
-            activeFilterCount={auditLogActiveFilterCount}
-          />
-        )}
       </div>
     </motion.div>
   );

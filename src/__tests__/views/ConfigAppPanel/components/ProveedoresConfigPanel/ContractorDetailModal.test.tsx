@@ -10,8 +10,8 @@
 import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ContractorDetailModal from "@/views/ProveedoresConfigPanel/components/ContractorDetailModal";
-import type { ConfigContractor } from "@/views/ProveedoresConfigPanel/types";
+import ContractorDetailModal from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel/components/ContractorDetailModal";
+import type { ConfigContractor } from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel/types";
 
 vi.mock("motion/react", () => {
   const stripMotionProps = (props: Record<string, unknown>) => {

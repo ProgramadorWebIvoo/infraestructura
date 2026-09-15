@@ -16,7 +16,7 @@ const { loadChunkNext, loadChunkOther } = vi.hoisted(() => ({
 vi.mock("@/routes/prefetchRegistry", () => ({
   ROUTE_PREFETCH: {
     "/presidencia": { loadChunk: loadChunkNext },
-    "/usuarios": { loadChunk: loadChunkOther },
+    "/config-app": { loadChunk: loadChunkOther },
   },
 }));
 
@@ -31,10 +31,6 @@ vi.mock("@/routes", () => ({
     ANALISTAS: "/analistas",
     FINANZAS: "/finanzas",
     CATALOGOS: "/catalogos",
-    USUARIOS: "/usuarios",
-    CONFIG_PROVEEDORES: "/config-proveedores",
-    CONFIG_MATERIALES: "/config-materiales",
-    CONFIG_IA: "/config-ia",
     CONFIG_APP: "/config-app",
   },
 }));

@@ -11,7 +11,7 @@ import {
   validateConfigForm,
   buildUpdatePayload,
   DEFAULT_MAX_TOKENS,
-} from "@/views/AIConfigPanel/aiConfigForm";
+} from "@/views/ConfigAppPanel/components/AIConfigPanel/aiConfigForm";
 import type { AiConfigForm } from "@/hooks/useAIConfig";
 
 const BASE_FORM: AiConfigForm = {

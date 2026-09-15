@@ -24,7 +24,6 @@ import { getMaterialColumns } from "./columns";
 import MaterialFormModal from "./components/MaterialFormModal";
 import { EMPTY_FORM, type ConfigMaterial, type MaterialForm } from "./types";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
-import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { materialConfigSchema } from "@/schemas/materialConfig.schema";
 
 interface MaterialConfigPanelProps {
@@ -289,18 +288,6 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
             isLoading={togglingId === confirmToggleId}
           />
         </div>
-
-        {isSuperadmin && (
-          <ConfigAuditLogPanel
-            logs={auditLogs}
-            isLoading={isLoadingAuditLogs}
-            pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-            filters={auditLogFilters}
-            onFilterChange={updateAuditLogFilter}
-            onClearFilters={clearAuditLogFilters}
-            activeFilterCount={auditLogActiveFilterCount}
-          />
-        )}
       </div>
     </motion.div>
   );

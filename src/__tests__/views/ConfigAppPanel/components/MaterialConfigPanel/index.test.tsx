@@ -9,8 +9,8 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import MaterialConfigPanel from "@/views/MaterialConfigPanel";
-import type { ConfigMaterial } from "@/views/MaterialConfigPanel/types";
+import MaterialConfigPanel from "@/views/ConfigAppPanel/components/MaterialConfigPanel";
+import type { ConfigMaterial } from "@/views/ConfigAppPanel/components/MaterialConfigPanel/types";
 
 vi.mock("motion/react", () => ({
   useReducedMotion: () => false,

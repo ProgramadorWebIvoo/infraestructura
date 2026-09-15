@@ -2,14 +2,18 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * CONFIG APP (Fase 1.4 del plan de 90 días) — parámetros de negocio
- * editables desde administración sin deploy, organizados en 3 macro-grupos:
- * Negocio (presupuesto, ratings, alertas, inflación, moneda, fiscal),
- * Notificaciones (settings de notificaciones + matriz de notificaciones por
- * rol), y Aplicación (ajustes generales).
+ * CONFIG APP — módulo único de Configuración, con navegación interna por
+ * tabs (Tabs + TabPanel, sin depender de rutas). Cubre tanto los
+ * macro-grupos de parámetros de negocio editables sin deploy (Negocio,
+ * Monedas, Notificaciones, Aplicación — ver MACRO_GROUPS) como las 4 vistas
+ * que antes eran rutas independientes del sidebar: Usuarios, Proveedores,
+ * Materiales y Modelos de IA (ver EXTRA_TABS), montadas tal cual sin
+ * modificar su lógica interna.
  *
- * Este contenedor solo orquesta: la lógica de estado vive en useDraftState,
- * el renderizado de cada sección vive en SettingGroupCard/NotificationRulesCard.
+ * Este contenedor solo orquesta: la lógica de estado de los macro-grupos
+ * vive en useDraftState, el renderizado de cada sección vive en
+ * SettingGroupCard/NotificationRulesCard; las EXTRA_TABS gestionan su
+ * propio estado de forma autónoma.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +54,11 @@ import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
 import ExchangeRateSyncLogsPanel from "./components/ExchangeRateSyncLogsPanel";
 import ExchangeRateEditModal from "./components/ExchangeRateEditModal";
+import UsuariosPanel from "./components/UsuariosPanel";
+import ProveedoresConfigPanel from "./components/ProveedoresConfigPanel";
+import MaterialConfigPanel from "./components/MaterialConfigPanel";
+import AIConfigPanel from "./components/AIConfigPanel";
+import KeysConfigPanel from "./components/KeysConfigPanel";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
@@ -78,12 +87,30 @@ const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
   { key: "aplicacion", title: "Aplicación", groups: ["app"] },
 ];
 
+/**
+ * Tabs que antes vivían como vistas/rutas separadas (Usuarios,
+ * Proveedores, Materiales, Modelos de IA). A diferencia de MACRO_GROUPS,
+ * no iteran `settings[group]` — montan directo el componente de vista
+ * completo, que ya fetchea y gestiona su propia data. `route` es el
+ * identificador de vista que devuelve /api/auth/permissions (canAccess),
+ * heredado de cuando estas eran rutas independientes.
+ */
+const EXTRA_TABS: { key: string; title: string; route: string }[] = [
+  { key: "usuarios", title: "Usuarios", route: "/usuarios" },
+  { key: "proveedores", title: "Proveedores", route: "/config-proveedores" },
+  { key: "materiales", title: "Materiales", route: "/config-materiales" },
+  { key: "modelos-ia", title: "Modelos de IA", route: "/config-ia" },
+  { key: "config-keys", title: "Configuración de Keys", route: "/config-keys" },
+];
+
 interface ConfigAppPanelProps {
   authToken: string;
   activeRole?: string;
+  canAccess: (path: string) => boolean;
+  onContractorMutated: () => void;
 }
 
-export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanelProps) {
+export default function ConfigAppPanel({ authToken, activeRole, canAccess, onContractorMutated }: ConfigAppPanelProps) {
   const { showToast } = useToast();
   const { settings, missingKeys, isLoading, updateSetting } = useAppSettings(authToken);
 
@@ -234,20 +261,33 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
       ),
     [isSuperadmin, settings],
   );
-  const visibleMacroGroups = MACRO_GROUPS.filter(macro => (visibleGroupsByMacro.get(macro.key)?.length ?? 0) > 0);
+  const visibleSettingsTabs = MACRO_GROUPS.filter(macro => (visibleGroupsByMacro.get(macro.key)?.length ?? 0) > 0);
+  const visibleExtraTabs = EXTRA_TABS.filter(tab => canAccess(tab.route));
+  const visibleMacroGroups = [...visibleSettingsTabs, ...visibleExtraTabs];
   const [activeMacroTab, setActiveMacroTab] = useState(MACRO_GROUPS[0].key);
+  const activeExtraTab = visibleExtraTabs.find(tab => tab.key === activeMacroTab);
 
   // Si la tab activa deja de tener contenido visible (ej. pierde isSuperadmin
   // mientras estaba en "Notificaciones" y esa tab solo tenía la matriz de
   // reglas), reconciliar a la primera tab visible en vez de mostrar un panel
   // vacío en silencio.
+  //
+  // Mientras isLoading es true, `settings` todavía es `{}` — todos los
+  // grupos basados en hasSettingsFor() (ej. los de "negocio") se ven vacíos
+  // y no cuentan como visibles, pero "Monedas" ya puede parecer visible
+  // porque su grupo __currencies__ solo depende de isSuperadmin, no de
+  // settings. Sin este guard, este efecto corría durante ESE primer render
+  // transitorio, veía que "negocio" (el tab inicial) no estaba en la lista
+  // de visibles todavía y reconciliaba a "monedas" — quedando pegado ahí
+  // aunque "negocio" sí tuviera contenido una vez cargaran los settings.
   useEffect(() => {
+    if (isLoading) return;
     if (visibleMacroGroups.length === 0) return;
     if (!visibleMacroGroups.some(m => m.key === activeMacroTab)) {
       setActiveMacroTab(visibleMacroGroups[0].key);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleMacroGroups.map(m => m.key).join(",")]);
+  }, [isLoading, visibleMacroGroups.map(m => m.key).join(",")]);
 
   const handleSaveAll = async () => {
     if (!hasPendingChanges) return;
@@ -300,7 +340,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
 
   return (
     <div className="space-y-6 pb-20">
-      {isSuperadmin && missingKeys && missingKeys.length > 0 && (
+      {isSuperadmin && !activeExtraTab && missingKeys && missingKeys.length > 0 && (
         <AlertBanner
           type="warning"
           message={
@@ -337,6 +377,19 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
             ya trae su propia transición de entrada, no necesita heredar nada.
           */}
           <TabPanel activeKey={activeMacroTab}>
+            {activeExtraTab ? (
+              activeExtraTab.key === "usuarios" ? (
+                <UsuariosPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "proveedores" ? (
+                <ProveedoresConfigPanel authToken={authToken} activeRole={activeRole} onContractorMutated={onContractorMutated} />
+              ) : activeExtraTab.key === "materiales" ? (
+                <MaterialConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "config-keys" ? (
+                <KeysConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : (
+                <AIConfigPanel authToken={authToken} activeRole={activeRole} />
+              )
+            ) : (
             <div className="space-y-6">
               {(visibleGroupsByMacro.get(activeMacroTab) ?? []).map(group =>
                 group === "__notification_rules__" ? (
@@ -389,6 +442,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
                 ),
               )}
             </div>
+            )}
           </TabPanel>
         </div>
 
@@ -420,7 +474,7 @@ export default function ConfigAppPanel({ authToken, activeRole }: ConfigAppPanel
       </div>
 
       <AnimatePresence>
-        {hasPendingChanges && (
+        {hasPendingChanges && !activeExtraTab && (
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import AIConfigPanel from "@/views/AIConfigPanel";
+import AIConfigPanel from "@/views/ConfigAppPanel/components/AIConfigPanel";
 import { EMPTY_CONFIG_FORM, type AiConfigRecord } from "@/hooks/useAIConfig";
 import { PROVIDER_MODELS } from "@/constants/aiModels";
 

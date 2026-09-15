@@ -17,7 +17,7 @@ import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
 import PasswordStrengthMeter, { type PasswordRequirement } from "@/components/UI/PasswordStrengthMeter";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { isValidEmail } from "@/utils/validators";
-import { STATUS_OPTIONS, type UserForm } from "@/views/UsuariosPanel/types";
+import { STATUS_OPTIONS, type UserForm } from "@/views/ConfigAppPanel/components/UsuariosPanel/types";
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const inputClass =

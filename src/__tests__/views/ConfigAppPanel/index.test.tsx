@@ -67,7 +67,7 @@ describe("ConfigAppPanel", () => {
   it("muestra el skeleton mientras isLoading es true", () => {
     mockUseAppSettings.mockReturnValue({ settings: {}, isLoading: true, updateSetting: mockUpdateSetting });
 
-    const { container } = render(<ConfigAppPanel authToken="token" />);
+    const { container } = render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
@@ -79,7 +79,7 @@ describe("ConfigAppPanel", () => {
     };
     mockUseAppSettings.mockReturnValue({ settings, isLoading: false, updateSetting: mockUpdateSetting });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(screen.getByText("Presupuesto y anticipos")).toBeInTheDocument();
     expect(screen.getByText("Datos fiscales")).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(screen.getByText(/parámetros documentados no tienen/)).toBeInTheDocument();
     expect(screen.getByText("proyecto_estancado_umbral_dias, sesion_inactividad_minutos")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" activeRole="PROCURA" />);
+    render(<ConfigAppPanel authToken="token" activeRole="PROCURA" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(screen.queryByText(/parámetros documentados no tienen/)).not.toBeInTheDocument();
   });
@@ -122,7 +122,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(screen.queryByText(/parámetros documentados no tienen/)).not.toBeInTheDocument();
   });
@@ -134,7 +134,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(screen.queryByText("Ratings")).not.toBeInTheDocument();
     expect(screen.queryByText("Alertas de precio")).not.toBeInTheDocument();
@@ -147,7 +147,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     fireEvent.change(screen.getByDisplayValue("100"), { target: { value: "75" } });
 
@@ -161,7 +161,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument();
 
@@ -203,7 +203,7 @@ describe("ConfigAppPanel", () => {
       return Promise.resolve(undefined);
     });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     await waitFor(() => expect(screen.getByText("Confirmacion de contratacion")).toHaveAttribute("aria-pressed"));
 
@@ -229,7 +229,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     fireEvent.change(screen.getByDisplayValue("100"), { target: { value: "75" } });
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "IVOO C.A." } });
@@ -258,7 +258,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
     // Carga inicial del historial (una sola vez, no polling).
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/config-audit-logs?page=1&per_page=20", { token: "token" }));
@@ -295,7 +295,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" />);
+    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
 
     fireEvent.change(screen.getByDisplayValue("100"), { target: { value: "40" } });
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "IVOO C.A." } });
@@ -323,7 +323,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
     // La matriz de reglas vive en la tab "Notificaciones" — no es la activa
     // por default (esa es "Negocio").
@@ -376,7 +376,7 @@ describe("ConfigAppPanel", () => {
       updateSetting: mockUpdateSetting,
     });
 
-    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" />);
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
     // La matriz de reglas vive en la tab "Notificaciones" — no es la activa
     // por default (esa es "Negocio").

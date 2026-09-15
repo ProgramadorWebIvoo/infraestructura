@@ -22,13 +22,13 @@ import {
   Users,
   DollarSign,
   UserCog,
+  Settings,
   X,
   LogOut,
   ChevronRight,
   House,
   BanknoteArrowDown
 } from "lucide-react";
-import ConfigDropdown from "./ConfigDropdown";
 import SidebarTip from "./SidebarTip";
 import SidebarCollapseHint from "./SidebarCollapseHint";
 import NotificationBell from "./NotificationBell";
@@ -68,6 +68,7 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
   const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
   const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
   const prefetchCatalogos = usePrefetchOnIntent(ROUTES.CATALOGOS, authToken);
+  const prefetchConfigApp = usePrefetchOnIntent(ROUTES.CONFIG_APP, authToken);
 
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
   const collapseLabel = isCollapsed ? "Expandir barra de navegación" : "Minimizar barra de navegación";
@@ -383,8 +384,43 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
             </SidebarTip>
           )}
 
-          {/* ── Configuration Dropdown ────────────────────────────────────── */}
-          {canAccess("/usuarios") && <ConfigDropdown isCollapsed={effectiveCollapsed} onClose={onClose} authToken={authToken} />}
+          {/* ── Configuración ─────────────────────────────────────────────── */}
+          {/* Un solo ítem — antes era un dropdown con 5 rutas separadas
+              (Usuarios, Proveedores, Material, Modelos de IA, Configuración
+              App); ahora esas 4 vistas viven como tabs dentro de ConfigAppPanel,
+              así que basta un NavLink directo a /config-app. Se muestra si el
+              usuario tiene acceso a esa ruta o a cualquiera de las que ahora
+              son tabs suyas. */}
+          {/* Los 4 paths "/usuarios", "/config-proveedores", etc. ya no son
+              rutas del router (viven como tabs), pero siguen siendo los
+              identificadores de vista que devuelve el backend en
+              /api/auth/permissions — por eso se siguen usando como strings
+              literales acá en vez de vía ROUTES (que ya no los expone). */}
+          {(canAccess(ROUTES.CONFIG_APP) ||
+            canAccess("/usuarios") ||
+            canAccess("/config-proveedores") ||
+            canAccess("/config-materiales") ||
+            canAccess("/config-ia")) && (
+            <SidebarTip label="Configuración" disabled={!effectiveCollapsed}>
+              <NavLink
+                to={ROUTES.CONFIG_APP}
+                id="sidebar-config-app"
+                onClick={onClose}
+                onMouseEnter={prefetchConfigApp.onMouseEnter}
+                onFocus={prefetchConfigApp.onFocus}
+                onMouseLeave={prefetchConfigApp.onMouseLeave}
+                onBlur={prefetchConfigApp.onBlur}
+                className={navLinkClass("neutral", effectiveCollapsed)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <Settings className={sidebarIconClass(isActive)} />
+                    <span className={sidebarTextClass(effectiveCollapsed)}>Configuración</span>
+                  </>
+                )}
+              </NavLink>
+            </SidebarTip>
+          )}
         </nav>
 
         {/* ── Exchange Rates Section ───────────────────────────────────────── */}

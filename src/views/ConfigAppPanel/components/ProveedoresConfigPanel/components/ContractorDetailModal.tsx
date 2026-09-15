@@ -15,7 +15,7 @@ import Button from "@/components/UI/Button";
 import Spinner from "@/components/UI/Spinner";
 import Card from "@/components/UI/Card";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
-import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "@/views/ProveedoresConfigPanel/types";
+import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel/types";
 import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
 import { getContractorRatingSuggestion, type ContractorRatingSuggestion } from "@/services/aiEvaluationService";
 import { getErrorMessage } from "@/services/logger";

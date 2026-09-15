@@ -25,7 +25,6 @@ import UserAccessModal from "./components/UserAccessModal";
 import { getUserColumns } from "./columns";
 import { EMPTY_FORM, type UserForm } from "./types";
 import { getErrorMessage } from "@/services/logger";
-import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
 import { userFormSchema } from "@/schemas/userAccount.schema";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
 import { useUserAccess } from "@/hooks/useUserAccess";
@@ -316,18 +315,6 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
           onSave={handleSaveAccess}
         />
       </div>
-
-      {isSuperadmin && (
-        <ConfigAuditLogPanel
-          logs={auditLogs}
-          isLoading={isLoadingAuditLogs}
-          pagination={{ page: auditLogPage, lastPage: auditLogLastPage, total: auditLogTotal, onPageChange: goToAuditLogPage }}
-          filters={auditLogFilters}
-          onFilterChange={updateAuditLogFilter}
-          onClearFilters={clearAuditLogFilters}
-          activeFilterCount={auditLogActiveFilterCount}
-        />
-      )}
     </motion.div>
   );
 }

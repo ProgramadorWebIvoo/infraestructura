@@ -11,7 +11,7 @@ import Button from "@/components/UI/Button";
 import Select from "@/components/UI/Select";
 import NumericInput from "@/components/UI/NumericInput";
 import { RequiredMark } from "@/components/UI/HintSignals";
-import { STATUS_OPTIONS, type MaterialForm } from "@/views/MaterialConfigPanel/types";
+import { STATUS_OPTIONS, type MaterialForm } from "@/views/ConfigAppPanel/components/MaterialConfigPanel/types";
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 const inputClass =

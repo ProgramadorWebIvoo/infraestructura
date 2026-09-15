@@ -16,8 +16,6 @@ import {
   Users,
   DollarSign,
   UserCog,
-  Package,
-  Brain,
   SlidersHorizontal,
   BanknoteArrowDown
 } from "lucide-react";
@@ -38,11 +36,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   [ROUTES.ANALISTAS]: { label: "Analistas", icon: Users, color: "#059669" },
   [ROUTES.FINANZAS]: { label: "Finanzas", icon: DollarSign, color: "#E11D48" },
   [ROUTES.CATALOGOS]: { label: "Proveedores", icon: UserCog, color: "#CBD5E1" },
-  [ROUTES.USUARIOS]: { label: "Usuarios", icon: Users, color: "#38BDF8" },
-  [ROUTES.CONFIG_PROVEEDORES]: { label: "Proveedores", icon: UserCog, color: "#818CF8" },
-  [ROUTES.CONFIG_MATERIALES]: { label: "Material", icon: Package, color: "#059669" },
-  [ROUTES.CONFIG_IA]: { label: "Modelos de IA", icon: Brain, color: "#0284c7" },
-  [ROUTES.CONFIG_APP]: { label: "Configuración App", icon: SlidersHorizontal, color: "#64748B" },
+  [ROUTES.CONFIG_APP]: { label: "Configuración", icon: SlidersHorizontal, color: "#64748B" },
 };
 
 /** Busca metadata por el prefijo de path más específico (para rutas con :params) */

@@ -20,7 +20,7 @@ describe("isPublicRoute", () => {
   it("retorna false para rutas autenticadas", () => {
     expect(isPublicRoute(ROUTES.PRESIDENCIA)).toBe(false);
     expect(isPublicRoute(ROUTES.FINANZAS)).toBe(false);
-    expect(isPublicRoute(ROUTES.USUARIOS)).toBe(false);
+    expect(isPublicRoute("/usuarios")).toBe(false);
     expect(isPublicRoute("/")).toBe(false);
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SidebarNav from "@/components/UI/SidebarNav";
@@ -136,38 +136,19 @@ describe("SidebarNav", () => {
     expect(screen.getByText("Proveedores")).toBeInTheDocument();
   });
 
-  it("renders configuration button when canAccess('/usuarios') is true", () => {
+  it("renders configuration link when canAccess('/usuarios') is true", () => {
     renderSidebar({ canAccess: vi.fn((path) => path === "/usuarios" || path === "/presidencia") });
 
     expect(screen.getByText("Configuración")).toBeInTheDocument();
     expect(screen.getByText("Presidencia")).toBeInTheDocument();
   });
 
-  it("does not render configuration section when canAccess('/usuarios') is false", () => {
+  it("does not render configuration link when the user has no access to any of its tabs", () => {
     const canAccess = vi.fn(() => false);
 
     renderSidebar({ canAccess });
 
     expect(screen.queryByText("Configuración")).not.toBeInTheDocument();
-  });
-
-  it("toggles configuration dropdown when button is clicked", async () => {
-    renderSidebar();
-
-    const configBtn = screen.getByText("Configuración");
-    expect(screen.queryByText("Usuarios")).not.toBeInTheDocument(); // sub-items hidden
-
-    fireEvent.click(configBtn);
-    expect(screen.getByText("Usuarios")).toBeInTheDocument();
-    // "Proveedores" appears both as main nav link and config sub-item
-    expect(screen.getAllByText("Proveedores").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Material")).toBeInTheDocument();
-    expect(screen.getByText("Modelos de IA")).toBeInTheDocument();
-
-    fireEvent.click(configBtn);
-    // El submenú es un acordeón con animación de salida (AnimatePresence):
-    // la remoción del DOM ocurre al terminar el exit, no en el mismo tick.
-    await waitFor(() => expect(screen.queryByText("Usuarios")).not.toBeInTheDocument());
   });
 
   it("renders logout button and calls onLogout on click", () => {
@@ -228,16 +209,6 @@ describe("SidebarNav", () => {
     expect(screen.getByRole("menuitem")).toHaveTextContent("Cerrar Sesión");
   });
 
-  it("configuration dropdown button has aria-expanded", () => {
-    renderSidebar();
-
-    const configBtn = screen.getByText("Configuración").closest("button")!;
-    expect(configBtn.getAttribute("aria-expanded")).toBe("false");
-
-    fireEvent.click(configBtn);
-    expect(configBtn.getAttribute("aria-expanded")).toBe("true");
-  });
-
   it("NavLinks have correct 'to' paths", () => {
     renderSidebar();
 
@@ -248,16 +219,7 @@ describe("SidebarNav", () => {
     expect(screen.getByText("Analistas").closest("a")).toHaveAttribute("href", "/analistas");
     expect(screen.getByText("Finanzas").closest("a")).toHaveAttribute("href", "/finanzas");
     expect(screen.getByText("Proveedores").closest("a")).toHaveAttribute("href", "/catalogos");
-
-    // Open config to check sub-items
-    fireEvent.click(screen.getByText("Configuración"));
-    expect(screen.getByText("Usuarios").closest("a")).toHaveAttribute("href", "/usuarios");
-    // The config "Proveedores" (second occurrence) goes to /config-proveedores
-    const proveedoresLinks = screen.getAllByText("Proveedores");
-    const configProveedoresLink = proveedoresLinks[1].closest("a");
-    expect(configProveedoresLink).toHaveAttribute("href", "/config-proveedores");
-    expect(screen.getByText("Material").closest("a")).toHaveAttribute("href", "/config-materiales");
-    expect(screen.getByText("Modelos de IA").closest("a")).toHaveAttribute("href", "/config-ia");
+    expect(screen.getByText("Configuración").closest("a")).toHaveAttribute("href", "/config-app");
   });
 
   it("closes sidebar when a NavLink is clicked", () => {
@@ -363,21 +325,17 @@ describe("SidebarNav", () => {
     expect(presidencia.className).toContain("opacity-100");
   });
 
-  it("collapsed sidebar centers config button and hides submenu indentation", () => {
+  it("collapsed sidebar centers config link and hides its label", () => {
     renderSidebar({ isCollapsed: true, isOpen: false });
 
-    const configBtn = screen.getByText("Configuración").closest("button")!;
-    expect(configBtn.className).toContain("justify-center");
-    expect(configBtn.className).toContain("px-0");
-    expect(configBtn.className).not.toContain("px-3");
+    const configLink = screen.getByText("Configuración").closest("a")!;
+    expect(configLink.className).toContain("justify-center");
+    expect(configLink.className).toContain("px-0");
+    expect(configLink.className).not.toContain("px-3");
 
-    fireEvent.click(configBtn);
-
-    const submenu = document.querySelector('[role="menu"]')!;
-    expect(submenu.className).not.toContain("ml-3");
-    const usuarios = screen.getByText("Usuarios");
-    expect(usuarios.className).toContain("max-w-0");
-    expect(usuarios.className).toContain("opacity-0");
+    const label = screen.getByText("Configuración");
+    expect(label.className).toContain("max-w-0");
+    expect(label.className).toContain("opacity-0");
   });
 
   it("collapsed sidebar centers user avatar and logout icon", () => {

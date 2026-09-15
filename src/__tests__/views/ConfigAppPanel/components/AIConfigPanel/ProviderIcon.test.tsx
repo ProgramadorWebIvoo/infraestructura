@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import ProviderIcon from "@/views/AIConfigPanel/components/ProviderIcon";
+import ProviderIcon from "@/views/ConfigAppPanel/components/AIConfigPanel/components/ProviderIcon";
 
 describe("ProviderIcon", () => {
   it("renderiza el label amigable del proveedor", () => {
