@@ -2,10 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Hook for Configuración de Keys (SMTP, Pusher) — credenciales de
+ * Hook for Configuración de Keys (SMTP, Pusher, Storage) — credenciales de
  * infraestructura editables sin tocar .env. Mismo patrón que useAIConfig:
  * los campos secretos llegan masked (hasValue + últimos 4 chars), nunca
- * completos.
+ * completos. Para "storage", `isActive` decide nube (S3) vs servidor (local).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,7 +13,7 @@ import { apiFetch } from "@/services/api";
 import { logError } from "@/services/logger";
 import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 
-export type SystemKeyGroup = "smtp" | "pusher";
+export type SystemKeyGroup = "smtp" | "pusher" | "storage";
 
 export interface SystemKeyField {
   hasValue: boolean;
