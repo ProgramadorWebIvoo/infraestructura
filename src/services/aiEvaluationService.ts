@@ -3,8 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Servicio de Evaluación Inteligente de Ofertas.
- * Comunica con el endpoint Laravel POST /api/ai/evaluate-proposals
- * que orquesta ChatGPT → Gemini → Claude con failover automático.
+ * Comunica con el endpoint Laravel POST /api/ai/evaluate-proposals, que
+ * encola la evaluación (ChatGPT → Gemini → Claude con failover automático)
+ * en un Job en vez de correrla en el request HTTP — con hasta 3 providers x
+ * 60s de timeout, la versión síncrona podía bloquear un worker hasta 180s
+ * (auditoría de rendimiento 2026-09-16). El endpoint ahora responde 202 de
+ * inmediato; el resultado se obtiene con getAIEvaluationStatus() (polling) o
+ * el evento WebSocket `ai-evaluation.finished` — ver
+ * EvaluacionInteligenteModal, que usa ambos (WS primero, poll de respaldo).
  */
 
 import type { MaterialItem, Project, Proposal } from "@/types";
@@ -97,16 +103,33 @@ interface AIEvaluationPayload {
 // Servicio
 // ---------------------------------------------------------------------------
 
+/** Respuesta inmediata del POST — la evaluación real corre en background. */
+export interface AIEvaluationAccepted {
+  success: true;
+  status: "processing";
+  projectId: string;
+}
+
+/** Respuesta de GET .../status/{project} — para polling. */
+export interface AIEvaluationStatusResponse {
+  success: true;
+  status: "processing" | "completed" | "failed" | null;
+  error: string | null;
+  data: AIEvaluationResult | null;
+}
+
 /**
- * Evalúa las propuestas de un proyecto usando el proxy AI del backend Laravel.
- * El backend orquesta ChatGPT → Gemini → Claude con failover automático.
+ * Dispara la evaluación de propuestas usando el proxy AI del backend
+ * Laravel. El backend encola el trabajo y responde de inmediato (202) —
+ * el resultado se consulta después con getAIEvaluationStatus() o se recibe
+ * por WebSocket.
  */
 export async function evaluateProposals(
   project: Project,
   proposals: Proposal[],
   authToken: string,
   provider?: 'chatgpt' | 'gemini' | 'claude',
-): Promise<AIEvaluationResult> {
+): Promise<AIEvaluationAccepted> {
   const payload: AIEvaluationPayload = {
     projectId: project.id,
     projectTitle: project.title,
@@ -149,11 +172,19 @@ export async function evaluateProposals(
 
   if (provider) payload.provider = provider;
 
-  const result = await apiFetch<AIEvaluationResult>("/ai/evaluate-proposals", {
+  return apiFetch<AIEvaluationAccepted>("/ai/evaluate-proposals", {
     method: "POST",
     token: authToken,
     body: JSON.stringify(payload),
   });
+}
 
-  return result;
+/** Consulta el estado actual de la evaluación en curso/última para un proyecto. */
+export async function getAIEvaluationStatus(
+  projectId: string,
+  authToken: string,
+): Promise<AIEvaluationStatusResponse> {
+  return apiFetch<AIEvaluationStatusResponse>(`/ai/evaluate-proposals/status/${projectId}`, {
+    token: authToken,
+  });
 }

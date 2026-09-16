@@ -5,7 +5,7 @@ vi.mock("@/services/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-import { evaluateProposals, evaluateDossier, type AIEvaluationResult } from "@/services/aiEvaluationService";
+import { evaluateProposals, evaluateDossier, getAIEvaluationStatus, type AIEvaluationResult } from "@/services/aiEvaluationService";
 import type { Project, Proposal } from "@/types";
 
 function createMockProject(overrides: Partial<Project> = {}): Project {
@@ -48,10 +48,12 @@ const mockResult: AIEvaluationResult = {
   providerUsed: "chatgpt",
 };
 
+const mockAccepted = { success: true as const, status: "processing" as const, projectId: "PRJ-001" };
+
 describe("evaluateProposals", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
-    mockApiFetch.mockResolvedValue(mockResult);
+    mockApiFetch.mockResolvedValue(mockAccepted);
   });
 
   it("llama a POST /ai/evaluate-proposals con el token de auth", async () => {
@@ -113,9 +115,9 @@ describe("evaluateProposals", () => {
     expect(body.provider).toBe("gemini");
   });
 
-  it("retorna el resultado tal cual lo entrega apiFetch", async () => {
+  it("retorna el acuse de encolado (202) tal cual lo entrega apiFetch", async () => {
     const result = await evaluateProposals(createMockProject(), [createMockProposal()], "token");
-    expect(result).toEqual(mockResult);
+    expect(result).toEqual(mockAccepted);
   });
 
   it("propaga el error si apiFetch falla", async () => {
@@ -124,6 +126,39 @@ describe("evaluateProposals", () => {
     await expect(
       evaluateProposals(createMockProject(), [createMockProposal()], "token"),
     ).rejects.toThrow("Todos los proveedores fallaron.");
+  });
+});
+
+describe("getAIEvaluationStatus", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+  });
+
+  it("llama a GET /ai/evaluate-proposals/status/{projectId} con el token de auth", async () => {
+    mockApiFetch.mockResolvedValue({ success: true, status: "completed", error: null, data: mockResult });
+
+    await getAIEvaluationStatus("PRJ-001", "auth-token-123");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/ai/evaluate-proposals/status/PRJ-001",
+      expect.objectContaining({ token: "auth-token-123" }),
+    );
+  });
+
+  it("retorna el resultado cuando el status es completed", async () => {
+    mockApiFetch.mockResolvedValue({ success: true, status: "completed", error: null, data: mockResult });
+
+    const res = await getAIEvaluationStatus("PRJ-001", "token");
+    expect(res.status).toBe("completed");
+    expect(res.data).toEqual(mockResult);
+  });
+
+  it("retorna el error cuando el status es failed", async () => {
+    mockApiFetch.mockResolvedValue({ success: true, status: "failed", error: "Todos los proveedores fallaron.", data: null });
+
+    const res = await getAIEvaluationStatus("PRJ-001", "token");
+    expect(res.status).toBe("failed");
+    expect(res.error).toBe("Todos los proveedores fallaron.");
   });
 });
 

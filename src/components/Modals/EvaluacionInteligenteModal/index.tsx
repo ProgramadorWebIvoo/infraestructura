@@ -14,9 +14,11 @@ import Modal from "@/components/UI/Modal";
 import type { Project, Proposal } from "@/types";
 import {
   evaluateProposals,
+  getAIEvaluationStatus,
   AIEvaluationResult,
   type AIProviderUsed,
 } from "@/services/aiEvaluationService";
+import { createEchoClient } from "@/services/echo";
 import { PROVIDER_META } from "./constants";
 import IdleView from "./IdleView";
 import LoadingView from "./LoadingView";
@@ -63,6 +65,26 @@ export default function EvaluacionInteligenteModal({
   const [selectedProvider, setSelectedProvider] = useState<"auto" | AIProviderUsed>("auto");
   const logEndRef = useRef<HTMLDivElement>(null);
 
+  // La evaluación corre en background (Job en cola, ver aiEvaluationService.ts)
+  // — estas refs sostienen la suscripción WebSocket + el polling de respaldo
+  // que "esperan" el resultado sin bloquear el hilo principal del navegador.
+  const pollTimerRef = useRef<number | null>(null);
+  const echoCleanupRef = useRef<(() => void) | null>(null);
+
+  const stopWatchingEvaluation = useCallback(() => {
+    if (pollTimerRef.current !== null) {
+      window.clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+    if (echoCleanupRef.current) {
+      echoCleanupRef.current();
+      echoCleanupRef.current = null;
+    }
+  }, []);
+
+  // Cortar WS/polling si el modal se desmonta con una evaluación en curso.
+  useEffect(() => () => stopWatchingEvaluation(), [stopWatchingEvaluation]);
+
   // Al abrir: si hay una evaluación cacheada para este expediente (no
   // invalidada por cambios posteriores al cuadro comparativo), se muestra
   // directamente en vez de forzar una nueva llamada a IA — solo "Re-evaluar"
@@ -99,6 +121,62 @@ export default function EvaluacionInteligenteModal({
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [failoverLog]);
 
+  // --- Esperar el resultado del Job en background ---
+  // WebSocket (Pusher) para resolución instantánea + polling de respaldo
+  // cada 3s (por si el navegador no soporta WS, la key de Pusher no está
+  // configurada, o el evento se pierde) — el primero que llegue gana, ver
+  // stopWatchingEvaluation().
+  const watchEvaluation = useCallback(
+    (projectId: string, log: (msg: string) => void) => {
+      stopWatchingEvaluation();
+
+      const settle = (
+        outcome: "completed" | "failed",
+        data: AIEvaluationResult | null,
+        error: string | null,
+      ) => {
+        stopWatchingEvaluation();
+        if (outcome === "completed" && data) {
+          log(`✅ Evaluación completada por ${PROVIDER_META[data.providerUsed].label}`);
+          setResult(data);
+          setStatus("result");
+        } else {
+          const message = error ?? "Error desconocido al evaluar propuestas.";
+          log(`❌ Error: ${message}`);
+          setErrorMsg(message);
+          setStatus("error");
+        }
+      };
+
+      const echo = createEchoClient();
+      if (echo) {
+        const channelName = `project.${projectId}.ai-evaluation`;
+        const channel = echo.private(channelName);
+        channel.listen(
+          ".ai-evaluation.finished",
+          (payload: { status: "completed" | "failed"; data: AIEvaluationResult | null; error: string | null }) => {
+            settle(payload.status, payload.data, payload.error);
+          },
+        );
+        echoCleanupRef.current = () => echo.leaveChannel(channelName);
+      }
+
+      pollTimerRef.current = window.setInterval(async () => {
+        try {
+          const res = await getAIEvaluationStatus(projectId, authToken);
+          if (res.status === "completed" && res.data) {
+            settle("completed", res.data, null);
+          } else if (res.status === "failed") {
+            settle("failed", null, res.error);
+          }
+        } catch {
+          // Silencioso: reintenta en el próximo tick, no corta el WS.
+        }
+      }, 3000);
+    },
+    [authToken, stopWatchingEvaluation],
+  );
+
   // --- Ejecutar evaluación ---
   const runEvaluation = useCallback(async () => {
     setStatus("loading");
@@ -117,16 +195,10 @@ export default function EvaluacionInteligenteModal({
 
       log(`Iniciando evaluación con ${startLabel}...`);
 
-      const data = await evaluateProposals(project, proposals, authToken, providerParam);
+      await evaluateProposals(project, proposals, authToken, providerParam);
+      log("Evaluación encolada — procesando en background...");
 
-      // Mostrar el log de failover del backend
-      if (data.attemptLog && data.attemptLog.length > 0) {
-        data.attemptLog.forEach((entry) => log(entry));
-      }
-
-      log(`✅ Evaluación completada por ${PROVIDER_META[data.providerUsed].label}`);
-      setResult(data);
-      setStatus("result");
+      watchEvaluation(project.id, log);
     } catch (err: unknown) {
       const error = err as Error & { attemptLog?: string[] };
       const message = error?.message ?? "Error desconocido al evaluar propuestas.";
@@ -139,7 +211,7 @@ export default function EvaluacionInteligenteModal({
       setErrorMsg(message);
       setStatus("error");
     }
-  }, [project, proposals, authToken, selectedProvider]);
+  }, [project, proposals, authToken, selectedProvider, watchEvaluation]);
 
   // --- Aceptar recomendación ---
   const handleAccept = async () => {
