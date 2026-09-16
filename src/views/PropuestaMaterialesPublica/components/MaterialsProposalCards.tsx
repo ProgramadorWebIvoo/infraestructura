@@ -20,6 +20,8 @@ import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { itemVariants, springs } from "@/animations";
 import { apiFetch, getApiBaseUrl } from "@/services/api";
+import { getErrorMessage } from "@/services/logger";
+import { useToast } from "@/components/UI/Toast";
 import {
   sanitize,
   CONDITION_OPTIONS,
@@ -178,16 +180,19 @@ function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (pr
 function ImageUploader({ token, item, onUploaded }: { token: string; item: ItemRow; onUploaded: (path: string | null) => void }) {
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const handleFile = async (file: File) => {
     setIsUploading(true);
     try {
       const form = new FormData();
       form.append("image", file);
-      const res = await apiFetch<{ path: string }>(`/public/invitations/${token}/proposal-image`, { method: "POST", body: form });
+      const res = await apiFetch<{ path: string; optimized: boolean }>(`/public/invitations/${token}/proposal-image`, { method: "POST", body: form });
       onUploaded(res.path);
-    } catch {
-      // El toast de error lo maneja el consumidor si hace falta; acá basta con no persistir el path.
+    } catch (error) {
+      // Mensaje del backend (pared de seguridad, tipo/tamaño no permitido) —
+      // ya viene en español y listo para mostrar tal cual, sin detalle interno.
+      showToast(getErrorMessage(error, "No se pudo subir la imagen."), "error");
     } finally {
       setIsUploading(false);
     }

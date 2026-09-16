@@ -11,9 +11,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/services/api";
-import { logError } from "@/services/logger";
+import { getErrorMessage, logError } from "@/services/logger";
 import type { ShowToast } from "./useProjects";
-import type { MarketingProject, MarketingProjectFormInput } from "@/views/MarketingPanel/types";
+import type { MarketingProject, MarketingProjectAttachment, MarketingProjectFormInput } from "@/views/MarketingPanel/types";
 
 /** El backend pagina (Resource::collection->paginate(15)) — solo la primera página por ahora. */
 interface PaginatedResponse<T> {
@@ -56,14 +56,21 @@ export function useMarketingProjects(authToken: string, showToast: ShowToast) {
           const form = new FormData();
           files.forEach((f) => form.append("files[]", f));
           try {
-            await apiFetch(`/marketing-projects/${created.data.id}/attachments`, {
+            const saved = await apiFetch<MarketingProjectAttachment[]>(`/marketing-projects/${created.data.id}/attachments`, {
               method: "POST",
               token: authToken,
               body: form,
             });
+            const optimizedCount = saved.filter(a => a.optimized).length;
+            if (optimizedCount > 0) {
+              showToast(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
+            }
           } catch (err) {
             logError("useMarketingProjects.create:uploadAttachments", err);
-            showToast("Propuesta creada, pero no se pudieron adjuntar los archivos.", "warning");
+            showToast(
+              getErrorMessage(err, "Propuesta creada, pero no se pudieron adjuntar los archivos."),
+              "warning",
+            );
           }
         }
 

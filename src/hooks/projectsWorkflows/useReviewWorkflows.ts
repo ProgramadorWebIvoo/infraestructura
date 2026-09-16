@@ -12,8 +12,8 @@ import { useCallback } from "react";
 import type { Project, ProjectDocument } from "@/types";
 import { ProjectStatus } from "@/types";
 import { apiFetch } from "@/services/api";
-import { logError } from "@/services/logger";
-import { uploadDocumentGroup, type WorkflowContext } from "./shared";
+import { getErrorMessage, logError } from "@/services/logger";
+import { describeUploadFailures, uploadDocumentGroup, type UploadDocumentGroupResult, type WorkflowContext } from "./shared";
 
 export function useReviewWorkflows({
   authTokenRef,
@@ -57,7 +57,8 @@ export function useReviewWorkflows({
         uploadDocumentGroup(project.id, files.documents, "CALC", "documentos", token, "handleAddProject:upload:CALC"),
         uploadDocumentGroup(project.id, files.plans, "PLANO", "planos", token, "handleAddProject:upload:PLANO"),
       ]);
-      const failedGroups = results.filter((r): r is string => r !== null);
+      const failedGroups = results.filter(r => r.failedGroup !== null);
+      const optimizedCount = results.reduce((sum, r) => sum + r.optimizedCount, 0);
 
       try {
         const refreshed = await apiFetch<Project>(`/projects/${project.id}`, { token });
@@ -68,14 +69,14 @@ export function useReviewWorkflows({
 
       if (failedGroups.length === 0) {
         show("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.", "success");
+        if (optimizedCount > 0) {
+          show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
+        }
         return { ok: true, partial: false, failedGroups: [] };
       }
 
-      show(
-        `Petición registrada, pero no se pudieron adjuntar: ${failedGroups.join(", ")}.`,
-        "warning",
-      );
-      return { ok: true, partial: true, failedGroups };
+      show(describeUploadFailures(failedGroups), "warning");
+      return { ok: true, partial: true, failedGroups: failedGroups.map(g => g.failedGroup as string) };
     },
     [authTokenRef, showToastRef, syncProjectRef],
   );
@@ -152,7 +153,10 @@ export function useReviewWorkflows({
         return { ok: true, partial: false, failedGroups: [] };
       } catch (error) {
         logError("handleRejectProject:uploadCorrections", error);
-        show("Petición rechazada, pero no se pudieron adjuntar las correcciones.", "warning");
+        show(
+          getErrorMessage(error, "Petición rechazada, pero no se pudieron adjuntar las correcciones."),
+          "warning",
+        );
         return { ok: true, partial: true, failedGroups: ["correcciones"] };
       }
     },
@@ -196,17 +200,17 @@ export function useReviewWorkflows({
         return { ok: false, partial: false, failedGroups: [] };
       }
 
-      const uploadReplacement = async (documentId: number, documentType: ProjectDocument["documentType"], file: File) => {
+      const uploadReplacement = async (documentId: number, documentType: ProjectDocument["documentType"], file: File): Promise<UploadDocumentGroupResult> => {
         const form = new FormData();
         form.append("document_type", documentType);
         form.append("new_version_of", String(documentId));
         form.append("files[]", file);
         try {
-          await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-          return null;
+          const saved = await apiFetch<ProjectDocument[]>(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+          return { failedGroup: null, optimizedCount: saved.filter(d => d.optimized).length };
         } catch (error) {
           logError(`handleResubmitProject:uploadReplacement:${documentId}`, error);
-          return `nueva versión de ${file.name}`;
+          return { failedGroup: `nueva versión de ${file.name}`, errorMessage: getErrorMessage(error), optimizedCount: 0 };
         }
       };
 
@@ -216,7 +220,8 @@ export function useReviewWorkflows({
         uploadDocumentGroup(projectId, files.plans, "PLANO", "planos", token, "handleResubmitProject:upload:PLANO"),
         ...versionReplacements.map((r) => uploadReplacement(r.documentId, r.documentType, r.file)),
       ]);
-      const failedGroups = results.filter((r): r is string => r !== null);
+      const failedGroups = results.filter(r => r.failedGroup !== null);
+      const optimizedCount = results.reduce((sum, r) => sum + r.optimizedCount, 0);
 
       try {
         const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
@@ -227,14 +232,14 @@ export function useReviewWorkflows({
 
       if (failedGroups.length === 0) {
         show("Petición corregida y reenviada a Cierre de Obra.", "success");
+        if (optimizedCount > 0) {
+          show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
+        }
         return { ok: true, partial: false, failedGroups: [] };
       }
 
-      show(
-        `Petición reenviada, pero no se pudieron adjuntar: ${failedGroups.join(", ")}.`,
-        "warning",
-      );
-      return { ok: true, partial: true, failedGroups };
+      show(describeUploadFailures(failedGroups), "warning");
+      return { ok: true, partial: true, failedGroups: failedGroups.map(g => g.failedGroup as string) };
     },
     [authTokenRef, showToastRef, syncProjectRef],
   );
@@ -307,7 +312,10 @@ export function useReviewWorkflows({
         return { ok: true, partial: false, failedGroups: [] };
       } catch (error) {
         logError("handleSendToReevaluation:uploadEvidence", error);
-        show("Expediente enviado a reevaluación, pero no se pudo adjuntar la evidencia.", "warning");
+        show(
+          getErrorMessage(error, "Expediente enviado a reevaluación, pero no se pudo adjuntar la evidencia."),
+          "warning",
+        );
         return { ok: true, partial: true, failedGroups: ["evidencia"] };
       }
     },

@@ -161,6 +161,9 @@ export interface ProjectDocument {
   documentGroupId: number;
   versionNumber: number;
   deletedAt?: string | null;
+  /** Solo presente en la respuesta de upload — true si el backend
+   *  recomprimió/redimensionó la imagen antes de guardarla. */
+  optimized?: boolean;
 }
 
 export interface Project {

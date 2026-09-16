@@ -39,6 +39,8 @@ import { NotificationsProvider } from "./components/UI/NotificationsProvider";
 import { PublicSettingsProvider } from "./components/UI/PublicSettingsProvider";
 import { ExchangeRatesProvider } from "./components/UI/ExchangeRatesProvider";
 import { AiFeatureGateProvider } from "./components/UI/AiFeatureGateProvider";
+import DebugPanel from "./components/UI/DebugPanel/DebugPanel";
+import { useDebugStore } from "./stores/debugStore";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -205,6 +207,14 @@ function AppRoutes() {
 
   // ---- Role Access ----
   const { activeRole, canAccess, firstAllowedRoute, isLoadingPermissions } = useRoleAccess(authUser?.role);
+
+  // ---- Debug mode: flag client-side (stores/debugStore.ts), gateado a
+  // ADMIN/SUPERADMIN — mismo criterio de rol que el toggle en CONFIG APP
+  // (ver ConfigAppPanel/components/DebugModeCard.tsx). Alguien con un rol
+  // distinto nunca ve el botón flotante aunque el flag haya quedado
+  // encendido en su localStorage (ej. cambio de rol sin logout).
+  const debugModeEnabled = useDebugStore(s => s.enabled);
+  const canUseDebugMode = activeRole === "SUPERADMIN" || activeRole === "ADMIN";
 
   // ---- Pre-fetching inteligente: heurística "próxima ruta probable por rol" ----
   useIdleRoutePrefetch(activeRole, canAccess);
@@ -407,6 +417,7 @@ function AppRoutes() {
         isCreatingMarketing={isCreatingMarketing}
         onCreateMarketingProject={handleCreateMarketingProject}
       />
+      {canUseDebugMode && debugModeEnabled && <DebugPanel authUser={authUser} activeRole={activeRole} />}
       </ExchangeRatesProvider>
     </NotificationsProvider>
   );

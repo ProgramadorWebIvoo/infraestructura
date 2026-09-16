@@ -11,6 +11,8 @@ vi.mock("@/services/api", () => ({
 
 vi.mock("@/services/logger", () => ({
   logError: vi.fn(),
+  getErrorMessage: (error: unknown, fallback = "Error inesperado.") =>
+    error instanceof Error ? error.message : fallback,
 }));
 
 import { useProjectsWorkflows } from "@/hooks/useProjectsWorkflows";
@@ -132,9 +134,9 @@ describe("useProjectsWorkflows", () => {
       const refreshedProject = createMockProject({ estimatedTotal: 999 });
       mockApiFetch
         .mockResolvedValueOnce(newProject) // POST /projects
-        .mockResolvedValueOnce({ data: [] }) // POST documents FOTO
-        .mockResolvedValueOnce({ data: [] }) // POST documents CALC
-        .mockResolvedValueOnce({ data: [] }) // POST documents PLANO
+        .mockResolvedValueOnce([]) // POST documents FOTO
+        .mockResolvedValueOnce([]) // POST documents CALC
+        .mockResolvedValueOnce([]) // POST documents PLANO
         .mockResolvedValueOnce(refreshedProject); // GET refresh
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
@@ -725,10 +727,8 @@ describe("useProjectsWorkflows", () => {
       await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile());
 
       expect(mockApiFetch).toHaveBeenCalledTimes(1);
-      expect(showToast).toHaveBeenCalledWith(
-        expect.stringContaining("No se pudo adjuntar el comprobante"),
-        "error",
-      );
+      // Muestra el mensaje real del backend (getErrorMessage), no uno genérico.
+      expect(showToast).toHaveBeenCalledWith("upload failed", "error");
     });
 
     it("shows error toast when the payment fails after the proof was uploaded", async () => {
@@ -775,10 +775,7 @@ describe("useProjectsWorkflows", () => {
       await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile());
 
       expect(mockApiFetch).toHaveBeenCalledTimes(1);
-      expect(showToast).toHaveBeenCalledWith(
-        expect.stringContaining("No se pudo adjuntar el comprobante"),
-        "error",
-      );
+      expect(showToast).toHaveBeenCalledWith("upload failed", "error");
     });
 
     it("shows error toast when the payment fails after the proof was uploaded", async () => {

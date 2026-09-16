@@ -44,7 +44,7 @@ interface SettingRowProps {
 export default function SettingRow({ setting, value, onChange, error, notificationActionsCatalog }: SettingRowProps) {
   const isNumeric = setting.type === "integer" || setting.type === "float";
   const isActionList = setting.type === "json" && ACTION_LIST_KEYS.has(setting.key) && !!notificationActionsCatalog;
-  const isCronHour = setting.key === "tasa_cambio_cron_hora";
+  const isCronHour = setting.key === "tasa_cambio_cron_hora" || setting.key === "rating_ia_cron_hora";
 
   const rangeHint =
     isNumeric && (setting.min_value !== null || setting.max_value !== null)

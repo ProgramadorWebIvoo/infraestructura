@@ -43,6 +43,7 @@ import { useToast } from "./Toast";
 import { BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
 import { notifyBrowser } from "@/services/browserNotifications";
 import { useNotificationsStore } from "@/stores/notificationsStore";
+import { pushDebugEntry, truncateForDebug, useDebugStore } from "@/stores/debugStore";
 
 export interface UseNotificationsResult {
   notifications: AppNotification[];
@@ -87,6 +88,19 @@ export function NotificationsProvider({ authToken, authUser, children }: Notific
     // anteponga el namespace default de eventos — el evento define
     // broadcastAs() explícito en el backend, sin namespace.
     channel.listen(".notification.created", (payload: AppNotification) => {
+      // Chequeo explícito (en vez de confiar solo en el no-op interno de
+      // push()) para no pagar ni el truncateForDebug() ni la construcción
+      // del objeto `detail` en la ruta hot de notificaciones cuando el modo
+      // está apagado — este listener corre para TODA sesión autenticada,
+      // no solo para quien puede ver el panel.
+      if (useDebugStore.getState().enabled) {
+        pushDebugEntry({
+          kind: "websocket",
+          level: "info",
+          label: `${channelName} — .notification.created`,
+          detail: { channel: channelName, event: ".notification.created", payload: truncateForDebug(payload) as Record<string, unknown> },
+        });
+      }
       pushFromSocket(payload);
 
       const title = payload.project_title_snapshot ?? "IVOO Gestión";

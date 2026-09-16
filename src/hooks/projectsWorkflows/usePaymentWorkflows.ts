@@ -12,7 +12,7 @@ import { useCallback } from "react";
 import type { Project } from "@/types";
 import { ProjectStatus } from "@/types";
 import { apiFetch } from "@/services/api";
-import { logError } from "@/services/logger";
+import { getErrorMessage, logError } from "@/services/logger";
 import type { WorkflowContext } from "./shared";
 
 /** Sube el comprobante bancario ANTES de confirmar el pago — si el
@@ -47,7 +47,7 @@ export function usePaymentWorkflows({
         await uploadPaymentProof(projectId, "COMPROBANTE_ANTICIPO", proofFile, token);
       } catch (error) {
         logError("handlePayAdvance:uploadProof", error);
-        show("No se pudo adjuntar el comprobante de pago. El anticipo no fue liberado.", "error");
+        show(getErrorMessage(error, "No se pudo adjuntar el comprobante de pago. El anticipo no fue liberado."), "error");
         return;
       }
 
@@ -78,7 +78,7 @@ export function usePaymentWorkflows({
         await uploadPaymentProof(projectId, "COMPROBANTE_FINIQUITO", proofFile, token);
       } catch (error) {
         logError("handlePayFinal:uploadProof", error);
-        show("No se pudo adjuntar el comprobante de pago. El finiquito no fue liquidado.", "error");
+        show(getErrorMessage(error, "No se pudo adjuntar el comprobante de pago. El finiquito no fue liquidado."), "error");
         return;
       }
 

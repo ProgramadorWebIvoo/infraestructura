@@ -22,13 +22,62 @@ import {
   setApiBaseUrl,
   setTokenRefreshHandler,
   getApiBaseUrl,
+  setApiDebugHook,
   apiFetch as sharedApiFetch,
   apiDownload as sharedApiDownload,
 } from "@ivoo/shared";
-import type { ApiFetchOptions } from "@ivoo/shared";
+import type { ApiFetchOptions, ApiDebugEvent } from "@ivoo/shared";
 import type { ProjectDocument } from "@/types";
+import { pushDebugEntry, truncateForDebug, useDebugStore } from "@/stores/debugStore";
 export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
+
+// ---------------------------------------------------------------------------
+// DEBUG-MODE: instrumentación de red
+// ---------------------------------------------------------------------------
+// El hook de @ivoo/shared solo se registra MIENTRAS el modo está encendido
+// (no a nivel de módulo, siempre activo) — apiFetchUncached() en el paquete
+// compartido ya evita todo el trabajo de armar el evento de debug cuando el
+// hook es `null` (ver comentario ahí), así que desregistrarlo cuando nadie
+// lo mira es lo que hace que el 99% de las sesiones (debug apagado o sin el
+// rol para verlo) paguen CERO overhead extra por request, no solo "poco".
+function handleApiDebugEvent(event: ApiDebugEvent): void {
+  pushDebugEntry({
+    kind: "http",
+    level: event.errorMessage ? "error" : "info",
+    label: `${event.method} ${event.path}${event.status ? ` — ${event.status}` : ""}`,
+    durationMs: event.durationMs,
+    detail: {
+      method: event.method,
+      path: event.path,
+      fullUrl: event.fullUrl,
+      status: event.status,
+      durationMs: event.durationMs,
+      requestHeaders: redactHeaders(event.requestHeaders),
+      requestBody: truncateForDebug(event.requestBody),
+      responseBody: truncateForDebug(event.responseBody),
+      errorMessage: event.errorMessage,
+    },
+  });
+}
+
+function syncApiDebugHook(enabled: boolean): void {
+  setApiDebugHook(enabled ? handleApiDebugEvent : null);
+}
+
+syncApiDebugHook(useDebugStore.getState().enabled);
+useDebugStore.subscribe((state, prevState) => {
+  if (state.enabled !== prevState.enabled) syncApiDebugHook(state.enabled);
+});
+
+/** Nunca mostrar tokens/cookies en claro en el panel de debug, aunque sea local. */
+function redactHeaders(headers: Record<string, string>): Record<string, string> {
+  const redacted: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    redacted[key] = /authorization|cookie|x-xsrf-token/i.test(key) ? "[redacted]" : value;
+  }
+  return redacted;
+}
 
 // ---------------------------------------------------------------------------
 // Inicialización de la base URL
@@ -108,7 +157,25 @@ export async function apiDownload(
   options: ApiFetchOptions = {},
 ): Promise<Blob> {
   const { token: _webIgnoresBearer, ...rest } = options;
-  return sharedApiDownload(path, { ...rest, credentials: "include" });
+  const startedAt = performance.now();
+  try {
+    const blob = await sharedApiDownload(path, { ...rest, credentials: "include" });
+    pushDebugEntry({
+      kind: "http",
+      level: "info",
+      label: `DOWNLOAD ${path}`,
+      detail: { method: "DOWNLOAD", path, durationMs: Math.round(performance.now() - startedAt), sizeBytes: blob.size, type: blob.type },
+    });
+    return blob;
+  } catch (err) {
+    pushDebugEntry({
+      kind: "http",
+      level: "error",
+      label: `DOWNLOAD ${path}`,
+      detail: { method: "DOWNLOAD", path, durationMs: Math.round(performance.now() - startedAt), errorMessage: err instanceof Error ? err.message : String(err) },
+    });
+    throw err;
+  }
 }
 
 /** Descarga un documento de proyecto y dispara el guardado en el navegador. Lanza si la descarga falla — el caller decide cómo mostrarlo (toast, etc). */

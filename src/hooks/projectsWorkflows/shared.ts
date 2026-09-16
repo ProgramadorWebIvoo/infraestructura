@@ -11,9 +11,9 @@
  */
 
 import { useCallback, useRef } from "react";
-import type { Project } from "@/types";
+import type { Project, ProjectDocument } from "@/types";
 import { apiFetch } from "@/services/api";
-import { logError } from "@/services/logger";
+import { getErrorMessage, logError } from "@/services/logger";
 import type { ShowToast } from "../useProjects";
 
 export interface UseProjectsWorkflowsOptions {
@@ -72,13 +72,22 @@ export function useWorkflowContext(options: UseProjectsWorkflowsOptions): Workfl
   return { authTokenRef, showToastRef, syncProjectRef, refreshAuditLogsRef, getProjectRef, optimisticUpdate };
 }
 
+export interface UploadDocumentGroupResult {
+  /** `groupLabel` si el grupo falló por completo, `null` si estaba vacío o subió bien. */
+  failedGroup: string | null;
+  /** Mensaje ya en español listo para mostrar al usuario (viene del backend:
+   *  pared de seguridad, tipo de archivo no permitido, tamaño excedido, etc.)
+   *  — undefined si no falló. */
+  errorMessage?: string;
+  /** Cuántos archivos de este grupo el backend optimizó (recomprimió/redimensionó). */
+  optimizedCount: number;
+}
+
 /**
  * Sube un grupo de archivos (fotos/documentos/planos) al endpoint de
  * documentos de un proyecto — usado por `handleAddProject` y
  * `handleResubmitProject` (mismo shape de dos fases: JSON + upload
- * multipart opcional + refetch). Devuelve `null` si el grupo estaba vacío
- * o subió bien, o `groupLabel` si falló (para que el caller arme el
- * mensaje de "éxito parcial" con los grupos que no se pudieron adjuntar).
+ * multipart opcional + refetch).
  */
 export async function uploadDocumentGroup(
   projectId: string,
@@ -87,16 +96,33 @@ export async function uploadDocumentGroup(
   groupLabel: string,
   token: string,
   logContext: string,
-): Promise<string | null> {
-  if (list.length === 0) return null;
+): Promise<UploadDocumentGroupResult> {
+  if (list.length === 0) return { failedGroup: null, optimizedCount: 0 };
   const form = new FormData();
   form.append("document_type", type);
   list.forEach(f => form.append("files[]", f));
   try {
-    await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-    return null;
+    const saved = await apiFetch<ProjectDocument[]>(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+    const optimizedCount = saved.filter(d => d.optimized).length;
+    return { failedGroup: null, optimizedCount };
   } catch (error) {
     logError(logContext, error);
-    return groupLabel;
+    return { failedGroup: groupLabel, errorMessage: getErrorMessage(error), optimizedCount: 0 };
   }
+}
+
+/**
+ * Arma el mensaje de "éxito parcial" para el toast — antepone el motivo real
+ * que dio el backend (pared de seguridad, tipo no permitido, tamaño
+ * excedido) en vez de solo listar los grupos que fallaron a secas, sin
+ * exponer detalles internos (el backend ya filtra eso, ver
+ * FileRejectedException).
+ */
+export function describeUploadFailures(
+  failed: Array<Pick<UploadDocumentGroupResult, "failedGroup" | "errorMessage">>,
+): string {
+  const reasons = failed
+    .map(f => (f.errorMessage ? `${f.failedGroup} (${f.errorMessage})` : f.failedGroup))
+    .join(", ");
+  return `Se guardó, pero no se pudieron adjuntar: ${reasons}.`;
 }

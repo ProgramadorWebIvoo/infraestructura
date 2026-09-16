@@ -20,6 +20,8 @@ export interface MarketingProjectAttachment {
   sizeBytes: number | null;
   uploadedBy: number;
   uploadedAt: string | null;
+  /** Solo presente en la respuesta de upload. */
+  optimized?: boolean;
 }
 
 export interface MarketingProject {

@@ -30,6 +30,7 @@ import {
   Check,
   RotateCcw,
   RefreshCw,
+  BrainCircuit,
 } from "lucide-react";
 import { itemVariants, springs } from "@/animations";
 import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
@@ -47,6 +48,7 @@ import { useNotificationRules, type NotificationRuleChannels } from "@/hooks/use
 import { useCurrencies, type CurrencyRecord } from "@/hooks/useCurrencies";
 import { useExchangeRates } from "@/hooks/useExchangeRates";
 import { useExchangeRateSyncLogs } from "@/hooks/useExchangeRateSyncLogs";
+import { useRatingIaBatch } from "@/hooks/useRatingIaBatch";
 import { useDraftState } from "@/hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
@@ -54,11 +56,13 @@ import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
 import ExchangeRateSyncLogsPanel from "./components/ExchangeRateSyncLogsPanel";
 import ExchangeRateEditModal from "./components/ExchangeRateEditModal";
+import RatingIaPanel from "./components/RatingIaPanel";
 import UsuariosPanel from "./components/UsuariosPanel";
 import ProveedoresConfigPanel from "./components/ProveedoresConfigPanel";
 import MaterialConfigPanel from "./components/MaterialConfigPanel";
 import AIConfigPanel from "./components/AIConfigPanel";
 import KeysConfigPanel from "./components/KeysConfigPanel";
+import DebugModeCard from "./components/DebugModeCard";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
@@ -70,6 +74,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
   app: { title: "Aplicación", description: "Umbrales operativos, límites de carga de archivos, vigencia de invitaciones y tiempo de sesión.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
   congelacion_tasa: { title: "Congelación de tasa de cambio", description: "Qué triggers de negocio fijan la tasa BCV vigente, para que los montos en Bs. ya contratados/pagados dejen de recalcularse con la tasa del día.", icon: <Lock className="h-5 w-5" />, color: "indigo" },
   sincronizacion_tasa: { title: "Sincronización de tasa", description: "Hora, activación y modo debug del cronjob que sincroniza las tasas BCV.", icon: <RefreshCw className="h-5 w-5" />, color: "sky" },
+  rating_ia: { title: "Cronjob de RatingIA", description: "Activación, frecuencia (en días), hora y modo debug del batch que evalúa la sugerencia de rating IA de todos los proveedores activos.", icon: <BrainCircuit className="h-5 w-5" />, color: "purple" },
 };
 
 /**
@@ -84,7 +89,8 @@ const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
   { key: "negocio", title: "Negocio", groups: ["presupuesto", "ratings", "alertas", "inflacion", "fiscal"] },
   { key: "monedas", title: "Monedas", groups: ["sincronizacion_tasa", "__currencies__", "congelacion_tasa"] },
   { key: "notificaciones", title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
-  { key: "aplicacion", title: "Aplicación", groups: ["app"] },
+  { key: "aplicacion", title: "Aplicación", groups: ["app", "__debug_mode__"] },
+  { key: "rating-ia", title: "CronJobs App", groups: ["rating_ia", "__rating_ia_batch__"] },
 ];
 
 /**
@@ -115,6 +121,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   const { settings, missingKeys, isLoading, updateSetting } = useAppSettings(authToken);
 
   const isSuperadmin = activeRole === "SUPERADMIN";
+  const canUseDebugMode = activeRole === "SUPERADMIN" || activeRole === "ADMIN";
 
   const {
     logs: auditLogs,
@@ -162,6 +169,17 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
     await Promise.all([refreshSyncLogsList(), refreshLastSync()]);
   };
 
+  // Mismos roles que canUseDebugMode (ADMIN/SUPERADMIN) — coincide con el
+  // gate de los endpoints /rating-ia/* en el backend.
+  const canUseRatingIaBatch = canUseDebugMode;
+  const {
+    runLogs: ratingIaRunLogs,
+    suggestions: ratingIaSuggestions,
+    isLoading: isLoadingRatingIa,
+    isRunning: isRunningRatingIa,
+    runNow: runRatingIaNow,
+  } = useRatingIaBatch(authToken, canUseRatingIaBatch);
+
   const handleUpdateCurrency = async (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => {
     const updated = await updateCurrency(id, input);
     if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
@@ -175,6 +193,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
   const cronHour = allSettings.find(s => s.key === "tasa_cambio_cron_hora")?.value || "10:00";
   const cronEnabled = allSettings.find(s => s.key === "tasa_cambio_cron_habilitado")?.value !== "false";
+  const ratingIaFrecuenciaDias = allSettings.find(s => s.key === "rating_ia_cron_frecuencia_dias")?.value || "30";
+  const ratingIaCronEnabled = allSettings.find(s => s.key === "rating_ia_cron_habilitado")?.value === "true";
   const settingById = useMemo(() => new Map(allSettings.map(s => [s.id, s])), [allSettings]);
 
   const settingLabelByKey = useMemo(() => {
@@ -255,11 +275,17 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
         MACRO_GROUPS.map(macro => [
           macro.key,
           macro.groups.filter(g =>
-            g === "__notification_rules__" || g === "__currencies__" ? isSuperadmin : hasSettingsFor(g),
+            g === "__notification_rules__" || g === "__currencies__"
+              ? isSuperadmin
+              : g === "__debug_mode__"
+                ? canUseDebugMode
+                : g === "__rating_ia_batch__"
+                  ? canUseRatingIaBatch
+                  : hasSettingsFor(g),
           ),
         ]),
       ),
-    [isSuperadmin, settings],
+    [isSuperadmin, canUseDebugMode, canUseRatingIaBatch, settings],
   );
   const visibleSettingsTabs = MACRO_GROUPS.filter(macro => (visibleGroupsByMacro.get(macro.key)?.length ?? 0) > 0);
   const visibleExtraTabs = EXTRA_TABS.filter(tab => canAccess(tab.route));
@@ -428,6 +454,19 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                       cronEnabled={cronEnabled}
                     />
                   </div>
+                ) : group === "__debug_mode__" ? (
+                  <DebugModeCard key={group} />
+                ) : group === "__rating_ia_batch__" ? (
+                  <RatingIaPanel
+                    key={group}
+                    runLogs={ratingIaRunLogs}
+                    suggestions={ratingIaSuggestions}
+                    isLoading={isLoadingRatingIa}
+                    isRunning={isRunningRatingIa}
+                    onRunNow={runRatingIaNow}
+                    cronFrecuenciaDias={ratingIaFrecuenciaDias}
+                    cronEnabled={ratingIaCronEnabled}
+                  />
                 ) : (
                   <SettingGroupCard
                     key={group}

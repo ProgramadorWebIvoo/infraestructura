@@ -31,6 +31,40 @@ export function getApiBaseUrl(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Instrumentación opcional (DEBUG-MODE)
+// ---------------------------------------------------------------------------
+// Hook inyectable — este paquete no sabe nada de UI ni de localStorage; solo
+// notifica cada request (éxito o error) con los datos que ya tiene a mano
+// (status, timing, bodies). Quien lo registre (web: services/api.ts) decide
+// qué hacer con eso. Sin registrar, no hay overhead más allá de un `if`.
+
+export interface ApiDebugEvent {
+  method: string;
+  path: string;
+  fullUrl: string;
+  status?: number;
+  durationMs: number;
+  requestHeaders: Record<string, string>;
+  requestBody?: unknown;
+  responseBody?: unknown;
+  errorMessage?: string;
+}
+
+let _onApiDebugEvent: ((event: ApiDebugEvent) => void) | null = null;
+
+export function setApiDebugHook(hook: ((event: ApiDebugEvent) => void) | null): void {
+  _onApiDebugEvent = hook;
+}
+
+function safeParseForDebug(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
 
@@ -164,6 +198,9 @@ async function apiFetchUncached<T = unknown>(
   options: ApiFetchOptions = {},
 ): Promise<T> {
   const { token, ...fetchOptions } = options;
+  const method = (fetchOptions.method ?? "GET").toUpperCase();
+  const fullUrl = `${_baseUrl}${path}`;
+  const startedAt = _onApiDebugEvent ? performance.now() : 0;
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -177,12 +214,14 @@ async function apiFetchUncached<T = unknown>(
     headers["Content-Type"] = "application/json";
   }
 
-  let response; 
+  const allHeaders = { ...headers, ...normalizeHeaders(fetchOptions.headers) };
+
+  let response;
   try {
     response = await http.request<string>({
-      url: `${_baseUrl}${path}`,
-      method: (fetchOptions.method ?? 'GET') as any,
-      headers: { ...headers, ...normalizeHeaders(fetchOptions.headers) },
+      url: fullUrl,
+      method: method as any,
+      headers: allHeaders,
       data: fetchOptions.body,
       signal: fetchOptions.signal as any,
       withCredentials: fetchOptions.credentials === "include",
@@ -190,12 +229,37 @@ async function apiFetchUncached<T = unknown>(
     });
   } catch (err) {
     const ex = err as AxiosError;
-    if (ex.response) throw buildApiError(ex.response.status, (ex.response.data as string) ?? "");
+    const apiError = ex.response ? buildApiError(ex.response.status, (ex.response.data as string) ?? "") : null;
+    _onApiDebugEvent?.({
+      method,
+      path,
+      fullUrl,
+      status: ex.response?.status,
+      durationMs: Math.round(performance.now() - startedAt),
+      requestHeaders: allHeaders,
+      requestBody: typeof fetchOptions.body === "string" ? safeParseForDebug(fetchOptions.body) : fetchOptions.body,
+      responseBody: ex.response ? safeParseForDebug((ex.response.data as string) ?? "") : undefined,
+      errorMessage: apiError?.message ?? ex.message,
+    });
+    if (apiError) throw apiError;
     throw err;
   }
 
+  // Solo parsear el body para debug si hay alguien escuchando — evita pagar
+  // un JSON.parse extra en cada mutación cuando DEBUG-MODE está apagado
+  // (que es el caso casi siempre: nadie lo tiene activo la mayor parte del
+  // tiempo, y hay usuarios que ni siquiera tienen el rol para verlo).
+  const debugRequestBody = _onApiDebugEvent
+    ? (typeof fetchOptions.body === "string" ? safeParseForDebug(fetchOptions.body) : fetchOptions.body)
+    : undefined;
+
   // 204 No Content
   if (response.status === 204) {
+    _onApiDebugEvent?.({
+      method, path, fullUrl, status: response.status,
+      durationMs: Math.round(performance.now() - startedAt),
+      requestHeaders: allHeaders, requestBody: debugRequestBody, responseBody: undefined,
+    });
     return undefined as T;
   }
 
@@ -209,10 +273,21 @@ async function apiFetchUncached<T = unknown>(
 
   // Algunos endpoints devuelven texto plano
   if (!text) {
+    _onApiDebugEvent?.({
+      method, path, fullUrl, status: response.status,
+      durationMs: Math.round(performance.now() - startedAt),
+      requestHeaders: allHeaders, requestBody: debugRequestBody, responseBody: undefined,
+    });
     return undefined as T;
   }
 
   const json = JSON.parse(text);
+
+  _onApiDebugEvent?.({
+    method, path, fullUrl, status: response.status,
+    durationMs: Math.round(performance.now() - startedAt),
+    requestHeaders: allHeaders, requestBody: debugRequestBody, responseBody: json,
+  });
 
   // Convención Laravel: los datos pueden venir envueltos en .data
   return (json.data ?? json) as T;

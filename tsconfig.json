@@ -31,8 +31,5 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "references": [
-    { "path": "./packages/shared" }
-  ],
-  "exclude": ["mobile", "node_modules", "dist"]
+  "exclude": ["mobile", "node_modules", "dist", "src-tauri"]
 }
