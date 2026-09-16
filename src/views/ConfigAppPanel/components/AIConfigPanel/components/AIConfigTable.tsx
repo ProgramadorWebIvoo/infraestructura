@@ -41,6 +41,7 @@ export default function AIConfigTable({
   testingId,
   deletingId,
   isSyncing,
+  canManage,
   onTest,
   onEdit,
   onDelete,
@@ -53,6 +54,7 @@ export default function AIConfigTable({
   testingId: number | null;
   deletingId: number | null;
   isSyncing: boolean;
+  canManage: boolean;
   onTest: (id: number) => void;
   onEdit: (config: AiConfigRecord) => void;
   onDelete: (id: number) => void;
@@ -111,47 +113,51 @@ export default function AIConfigTable({
           <span className="text-text-muted">—</span>
         ),
     },
-    {
-      key: "actions",
-      label: "Acciones",
-      align: "center",
-      render: (c) => (
-        <div className="flex items-center justify-center gap-1">
-          <IconActionButton
-            label={`Probar conexión ${c.model}`}
-            tooltip="Probar conexión"
-            onClick={() => onTest(c.id)}
-            disabled={!c.isActive}
-            isBusy={testingId === c.id}
-            tone="sky"
-            icon={<Server className="h-3.5 w-3.5" />}
-          />
-          <IconActionButton
-            label={`Editar ${c.model}`}
-            tooltip="Editar configuración"
-            onClick={() => onEdit(c)}
-            tone="indigo"
-            icon={<Pencil className="h-3.5 w-3.5" />}
-          />
-          <IconActionButton
-            label={c.isActive ? "Desactivar" : "Activar"}
-            tooltip={c.isActive ? "Desactivar modelo" : "Activar modelo"}
-            onClick={() => onToggleActive(c)}
-            tone={c.isActive ? "amber" : "emerald"}
-            icon={c.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-          />
-          <IconActionButton
-            label={`Eliminar ${c.model}`}
-            tooltip="Eliminar configuración"
-            onClick={() => onDelete(c.id)}
-            isBusy={deletingId === c.id}
-            tone="rose"
-            icon={<Trash2 className="h-3.5 w-3.5" />}
-          />
-        </div>
-      ),
-    },
-  ], [testingId, deletingId, onTest, onEdit, onToggleActive, onDelete]);
+    ...(canManage
+      ? [
+          {
+            key: "actions",
+            label: "Acciones",
+            align: "center" as const,
+            render: (c: AiConfigRecord) => (
+              <div className="flex items-center justify-center gap-1">
+                <IconActionButton
+                  label={`Probar conexión ${c.model}`}
+                  tooltip="Probar conexión"
+                  onClick={() => onTest(c.id)}
+                  disabled={!c.isActive}
+                  isBusy={testingId === c.id}
+                  tone="sky"
+                  icon={<Server className="h-3.5 w-3.5" />}
+                />
+                <IconActionButton
+                  label={`Editar ${c.model}`}
+                  tooltip="Editar configuración"
+                  onClick={() => onEdit(c)}
+                  tone="indigo"
+                  icon={<Pencil className="h-3.5 w-3.5" />}
+                />
+                <IconActionButton
+                  label={c.isActive ? "Desactivar" : "Activar"}
+                  tooltip={c.isActive ? "Desactivar modelo" : "Activar modelo"}
+                  onClick={() => onToggleActive(c)}
+                  tone={c.isActive ? "amber" : "emerald"}
+                  icon={c.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                />
+                <IconActionButton
+                  label={`Eliminar ${c.model}`}
+                  tooltip="Eliminar configuración"
+                  onClick={() => onDelete(c.id)}
+                  isBusy={deletingId === c.id}
+                  tone="rose"
+                  icon={<Trash2 className="h-3.5 w-3.5" />}
+                />
+              </div>
+            ),
+          },
+        ]
+      : []),
+  ], [canManage, testingId, deletingId, onTest, onEdit, onToggleActive, onDelete]);
 
   const info = SEMANTIC_COLOR_MAP.info;
 
@@ -165,26 +171,28 @@ export default function AIConfigTable({
             description="Selección dinámica de modelos por proveedor. Los cambios se aplican en tiempo real sin reinicio."
             color="indigo"
             actions={
-              <>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  onClick={onSync}
-                  disabled={isSyncing}
-                  icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                >
-                  Sincronizar
-                </Button>
-                <Button
-                  variant="primary"
-                  colorScheme="indigo"
-                  size="md"
-                  onClick={onCreateNew}
-                  icon={<Plus className="h-4 w-4" />}
-                >
-                  Nueva config.
-                </Button>
-              </>
+              canManage ? (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={onSync}
+                    disabled={isSyncing}
+                    icon={isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  >
+                    Sincronizar
+                  </Button>
+                  <Button
+                    variant="primary"
+                    colorScheme="indigo"
+                    size="md"
+                    onClick={onCreateNew}
+                    icon={<Plus className="h-4 w-4" />}
+                  >
+                    Nueva config.
+                  </Button>
+                </>
+              ) : undefined
             }
           />
         </div>

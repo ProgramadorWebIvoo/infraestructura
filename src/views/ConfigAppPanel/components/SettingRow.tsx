@@ -39,9 +39,12 @@ interface SettingRowProps {
   error?: string;
   /** Catálogo real de acciones auditadas — requerido para renderizar el selector de tags de los settings de ACTION_LIST_KEYS. */
   notificationActionsCatalog?: TagOption[];
+  /** PATCH /settings/{setting} es SUPERADMIN exclusivo — deshabilita los
+   *  inputs para cualquier otro rol en vez de dejarlos editar y fallar con 403. */
+  readOnly?: boolean;
 }
 
-export default function SettingRow({ setting, value, onChange, error, notificationActionsCatalog }: SettingRowProps) {
+export default function SettingRow({ setting, value, onChange, error, notificationActionsCatalog, readOnly }: SettingRowProps) {
   const isNumeric = setting.type === "integer" || setting.type === "float";
   const isActionList = setting.type === "json" && ACTION_LIST_KEYS.has(setting.key) && !!notificationActionsCatalog;
   const isCronHour = setting.key === "tasa_cambio_cron_hora" || setting.key === "rating_ia_cron_hora";
@@ -71,6 +74,7 @@ export default function SettingRow({ setting, value, onChange, error, notificati
           options={notificationActionsCatalog!}
           value={parseActionList(value)}
           onChange={next => onChange(setting.id, JSON.stringify(next))}
+          disabled={readOnly}
         />
         <FieldError message={error} />
       </div>
@@ -96,8 +100,9 @@ export default function SettingRow({ setting, value, onChange, error, notificati
                 type="checkbox"
                 checked={value === "true"}
                 onChange={e => onChange(setting.id, e.target.checked ? "true" : "false")}
+                disabled={readOnly}
                 whileTap={{ scale: 0.85 }}
-                className={`h-4 w-4 rounded border-border-default ${SEMANTIC_COLOR_MAP.brand.text600} focus:ring-brand-400 cursor-pointer`}
+                className={`h-4 w-4 rounded border-border-default ${SEMANTIC_COLOR_MAP.brand.text600} focus:ring-brand-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
               />
               <span className="text-xs text-text-tertiary">{value === "true" ? "Activado" : "Desactivado"}</span>
             </label>
@@ -106,7 +111,8 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               value={value}
               onChange={e => onChange(setting.id, e.target.value)}
               rows={2}
-              className={`flex-1 min-w-0 text-xs font-mono px-3 py-2 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors ${errorClasses}`}
+              disabled={readOnly}
+              className={`flex-1 min-w-0 text-xs font-mono px-3 py-2 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${errorClasses}`}
             />
           ) : isCronHour ? (
             <TimeInput
@@ -118,6 +124,7 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               hasError={!!error}
               ariaLabel={setting.label}
               className="w-32"
+              disabled={readOnly}
             />
           ) : isNumeric ? (
             <NumericInput
@@ -128,13 +135,15 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               max={setting.max_value ?? undefined}
               allowNegative={(setting.min_value ?? 0) < 0}
               className={`flex-1 min-w-0 py-1.5! text-sm! ${errorClasses}`}
+              disabled={readOnly}
             />
           ) : (
             <input
               type="text"
               value={value}
               onChange={e => onChange(setting.id, e.target.value)}
-              className={`flex-1 min-w-0 text-sm px-3 py-1.5 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors ${errorClasses}`}
+              disabled={readOnly}
+              className={`flex-1 min-w-0 text-sm px-3 py-1.5 rounded-control border border-border-default focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${errorClasses}`}
             />
           )}
         </div>

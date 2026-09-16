@@ -65,6 +65,7 @@ describe("AIConfigTable", () => {
   function renderTable(configs: AiConfigRecord[], extra: Partial<typeof handlers> = {}) {
     return render(
       <AIConfigTable
+        canManage={true}
         configs={configs}
         isLoading={false}
         testingId={null}

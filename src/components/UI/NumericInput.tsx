@@ -26,6 +26,7 @@ interface NumericInputProps {
   /** Color de foco/acento. Default "brand" (celeste), el histórico de este campo. */
   accent?: SemanticColor;
   id?: string;
+  disabled?: boolean;
 }
 
 export default function NumericInput({
@@ -40,6 +41,7 @@ export default function NumericInput({
   integer = false,
   accent = "brand",
   id,
+  disabled = false,
 }: NumericInputProps) {
   const sanitize = useCallback(
     (raw: string) => {
@@ -85,7 +87,8 @@ export default function NumericInput({
       onKeyDown={handleKeyDown}
       onPaste={handlePaste}
       placeholder={placeholder}
-      className={`w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 bg-surface font-mono font-bold text-text-secondary ${FOCUS_RING_CLASSES[accent]} ${className}`}
+      disabled={disabled}
+      className={`w-full text-xs px-3.5 py-3 rounded-control border border-border-default outline-hidden focus:ring-2 bg-surface font-mono font-bold text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed ${FOCUS_RING_CLASSES[accent]} ${className}`}
     />
   );
 }

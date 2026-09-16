@@ -90,7 +90,7 @@ const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
   { key: "monedas", title: "Monedas", groups: ["sincronizacion_tasa", "__currencies__", "congelacion_tasa"] },
   { key: "notificaciones", title: "Notificaciones", groups: ["notificaciones", "__notification_rules__"] },
   { key: "aplicacion", title: "Aplicación", groups: ["app", "__debug_mode__"] },
-  { key: "rating-ia", title: "CronJobs App", groups: ["rating_ia", "__rating_ia_batch__"] },
+  { key: "cronjobs", title: "CronJobs App", groups: ["rating_ia", "__rating_ia_batch__"] },
 ];
 
 /**
@@ -170,7 +170,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   };
 
   // Mismos roles que canUseDebugMode (ADMIN/SUPERADMIN) — coincide con el
-  // gate de los endpoints /rating-ia/* en el backend.
+  // gate de los endpoints /cronjobs/* en el backend.
   const canUseRatingIaBatch = canUseDebugMode;
   const {
     runLogs: ratingIaRunLogs,
@@ -288,7 +288,15 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
     [isSuperadmin, canUseDebugMode, canUseRatingIaBatch, settings],
   );
   const visibleSettingsTabs = MACRO_GROUPS.filter(macro => (visibleGroupsByMacro.get(macro.key)?.length ?? 0) > 0);
-  const visibleExtraTabs = EXTRA_TABS.filter(tab => canAccess(tab.route));
+  // "usuarios" y "config-keys" ahora son 100% SUPERADMIN en backend (ver
+  // routes/api.php: UserController, AccessAdminController, SystemKeyConfigController)
+  // — se filtran también aquí para no depender solo de role_view_access
+  // (editable por ADMIN antes del endurecimiento) y evitar mostrar un panel
+  // cuyas acciones el backend rechazará con 403.
+  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys"]);
+  const visibleExtraTabs = EXTRA_TABS.filter(tab =>
+    SUPERADMIN_ONLY_TABS.has(tab.key) ? isSuperadmin : canAccess(tab.route),
+  );
   const visibleMacroGroups = [...visibleSettingsTabs, ...visibleExtraTabs];
   const [activeMacroTab, setActiveMacroTab] = useState(MACRO_GROUPS[0].key);
   const activeExtraTab = visibleExtraTabs.find(tab => tab.key === activeMacroTab);
@@ -477,6 +485,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                     onChange={settingsDraft.onChange}
                     errors={settingsDraft.errors}
                     notificationActionsCatalog={notificationActionsCatalog}
+                    readOnly={!isSuperadmin}
                   />
                 ),
               )}

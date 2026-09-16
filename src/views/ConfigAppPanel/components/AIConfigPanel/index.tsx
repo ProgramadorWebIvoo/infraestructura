@@ -200,6 +200,7 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
           testingId={testingId}
           deletingId={deletingId}
           isSyncing={isSyncing}
+          canManage={isSuperadmin}
           onTest={handleTest}
           onEdit={handleOpenEdit}
           onDelete={(id) => setConfirmDeleteId(id)}
