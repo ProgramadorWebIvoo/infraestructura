@@ -53,6 +53,30 @@ export default function SettingRow({ setting, value, onChange, error, notificati
 
   const errorClasses = fieldErrorClasses(!!error);
 
+  if (isActionList) {
+    // Layout apilado a ancho completo: la nube de ~35 chips necesita todo el
+    // ancho disponible para respirar y para el buscador — la fila inline
+    // label(sm:w-64) + valor(flex-1) de las demás settings la deja apretada
+    // contra la barra lateral del label.
+    return (
+      <div
+        id={`setting-row-${setting.id}`}
+        className="py-3.5 rounded-control border-b border-border-subtle last:border-0"
+      >
+        <div className="mb-2">
+          <p className="text-sm font-bold text-text-secondary">{setting.label}</p>
+          {setting.description && <p className="text-xs text-text-muted mt-0.5">{setting.description}</p>}
+        </div>
+        <TagMultiSelect
+          options={notificationActionsCatalog!}
+          value={parseActionList(value)}
+          onChange={next => onChange(setting.id, JSON.stringify(next))}
+        />
+        <FieldError message={error} />
+      </div>
+    );
+  }
+
   return (
     <div
       id={`setting-row-${setting.id}`}
@@ -77,12 +101,6 @@ export default function SettingRow({ setting, value, onChange, error, notificati
               />
               <span className="text-xs text-text-tertiary">{value === "true" ? "Activado" : "Desactivado"}</span>
             </label>
-          ) : isActionList ? (
-            <TagMultiSelect
-              options={notificationActionsCatalog!}
-              value={parseActionList(value)}
-              onChange={next => onChange(setting.id, JSON.stringify(next))}
-            />
           ) : setting.type === "json" ? (
             <textarea
               value={value}

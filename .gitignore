@@ -14,3 +14,5 @@ docs/.obsidian
 CLAUDE.md
 graphify-policy.yaml
 lighthouse-*.json
+package-lock.json
+src-tauri
