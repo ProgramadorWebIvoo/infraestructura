@@ -35,11 +35,17 @@ type ArrayUpdater<T> = T[] | ((prev: T[]) => T[]);
 interface UseProjectsDataOptions {
   authToken: string;
   showToast: ShowToast;
+  /** SUPERADMIN → Acceso total + auditoría exclusiva (ver CLAUDE.md raíz §Roles).
+   *  Los otros 9 roles nunca ven audit logs, así que no tiene sentido pedirlos
+   *  (ni pollearlos cada 25s) al montar la app para ellos — es una de las
+   *  ~13 requests que compiten en el burst inicial del dashboard. */
+  role?: string;
 }
 
-export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions) {
+export function useProjectsData({ authToken, showToast, role }: UseProjectsDataOptions) {
   const queryClient = useQueryClient();
   const enabled = !!authToken;
+  const auditLogsEnabled = enabled && role === "SUPERADMIN";
 
   // Lee showToast desde ref para evitar recrear callbacks si cambia entre renders
   const showToastRef = useRef(showToast);
@@ -65,8 +71,8 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
   const auditLogsQuery = useQuery({
     queryKey: auditLogsKey(authToken),
     queryFn: () => apiFetch<{ items: AuditLog[] }>("/audit-logs", { token: authToken }),
-    enabled,
-    refetchInterval: enabled ? POLL_MS : false,
+    enabled: auditLogsEnabled,
+    refetchInterval: auditLogsEnabled ? POLL_MS : false,
     staleTime: POLL_MS - 5000,
     retry: false,
   });
@@ -75,7 +81,10 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
   const auditLogs = auditLogsQuery.data?.items ?? [];
   // isPending (sin data aún) en vez de isFetching: replica isLoading=true
   // mientras no hay token (fetch deshabilitado) hasta el primer fetch real.
-  const isLoading = projectsQuery.isPending || auditLogsQuery.isPending;
+  // auditLogsQuery.isPending solo cuenta si está enabled — si no, se queda en
+  // "pending" para siempre (nunca fetchea) y isLoading nunca bajaría a false
+  // para los 9 roles sin acceso a auditoría.
+  const isLoading = projectsQuery.isPending || (auditLogsEnabled && auditLogsQuery.isPending);
 
   // Fallback dev + toast solo en el fetch inicial sin data todavía — una vez
   // que hay data en caché (éxito o fallback), un fallo de poll en background
@@ -113,9 +122,14 @@ export function useProjectsData({ authToken, showToast }: UseProjectsDataOptions
 
   const loadProjects = useCallback(async () => {
     if (!authToken) return;
-    await Promise.all([projectsQuery.refetch(), auditLogsQuery.refetch()]);
+    // refetch() ignora `enabled` (lo fuerza igual) — sin este guard, un
+    // refresh manual pediría /audit-logs para los 9 roles sin acceso (403
+    // innecesario) aunque la query esté deshabilitada.
+    const refetches: Promise<unknown>[] = [projectsQuery.refetch()];
+    if (auditLogsEnabled) refetches.push(auditLogsQuery.refetch());
+    await Promise.all(refetches);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authToken, projectsQuery.refetch, auditLogsQuery.refetch]);
+  }, [authToken, auditLogsEnabled, projectsQuery.refetch, auditLogsQuery.refetch]);
 
   return {
     projects,

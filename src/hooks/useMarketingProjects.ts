@@ -20,13 +20,23 @@ interface PaginatedResponse<T> {
   data: T[];
 }
 
-export function useMarketingProjects(authToken: string, showToast: ShowToast) {
+export function useMarketingProjects(authToken: string, showToast: ShowToast, enabled = true) {
   const [projects, setProjects] = useState<MarketingProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Solo lo consume MarketingPanel (ROUTES.MARKETING) — mismo criterio que
+  // useContractors/useCatalog: antes se pedía para los 10 roles en cada
+  // mount de la app. (Va a quedar huérfano del todo cuando MarketingPanel se
+  // reemplace por la vista "en construcción" — en ese momento, eliminar
+  // el fetch en vez de solo gatearlo.)
   const load = useCallback(async () => {
-    if (!authToken) return;
+    if (!authToken || !enabled) {
+      // Sin esto, isLoading se queda en `true` para siempre en los roles sin
+      // acceso a Marketing (el fetch real nunca corre para bajarlo a false).
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await apiFetch<PaginatedResponse<MarketingProject>>("/marketing-projects", { token: authToken });
@@ -36,7 +46,7 @@ export function useMarketingProjects(authToken: string, showToast: ShowToast) {
     } finally {
       setIsLoading(false);
     }
-  }, [authToken]);
+  }, [authToken, enabled]);
 
   useEffect(() => {
     load();

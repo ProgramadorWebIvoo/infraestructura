@@ -63,6 +63,22 @@ describe("useContractors", () => {
     });
   });
 
+  it("passes authToken='' to usePolledFetch when enabled=false (sin acceso a Analistas/Catálogos)", () => {
+    renderHook(() => useContractors("token", showToast, false));
+
+    expect(mockUsePolledFetch).toHaveBeenCalledWith(
+      expect.objectContaining({ authToken: "" }),
+    );
+  });
+
+  it("passes through the real authToken when enabled=true (default)", () => {
+    renderHook(() => useContractors("token", showToast));
+
+    expect(mockUsePolledFetch).toHaveBeenCalledWith(
+      expect.objectContaining({ authToken: "token" }),
+    );
+  });
+
   it("returns data, loading state, and handlers", () => {
     const { result } = renderHook(() => useContractors("token", showToast));
 

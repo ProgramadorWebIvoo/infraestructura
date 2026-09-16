@@ -44,12 +44,12 @@ function createMockAuditLog(id = "LOG-001"): AuditLog {
   return { id, projectId: "PRJ-001", role: "INFRAESTRUCTURA", action: "Creación", timestamp: "2026-07-01", details: "" } as AuditLog;
 }
 
-function renderWithClient(authToken: string, showToast = vi.fn()) {
+function renderWithClient(authToken: string, showToast = vi.fn(), role = "SUPERADMIN") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  return { ...renderHook(() => useProjectsData({ authToken, showToast }), { wrapper }), showToast, client };
+  return { ...renderHook(() => useProjectsData({ authToken, showToast, role }), { wrapper }), showToast, client };
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -101,6 +101,22 @@ describe("useProjectsData", () => {
       expect(mockApiFetch).toHaveBeenCalledWith("/audit-logs", { token: "valid-token" });
       expect(result.current.projects).toEqual(projects);
       expect(result.current.auditLogs).toEqual(audits);
+    });
+
+    it("does not fetch /audit-logs for a non-SUPERADMIN role (auditoría exclusiva)", async () => {
+      const projects = [createMockProject({ id: "PRJ-001" })];
+      mockApiFetch.mockImplementation((url: string) => {
+        if (url === "/projects") return Promise.resolve(projects);
+        return Promise.reject(new Error("unexpected: " + url));
+      });
+
+      const { result } = renderWithClient("valid-token", vi.fn(), "PROCURA");
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/projects", { token: "valid-token" });
+      expect(mockApiFetch).not.toHaveBeenCalledWith("/audit-logs", expect.anything());
+      expect(result.current.auditLogs).toEqual([]);
     });
 
     it("sets isLoading=false even when fetch fails (non-poll)", async () => {

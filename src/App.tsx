@@ -227,7 +227,7 @@ function AppRoutes() {
     handleUpdateContractorRating,
     loadContractors,
     resetContractors,
-  } = useContractors(authToken, showToast);
+  } = useContractors(authToken, showToast, canAccess(ROUTES.ANALISTAS) || canAccess(ROUTES.CATALOGOS));
 
   // ---- Catalog ----
   const {
@@ -235,7 +235,7 @@ function AppRoutes() {
     setMaterialsCatalog,
     handleAddCatalogItem,
     resetCatalog,
-  } = useCatalog(authToken, showToast);
+  } = useCatalog(authToken, showToast, canAccess(ROUTES.INFRAESTRUCTURA));
 
   // ---- Projects ----
   const {
@@ -266,7 +266,7 @@ function AppRoutes() {
     handlePayFinal,
     resetData,
     loadApiData,
-  } = useProjects(authToken, showToast);
+  } = useProjects(authToken, showToast, activeRole);
 
   // ---- Marketing ----
   const {
@@ -274,7 +274,7 @@ function AppRoutes() {
     isLoading: isLoadingMarketing,
     isCreating: isCreatingMarketing,
     createProject: handleCreateMarketingProject,
-  } = useMarketingProjects(authToken, showToast);
+  } = useMarketingProjects(authToken, showToast, canAccess(ROUTES.MARKETING));
 
   // ---- Logout compuesto (limpia auth + datos) ----
   const [isLoggingOut, setIsLoggingOut] = useState(false);

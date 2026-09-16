@@ -60,6 +60,22 @@ describe("useCatalog", () => {
     });
   });
 
+  it("passes authToken='' to usePolledFetch when enabled=false (sin acceso a Infraestructura)", () => {
+    renderHook(() => useCatalog("token", showToast, false));
+
+    expect(mockUsePolledFetch).toHaveBeenCalledWith(
+      expect.objectContaining({ authToken: "" }),
+    );
+  });
+
+  it("passes through the real authToken when enabled=true (default)", () => {
+    renderHook(() => useCatalog("token", showToast));
+
+    expect(mockUsePolledFetch).toHaveBeenCalledWith(
+      expect.objectContaining({ authToken: "token" }),
+    );
+  });
+
   it("returns catalog, loading, and handlers", () => {
     const { result } = renderHook(() => useCatalog("token", showToast));
 

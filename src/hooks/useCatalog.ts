@@ -17,10 +17,14 @@ export interface CatalogItem {
   estimatedUnitPrice: number;
 }
 
-export function useCatalog(authToken: string, showToast: ShowToast) {
+export function useCatalog(authToken: string, showToast: ShowToast, enabled = true) {
+  // `materialsCatalog` solo lo consume InfraestructuraMantenimientoPanel
+  // (ROUTES.INFRAESTRUCTURA) — ver App.tsx. Mismo criterio que useContractors:
+  // antes se pedía /materials para los 10 roles en cada mount aunque solo
+  // uno lo use, sumando otra request al burst inicial del dashboard.
   const { data: materialsCatalog, setData: setMaterialsCatalog, isLoading, refresh: loadMaterials } =
     usePolledFetch<CatalogItem>({
-      authToken,
+      authToken: enabled ? authToken : "",
       showToast,
       queryKey: ["materials"],
       fetcher: useCallback(() => apiFetch<CatalogItem[]>("/materials"), []),

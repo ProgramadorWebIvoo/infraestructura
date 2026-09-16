@@ -15,9 +15,9 @@ import { useProjectsWorkflows } from "./useProjectsWorkflows";
 
 export type ShowToast = (msg: string, type?: "success" | "error" | "warning" | "info") => void;
 
-export function useProjects(authToken: string, showToast: ShowToast) {
+export function useProjects(authToken: string, showToast: ShowToast, role?: string) {
   const { projects, setProjects, auditLogs, setAuditLogs, isLoading, loadProjects } =
-    useProjectsData({ authToken, showToast });
+    useProjectsData({ authToken, showToast, role });
 
   const [inspectedProject, setInspectedProject] = useState<Project | null>(null);
 

@@ -13,10 +13,16 @@ import { apiFetch } from "@/services/api";
 import type { ShowToast } from "./useProjects";
 import { usePolledFetch } from "./usePolledFetch";
 
-export function useContractors(authToken: string, showToast: ShowToast) {
+export function useContractors(authToken: string, showToast: ShowToast, enabled = true) {
+  // `contractors` solo lo consumen AnalistasPanel y ProveedoresRegistrados
+  // (ROUTES.ANALISTAS / ROUTES.CATALOGOS) — ver App.tsx. Antes se pedía para
+  // los 10 roles en cada mount de la app aunque solo 2 rutas lo usen; con
+  // `enabled=false` (canAccess resuelto en false) usePolledFetch ni siquiera
+  // dispara el fetch inicial ni el polling, sacándolo del burst inicial para
+  // el resto de roles.
   const { data: contractors, setData: setContractors, isLoading, refresh: loadContractors } =
     usePolledFetch<Contractor>({
-      authToken,
+      authToken: enabled ? authToken : "",
       showToast,
       queryKey: ["contractors"],
       fetcher: useCallback(() => apiFetch<Contractor[]>("/contractors"), []),
