@@ -158,7 +158,17 @@ export default function EvaluacionInteligenteModal({
             settle(payload.status, payload.data, payload.error);
           },
         );
-        echoCleanupRef.current = () => echo.leaveChannel(channelName);
+        // createEchoClient() abre una conexión Pusher NUEVA cada vez (a
+        // diferencia de NotificationsProvider/ExchangeRatesProvider, que
+        // mantienen una única conexión de sesión) — leaveChannel() solo deja
+        // el canal, no cierra el socket subyacente. Sin disconnect() acá,
+        // cada evaluación (abrir modal → evaluar → reintentar) dejaba un
+        // WebSocket abierto sin límite hasta cerrar la pestaña (auditoría de
+        // rendimiento 2026-09-16, round 3).
+        echoCleanupRef.current = () => {
+          echo.leaveChannel(channelName);
+          echo.disconnect();
+        };
       }
 
       pollTimerRef.current = window.setInterval(async () => {
