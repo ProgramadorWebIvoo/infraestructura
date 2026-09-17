@@ -69,6 +69,7 @@ import ProveedoresConfigPanel from "./components/ProveedoresConfigPanel";
 import MaterialConfigPanel from "./components/MaterialConfigPanel";
 import ProjectTypeConfigPanel from "./components/ProjectTypeConfigPanel";
 import RolesConfigPanel from "./components/RolesConfigPanel";
+import NotificationActionsConfigPanel from "./components/NotificationActionsConfigPanel";
 import AIConfigPanel from "./components/AIConfigPanel";
 import KeysConfigPanel from "./components/KeysConfigPanel";
 import DebugModeCard from "./components/DebugModeCard";
@@ -113,6 +114,7 @@ const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
 const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "usuarios", title: "Usuarios", route: "/usuarios" },
   { key: "roles", title: "Roles", route: "/config-roles" },
+  { key: "acciones-notificables", title: "Acciones Notificables", route: "/config-notification-actions" },
   { key: "proveedores", title: "Proveedores", route: "/config-proveedores" },
   { key: "materiales", title: "Materiales", route: "/config-materiales" },
   { key: "tipos-proyecto", title: "Tipos de Proyecto", route: "/config-project-types" },
@@ -137,6 +139,7 @@ const SECTION_META: Record<string, { group: string; icon: ReactNode }> = {
   materiales: { group: "Catálogos", icon: <Package className="h-4 w-4" /> },
   "tipos-proyecto": { group: "Catálogos", icon: <Hammer className="h-4 w-4" /> },
   roles: { group: "Catálogos", icon: <Shield className="h-4 w-4" /> },
+  "acciones-notificables": { group: "Catálogos", icon: <Bell className="h-4 w-4" /> },
   usuarios: { group: "Administración", icon: <Users className="h-4 w-4" /> },
   proveedores: { group: "Administración", icon: <Truck className="h-4 w-4" /> },
   "modelos-ia": { group: "Administración", icon: <BrainCircuit className="h-4 w-4" /> },
@@ -327,7 +330,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   // — se filtran también aquí para no depender solo de role_view_access
   // (editable por ADMIN antes del endurecimiento) y evitar mostrar un panel
   // cuyas acciones el backend rechazará con 403.
-  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles"]);
+  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles", "acciones-notificables"]);
   const visibleExtraTabs = EXTRA_TABS.filter(tab =>
     SUPERADMIN_ONLY_TABS.has(tab.key) ? isSuperadmin : canAccess(tab.route),
   );
@@ -453,6 +456,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
             {activeExtraTab ? (
               activeExtraTab.key === "roles" ? (
                 <RolesConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "acciones-notificables" ? (
+                <NotificationActionsConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "usuarios" ? (
                 <UsuariosPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "proveedores" ? (
