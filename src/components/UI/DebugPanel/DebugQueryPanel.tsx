@@ -55,6 +55,13 @@ const STATUS_ACCENT: Record<QueryRowState["status"], SemanticColor> = {
   pending: "warning",
 };
 
+const STATUS_FILTERS: { key: QueryRowState["status"] | "all"; label: string }[] = [
+  { key: "all", label: "Todos" },
+  { key: "success", label: "Success" },
+  { key: "error", label: "Error" },
+  { key: "pending", label: "Pending" },
+];
+
 interface DebugQueryPanelProps {
   search: string;
 }
@@ -62,6 +69,7 @@ interface DebugQueryPanelProps {
 export default function DebugQueryPanel({ search }: DebugQueryPanelProps) {
   const queryClient = useQueryClient();
   const [queries, setQueries] = useState<QueryRowState[]>(() => readQueries(queryClient));
+  const [statusFilter, setStatusFilter] = useState<QueryRowState["status"] | "all">("all");
 
   // Suscripción cruda al QueryCache: es la única forma de saber "algo cambió
   // en cualquier query" sin instanciar un useQuery por cada key existente.
@@ -72,7 +80,9 @@ export default function DebugQueryPanel({ search }: DebugQueryPanelProps) {
     return unsubscribe;
   }, [queryClient]);
 
-  const filtered = queries.filter(q => matchesSearchText(q.displayKey, search));
+  const filtered = queries
+    .filter(q => statusFilter === "all" || q.status === statusFilter)
+    .filter(q => matchesSearchText(q.displayKey, search));
 
   if (queries.length === 0) {
     return <EmptyState message="El cache de React Query está vacío." />;
@@ -80,10 +90,24 @@ export default function DebugQueryPanel({ search }: DebugQueryPanelProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-text-tertiary">
+      <div className="flex items-center justify-between gap-2">
+        <span className="shrink-0 text-[10px] font-bold text-text-tertiary">
           {filtered.length} de {queries.length} {queries.length === 1 ? "query" : "queries"}
         </span>
+        <div className="flex shrink-0 gap-1 rounded-xl bg-slate-100/60 p-1">
+          {STATUS_FILTERS.map(f => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setStatusFilter(f.key)}
+              className={`rounded-lg px-2 py-1 text-[10px] font-bold transition-colors cursor-pointer ${
+                statusFilter === f.key ? "bg-white text-slate-700 shadow-xs" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
         <Button
           size="sm"
           variant="secondary"

@@ -5,10 +5,12 @@
  * DEBUG-MODE — panel flotante de depuración: Network (requests HTTP
  * completos, con headers/body/cURL), Logs (logError/logWarn/logInfo),
  * WebSocket (eventos Pusher/Echo), Errors (excepciones no capturadas +
- * promesas rechazadas sin catch) y Queries (inspector en vivo de TanStack
- * Query). Solo se monta (ver AppRoutes en App.tsx) cuando el rol activo es
- * ADMIN/SUPERADMIN y el flag fue activado desde CONFIG APP — no depende de
- * env vars ni de build flags, es 100% runtime y por-navegador.
+ * promesas rechazadas sin catch), Queries (inspector en vivo de TanStack
+ * Query), Codebase (módulo/vista activa + hooks + God Nodes, ver
+ * codebaseRouteMap.ts) y Acciones (atajos curados sin eval() libre, ver
+ * DebugActionsPanel.tsx). Solo se monta (ver AppRoutes en App.tsx) cuando el
+ * rol activo es ADMIN/SUPERADMIN y el flag fue activado desde CONFIG APP —
+ * no depende de env vars ni de build flags, es 100% runtime y por-navegador.
  *
  * Atajo de teclado: Ctrl/Cmd+Shift+D alterna abierto/cerrado sin necesidad
  * de apuntar al botón flotante — útil mientras se reproduce un bug con las
@@ -32,15 +34,26 @@ import { Bug, Trash2, X, Pause, Play, Download, Maximize2, Minimize2 } from "luc
 import Tabs, { type TabDefinition } from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import IconActionButton from "@/components/UI/IconActionButton";
+import Select from "@/components/UI/Select";
 import { SearchInput } from "@/components/UI/FilterBar";
-import { useDebugStore, installGlobalErrorCapture, type DebugEntry, type DebugEntryKind, type DebugLevel } from "@/stores/debugStore";
+import {
+  useDebugStore,
+  installGlobalErrorCapture,
+  installPerfObservers,
+  type DebugEntry,
+  type DebugEntryKind,
+  type DebugLevel,
+} from "@/stores/debugStore";
 import type { AuthUser } from "@/hooks/useAuth";
 import DebugEntryList from "./DebugEntryList";
 import DebugQueryPanel from "./DebugQueryPanel";
 import DebugInfoPanel from "./DebugInfoPanel";
+import DebugActionsPanel from "./DebugActionsPanel";
+import DebugCodebasePanel from "./DebugCodebasePanel";
+import DebugPerformancePanel from "./DebugPerformancePanel";
 import { matchesSearch, downloadJson } from "./debugUtils";
 
-type PanelTab = DebugEntryKind | "query" | "info";
+type PanelTab = DebugEntryKind | "query" | "info" | "actions" | "codebase" | "performance";
 
 const TABS: { key: PanelTab; label: string }[] = [
   { key: "http", label: "Network" },
@@ -48,8 +61,16 @@ const TABS: { key: PanelTab; label: string }[] = [
   { key: "websocket", label: "WebSocket" },
   { key: "error", label: "Errors" },
   { key: "query", label: "Queries" },
+  { key: "performance", label: "Performance" },
+  { key: "codebase", label: "Codebase" },
+  { key: "actions", label: "Acciones" },
   { key: "info", label: "Info" },
 ];
+
+const NON_ENTRY_TABS: PanelTab[] = ["query", "info", "actions", "codebase", "performance"];
+
+const HTTP_METHOD_FILTERS = ["all", "GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+const HTTP_STATUS_FILTERS = ["all", "2xx", "3xx", "4xx", "5xx"] as const;
 
 const LEVEL_FILTERS: { key: DebugLevel | "all"; label: string }[] = [
   { key: "all", label: "Todos" },
@@ -72,6 +93,7 @@ export default function DebugPanel({ authUser, activeRole }: DebugPanelProps) {
   // componente, no a `open`).
   useEffect(() => {
     installGlobalErrorCapture();
+    installPerfObservers();
   }, []);
 
   useEffect(() => {
@@ -124,6 +146,9 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
   const [activeTab, setActiveTab] = useState<PanelTab>("http");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<DebugLevel | "all">("all");
+  const [httpMethodFilter, setHttpMethodFilter] = useState<(typeof HTTP_METHOD_FILTERS)[number]>("all");
+  const [httpStatusFilter, setHttpStatusFilter] = useState<(typeof HTTP_STATUS_FILTERS)[number]>("all");
+  const [wsChannelFilter, setWsChannelFilter] = useState<string>("all");
 
   // useDeferredValue: con el panel abierto y tráfico real entrando, tipear
   // en el buscador no debería competir por el hilo principal con los
@@ -145,16 +170,28 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
   const tabDefinitions: TabDefinition[] = TABS.map(t => ({
     key: t.key,
     label: t.label,
-    count: t.key === "query" || t.key === "info" ? undefined : countsByKind[t.key as DebugEntryKind],
+    count: NON_ENTRY_TABS.includes(t.key) ? undefined : countsByKind[t.key as DebugEntryKind],
     showDot: t.key === "error" && countsByKind.error > 0,
   }));
 
-  const isEntryTab = activeTab !== "query" && activeTab !== "info";
+  const isEntryTab = !NON_ENTRY_TABS.includes(activeTab);
 
   const entriesForTab = useMemo(
     () => (isEntryTab ? entries.filter((e: DebugEntry) => e.kind === activeTab) : []),
     [entries, activeTab, isEntryTab],
   );
+
+  // Canales distintos vistos hasta ahora — populan el <select> del tab
+  // WebSocket sin mantener una lista hardcodeada de canales posibles.
+  const wsChannels = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of entries) {
+      if (e.kind !== "websocket") continue;
+      const channel = (e.detail as Record<string, unknown> | undefined)?.channel;
+      if (typeof channel === "string") set.add(channel);
+    }
+    return Array.from(set).sort();
+  }, [entries]);
 
   // Cap de renderizado (no de captura) — 500 filas DOM con contenido
   // expandible no es gratis, y casi nunca hace falta ver más de las últimas
@@ -167,20 +204,34 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
     const matched = entriesForTab
       .filter(e => levelFilter === "all" || e.level === levelFilter)
       .filter(e => matchesSearch(e, searchLower))
+      .filter(e => {
+        if (activeTab !== "http") return true;
+        const detail = e.detail as Record<string, unknown> | undefined;
+        if (httpMethodFilter !== "all" && detail?.method !== httpMethodFilter) return false;
+        if (httpStatusFilter !== "all") {
+          const status = Number(detail?.status);
+          if (!Number.isFinite(status) || `${Math.floor(status / 100)}xx` !== httpStatusFilter) return false;
+        }
+        return true;
+      })
+      .filter(e => {
+        if (activeTab !== "websocket" || wsChannelFilter === "all") return true;
+        return (e.detail as Record<string, unknown> | undefined)?.channel === wsChannelFilter;
+      })
       .slice()
       .reverse();
     return {
       filteredEntries: matched.slice(0, MAX_RENDERED_ROWS),
       hiddenCount: Math.max(0, matched.length - MAX_RENDERED_ROWS),
     };
-  }, [entriesForTab, isEntryTab, levelFilter, searchLower]);
+  }, [entriesForTab, isEntryTab, activeTab, levelFilter, searchLower, httpMethodFilter, httpStatusFilter, wsChannelFilter]);
 
   return (
     <div
       className={`fixed z-50 flex flex-col overflow-hidden rounded-container border border-border-default bg-surface shadow-2xl transition-[width,height] duration-200 ${
         expanded
-          ? "inset-6"
-          : "bottom-6 right-6 h-[34rem] w-[28rem] max-w-[calc(100vw-3rem)]"
+          ? "inset-3 sm:inset-6"
+          : "bottom-3 right-3 h-[min(34rem,calc(100vh-1.5rem))] w-[min(28rem,calc(100vw-1.5rem))] sm:bottom-6 sm:right-6 sm:h-[min(34rem,calc(100vh-3rem))] sm:w-[min(28rem,calc(100vw-3rem))]"
       }`}
     >
       <div className="flex items-center justify-between border-b border-border-default px-4 py-3">
@@ -204,12 +255,12 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             tooltip="Exportar todo como JSON"
             onClick={() => downloadJson(`ivoo-debug-${Date.now()}.json`, entries)}
           />
-          {activeTab !== "info" && (
+          {isEntryTab && (
             <IconActionButton
               icon={<Trash2 className="h-3.5 w-3.5" />}
               label="Limpiar tab actual"
               tooltip="Limpiar tab actual"
-              onClick={() => clear(activeTab === "query" ? undefined : activeTab)}
+              onClick={() => clear(activeTab as DebugEntryKind)}
             />
           )}
           <IconActionButton
@@ -229,13 +280,30 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
       </div>
 
       <div className="space-y-2 px-3 pt-2">
-        <Tabs
-          ariaLabel="Secciones de debug"
-          activeKey={activeTab}
-          onChange={key => setActiveTab(key as PanelTab)}
-          fullWidth
-          tabs={tabDefinitions}
-        />
+        {expanded ? (
+          <Tabs
+            ariaLabel="Secciones de debug"
+            activeKey={activeTab}
+            onChange={key => setActiveTab(key as PanelTab)}
+            fullWidth
+            tabs={tabDefinitions}
+          />
+        ) : (
+          // Con 9 tabs, <Tabs fullWidth> en el ancho colapsado (28rem) las
+          // aprieta hasta volverlas ilegibles (sin ícono ni label completo).
+          // Un <Select> muestra siempre la tab activa entera y el resto en
+          // un listbox — mismo <activeTab>/<onChange>, solo cambia el control.
+          <Select
+            ariaLabel="Sección de debug activa"
+            value={activeTab}
+            onChange={key => setActiveTab(key as PanelTab)}
+            options={tabDefinitions.map(t => ({
+              value: t.key,
+              label: t.count !== undefined && t.count > 0 ? `${t.label} (${t.count})` : t.label,
+            }))}
+            size="sm"
+          />
+        )}
         <div className="flex items-center gap-2">
           <SearchInput
             id="debug-panel-search"
@@ -261,12 +329,57 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             </div>
           )}
         </div>
+        {activeTab === "http" && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <select
+              value={httpMethodFilter}
+              onChange={e => setHttpMethodFilter(e.target.value as (typeof HTTP_METHOD_FILTERS)[number])}
+              aria-label="Filtrar por método HTTP"
+              className="rounded-lg border border-border-default bg-white px-2 py-1 text-[10px] font-bold text-slate-600"
+            >
+              {HTTP_METHOD_FILTERS.map(m => (
+                <option key={m} value={m}>{m === "all" ? "Todos los métodos" : m}</option>
+              ))}
+            </select>
+            <select
+              value={httpStatusFilter}
+              onChange={e => setHttpStatusFilter(e.target.value as (typeof HTTP_STATUS_FILTERS)[number])}
+              aria-label="Filtrar por status HTTP"
+              className="rounded-lg border border-border-default bg-white px-2 py-1 text-[10px] font-bold text-slate-600"
+            >
+              {HTTP_STATUS_FILTERS.map(s => (
+                <option key={s} value={s}>{s === "all" ? "Todos los status" : s}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {activeTab === "websocket" && wsChannels.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <select
+              value={wsChannelFilter}
+              onChange={e => setWsChannelFilter(e.target.value)}
+              aria-label="Filtrar por canal WebSocket"
+              className="rounded-lg border border-border-default bg-white px-2 py-1 text-[10px] font-bold text-slate-600"
+            >
+              <option value="all">Todos los canales</option>
+              {wsChannels.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-2">
         <TabPanel activeKey={activeTab}>
           {activeTab === "query" ? (
             <DebugQueryPanel search={deferredSearch} />
+          ) : activeTab === "performance" ? (
+            <DebugPerformancePanel />
+          ) : activeTab === "codebase" ? (
+            <DebugCodebasePanel />
+          ) : activeTab === "actions" ? (
+            <DebugActionsPanel />
           ) : activeTab === "info" ? (
             <DebugInfoPanel authUser={authUser} activeRole={activeRole} />
           ) : (
