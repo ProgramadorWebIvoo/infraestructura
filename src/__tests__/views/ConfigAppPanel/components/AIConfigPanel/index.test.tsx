@@ -102,7 +102,7 @@ describe("AIConfigPanel (integración)", () => {
   });
 
   it("valida el formulario antes de crear (modelo vacío → toast error)", async () => {
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
     fireEvent.click(screen.getByRole("button", { name: "Nueva config." }));
 
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
@@ -116,7 +116,7 @@ describe("AIConfigPanel (integración)", () => {
   });
 
   it("crea una configuración con modelo y API key", async () => {
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
     fireEvent.click(screen.getByRole("button", { name: "Nueva config." }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
 
@@ -137,7 +137,7 @@ describe("AIConfigPanel (integración)", () => {
 
   it("edita una configuración (payload tipado sin apiKey vacía)", async () => {
     mockHook.configs = [CONFIG];
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
 
     fireEvent.click(screen.getByRole("button", { name: `Editar ${CONFIG.model}` }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
@@ -158,7 +158,7 @@ describe("AIConfigPanel (integración)", () => {
 
   it("prueba la conexión y muestra el resultado", async () => {
     mockHook.configs = [CONFIG];
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
 
     fireEvent.click(screen.getByRole("button", { name: `Probar conexión ${CONFIG.model}` }));
 
@@ -168,7 +168,7 @@ describe("AIConfigPanel (integración)", () => {
 
   it("elimina tras confirmación", async () => {
     mockHook.configs = [CONFIG];
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
 
     fireEvent.click(screen.getByRole("button", { name: `Eliminar ${CONFIG.model}` }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
@@ -180,7 +180,7 @@ describe("AIConfigPanel (integración)", () => {
   });
 
   it("sincroniza y muestra el banner de éxito", async () => {
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Sincronizar" }));
 
@@ -190,7 +190,7 @@ describe("AIConfigPanel (integración)", () => {
 
   it("alterna el estado activo", async () => {
     mockHook.configs = [CONFIG];
-    render(<AIConfigPanel authToken="token" />);
+    render(<AIConfigPanel authToken="token" activeRole="SUPERADMIN" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Desactivar" }));
 

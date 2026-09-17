@@ -209,7 +209,13 @@ describe("ConfigAppPanel", () => {
       return Promise.resolve(undefined);
     });
 
-    render(<ConfigAppPanel authToken="token" canAccess={() => false} onContractorMutated={() => {}} />);
+    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
+
+    // Con activeRole="SUPERADMIN" la tab "Monedas" (antes vacía sin
+    // permisos) ahora también tiene contenido propio y puede quedar antes
+    // que "Notificaciones" como default — navegar explícito, igual que el
+    // test de "SUPERADMIN: la fila de la matriz..." más abajo.
+    fireEvent.click(screen.getByRole("tab", { name: "Notificaciones" }));
 
     await waitFor(() => expect(screen.getByText("Confirmacion de contratacion")).toHaveAttribute("aria-pressed"));
 
