@@ -2,11 +2,18 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Panel de configuración del catálogo de acciones notificables. Solo
- * edición de metadatos (label/grupo/alcance/crítica) + activo/inactivo —
- * sin alta, ver NotificationActionController. Cierra la brecha de
- * App\Support\NotificationCatalog::ACTIONS hardcodeado: el metadato ya es
- * administrable sin deploy, aunque el disparo de cada acción sigue en código.
+ * Catálogo de acciones notificables — solo edición de metadatos
+ * (label/grupo/alcance/crítica) + activo/inactivo, sin alta (ver
+ * NotificationActionController). Vive DENTRO de la sección "Notificaciones"
+ * de Config App, como una tarjeta más junto a NotificationRulesCard (ver
+ * ConfigAppPanel/index.tsx, grupo "__notification_rules__") — no es un tab
+ * propio: separarlo como tab rompía la cohesión de "todo lo de
+ * notificaciones vive junto" (antes vivía en "Catálogos", un grupo distinto
+ * al de la matriz de roles).
+ *
+ * Responde "¿qué eventos existen y cómo se llaman?" (listado plano);
+ * NotificationRulesCard, debajo, responde "¿a quién le llega cada uno?"
+ * (matriz rol×canal) — se complementan, no se pisan.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,11 +24,10 @@ import TableToolbar from "@/components/UI/TableToolbar";
 import Card from "@/components/UI/Card";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 import SectionHeader from "@/components/UI/SectionHeader";
-import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useToast } from "@/components/UI/Toast";
 import { apiFetch } from "@/services/api";
 import { logError, getErrorMessage } from "@/services/logger";
-import { containerVariants, itemVariants } from "@/animations";
+import { itemVariants } from "@/animations";
 import { getNotificationActionColumns } from "./columns";
 import NotificationActionEditModal from "./components/NotificationActionEditModal";
 import type { ConfigNotificationAction, NotificationActionForm } from "./types";
@@ -68,7 +74,7 @@ export default function NotificationActionsConfigPanel({ authToken, activeRole }
     if (!authToken) return;
     try {
       const data = await apiFetch<ConfigNotificationAction[]>("/notification-actions/config", { token: authToken });
-      setActions(data);
+      setActions(data ?? []);
     } catch (error) {
       logError("NotificationActionsConfigPanel.loadActions", error);
       showToast("No se pudieron cargar las acciones notificables.", "error");
@@ -172,28 +178,24 @@ export default function NotificationActionsConfigPanel({ authToken, activeRole }
   }), [togglingId, handleOpenEdit]);
 
   const actionPendingToggle = actions.find((a) => a.id === confirmToggleId);
+  const groupOptions = useMemo(
+    () => Array.from(new Set(actions.map((a) => a.group))).sort(),
+    [actions],
+  );
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""}>
-        <div
-          className={`space-y-6 ${isSuperadmin ? "flex min-h-0 flex-col lg:sticky lg:top-6" : ""}`}
-          style={isSuperadmin ? { height: "calc(100vh - 3rem)" } : undefined}
-        >
-          <motion.div variants={itemVariants} className="shrink-0">
-            <Card hoverable={false} className={`border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400}`}>
-              <SectionHeader
-                icon={<Bell className="h-5 w-5" />}
-                title="Acciones Notificables"
-                description="Catálogo de eventos que la app puede notificar. Edita etiqueta, agrupación, alcance y criticidad, o desactívalos de los selectores."
-                color="emerald"
-              />
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className={isSuperadmin ? "flex-1 min-h-0 flex flex-col" : ""}>
-            <Card hoverable={false} fillHeight={isSuperadmin} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.success.borderL400}`}>
-              <TableToolbar
+    <motion.div variants={itemVariants}>
+      <Card hoverable={false} className="p-0 overflow-hidden">
+        <div className="p-5 pb-0">
+          <SectionHeader
+            icon={<Bell className="h-5 w-5" />}
+            title="Catálogo de acciones notificables"
+            description="Qué eventos existen, su etiqueta, agrupación y criticidad — alimenta el selector de arriba y la matriz de abajo. Desactivar una acción la oculta de ambos sin perder su histórico."
+            color="indigo"
+          />
+        </div>
+        <div className="mt-4">
+          <TableToolbar
                 searchId="notification-actions-search"
                 searchValue={search}
                 onSearchChange={setSearch}
@@ -206,42 +208,41 @@ export default function NotificationActionsConfigPanel({ authToken, activeRole }
                 nounPlural="acciones"
               />
 
-              <Table
-                columns={columns}
-                data={filtered}
-                rowKey={(a) => a.id}
-                isLoading={isLoading}
-                emptyMessage="No se encontraron acciones con ese criterio."
-                fillViewport
-                pageSize={20}
-              />
-            </Card>
-          </motion.div>
-
-          <NotificationActionEditModal
-            isOpen={isModalOpen}
-            actionKey={editingKey}
-            form={form}
-            onFormChange={setForm}
-            isSaving={isSaving}
-            onClose={handleCloseModal}
-            onSave={handleSave}
-          />
-
-          <ConfirmDialog
-            isOpen={confirmToggleId !== null}
-            onClose={() => setConfirmToggleId(null)}
-            onConfirm={() => {
-              if (confirmToggleId !== null) handleToggleStatus(confirmToggleId);
-            }}
-            title="Cambiar estado de la acción"
-            message={`¿Estás seguro de ${actionPendingToggle?.isActive ? "desactivar" : "activar"} esta acción? ${actionPendingToggle?.isActive ? "Dejará de ofrecerse en selectores nuevos, pero el histórico y las reglas ya configuradas siguen funcionando." : "Volverá a estar disponible en selectores nuevos."}`}
-            variant="warning"
-            confirmLabel={actionPendingToggle?.isActive ? "Desactivar" : "Activar"}
-            isLoading={togglingId === confirmToggleId}
+          <Table
+            columns={columns}
+            data={filtered}
+            rowKey={(a) => a.id}
+            isLoading={isLoading}
+            emptyMessage="No se encontraron acciones con ese criterio."
+            maxHeight="26rem"
+            pageSize={20}
           />
         </div>
-      </div>
+      </Card>
+
+      <NotificationActionEditModal
+        isOpen={isModalOpen}
+        actionKey={editingKey}
+        form={form}
+        onFormChange={setForm}
+        groupOptions={groupOptions}
+        isSaving={isSaving}
+        onClose={handleCloseModal}
+        onSave={handleSave}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmToggleId !== null}
+        onClose={() => setConfirmToggleId(null)}
+        onConfirm={() => {
+          if (confirmToggleId !== null) handleToggleStatus(confirmToggleId);
+        }}
+        title="Cambiar estado de la acción"
+        message={`¿Estás seguro de ${actionPendingToggle?.isActive ? "desactivar" : "activar"} esta acción? ${actionPendingToggle?.isActive ? "Dejará de ofrecerse en selectores nuevos, pero el histórico y las reglas ya configuradas siguen funcionando." : "Volverá a estar disponible en selectores nuevos."}`}
+        variant="warning"
+        confirmLabel={actionPendingToggle?.isActive ? "Desactivar" : "Activar"}
+        isLoading={togglingId === confirmToggleId}
+      />
     </motion.div>
   );
 }

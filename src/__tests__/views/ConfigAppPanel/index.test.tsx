@@ -60,6 +60,9 @@ describe("ConfigAppPanel", () => {
           unconfigured: [],
         });
       }
+      if (path === "/notification-actions/config") {
+        return Promise.resolve([]);
+      }
       return Promise.resolve(undefined);
     });
   });
@@ -199,6 +202,9 @@ describe("ConfigAppPanel", () => {
           { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
           { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
         ]);
+      }
+      if (path === "/notification-actions/config") {
+        return Promise.resolve([]);
       }
       return Promise.resolve(undefined);
     });

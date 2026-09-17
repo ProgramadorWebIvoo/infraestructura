@@ -114,7 +114,6 @@ const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
 const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "usuarios", title: "Usuarios", route: "/usuarios" },
   { key: "roles", title: "Roles", route: "/config-roles" },
-  { key: "acciones-notificables", title: "Acciones Notificables", route: "/config-notification-actions" },
   { key: "proveedores", title: "Proveedores", route: "/config-proveedores" },
   { key: "materiales", title: "Materiales", route: "/config-materiales" },
   { key: "tipos-proyecto", title: "Tipos de Proyecto", route: "/config-project-types" },
@@ -139,7 +138,6 @@ const SECTION_META: Record<string, { group: string; icon: ReactNode }> = {
   materiales: { group: "Catálogos", icon: <Package className="h-4 w-4" /> },
   "tipos-proyecto": { group: "Catálogos", icon: <Hammer className="h-4 w-4" /> },
   roles: { group: "Catálogos", icon: <Shield className="h-4 w-4" /> },
-  "acciones-notificables": { group: "Catálogos", icon: <Bell className="h-4 w-4" /> },
   usuarios: { group: "Administración", icon: <Users className="h-4 w-4" /> },
   proveedores: { group: "Administración", icon: <Truck className="h-4 w-4" /> },
   "modelos-ia": { group: "Administración", icon: <BrainCircuit className="h-4 w-4" /> },
@@ -330,7 +328,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   // — se filtran también aquí para no depender solo de role_view_access
   // (editable por ADMIN antes del endurecimiento) y evitar mostrar un panel
   // cuyas acciones el backend rechazará con 403.
-  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles", "acciones-notificables"]);
+  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles"]);
   const visibleExtraTabs = EXTRA_TABS.filter(tab =>
     SUPERADMIN_ONLY_TABS.has(tab.key) ? isSuperadmin : canAccess(tab.route),
   );
@@ -456,8 +454,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
             {activeExtraTab ? (
               activeExtraTab.key === "roles" ? (
                 <RolesConfigPanel authToken={authToken} activeRole={activeRole} />
-              ) : activeExtraTab.key === "acciones-notificables" ? (
-                <NotificationActionsConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "usuarios" ? (
                 <UsuariosPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "proveedores" ? (
@@ -475,18 +471,25 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
             <div className="space-y-6">
               {(visibleGroupsByMacro.get(activeMacroTab) ?? []).map(group =>
                 group === "__notification_rules__" ? (
-                  <NotificationRulesCard
-                    key={group}
-                    actions={ruleActions}
-                    roles={ruleRoles}
-                    isLoading={isLoadingRules}
-                    valueOf={rulesDraft.valueOf}
-                    onChange={rulesDraft.onChange}
-                    isDirty={rulesDraft.isDirty}
-                    unconfigured={unconfigured}
-                    errors={rulesDraft.errors}
-                    silencedChannelsFor={silencedChannelsFor}
-                  />
+                  // Catálogo (qué acciones existen) + matriz (a quién le
+                  // llegan) viven juntos acá a propósito — antes el catálogo
+                  // era un tab aparte en "Catálogos", separado de la matriz
+                  // de roles que vive en "Notificaciones": dos pantallas de
+                  // notificaciones en grupos distintos del menú no convergía.
+                  <div key={group} className="space-y-6">
+                    <NotificationActionsConfigPanel authToken={authToken} activeRole={activeRole} />
+                    <NotificationRulesCard
+                      actions={ruleActions}
+                      roles={ruleRoles}
+                      isLoading={isLoadingRules}
+                      valueOf={rulesDraft.valueOf}
+                      onChange={rulesDraft.onChange}
+                      isDirty={rulesDraft.isDirty}
+                      unconfigured={unconfigured}
+                      errors={rulesDraft.errors}
+                      silencedChannelsFor={silencedChannelsFor}
+                    />
+                  </div>
                 ) : group === "__currencies__" ? (
                   <div key={group} className="space-y-6">
                     <CurrencyCard

@@ -24,6 +24,10 @@ interface NotificationActionEditModalProps {
   actionKey: string | null;
   form: NotificationActionForm;
   onFormChange: (form: NotificationActionForm) => void;
+  /** Grupos ya existentes en el catálogo — evita typos que crean un grupo
+   * nuevo por accidente (ej. "catalogos" vs "catálogos" quedarían como dos
+   * grupos distintos en la matriz si esto fuera texto libre). */
+  groupOptions: string[];
   isSaving: boolean;
   onClose: () => void;
   onSave: () => void;
@@ -34,6 +38,7 @@ export default function NotificationActionEditModal({
   actionKey,
   form,
   onFormChange,
+  groupOptions,
   isSaving,
   onClose,
   onSave,
@@ -91,14 +96,12 @@ export default function NotificationActionEditModal({
           <label htmlFor="notification-action-group" className={labelClass}>
             Grupo <RequiredMark filled={form.group.trim().length > 0} />
           </label>
-          <input
+          <Select
             id="notification-action-group"
-            type="text"
             value={form.group}
-            onChange={(e) => onFormChange({ ...form, group: e.target.value })}
-            maxLength={40}
-            placeholder="Ej: proyectos, documentos, catalogos"
-            className={inputClass}
+            onChange={(v) => onFormChange({ ...form, group: v })}
+            options={groupOptions.map((g) => ({ value: g, label: g }))}
+            accent="success"
           />
         </div>
 
