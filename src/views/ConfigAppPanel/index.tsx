@@ -16,7 +16,7 @@
  * propio estado de forma autónoma.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Gauge,
@@ -31,13 +31,20 @@ import {
   RotateCcw,
   RefreshCw,
   BrainCircuit,
+  Coins,
+  Users,
+  Truck,
+  Package,
+  Hammer,
+  Shield,
+  KeyRound,
 } from "lucide-react";
 import { itemVariants, springs } from "@/animations";
 import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
 import Button from "@/components/UI/Button";
 import AlertBanner from "@/components/UI/AlertBanner";
 import ConfigAuditLogPanel from "@/components/UI/ConfigAuditLogPanel";
-import Tabs from "@/components/UI/Tabs";
+import SectionNav, { type SectionNavItem } from "@/components/UI/SectionNav";
 import TabPanel from "@/components/UI/TabPanel";
 import { useToast } from "@/components/UI/Toast";
 import { getErrorMessage } from "@/services/logger";
@@ -112,6 +119,29 @@ const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "modelos-ia", title: "Modelos de IA", route: "/config-ia" },
   { key: "config-keys", title: "Configuración de Keys", route: "/config-keys" },
 ];
+
+/**
+ * Metadata puramente visual del selector (grupo + ícono) — separada de
+ * MACRO_GROUPS/EXTRA_TABS porque esos arrays ya definen la lógica real
+ * (qué settings trae cada macro-tab, qué ruta gatea cada extra-tab); acá
+ * solo se decide cómo se organiza y qué ícono lleva cada uno en SectionNav.
+ * Agregar una sección nueva a NEGOCIO/CATÁLOGOS/ADMINISTRACIÓN es solo
+ * sumar una fila acá, sin tocar SectionNav.
+ */
+const SECTION_META: Record<string, { group: string; icon: ReactNode }> = {
+  negocio: { group: "Negocio", icon: <Gauge className="h-4 w-4" /> },
+  monedas: { group: "Negocio", icon: <Coins className="h-4 w-4" /> },
+  notificaciones: { group: "Negocio", icon: <Bell className="h-4 w-4" /> },
+  aplicacion: { group: "Negocio", icon: <SettingsIcon className="h-4 w-4" /> },
+  cronjobs: { group: "Negocio", icon: <RefreshCw className="h-4 w-4" /> },
+  materiales: { group: "Catálogos", icon: <Package className="h-4 w-4" /> },
+  "tipos-proyecto": { group: "Catálogos", icon: <Hammer className="h-4 w-4" /> },
+  roles: { group: "Catálogos", icon: <Shield className="h-4 w-4" /> },
+  usuarios: { group: "Administración", icon: <Users className="h-4 w-4" /> },
+  proveedores: { group: "Administración", icon: <Truck className="h-4 w-4" /> },
+  "modelos-ia": { group: "Administración", icon: <BrainCircuit className="h-4 w-4" /> },
+  "config-keys": { group: "Administración", icon: <KeyRound className="h-4 w-4" /> },
+};
 
 interface ConfigAppPanelProps {
   authToken: string;
@@ -302,6 +332,12 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
     SUPERADMIN_ONLY_TABS.has(tab.key) ? isSuperadmin : canAccess(tab.route),
   );
   const visibleMacroGroups = [...visibleSettingsTabs, ...visibleExtraTabs];
+  const sectionNavItems: SectionNavItem[] = visibleMacroGroups.map(macro => ({
+    key: macro.key,
+    label: macro.title,
+    group: SECTION_META[macro.key]?.group ?? "Otros",
+    icon: SECTION_META[macro.key]?.icon,
+  }));
   const [activeMacroTab, setActiveMacroTab] = useState(MACRO_GROUPS[0].key);
   const activeExtraTab = visibleExtraTabs.find(tab => tab.key === activeMacroTab);
 
@@ -392,14 +428,13 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
       )}
 
       <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 items-start" : ""}>
-        <div className="min-w-0">
-          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="mb-6">
-            <Tabs
+        <div className="min-w-0 flex flex-col lg:flex-row gap-6 items-start">
+          <motion.div variants={itemVariants} initial="hidden" animate="visible" className="w-full lg:w-auto lg:shrink-0">
+            <SectionNav
               ariaLabel="Secciones de configuración"
               activeKey={activeMacroTab}
               onChange={setActiveMacroTab}
-              fullWidth
-              tabs={visibleMacroGroups.map(macro => ({ key: macro.key, label: macro.title }))}
+              items={sectionNavItems}
             />
           </motion.div>
 
@@ -414,7 +449,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
             atascado en opacity 0 después del primer cambio de tab. TabPanel
             ya trae su propia transición de entrada, no necesita heredar nada.
           */}
-          <TabPanel activeKey={activeMacroTab}>
+          <TabPanel activeKey={activeMacroTab} className="min-w-0 flex-1">
             {activeExtraTab ? (
               activeExtraTab.key === "roles" ? (
                 <RolesConfigPanel authToken={authToken} activeRole={activeRole} />
