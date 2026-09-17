@@ -61,6 +61,7 @@ import UsuariosPanel from "./components/UsuariosPanel";
 import ProveedoresConfigPanel from "./components/ProveedoresConfigPanel";
 import MaterialConfigPanel from "./components/MaterialConfigPanel";
 import ProjectTypeConfigPanel from "./components/ProjectTypeConfigPanel";
+import RolesConfigPanel from "./components/RolesConfigPanel";
 import AIConfigPanel from "./components/AIConfigPanel";
 import KeysConfigPanel from "./components/KeysConfigPanel";
 import DebugModeCard from "./components/DebugModeCard";
@@ -104,6 +105,7 @@ const MACRO_GROUPS: { key: string; title: string; groups: string[] }[] = [
  */
 const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "usuarios", title: "Usuarios", route: "/usuarios" },
+  { key: "roles", title: "Roles", route: "/config-roles" },
   { key: "proveedores", title: "Proveedores", route: "/config-proveedores" },
   { key: "materiales", title: "Materiales", route: "/config-materiales" },
   { key: "tipos-proyecto", title: "Tipos de Proyecto", route: "/config-project-types" },
@@ -295,7 +297,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   // — se filtran también aquí para no depender solo de role_view_access
   // (editable por ADMIN antes del endurecimiento) y evitar mostrar un panel
   // cuyas acciones el backend rechazará con 403.
-  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys"]);
+  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles"]);
   const visibleExtraTabs = EXTRA_TABS.filter(tab =>
     SUPERADMIN_ONLY_TABS.has(tab.key) ? isSuperadmin : canAccess(tab.route),
   );
@@ -414,7 +416,9 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
           */}
           <TabPanel activeKey={activeMacroTab}>
             {activeExtraTab ? (
-              activeExtraTab.key === "usuarios" ? (
+              activeExtraTab.key === "roles" ? (
+                <RolesConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "usuarios" ? (
                 <UsuariosPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "proveedores" ? (
                 <ProveedoresConfigPanel authToken={authToken} activeRole={activeRole} onContractorMutated={onContractorMutated} />
