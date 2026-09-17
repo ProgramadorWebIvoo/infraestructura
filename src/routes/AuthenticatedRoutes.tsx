@@ -12,7 +12,7 @@ import { useHomeAnnouncement } from "@/hooks/useHomeAnnouncement";
 // SidebarNav para hover-prefetch).
 const HomePanel = lazy(ROUTE_PREFETCH[ROUTES.HOME]!.loadChunk);
 const PresidenciaDashboard = lazy(ROUTE_PREFETCH[ROUTES.PRESIDENCIA]!.loadChunk);
-const MarketingPanel = lazy(ROUTE_PREFETCH[ROUTES.MARKETING]!.loadChunk);
+const MarketingUnderConstruction = lazy(ROUTE_PREFETCH[ROUTES.MARKETING]!.loadChunk);
 const InfraestructuraMantenimientoPanel = lazy(ROUTE_PREFETCH[ROUTES.INFRAESTRUCTURA]!.loadChunk);
 const CierreObraPanel = lazy(ROUTE_PREFETCH[ROUTES.CIERRE_OBRA]!.loadChunk);
 const ProcuraPanel = lazy(ROUTE_PREFETCH[ROUTES.PROCURA]!.loadChunk);
@@ -35,7 +35,6 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
     onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
-    marketingProjects, isLoadingMarketing, isCreatingMarketing, onCreateMarketingProject,
   } = props;
 
   const homeAnnouncement = useHomeAnnouncement();
@@ -67,13 +66,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.MARKETING}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.MARKETING)} redirectTo={fallbackRoute}>
-              <MarketingPanel
-                projects={marketingProjects}
-                authToken={authToken}
-                isLoading={isLoadingMarketing}
-                isCreating={isCreatingMarketing}
-                onCreate={onCreateMarketingProject}
-              />
+              <MarketingUnderConstruction />
             </ProtectedRoute>
           }
         />

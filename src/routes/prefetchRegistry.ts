@@ -48,7 +48,7 @@ function withAuthKey(key: string, authToken: string): [string, string] {
 export const ROUTE_PREFETCH: Partial<Record<string, RoutePrefetchEntry>> = {
   [ROUTES.HOME]: { loadChunk: () => import("@/views/HomePanel") },
   [ROUTES.PRESIDENCIA]: { loadChunk: () => import("@/views/PresidenciaDashboard") },
-  [ROUTES.MARKETING]: { loadChunk: () => import("@/views/MarketingPanel") },
+  [ROUTES.MARKETING]: { loadChunk: () => import("@/components/UI/UnderConstruction") },
   [ROUTES.INFRAESTRUCTURA]: { loadChunk: () => import("@/views/InfraestructuraMantenimientoPanel") },
   [ROUTES.CIERRE_OBRA]: { loadChunk: () => import("@/views/CierreObraPanel") },
   [ROUTES.PROCURA]: { loadChunk: () => import("@/views/ProcuraPanel") },

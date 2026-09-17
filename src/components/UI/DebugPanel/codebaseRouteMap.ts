@@ -37,9 +37,9 @@ export const CODEBASE_ROUTE_MAP: Record<string, CodebaseRouteInfo> = {
     godNodes: ["usePolledFetch"],
   },
   [ROUTES.MARKETING]: {
-    component: "MarketingPanel",
-    file: "views/MarketingPanel/index.tsx",
-    hooks: ["useMarketingProjects"],
+    component: "UnderConstruction",
+    file: "components/UI/UnderConstruction.tsx",
+    hooks: [],
   },
   [ROUTES.INFRAESTRUCTURA]: {
     component: "InfraestructuraMantenimientoPanel",
