@@ -8,9 +8,10 @@
  */
 
 import { useEffect } from "react";
-import { Building2, MapPin, Wrench } from "lucide-react";
+import { Building2, MapPin } from "lucide-react";
 import TextField from "@/components/UI/TextField";
 import SegmentedControl from "@/components/UI/SegmentedControl";
+import type { ProjectTypeOption } from "@/hooks/useProjectTypes";
 
 export interface RequestFormErrors {
   title?: string;
@@ -23,19 +24,16 @@ interface RequestFormSectionProps {
   onTitleChange: (v: string) => void;
   location: string;
   onLocationChange: (v: string) => void;
-  type: "INFRAESTRUCTURA" | "MANTENIMIENTO";
-  onTypeChange: (v: "INFRAESTRUCTURA" | "MANTENIMIENTO") => void;
+  type: string;
+  onTypeChange: (v: string) => void;
+  /** Catálogo administrable (GET /project-types) — ver useProjectTypes. */
+  typeOptions: ProjectTypeOption[];
   description: string;
   onDescriptionChange: (v: string) => void;
   errors?: RequestFormErrors;
   /** Modo edición (reenvío tras rechazo): el tipo no es editable — el backend de resubmit no lo acepta. */
   typeReadOnly?: boolean;
 }
-
-const TYPE_LABEL: Record<"INFRAESTRUCTURA" | "MANTENIMIENTO", string> = {
-  INFRAESTRUCTURA: "Obras / Infraestructura",
-  MANTENIMIENTO: "Mantenimiento",
-};
 
 const FIELD_IDS: Record<keyof RequestFormErrors, string> = {
   title: "req-title",
@@ -52,11 +50,13 @@ export default function RequestFormSection({
   onLocationChange,
   type,
   onTypeChange,
+  typeOptions,
   description,
   onDescriptionChange,
   errors = {},
   typeReadOnly = false,
 }: RequestFormSectionProps) {
+  const typeLabel = typeOptions.find((o) => o.key === type)?.label ?? type;
   // Foco en el primer campo inválido para guiar la corrección
   useEffect(() => {
     const first = FIELD_KEYS.find((k) => errors[k]);
@@ -97,8 +97,8 @@ export default function RequestFormSection({
         </label>
         {typeReadOnly ? (
           <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
-            {type === "INFRAESTRUCTURA" ? <Building2 className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
-            {TYPE_LABEL[type]}
+            <Building2 className="h-4 w-4" />
+            {typeLabel}
             <span className="ml-auto text-[10px] font-medium text-slate-400 normal-case">No editable al reenviar</span>
           </div>
         ) : (
@@ -107,22 +107,12 @@ export default function RequestFormSection({
             ariaLabel="Tipo de requerimiento"
             value={type}
             onChange={onTypeChange}
-            options={[
-              {
-                value: "INFRAESTRUCTURA",
-                label: "Obras / Infraestructura",
-                description: "Nueva obra o construcción",
-                icon: <Building2 className="h-4 w-4" />,
-                accent: "info",
-              },
-              {
-                value: "MANTENIMIENTO",
-                label: "Mantenimiento",
-                description: "Reparación o acondicionamiento",
-                icon: <Wrench className="h-4 w-4" />,
-                accent: "neutral",
-              },
-            ]}
+            options={typeOptions.map((o, i) => ({
+              value: o.key,
+              label: o.label,
+              icon: <Building2 className="h-4 w-4" />,
+              accent: i === 0 ? "info" : "neutral",
+            }))}
           />
         )}
       </div>

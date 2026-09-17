@@ -42,6 +42,7 @@ interface RejectedPetitionsSectionProps {
   auditLogs: AuditLog[];
   authToken: string;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  projectTypes: { key: string; label: string }[];
   onResubmitProject: (
     projectId: string,
     project: Omit<Project, "id" | "createdDate" | "status" | "type">,
@@ -63,6 +64,7 @@ function latestRejectionLog(auditLogs: AuditLog[], projectId: string): AuditLog 
 function EditAndResubmitModal({
   project,
   materialsCatalog,
+  projectTypes,
   authToken,
   onResubmitProject,
   onDeleteDocument,
@@ -70,6 +72,7 @@ function EditAndResubmitModal({
 }: {
   project: Project;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  projectTypes: { key: string; label: string }[];
   authToken: string;
   onResubmitProject: RejectedPetitionsSectionProps["onResubmitProject"];
   onDeleteDocument: RejectedPetitionsSectionProps["onDeleteDocument"];
@@ -103,7 +106,7 @@ function EditAndResubmitModal({
       infoLine={project.title}
     >
       <div className="h-[70vh] -m-6 p-6 pt-5">
-        <RequestWizardCard form={form} materialsCatalog={materialsCatalog} authToken={authToken} variant="embedded" />
+        <RequestWizardCard form={form} materialsCatalog={materialsCatalog} projectTypes={projectTypes} authToken={authToken} variant="embedded" />
       </div>
     </Modal>
   );
@@ -114,6 +117,7 @@ export default function RejectedPetitionsSection({
   auditLogs,
   authToken,
   materialsCatalog,
+  projectTypes,
   onResubmitProject,
   onDeleteDocument,
   defaultViewMode = "grid",
@@ -290,6 +294,7 @@ export default function RejectedPetitionsSection({
         <EditAndResubmitModal
           project={editingProject}
           materialsCatalog={materialsCatalog}
+          projectTypes={projectTypes}
           authToken={authToken}
           onResubmitProject={onResubmitProject}
           onDeleteDocument={onDeleteDocument}

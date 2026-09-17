@@ -53,10 +53,14 @@ vi.mock("@/hooks/useAppGroupSettings", () => ({
 afterEach(() => vi.restoreAllMocks());
 
 const materialsCatalog = [{ name: "Cemento", unit: "Saco", estimatedUnitPrice: 12.5 }];
+const projectTypes = [
+  { key: "INFRAESTRUCTURA", label: "Obras / Infraestructura" },
+  { key: "MANTENIMIENTO", label: "Mantenimiento" },
+];
 
 function Harness({ onAddProject }: { onAddProject: Parameters<typeof useRequestForm>[0]["onAddProject"] }) {
   const form = useRequestForm({ onAddProject });
-  return <RequestWizardCard form={form} materialsCatalog={materialsCatalog} />;
+  return <RequestWizardCard form={form} materialsCatalog={materialsCatalog} projectTypes={projectTypes} />;
 }
 
 function renderWizard(onAddProject = vi.fn().mockResolvedValue({ ok: true, partial: false, failedGroups: [] })) {

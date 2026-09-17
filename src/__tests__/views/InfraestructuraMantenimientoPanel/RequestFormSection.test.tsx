@@ -18,8 +18,12 @@ describe("RequestFormSection", () => {
     onTitleChange: vi.fn(),
     location: "",
     onLocationChange: vi.fn(),
-    type: "INFRAESTRUCTURA" as const,
+    type: "INFRAESTRUCTURA",
     onTypeChange: vi.fn(),
+    typeOptions: [
+      { key: "INFRAESTRUCTURA", label: "Obras / Infraestructura" },
+      { key: "MANTENIMIENTO", label: "Mantenimiento" },
+    ],
     description: "",
     onDescriptionChange: vi.fn(),
   };

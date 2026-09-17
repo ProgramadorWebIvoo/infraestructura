@@ -47,6 +47,10 @@ vi.mock("@/services/api", () => ({
 afterEach(() => vi.restoreAllMocks());
 
 const materialsCatalog = [{ name: "Cemento", unit: "Saco", estimatedUnitPrice: 12.5 }];
+const projectTypes = [
+  { key: "INFRAESTRUCTURA", label: "Obras / Infraestructura" },
+  { key: "MANTENIMIENTO", label: "Mantenimiento" },
+];
 
 function makeRejectedProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -84,6 +88,7 @@ describe("RejectedPetitionsSection", () => {
         projects={[]}
         auditLogs={[]}
         materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
         authToken="test-token"
         onResubmitProject={vi.fn()}
         onDeleteDocument={vi.fn()}
@@ -100,6 +105,7 @@ describe("RejectedPetitionsSection", () => {
         projects={[makeRejectedProject()]}
         auditLogs={[rejectionLog]}
         materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
         authToken="test-token"
         onResubmitProject={vi.fn()}
         onDeleteDocument={vi.fn()}
@@ -118,6 +124,7 @@ describe("RejectedPetitionsSection", () => {
         projects={[makeRejectedProject({ id: "PRJ-011", status: ProjectStatus.CREADO })]}
         auditLogs={[]}
         materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
         authToken="test-token"
         onResubmitProject={vi.fn()}
         onDeleteDocument={vi.fn()}
@@ -134,6 +141,7 @@ describe("RejectedPetitionsSection", () => {
           projects={[makeRejectedProject()]}
           auditLogs={[rejectionLog]}
           materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
           authToken="test-token"
           onResubmitProject={vi.fn()}
           onDeleteDocument={vi.fn()}
@@ -157,6 +165,7 @@ describe("RejectedPetitionsSection", () => {
           projects={[makeRejectedProject()]}
           auditLogs={[rejectionLog]}
           materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
           authToken="test-token"
           onResubmitProject={onResubmitProject}
           onDeleteDocument={vi.fn()}
@@ -199,6 +208,7 @@ describe("RejectedPetitionsSection", () => {
           ]}
           auditLogs={[logWithObservations]}
           materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
           authToken="test-token"
           onResubmitProject={vi.fn()}
           onDeleteDocument={vi.fn()}
@@ -270,6 +280,7 @@ describe("RejectedPetitionsSection — vista Grid (default)", () => {
           projects={[makeRejectedProject()]}
           auditLogs={[rejectionLog]}
           materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
           authToken="test-token"
           onResubmitProject={vi.fn()}
           onDeleteDocument={vi.fn()}
@@ -294,6 +305,7 @@ describe("RejectedPetitionsSection — vista Grid (default)", () => {
           projects={[makeRejectedProject()]}
           auditLogs={[rejectionLog]}
           materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
           authToken="test-token"
           onResubmitProject={vi.fn()}
           onDeleteDocument={vi.fn()}

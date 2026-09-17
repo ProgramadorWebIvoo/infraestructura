@@ -42,6 +42,7 @@ interface InfraestructuraMantenimientoPanelProps {
   auditLogs: AuditLog[];
   authToken: string;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  projectTypes: { key: string; label: string }[];
   isLoading?: boolean;
 }
 
@@ -53,6 +54,7 @@ export default function InfraestructuraMantenimientoPanel({
   auditLogs,
   authToken,
   materialsCatalog,
+  projectTypes,
   isLoading = false,
 }: InfraestructuraMantenimientoPanelProps) {
   const form = useRequestForm({ onAddProject });
@@ -130,7 +132,7 @@ export default function InfraestructuraMantenimientoPanel({
 
         <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
           <TabPanel activeKey={activeTab}>
-            {activeTab === "crear" && <RequestWizardCard form={form} materialsCatalog={materialsCatalog} />}
+            {activeTab === "crear" && <RequestWizardCard form={form} materialsCatalog={materialsCatalog} projectTypes={projectTypes} />}
             {activeTab === "expedientes" && (
               <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} />
             )}
@@ -140,6 +142,7 @@ export default function InfraestructuraMantenimientoPanel({
                 auditLogs={auditLogs}
                 authToken={authToken}
                 materialsCatalog={materialsCatalog}
+                projectTypes={projectTypes}
                 onResubmitProject={onResubmitProject}
                 onDeleteDocument={onDeleteDocument}
               />

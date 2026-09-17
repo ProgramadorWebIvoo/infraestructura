@@ -169,7 +169,8 @@ export interface ProjectDocument {
 export interface Project {
   id: string;
   title: string;
-  type: "INFRAESTRUCTURA" | "MANTENIMIENTO";
+  /** Catálogo real en GET /project-types (administrable, ver useProjectTypes). */
+  type: string;
   description: string;
   location: string;
   createdDate: string;

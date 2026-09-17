@@ -102,7 +102,7 @@ interface UseRequestFormParams {
 
 export function useRequestForm({ onAddProject, existingProject, onResubmitProject, onDeleteDocument }: UseRequestFormParams) {
   const [title, setTitle] = useState(existingProject?.title ?? "");
-  const [type, setType] = useState<"INFRAESTRUCTURA" | "MANTENIMIENTO">(existingProject?.type ?? "INFRAESTRUCTURA");
+  const [type, setType] = useState<string>(existingProject?.type ?? "INFRAESTRUCTURA");
   const [description, setDescription] = useState(existingProject?.description ?? "");
   const [location, setLocation] = useState(existingProject?.location ?? "");
 

@@ -60,6 +60,7 @@ import RatingIaPanel from "./components/RatingIaPanel";
 import UsuariosPanel from "./components/UsuariosPanel";
 import ProveedoresConfigPanel from "./components/ProveedoresConfigPanel";
 import MaterialConfigPanel from "./components/MaterialConfigPanel";
+import ProjectTypeConfigPanel from "./components/ProjectTypeConfigPanel";
 import AIConfigPanel from "./components/AIConfigPanel";
 import KeysConfigPanel from "./components/KeysConfigPanel";
 import DebugModeCard from "./components/DebugModeCard";
@@ -105,6 +106,7 @@ const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "usuarios", title: "Usuarios", route: "/usuarios" },
   { key: "proveedores", title: "Proveedores", route: "/config-proveedores" },
   { key: "materiales", title: "Materiales", route: "/config-materiales" },
+  { key: "tipos-proyecto", title: "Tipos de Proyecto", route: "/config-project-types" },
   { key: "modelos-ia", title: "Modelos de IA", route: "/config-ia" },
   { key: "config-keys", title: "Configuración de Keys", route: "/config-keys" },
 ];
@@ -418,6 +420,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                 <ProveedoresConfigPanel authToken={authToken} activeRole={activeRole} onContractorMutated={onContractorMutated} />
               ) : activeExtraTab.key === "materiales" ? (
                 <MaterialConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "tipos-proyecto" ? (
+                <ProjectTypeConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "config-keys" ? (
                 <KeysConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : (

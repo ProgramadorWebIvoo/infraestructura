@@ -30,6 +30,7 @@ const STEP_DEFINITIONS: StepDefinition[] = [
 interface RequestWizardCardProps {
   form: UseRequestFormReturn;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
+  projectTypes: { key: string; label: string }[];
   /** Requerido en modo edición para preview/descarga de adjuntos existentes. */
   authToken?: string;
   /**
@@ -43,7 +44,7 @@ interface RequestWizardCardProps {
   variant?: "standalone" | "embedded";
 }
 
-export default function RequestWizardCard({ form, materialsCatalog, authToken, variant = "standalone" }: RequestWizardCardProps) {
+export default function RequestWizardCard({ form, materialsCatalog, projectTypes, authToken, variant = "standalone" }: RequestWizardCardProps) {
   const wizard = useRequestWizard({ form });
   const isEmbedded = variant === "embedded";
 
@@ -103,6 +104,7 @@ export default function RequestWizardCard({ form, materialsCatalog, authToken, v
               onLocationChange={form.setLocation}
               type={form.type}
               onTypeChange={form.setType}
+              typeOptions={projectTypes}
               description={form.description}
               onDescriptionChange={form.setDescription}
               errors={{ ...wizard.stepErrors, ...form.fieldErrors }}

@@ -34,6 +34,7 @@ import { useProjects } from "./hooks/useProjects";
 import { useMarketingProjects } from "./hooks/useMarketingProjects";
 import { useContractors } from "./hooks/useContractors";
 import { useCatalog } from "./hooks/useCatalog";
+import { useProjectTypes } from "./hooks/useProjectTypes";
 import { useIdleRoutePrefetch } from "./hooks/useIdleRoutePrefetch";
 import { NotificationsProvider } from "./components/UI/NotificationsProvider";
 import { PublicSettingsProvider } from "./components/UI/PublicSettingsProvider";
@@ -237,6 +238,8 @@ function AppRoutes() {
     resetCatalog,
   } = useCatalog(authToken, showToast, canAccess(ROUTES.INFRAESTRUCTURA));
 
+  const { projectTypes } = useProjectTypes(authToken, showToast, canAccess(ROUTES.INFRAESTRUCTURA));
+
   // ---- Projects ----
   const {
     projects,
@@ -390,6 +393,7 @@ function AppRoutes() {
         onUpdateContractorRating={handleUpdateContractorRating}
         onContractorMutated={() => loadContractors()}
         materialsCatalog={materialsCatalog}
+        projectTypes={projectTypes}
         onAddProject={handleAddProject}
         onResubmitProject={handleResubmitProject}
         onReviewProject={handleReviewProject}
