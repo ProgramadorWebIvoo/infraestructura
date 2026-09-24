@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Modal de rechazo de una petición desde el wizard de revisión técnica de
- * Cierre de Obra. Extraído de TechnicalReviewSection.tsx para que cada
+ * Auditoría. Extraído de TechnicalReviewSection.tsx para que cada
  * modal maneje su propio estado (motivo/observaciones/adjuntos) en vez de
  * que el orquestador cargue con todo — la petición vuelve a Infraestructura
  * (mismo Project.id) para corrección y reenvío, no crea una nueva.

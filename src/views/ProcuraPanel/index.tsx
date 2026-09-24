@@ -93,8 +93,7 @@ export default function ProcuraPanel({
       </motion.div>
 
       {/* KPIs operativos del departamento — contexto secundario compacto
-          debajo de las tabs (mismo patrón que Infraestructura/Cierre de
-          Obra), no cards grandes compitiendo por atención con las tabs. */}
+          debajo de las tabs (mismo patrón que Infraestructura/Auditoría), no cards grandes compitiendo por atención con las tabs. */}
       <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
         <KpiPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Por Autorizar" value={kpis.pendingApproval} accent="brand" tooltip="Proyectos confirmados por Procura, pendientes de abrir a licitación." />
         <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="info" tooltip="Proyectos abiertos, recibiendo propuestas de proveedores." />

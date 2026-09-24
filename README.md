@@ -1,6 +1,6 @@
 # IVOO — Gestión de Infraestructura
 
-Sistema interno de gestión de obras de infraestructura y mantenimiento: seguimiento del ciclo de vida completo de un proyecto (creación → revisión de cierre de obra → aprobación de inversión → licitación/comparativa de proveedores → contratación → ejecución → verificación → pago), con evaluación asistida por IA de propuestas de contratistas, gestión de usuarios/roles, catálogo de materiales y proveedores, y un portal público para que proveedores externos se registren y envíen cotizaciones.
+Sistema interno de gestión de obras de infraestructura y mantenimiento: seguimiento del ciclo de vida completo de un proyecto (creación → revisión de auditoría → aprobación de inversión → licitación/comparativa de proveedores → contratación → ejecución → verificación → pago), con evaluación asistida por IA de propuestas de contratistas, gestión de usuarios/roles, catálogo de materiales y proveedores, y un portal público para que proveedores externos se registren y envíen cotizaciones.
 
 ## Stack
 
@@ -67,7 +67,7 @@ npm start
 
 ## Roles del sistema
 
-`SUPERADMIN`, `ADMIN`, `PRESIDENCIA`, `INFRAESTRUCTURA`, `CIERRE_DE_OBRA`, `PROCURA`, `ANALISTA`, `FINANZAS`, `CATALOGOS`. La matriz de acceso a rutas por rol la sirve el backend (`GET /api/auth/permissions`), no está hardcodeada en el frontend.
+`SUPERADMIN`, `ADMIN`, `PRESIDENCIA`, `INFRAESTRUCTURA`, `AUDITORIA`, `PROCURA`, `ANALISTA`, `FINANZAS`, `CATALOGOS`. La matriz de acceso a rutas por rol la sirve el backend (`GET /api/auth/permissions`), no está hardcodeada en el frontend.
 
 ## Documentación relacionada
 

@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Salud del pipeline: tasa de conversión (creadas → contratadas → pagadas)
+ * Estatus del pipeline: tasa de conversión (creadas → contratadas → pagadas)
  * y cuellos de botella (fases con acumulación de obras sin actividad).
  * El cuello de botella combina VOLUMEN (obras en la fase) con ANTIGÜEDAD
  * (días sin actividad), para no alertar sobre fases recién pobladas.
@@ -63,7 +63,7 @@ export default function PipelineHealthSection({ summary, projects }: PipelineHea
           <GitBranch className="h-4 w-4 text-amber-500" />
         </div>
         <div>
-          <h2 className="font-bold text-slate-900 text-sm">Salud del Pipeline</h2>
+          <h2 className="font-bold text-slate-900 text-sm">Estatus del Pipeline</h2>
           <p className="text-[11px] text-slate-500 font-medium">Conversión del flujo y fases con acumulación</p>
         </div>
         {isConstrained && (

@@ -20,7 +20,7 @@ import type { AiFeatureMatrixEntry } from "@/stores/aiFeatureGateStore";
 
 const DEPARTMENT_LABELS: Record<string, string> = {
   PROCURA: "Procura",
-  CIERRE_DE_OBRA: "Cierre de Obra",
+  AUDITORIA: "Auditoría",
   ANALISTA: "Analistas",
   CATALOGOS: "Proveedores",
 };

@@ -4,11 +4,11 @@ import RoleMultiSelect from "@/components/UI/RoleMultiSelect";
 
 describe("RoleMultiSelect", () => {
   it("muestra el label legible de cada rol, no el valor técnico", () => {
-    render(<RoleMultiSelect roles={["CIERRE_DE_OBRA", "SUPERADMIN"]} value={[]} onChange={() => {}} />);
+    render(<RoleMultiSelect roles={["AUDITORIA", "SUPERADMIN"]} value={[]} onChange={() => {}} />);
 
-    expect(screen.getByText("Cierre de Obra")).toBeInTheDocument();
+    expect(screen.getByText("Auditoría")).toBeInTheDocument();
     expect(screen.getByText("Super Administrador")).toBeInTheDocument();
-    expect(screen.queryByText("CIERRE_DE_OBRA")).not.toBeInTheDocument();
+    expect(screen.queryByText("AUDITORIA")).not.toBeInTheDocument();
   });
 
   it("propaga el value técnico (no el label) al hacer click", () => {

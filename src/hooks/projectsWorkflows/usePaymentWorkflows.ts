@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Workflows de Finanzas (anticipo, finiquito, congelación manual de tasa) y
- * verificación de finalización de Cierre de Obra. Extraído de
+ * verificación de finalización de Auditoría. Extraído de
  * useProjectsWorkflows.ts (antes 795 líneas / 22 handlers en un solo
  * archivo — ver graphify toxic hotspot).
  */

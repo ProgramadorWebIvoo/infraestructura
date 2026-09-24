@@ -58,7 +58,7 @@ Sistema de gestión integral para obras de infraestructura y mantenimiento que c
 | `ADMIN` | Gestión completa sin superadmin | Todas menos `/presidencia` |
 | `PRESIDENCIA` | Dashboard ejecutivo + catálogos | `/presidencia`, `/catalogos` |
 | `INFRAESTRUCTURA` | Creación y gestión de obras | `/infraestructura` |
-| `CIERRE_DE_OBRA` | Revisión técnica + verificación final | `/cierre-obra` |
+| `AUDITORIA` | Revisión técnica + verificación final | `/auditoria` |
 | `PROCURA` | Aprobación inversión + adjudicación | `/procura`, `/catalogos` |
 | `ANALISTA` | Carga propuestas + comparativas | `/analistas` |
 | `FINANZAS` | Pagos (anticipo/final) | `/finanzas` |
@@ -128,7 +128,7 @@ src/
 │   ├── LoginScreen.tsx
 │   ├── PresidenciaDashboard.tsx
 │   ├── InfraestructuraMantenimientoPanel.tsx
-│   ├── CierreObraPanel.tsx
+│   ├── AuditoriaPanel.tsx
 │   ├── ProcuraPanel.tsx
 │   ├── AnalistasPanel.tsx
 │   ├── FinanzasPanel.tsx
@@ -337,7 +337,7 @@ app/
 | POST | `/supplier-invitations` | - | Crear invitación proveedor |
 | GET | `/supplier-material-proposals` | - | Propuestas materiales proveedores |
 | GET/POST | `/projects` | - | Index, store, show |
-| POST | `/projects/{project}/review` | `CIERRE_DE_OBRA,ADMIN,SUPERADMIN` | Revisión técnica |
+| POST | `/projects/{project}/review` | `AUDITORIA,ADMIN,SUPERADMIN` | Revisión técnica |
 | POST | `/projects/{project}/approve-investment` | `PROCURA,ADMIN,SUPERADMIN` | Aprobar inversión |
 | POST | `/projects/{project}/proposals` | `ANALISTA,ADMIN,SUPERADMIN` | Cargar propuesta |
 | DELETE | `/projects/{project}/proposals/{proposal}` | `ANALISTA,ADMIN,SUPERADMIN` | Eliminar propuesta |
@@ -346,8 +346,8 @@ app/
 | POST | `/projects/{project}/reject-proposals` | `PROCURA,ADMIN,SUPERADMIN` | Rechazar comparativa |
 | POST | `/projects/{project}/select-contractor` | `PROCURA,ADMIN,SUPERADMIN` | Adjudicar contratista |
 | POST | `/projects/{project}/payments` | `FINANZAS,ADMIN,SUPERADMIN` | Pagos (ADVANCE/FINAL) |
-| POST | `/projects/{project}/report-finished` | `CIERRE_DE_OBRA,ADMIN,SUPERADMIN` | Reportar finalizada |
-| POST | `/projects/{project}/verify-completion` | `CIERRE_DE_OBRA,ADMIN,SUPERADMIN` | Verificar calidad |
+| POST | `/projects/{project}/report-finished` | `AUDITORIA,ADMIN,SUPERADMIN` | Reportar finalizada |
+| POST | `/projects/{project}/verify-completion` | `AUDITORIA,ADMIN,SUPERADMIN` | Verificar calidad |
 | POST | `/ai/evaluate-proposals` | `PROCURA,ADMIN,SUPERADMIN` | Evaluación IA |
 | GET/POST/DELETE | `/projects/{project}/documents` | - | Documentos (planos, cálculos) |
 | **Admin (SUPERADMIN,ADMIN)** | | | |
@@ -364,7 +364,7 @@ app/
 ```
 CREADO
     │
-    ▼ (CIERRE_DE_OBRA: review)
+    ▼ (AUDITORIA: review)
 REVISADO_CIERRE
     │
     ▼ (PROCURA: approve-investment)
@@ -381,12 +381,12 @@ CONTRATADO
     ▼ (FINANZAS: pay ADVANCE)
 EN_EJECUCION
     │
-    ▼ (CIERRE_DE_OBRA: report-finished)
+    ▼ (AUDITORIA: report-finished)
 VERIFICANDO_FINALIZACION
     │
-    ├─► (CIERRE_DE_OBRA: verify-completion qualityVerified=false) ──► EN_EJECUCION
+    ├─► (AUDITORIA: verify-completion qualityVerified=false) ──► EN_EJECUCION
     │
-    ▼ (CIERRE_DE_OBRA: verify-completion qualityVerified=true)
+    ▼ (AUDITORIA: verify-completion qualityVerified=true)
 LISTO_PAGO_FINAL
     │
     ▼ (FINANZAS: pay FINAL)
@@ -592,11 +592,11 @@ Ver sección 3.3 para diagrama completo. Cada transición valida:
 
 ```php
 return [
-    'SUPERADMIN' => ['/presidencia', '/infraestructura', '/cierre-obra', '/procura', '/analistas', '/finanzas', '/catalogos', '/usuarios', '/config-proveedores', '/config-materiales', '/config-ia'],
-    'ADMIN'      => ['/infraestructura', '/cierre-obra', '/procura', '/analistas', '/finanzas', '/catalogos', '/usuarios', '/config-proveedores', '/config-materiales', '/config-ia'],
+    'SUPERADMIN' => ['/presidencia', '/infraestructura', '/auditoria', '/procura', '/analistas', '/finanzas', '/catalogos', '/usuarios', '/config-proveedores', '/config-materiales', '/config-ia'],
+    'ADMIN'      => ['/infraestructura', '/auditoria', '/procura', '/analistas', '/finanzas', '/catalogos', '/usuarios', '/config-proveedores', '/config-materiales', '/config-ia'],
     'PRESIDENCIA'=> ['/presidencia', '/catalogos'],
     'INFRAESTRUCTURA' => ['/infraestructura'],
-    'CIERRE_DE_OBRA'  => ['/cierre-obra'],
+    'AUDITORIA'  => ['/auditoria'],
     'PROCURA'         => ['/procura', '/catalogos'],
     'ANALISTA'        => ['/analistas'],
     'FINANZAS'        => ['/finanzas'],
@@ -830,7 +830,7 @@ Los 6 hallazgos críticos de la auditoría V3 (27/07/2026) han sido corregidos:
 7. **Fix M-04 incompleto (A-1)** — Extraer `AuditLogService` único; propagar `Str::random(4)` a 3 focos
 8. **Guardas estado pagos (A-6)** — State machine en BD o validaciones estrictas en `ProjectController::pay()` + tests transiciones inválidas
 9. **CVE react-router** — Evaluar `npm audit fix --force` (breaking changes rutas)
-10. **Tests vistas críticas** — 6 vistas sin test directo (PresidenciaDashboard, InfraestructuraMantenimientoPanel, CierreObraPanel, ProcuraPanel, AnalistasPanel, FinanzasPanel)
+10. **Tests vistas críticas** — 6 vistas sin test directo (PresidenciaDashboard, InfraestructuraMantenimientoPanel, AuditoriaPanel, ProcuraPanel, AnalistasPanel, FinanzasPanel)
 11. **Mobile `EXPO_PUBLIC_API_URL`** — Migrar `config.ts` hardcodeado a variable entorno
 
 ### 10.3 Media (Clean Code)

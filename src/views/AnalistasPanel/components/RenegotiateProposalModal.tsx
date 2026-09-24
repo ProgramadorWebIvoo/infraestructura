@@ -269,7 +269,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                             className="w-16! px-2! py-1.5! text-center! text-[11px]!"
                           />
                         ) : (
-                          <span className="font-mono font-bold text-slate-600 text-[11px]" title="Cantidad auditada en Cierre de Obra — no editable">
+                          <span className="font-mono font-bold text-slate-600 text-[11px]" title="Cantidad auditada en Auditoría — no editable">
                             {row.quantity}
                           </span>
                         )}

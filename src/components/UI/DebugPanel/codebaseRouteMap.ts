@@ -48,8 +48,8 @@ export const CODEBASE_ROUTE_MAP: Record<string, CodebaseRouteInfo> = {
     godNodes: ["apiFetch()", "downloadProjectDocument", "usePolledFetch"],
   },
   [ROUTES.CIERRE_OBRA]: {
-    component: "CierreObraPanel",
-    file: "views/CierreObraPanel/index.tsx",
+    component: "AuditoriaPanel",
+    file: "views/AuditoriaPanel/index.tsx",
     hooks: ["useProjects"],
     godNodes: ["handleSave", "downloadProjectDocument"],
   },

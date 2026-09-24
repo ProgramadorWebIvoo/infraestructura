@@ -41,12 +41,12 @@ export default function ExpedienteDetailTab({ project, rejectionCount }: Expedie
             </div>
           )}
 
-          {project.cierreObraNotes && (
+          {project.auditNotes && (
             <div>
               <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Observaciones de Cierre de Obra
+                Observaciones de Auditoría
               </span>
-              <p className="text-[11px] text-slate-600 whitespace-pre-line">{project.cierreObraNotes}</p>
+              <p className="text-[11px] text-slate-600 whitespace-pre-line">{project.auditNotes}</p>
             </div>
           )}
         </div>

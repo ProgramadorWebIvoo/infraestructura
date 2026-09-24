@@ -124,7 +124,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         <SectionHeader
           icon={<DollarSign className="h-5 w-5" />}
           title="Finiquitos y Liquidaciones de Cierre (100%)"
-          description="Cierre el ciclo financiero de la obra pagando el saldo restante, previa certificación de calidad por Cierre de Obra."
+          description="Cierre el ciclo financiero de la obra pagando el saldo restante, previa certificación de calidad por Auditoría."
           color="sky"
         />
 

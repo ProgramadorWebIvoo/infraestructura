@@ -124,7 +124,7 @@ export default function InfraestructuraMantenimientoPanel({
             semánticos disponibles, así que se usa el accent info más cercano. */}
         <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
           <KpiPill icon={<FilePlus2 className="h-3.5 w-3.5" />} label="Peticiones" value={kpis.total} accent="brand" tooltip="Total de peticiones de obra registradas en este panel, en cualquier estado." />
-          <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="Por Revisar" value={kpis.pendingReview} accent="warning" tooltip="Peticiones creadas que aún no pasaron la revisión de Cierre de Obra." />
+          <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="Por Revisar" value={kpis.pendingReview} accent="warning" tooltip="Peticiones creadas que aún no pasaron la revisión de Auditoría." />
           <KpiPill icon={<HardHat className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="info" tooltip="Proyectos contratados que actualmente están en fase de ejecución en obra." />
           <KpiPill icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Completadas" value={kpis.completed} accent="success" tooltip="Proyectos que llegaron a estado Completado/Pagado." />
         </motion.div>

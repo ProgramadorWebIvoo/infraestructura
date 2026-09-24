@@ -74,7 +74,7 @@ const rejectionLog: AuditLog = {
   id: "LOG-1",
   projectId: "PRJ-010",
   projectTitle: "Remodelación depósito",
-  role: "CIERRE_DE_OBRA",
+  role: "AUDITORIA",
   userName: "Ana Cierre",
   action: "Rechazo de petición de obra",
   timestamp: "2026-08-10 10:00:00",
@@ -179,7 +179,7 @@ describe("RejectedPetitionsSection", () => {
     // hace falta avanzar los 2 pasos restantes hasta Adjuntos.
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/ }));
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Reenviar Petición a Cierre de Obra/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Reenviar Petición a Auditoría/ }));
 
     expect(onResubmitProject).toHaveBeenCalledWith(
       "PRJ-010",

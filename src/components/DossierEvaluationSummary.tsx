@@ -5,16 +5,16 @@ import { formatCurrency } from "@ivoo/shared";
  *
  * Presentación de la evaluación IA del expediente (score, resumen, alertas,
  * recomendación, factores de completitud, monto sugerido) — extraída de
- * DossierEvaluationPanel.tsx (Cierre de Obra) para poder reusarse también en
+ * DossierEvaluationPanel.tsx (Auditoría) para poder reusarse también en
  * el modal de Autorización de Inversión de Procura, donde el monto sugerido
  * por IA es información de apoyo directamente relevante para fijar el tope
  * presupuestario.
  *
  * Omitir `onReevaluate` oculta el botón "Reevaluar" — Procura consulta la
- * evaluación ya hecha por Cierre de Obra, no dispara ni repite el análisis
+ * evaluación ya hecha por Auditoría, no dispara ni repite el análisis
  * (esa acción sigue siendo exclusiva del auditor que la generó).
  *
- * `showSuggestedAmount` es opcional (default false) porque a Cierre de Obra
+ * `showSuggestedAmount` es opcional (default false) porque a Auditoría
  * le interesa completitud/riesgo para decidir aprobar o rechazar, no una
  * cifra de presupuesto — ver DossierEvaluationPanel.tsx. El monto nunca
  * autocompleta ningún campo, en ningún consumidor: es solo referencia visual.
@@ -31,7 +31,7 @@ interface DossierEvaluationSummaryProps {
   project: Project;
   /** Omitido (o `undefined`) oculta el botón "Reevaluar" — vista de solo lectura. */
   onReevaluate?: () => void;
-  /** Muestra el monto sugerido por IA junto al score — relevante para Procura, no para Cierre de Obra. */
+  /** Muestra el monto sugerido por IA junto al score — relevante para Procura, no para Auditoría. */
   showSuggestedAmount?: boolean;
 }
 
@@ -59,7 +59,7 @@ const COMPLETENESS_FACTORS: { key: "documentation" | "budgetConsistency" | "reje
 
 /**
  * Resultado de la evaluación — el momento de mayor valor informativo del
- * flujo de Cierre de Obra. Entra con un stagger propio (score → chip →
+ * flujo de Auditoría. Entra con un stagger propio (score → chip →
  * resumen → alertas → recomendación) en vez de aparecer de golpe, para que
  * el lector reciba la información en el mismo orden de importancia con el
  * que fue diseñada.

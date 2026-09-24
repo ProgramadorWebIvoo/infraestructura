@@ -125,7 +125,7 @@ const AUDIT_ROLE_OPTIONS = [
   { value: "", label: "Todos los Roles" },
   { value: "PRESIDENCIA", label: "Presidencia" },
   { value: "INFRAESTRUCTURA", label: "Infraestructura" },
-  { value: "CIERRE_DE_OBRA", label: "Cierre de Obra" },
+  { value: "AUDITORIA", label: "Auditoría" },
   { value: "PROCURA", label: "Procura" },
   { value: "ANALISTA", label: "Analistas" },
   { value: "FINANZAS", label: "Finanzas" },

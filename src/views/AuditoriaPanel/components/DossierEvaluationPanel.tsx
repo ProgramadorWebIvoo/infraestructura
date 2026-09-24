@@ -2,13 +2,13 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Evaluación IA del expediente — herramienta de Cierre de Obra, no de
+ * Evaluación IA del expediente — herramienta de Auditoría, no de
  * Procura. Al montar, si el expediente todavía no tiene evaluación
  * (dossierAiEvaluatedAt ausente), la dispara automáticamente una única vez.
  * Resultados posteriores quedan cacheados en el proyecto; un botón
  * "Reevaluar" permite forzar una nueva pasada.
  *
- * El monto sugerido por la IA NO se muestra acá — a Cierre de Obra le
+ * El monto sugerido por la IA NO se muestra acá — a Auditoría le
  * interesa completitud/riesgo para decidir si aprobar o rechazar, no una
  * cifra de presupuesto (eso es criterio de Procura). El monto sí viaja con
  * el expediente y se muestra únicamente en InvestmentApprovalSection

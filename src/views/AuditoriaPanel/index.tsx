@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Panel de Cierre de Obra: revisión de cálculos/planos + auditoría de fin de obra.
+ * Panel de Auditoría: revisión de cálculos/planos + auditoría de fin de obra.
  */
 
 import { useMemo, useState } from "react";
@@ -24,7 +24,7 @@ import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "revision" | "reevaluacion" | "auditoria" | "documentos";
 
-interface CierreObraPanelProps {
+interface AuditoriaPanelProps {
   projects: Project[];
   auditLogs: AuditLog[];
   authToken: string;
@@ -42,7 +42,7 @@ interface CierreObraPanelProps {
   onRefreshData?: () => Promise<void> | void;
 }
 
-export default function CierreObraPanel({
+export default function AuditoriaPanel({
   projects,
   auditLogs,
   authToken,
@@ -53,7 +53,7 @@ export default function CierreObraPanel({
   onSyncProject,
   isLoading = false,
   onRefreshData,
-}: CierreObraPanelProps) {
+}: AuditoriaPanelProps) {
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("revision");
 
@@ -68,7 +68,7 @@ export default function CierreObraPanel({
     [projects],
   );
 
-  const visibleTabs = filterTabs("/cierre-obra", [
+  const visibleTabs = filterTabs("/auditoria", [
     { key: "revision", label: "Revisión de Cálculos y Planos", count: kpis.pendingReview, showDot: kpis.pendingReview > 0 && activeTab !== "revision" },
     { key: "reevaluacion", label: "Reevaluaciones de Procura", count: kpis.pendingReevaluation, showDot: kpis.pendingReevaluation > 0 && activeTab !== "reevaluacion" },
     { key: "auditoria", label: "Auditoría de Fin de Obra", count: kpis.inExecution + kpis.underAudit },
@@ -76,11 +76,11 @@ export default function CierreObraPanel({
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
 
-  if (isLoading || isLoadingTabs) return <CierreObraSkeleton />;
+  if (isLoading || isLoadingTabs) return <AuditoriaSkeleton />;
 
   return (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-      <h1 className="sr-only">Cierre de Obra</h1>
+      <h1 className="sr-only">Auditoría</h1>
 
       {/* Columna a alto de viewport, igual que InfraestructuraMantenimientoPanel:
           las tabs/KPIs son shrink-0 y el panel de tab activa es flex-1. Height
@@ -89,7 +89,7 @@ export default function CierreObraPanel({
       <div className="flex min-h-0 flex-col gap-4" style={{ height: "calc(100vh - 3rem)" }}>
         <motion.div variants={itemVariants} className="shrink-0">
           <Tabs
-            ariaLabel="Secciones de Cierre de Obra"
+            ariaLabel="Secciones de Auditoría"
             activeKey={activeTab}
             onChange={(key) => setActiveTab(key as TabKey)}
             fullWidth
@@ -102,7 +102,7 @@ export default function CierreObraPanel({
           <KpiPill icon={<Undo2 className="h-3.5 w-3.5" />} label="Reevaluación" value={kpis.pendingReevaluation} accent="warning" tooltip="Expedientes devueltos por Procura con un motivo, antes de autorizar inversión." />
           <KpiPill icon={<HardHat className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="brand" tooltip="Proyectos contratados que ya están en obra." />
           <KpiPill icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Auditoría" value={kpis.underAudit} accent="warning" tooltip="Proyectos en verificación de finalización, previos al pago final." />
-          <KpiPill icon={<FileStack className="h-3.5 w-3.5" />} label="Revisados" value={kpis.revised} accent="success" tooltip="Expedientes que ya pasaron la revisión de Cierre de Obra." />
+          <KpiPill icon={<FileStack className="h-3.5 w-3.5" />} label="Revisados" value={kpis.revised} accent="success" tooltip="Expedientes que ya pasaron la revisión de Auditoría." />
         </motion.div>
 
         <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
@@ -111,7 +111,7 @@ export default function CierreObraPanel({
               <div className="min-h-0 flex flex-col flex-1 gap-6">
                 <InfoBanner defaultOpen = {false} title="Flujo de Retornos · De acuerdo con los procedimientos operativos de IVOO" color="sky" className="shrink-0">
                   <ol className="space-y-1.5 list-none">
-                    <li><strong className="text-sky-900">1.</strong> Cierre de Obra realiza la cubicación de materiales y planos de ingeniería iniciales.</li>
+                    <li><strong className="text-sky-900">1.</strong> Auditoría realiza la cubicación de materiales y planos de ingeniería iniciales.</li>
                     <li><strong className="text-sky-900">2.</strong> Al finalizar el trabajo, audita físicamente la obra y certifica si cumple con los estándares estipulados.</li>
                     <li><strong className="text-sky-900">3.</strong> Su aprobación final viaja a la Base de Datos para que <strong>Finanzas</strong> proceda con la liberación del finiquito.</li>
                   </ol>
@@ -148,7 +148,7 @@ export default function CierreObraPanel({
 }
 
 /* ─── Skeleton Loader ─── */
-function CierreObraSkeleton() {
+function AuditoriaSkeleton() {
   return (
     <SkeletonGroup className="space-y-4">
       <SkeletonGroupItem>

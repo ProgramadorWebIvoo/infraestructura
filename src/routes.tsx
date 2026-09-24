@@ -23,7 +23,7 @@ export const ROUTES = {
   PRESIDENCIA: "/presidencia",
   MARKETING: "/marketing",
   INFRAESTRUCTURA: "/infraestructura",
-  CIERRE_OBRA: "/cierre-obra",
+  CIERRE_OBRA: "/auditoria",
   PROCURA: "/procura",
   ANALISTAS: "/analistas",
   FINANZAS: "/finanzas",

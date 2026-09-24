@@ -5,7 +5,7 @@
  * Listado genérico de los documentos (planos/hojas de cálculo/fotos) de un
  * proyecto — extraído del `ProjectDocuments` interno de
  * `InvestmentApprovalSection.tsx` (Procura) para reutilizarlo en la nueva
- * sección de Cierre de Obra, que además necesita badge de versión, botón de
+ * sección de Auditoría, que además necesita badge de versión, botón de
  * previsualizar, e historial expandible (Procura solo usaba descarga).
  *
  * Se agrupa por `documentGroupId`: cada documento lógico es UNA fila (su
@@ -39,7 +39,7 @@ interface ProjectDocumentsListProps {
    * versión antigua por proximidad temporal (no hay vínculo estructural
    * directo entre AuditLog y ProjectDocument). */
   auditLogs?: AuditLog[];
-  /** "view" (default): solo lectura/exploración (Cierre de Obra). "manage":
+  /** "view" (default): solo lectura/exploración (Auditoría). "manage":
    * habilita el botón "Nueva versión" por fila (vía onRequestNewVersion),
    * además de Eliminar (ya existente vía onDelete) — usado solo en el wizard
    * de Infraestructura, donde el usuario gestiona sus propios adjuntos. */
@@ -55,7 +55,7 @@ const GROUPS: { type: ProjectDocument["documentType"]; label: string; icon: type
   { type: "PLANO", label: "Planos de Ingeniería", icon: Map, accent: "info", accept: ".pdf,.png,.jpg,.jpeg,.svg,.tiff,.tif,.dwg,.dxf" },
   { type: "CALC", label: "Hojas de Cálculo", icon: FileSpreadsheet, accent: "brand", accept: ".pdf,.xlsx,.xls,.csv,.ods" },
   { type: "FOTO", label: "Fotos del Sitio", icon: ImageIcon, accent: "neutral", accept: ".png,.jpg,.jpeg,.webp" },
-  { type: "CORRECCION", label: "Correcciones de Cierre de Obra", icon: AlertTriangle, accent: "danger", accept: "" },
+  { type: "CORRECCION", label: "Correcciones de Auditoría", icon: AlertTriangle, accent: "danger", accept: "" },
   { type: "REEVALUACION", label: "Evidencia de Reevaluación (Procura)", icon: AlertTriangle, accent: "warning", accept: "" },
 ];
 

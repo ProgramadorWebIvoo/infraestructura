@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [2026-09-24] — F0: renombre "Cierre de Obra" -> "Auditoría" y "Salud" -> "Estatus"
+- Tipo: refactor (UI + identificadores)
+- Qué: rol `CIERRE_DE_OBRA` -> `AUDITORIA`, ruta `/cierre-obra` -> `/auditoria`, carpeta `CierreObraPanel` -> `AuditoriaPanel`, campo `cierreObraNotes` -> `auditNotes`, feature IA `ia.auditoria.evaluacion_expediente`, acción 'Solicitud de reevaluación a Auditoría'. Rótulo "Salud del Pipeline" -> "Estatus del Pipeline" en Presidencia.
+- Requiere el renombre equivalente en backend (contrato común).
+
 ## [2026-08-13] — Fix: barra de "cambios pendientes" no reaccionaba con TagMultiSelect + diff legible en el historial de auditoría
 - Tipo: fix (bug) + UX
 - Qué:

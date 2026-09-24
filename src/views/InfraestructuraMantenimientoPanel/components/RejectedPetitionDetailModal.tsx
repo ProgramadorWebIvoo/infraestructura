@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Modal de solo lectura: detalle completo de una petición rechazada — motivo,
- * observaciones y correcciones adjuntadas por Cierre de Obra. Distinto de
+ * observaciones y correcciones adjuntadas por Auditoría. Distinto de
  * EditAndResubmitModal (RejectedPetitionsSection.tsx), que es el único punto
  * de edición/reenvío — este modal no muta nada.
  */
@@ -69,7 +69,7 @@ export default function RejectedPetitionDetailModal({ project, log, authToken, o
                 <p className="font-medium leading-relaxed">{log.details}</p>
                 <p className="mt-1.5 flex items-center gap-1 text-[10px] text-slate-400 font-mono">
                   <User className="h-3 w-3" />
-                  {log.userName ?? "Cierre de Obra"} · {log.timestamp}
+                  {log.userName ?? "Auditoría"} · {log.timestamp}
                 </p>
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function RejectedPetitionDetailModal({ project, log, authToken, o
         {corrections.length > 0 && (
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Correcciones adjuntadas por Cierre de Obra
+              Correcciones adjuntadas por Auditoría
             </label>
             <ProjectDocumentsList
               project={{ ...project, documents: corrections }}

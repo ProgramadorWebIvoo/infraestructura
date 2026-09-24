@@ -92,7 +92,7 @@ export const INITIAL_PROJECTS: Project[] = [
       { id: "m6", name: "Arena Lavada para Concreto", quantity: 3, unit: "m³", estimatedUnitPrice: 35.0, condition: "NUEVO" }
     ],
     estimatedTotal: 1225.0,
-    cierreObraNotes: "Se validaron los cálculos de área de fachada (1200 m²). Requiere andamios de seguridad y equipo de arnés.",
+    auditNotes: "Se validaron los cálculos de área de fachada (1200 m²). Requiere andamios de seguridad y equipo de arnés.",
     calculationsAdded: true,
     blueprintsCount: 1,
     procuraReviewNotes: "Monto estimado inicial de $1,225 aprobado para licitación. Se solicita un anticipo no mayor al 40%.",
@@ -143,7 +143,7 @@ export const INITIAL_PROJECTS: Project[] = [
       { id: "m10", name: "Bloque de Arcilla de 15cm", quantity: 2, unit: "Millar", estimatedUnitPrice: 450.0, condition: "NUEVO" }
     ],
     estimatedTotal: 4365.0,
-    cierreObraNotes: "Planos estructurales aprobados por ingeniería municipal. Cálculos de resistencia de suelo verificados.",
+    auditNotes: "Planos estructurales aprobados por ingeniería municipal. Cálculos de resistencia de suelo verificados.",
     calculationsAdded: true,
     blueprintsCount: 4,
     procuraReviewNotes: "Proyecto estratégico para despacho de ventas e-commerce. Aprobado para licitación de emergencia.",
@@ -189,7 +189,7 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     id: "LOG-102",
     projectId: "PRJ-003",
     projectTitle: "Ampliación de Galpón de Despacho Logístico",
-    role: "CIERRE_DE_OBRA",
+    role: "AUDITORIA",
     action: "Revisión técnica de cálculos y planos",
     timestamp: "2026-05-12 11:15",
     details: "Cálculos estructurales corregidos y aprobados. 4 planos cargados al servidor."
@@ -234,7 +234,7 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     id: "LOG-107",
     projectId: "PRJ-003",
     projectTitle: "Ampliación de Galpón de Despacho Logístico",
-    role: "CIERRE_DE_OBRA",
+    role: "AUDITORIA",
     action: "Verificación de finalización y calidad de obra",
     timestamp: "2026-06-12 15:20",
     details: "Trabajo culminado satisfactoriamente bajo estándares de resistencia de concreto."

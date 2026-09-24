@@ -84,7 +84,7 @@ function SidebarNav({
     ROUTES.INFRAESTRUCTURA,
     authToken,
   );
-  const prefetchCierreObra = usePrefetchOnIntent(ROUTES.CIERRE_OBRA, authToken);
+  const prefetchAuditoria = usePrefetchOnIntent(ROUTES.CIERRE_OBRA, authToken);
   const prefetchProcura = usePrefetchOnIntent(ROUTES.PROCURA, authToken);
   const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
   const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
@@ -328,16 +328,16 @@ function SidebarNav({
             </SidebarTip>
           )}
 
-          {canAccess("/cierre-obra") && (
-            <SidebarTip label="Cierre de Obra" disabled={!effectiveCollapsed}>
+          {canAccess("/auditoria") && (
+            <SidebarTip label="Auditoría" disabled={!effectiveCollapsed}>
               <NavLink
-                to="/cierre-obra"
+                to="/auditoria"
                 id="sidebar-cierre"
                 onClick={onClose}
-                onMouseEnter={prefetchCierreObra.onMouseEnter}
-                onFocus={prefetchCierreObra.onFocus}
-                onMouseLeave={prefetchCierreObra.onMouseLeave}
-                onBlur={prefetchCierreObra.onBlur}
+                onMouseEnter={prefetchAuditoria.onMouseEnter}
+                onFocus={prefetchAuditoria.onFocus}
+                onMouseLeave={prefetchAuditoria.onMouseLeave}
+                onBlur={prefetchAuditoria.onBlur}
                 className={navLinkClass("brand", effectiveCollapsed)}
               >
                 {({ isActive }) => (

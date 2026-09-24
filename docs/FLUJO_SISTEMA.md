@@ -47,7 +47,7 @@ INFRAESTRUCTURA → CIERRE DE OBRA → PROCURA → ANALISTAS → PROCURA → FIN
 | `SUPERADMIN` / `ADMIN` | Acceso total a todos los módulos | Todos |
 | `PRESIDENCIA` | Vista ejecutiva: KPIs, dashboards y trazabilidad en tiempo real | Dashboard + Trazabilidad |
 | `INFRAESTRUCTURA` | Registra nuevas órdenes de obra o mantenimiento | Módulo Infraestructura |
-| `CIERRE_DE_OBRA` | Revisión técnica de cálculos, planos y verificación final de calidad | Módulo Cierre de Obra |
+| `AUDITORIA` | Revisión técnica de cálculos, planos y verificación final de calidad | Módulo Auditoría |
 | `PROCURA` | Aprueba inversión, gestiona licitación y adjudica contratistas | Módulo Procura + Catálogos |
 | `ANALISTA` | Carga propuestas de contratistas y envía cuadro comparativo | Módulo Analistas |
 | `FINANZAS` | Libera pagos: anticipo al inicio y liquidación final | Módulo Finanzas |
@@ -63,14 +63,14 @@ Cada proyecto transita por los siguientes estados en orden:
 
 | # | Estado (código) | Etiqueta en UI | Responsable que lo genera |
 |---|---|---|---|
-| 1 | `CREADO` | Enviado a Cierre de Obra | Infraestructura |
-| 2 | `REVISADO_CIERRE` | Revisado — Para Procura | Cierre de Obra |
+| 1 | `CREADO` | Enviado a Auditoría | Infraestructura |
+| 2 | `REVISADO_CIERRE` | Revisado — Para Procura | Auditoría |
 | 3 | `CONFIRMADO_PROCURA` | Confirmado — En Licitación | Procura |
 | 4 | `COMPARATIVA_ENVIADA` | Comparativa Lista | Analistas |
 | 5 | `CONTRATADO` | Pendiente Anticipo Finanzas | Procura |
 | 6 | `EN_EJECUCION` | Obra en Ejecución | Finanzas |
-| 7 | `VERIFICANDO_FINALIZACION` | Cerrando Obra (Auditoría) | Cierre de Obra |
-| 8 | `LISTO_PAGO_FINAL` | Pendiente Finiquito | Cierre de Obra |
+| 7 | `VERIFICANDO_FINALIZACION` | Cerrando Obra (Auditoría) | Auditoría |
+| 8 | `LISTO_PAGO_FINAL` | Pendiente Finiquito | Auditoría |
 | 9 | `COMPLETADO_PAGADO` | Completado y Liquidado | Finanzas |
 
 **Estado alternativo (retroceso):** Procura puede rechazar el cuadro comparativo, devolviendo el proyecto de `COMPARATIVA_ENVIADA` → `CONFIRMADO_PROCURA` y borrando todas las propuestas para reiniciar la licitación.
@@ -104,20 +104,20 @@ Cada proyecto transita por los siguientes estados en orden:
 - Se crea un registro en la tabla `projects` con estado `CREADO` y un ID correlativo (`PRJ-001`, `PRJ-002`, etc.).
 - Se crean registros en `project_materials` por cada ítem de la lista.
 - Se genera un log de auditoría: `INFRAESTRUCTURA | Creación de petición de obra`.
-- El proyecto aparece inmediatamente en la cola de Cierre de Obra.
+- El proyecto aparece inmediatamente en la cola de Auditoría.
 
 **API:** `POST /api/projects`
 
 ---
 
-### Fase 2 — Revisión Técnica (Cierre de Obra)
+### Fase 2 — Revisión Técnica (Auditoría)
 
-**Módulo:** `/cierre-obra`  
+**Módulo:** `/auditoria`  
 **Estado resultante:** `REVISADO_CIERRE`  
-**Rol requerido:** `CIERRE_DE_OBRA`
+**Rol requerido:** `AUDITORIA`
 
 **Qué hace el usuario:**
-1. Ingresa al módulo **Cierre de Obra**.
+1. Ingresa al módulo **Auditoría**.
 2. Ve la lista de proyectos en estado `CREADO` que aguardan revisión.
 3. Selecciona el proyecto a revisar.
 4. Revisa el alcance de la obra y los materiales solicitados.
@@ -130,7 +130,7 @@ Cada proyecto transita por los siguientes estados en orden:
 **Lo que ocurre en el sistema:**
 - El proyecto actualiza su estado a `REVISADO_CIERRE`.
 - Se guardan las notas, cantidad de planos y flag de cálculos en el proyecto.
-- Log de auditoría: `CIERRE_DE_OBRA | Revisión técnica de cálculos y planos`.
+- Log de auditoría: `AUDITORIA | Revisión técnica de cálculos y planos`.
 - El proyecto pasa a la cola de Procura.
 
 **API:** `POST /api/projects/{id}/review`
@@ -281,18 +281,18 @@ Durante esta fase:
 - La obra está en ejecución física por el contratista.
 - El sistema no requiere acción interna; el proyecto permanece en estado `EN_EJECUCION`.
 - Presidencia puede monitorear el estado desde el dashboard ejecutivo.
-- Una vez el contratista finaliza los trabajos, Cierre de Obra es notificada para certificar.
+- Una vez el contratista finaliza los trabajos, Auditoría es notificada para certificar.
 
 ---
 
-### Fase 8 — Reporte de Finalización (Cierre de Obra)
+### Fase 8 — Reporte de Finalización (Auditoría)
 
-**Módulo:** `/cierre-obra`  
+**Módulo:** `/auditoria`  
 **Estado resultante:** `VERIFICANDO_FINALIZACION`  
-**Rol requerido:** `CIERRE_DE_OBRA`
+**Rol requerido:** `AUDITORIA`
 
 **Qué hace el usuario:**
-1. En el módulo **Cierre de Obra**, sección "Proyectos en Ejecución / Para Verificar".
+1. En el módulo **Auditoría**, sección "Proyectos en Ejecución / Para Verificar".
 2. Localiza el proyecto en estado `EN_EJECUCION`.
 3. Presiona **"Reportar Obra Finalizada"** para indicar que el contratista terminó los trabajos.
 
@@ -305,14 +305,14 @@ Durante esta fase:
 
 ---
 
-### Fase 9 — Verificación de Calidad (Cierre de Obra)
+### Fase 9 — Verificación de Calidad (Auditoría)
 
-**Módulo:** `/cierre-obra`  
+**Módulo:** `/auditoria`  
 **Estado resultante:** `LISTO_PAGO_FINAL`  
-**Rol requerido:** `CIERRE_DE_OBRA`
+**Rol requerido:** `AUDITORIA`
 
 **Qué hace el usuario:**
-1. El inspector de Cierre de Obra visita la obra en campo y verifica que cumple con:
+1. El inspector de Auditoría visita la obra en campo y verifica que cumple con:
    - Las especificaciones técnicas de los planos aprobados
    - Los estándares de calidad de IVOO
    - El alcance original de la solicitud
@@ -322,7 +322,7 @@ Durante esta fase:
 **Lo que ocurre en el sistema:**
 - El proyecto actualiza su estado a `LISTO_PAGO_FINAL`.
 - Se guardan `quality_verified = true` y `completion_verified_date`.
-- Log de auditoría: `CIERRE_DE_OBRA | Verificación de finalización y calidad de obra`.
+- Log de auditoría: `AUDITORIA | Verificación de finalización y calidad de obra`.
 - El proyecto pasa a la cola de Finanzas para el pago final.
 
 > Si la calidad no es satisfactoria, el sistema puede devolver el proyecto a `EN_EJECUCION` para que el contratista corrija los trabajos.
@@ -485,7 +485,7 @@ Cada acción sobre un proyecto genera automáticamente un registro en la tabla `
 | Departamento | Acción registrada |
 |---|---|
 | INFRAESTRUCTURA | Creación de petición de obra |
-| CIERRE_DE_OBRA | Revisión técnica de cálculos y planos |
+| AUDITORIA | Revisión técnica de cálculos y planos |
 | PROCURA | Confirmación de presupuesto y envío a licitación |
 | ANALISTA | Carga de propuesta |
 | ANALISTA | Carga de cuadro comparativo |
@@ -494,7 +494,7 @@ Cada acción sobre un proyecto genera automáticamente un registro en la tabla `
 | PROCURA | Confirmación de contratación |
 | FINANZAS | Liberación de anticipo |
 | SISTEMA | Reporte de obra finalizada |
-| CIERRE_DE_OBRA | Verificación de finalización y calidad de obra |
+| AUDITORIA | Verificación de finalización y calidad de obra |
 | FINANZAS | Liberación total de fondos |
 
 ---
@@ -507,7 +507,7 @@ Cada acción sobre un proyecto genera automáticamente un registro en la tabla `
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `/presidencia` (Dashboard) | ✓ | — | ✓ | — | — | — | — | — | — |
 | `/infraestructura` | ✓ | ✓ | — | ✓ | — | — | — | — | — |
-| `/cierre-obra` | ✓ | ✓ | — | — | ✓ | — | — | — | — |
+| `/auditoria` | ✓ | ✓ | — | — | ✓ | — | — | — | — |
 | `/procura` | ✓ | ✓ | — | — | — | ✓ | — | — | — |
 | `/analistas` | ✓ | ✓ | — | — | — | — | ✓ | — | — |
 | `/finanzas` | ✓ | ✓ | — | — | — | — | — | ✓ | — |

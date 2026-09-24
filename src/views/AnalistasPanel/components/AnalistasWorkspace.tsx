@@ -245,7 +245,7 @@ export default function AnalistasWorkspace({
                 selectedRowKey={selectedId}
                 emptyState={
                   <EmptyState
-                    message={pendingLicitacion.length === 0 ? "No hay expedientes en licitación activa. Vaya al panel de Procura o Cierre de Obra para avanzar flujos." : "No hay expedientes que coincidan con la búsqueda."}
+                    message={pendingLicitacion.length === 0 ? "No hay expedientes en licitación activa. Vaya al panel de Procura o Auditoría para avanzar flujos." : "No hay expedientes que coincidan con la búsqueda."}
                     icon={<SearchX className="h-8 w-8" />}
                   />
                 }
@@ -270,7 +270,7 @@ export default function AnalistasWorkspace({
                 cardAccent={() => "success"}
                 emptyState={
                   <EmptyState
-                    message={pendingLicitacion.length === 0 ? "No hay expedientes en licitación activa. Vaya al panel de Procura o Cierre de Obra para avanzar flujos." : "No hay expedientes que coincidan con la búsqueda."}
+                    message={pendingLicitacion.length === 0 ? "No hay expedientes en licitación activa. Vaya al panel de Procura o Auditoría para avanzar flujos." : "No hay expedientes que coincidan con la búsqueda."}
                     icon={<SearchX className="h-8 w-8" />}
                   />
                 }

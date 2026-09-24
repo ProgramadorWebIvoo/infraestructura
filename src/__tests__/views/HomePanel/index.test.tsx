@@ -53,7 +53,7 @@ function renderHome(props: Partial<React.ComponentProps<typeof HomePanel>> = {})
     <MemoryRouter>
       <HomePanel
         user={{ name: "Ana Torres", email: "ana@ivoo.local" }}
-        activeRole="CIERRE_DE_OBRA"
+        activeRole="AUDITORIA"
         projects={[]}
         {...props}
       />
@@ -73,24 +73,24 @@ describe("HomePanel", () => {
   });
 
   it("muestra el label del rol activo", () => {
-    renderHome({ activeRole: "CIERRE_DE_OBRA" });
-    expect(screen.getByText("Cierre de Obra", { selector: "h1" })).toBeInTheDocument();
+    renderHome({ activeRole: "AUDITORIA" });
+    expect(screen.getByText("Auditoría", { selector: "h1" })).toBeInTheDocument();
   });
 
-  it("un rol de una sola vista (CIERRE_DE_OBRA) solo ofrece acceso a su propio módulo", () => {
-    renderHome({ activeRole: "CIERRE_DE_OBRA" });
-    expect(screen.getByText("Cierre de Obra", { selector: "p" })).toBeInTheDocument();
+  it("un rol de una sola vista (AUDITORIA) solo ofrece acceso a su propio módulo", () => {
+    renderHome({ activeRole: "AUDITORIA" });
+    expect(screen.getByText("Auditoría", { selector: "p" })).toBeInTheDocument();
     expect(screen.queryByText("Finanzas")).not.toBeInTheDocument();
     expect(screen.queryByText("Procura")).not.toBeInTheDocument();
   });
 
-  it("calcula el KPI 'Por revisar' de Cierre de Obra contando proyectos CREADO y los lista", () => {
+  it("calcula el KPI 'Por revisar' de Auditoría contando proyectos CREADO y los lista", () => {
     const projects = [
       makeProject({ id: "OBRA-100", title: "Puente Norte", status: ProjectStatus.CREADO }),
       makeProject({ id: "OBRA-200", title: "Vía Sur", status: ProjectStatus.CREADO }),
       makeProject({ id: "OBRA-300", title: "Planta Este", status: ProjectStatus.EN_EJECUCION }),
     ];
-    renderHome({ activeRole: "CIERRE_DE_OBRA", projects });
+    renderHome({ activeRole: "AUDITORIA", projects });
 
     const kpiHeading = screen.getByText("Por revisar");
     const kpiCard = kpiHeading.closest("div.group") as HTMLElement;
@@ -104,7 +104,7 @@ describe("HomePanel", () => {
     renderHome({ activeRole: "SUPERADMIN" });
     expect(screen.getByText("Presidencia")).toBeInTheDocument();
     expect(screen.getByText("Infra / Mant")).toBeInTheDocument();
-    expect(screen.getByText("Cierre de Obra", { selector: "p" })).toBeInTheDocument();
+    expect(screen.getByText("Auditoría", { selector: "p" })).toBeInTheDocument();
     expect(screen.getByText("Procura")).toBeInTheDocument();
     expect(screen.getByText("Analistas")).toBeInTheDocument();
     expect(screen.getByText("Finanzas")).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe("HomePanel", () => {
         id: "LOG-1",
         projectId: "OBRA-1",
         projectTitle: "Puente Norte",
-        role: "CIERRE_DE_OBRA",
+        role: "AUDITORIA",
         userName: "Ana Torres",
         action: "Revisión de documentos",
         timestamp: new Date().toISOString(),
@@ -147,12 +147,12 @@ describe("HomePanel", () => {
 
   it("muestra el mensaje dinámico de pendientes cuando hay un solo KPI con proyectos", () => {
     const projects = [makeProject({ id: "1", status: ProjectStatus.CREADO })];
-    renderHome({ activeRole: "CIERRE_DE_OBRA", projects });
+    renderHome({ activeRole: "AUDITORIA", projects });
     expect(screen.getByText(/Hay 1 expediente en "por revisar"/i)).toBeInTheDocument();
   });
 
   it("muestra confirmación de 'al día' cuando ningún KPI tiene pendientes", () => {
-    renderHome({ activeRole: "CIERRE_DE_OBRA", projects: [] });
+    renderHome({ activeRole: "AUDITORIA", projects: [] });
     expect(screen.getByText(/Todo al día/i)).toBeInTheDocument();
   });
 

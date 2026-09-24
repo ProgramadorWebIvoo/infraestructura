@@ -119,7 +119,7 @@ describe("InspectProjectModal", () => {
     expect(screen.getByText("Mantenimiento")).toBeInTheDocument();
   });
 
-  it("proyecto CREADO: Cierre de Obra en curso, resto pendiente, trazabilidad en paso 2", () => {
+  it("proyecto CREADO: Auditoría en curso, resto pendiente, trazabilidad en paso 2", () => {
     renderModal(createProject());
 
     // Organigrama: Presidencia hecho + leyenda; Cierre en curso; Procura/Analistas/Finanzas pendientes
@@ -134,7 +134,7 @@ describe("InspectProjectModal", () => {
   it("proyecto COMPLETADO_PAGADO: todos los nodos hechos y trazabilidad completa", () => {
     const project = createProject({
       status: ProjectStatus.COMPLETADO_PAGADO,
-      cierreObraNotes: "Planos validados",
+      auditNotes: "Planos validados",
       calculationsAdded: true,
       blueprintsCount: 2,
       approvedInvestmentAmount: 80000,

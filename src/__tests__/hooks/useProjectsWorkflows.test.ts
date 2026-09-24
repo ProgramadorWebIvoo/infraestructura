@@ -324,7 +324,7 @@ describe("useProjectsWorkflows", () => {
   });
 
   describe("handleReviewProject", () => {
-    it("POSTs review with notes — Cierre de Obra ya no sube documentos, solo audita", async () => {
+    it("POSTs review with notes — Auditoría ya no sube documentos, solo audita", async () => {
       const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
       mockApiFetch.mockResolvedValueOnce(project);
 
@@ -792,7 +792,7 @@ describe("useProjectsWorkflows", () => {
     });
   });
 
-  // ── Cierre de Obra ─────────────────────────────────────────────────────────
+  // ── Auditoría ─────────────────────────────────────────────────────────
   describe("handleVerifyCompletion", () => {
     it("calls report-finished when project is EN_EJECUCION", async () => {
       const project = createMockProject({ status: ProjectStatus.EN_EJECUCION });

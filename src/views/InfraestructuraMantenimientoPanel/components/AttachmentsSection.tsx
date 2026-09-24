@@ -82,7 +82,7 @@ export default function AttachmentsSection({
   };
 
   const hasExistingSection = !!existingProjectId && !!existingDocuments;
-  // Las correcciones que Cierre de Obra adjuntó al rechazar no se muestran
+  // Las correcciones que Auditoría adjuntó al rechazar no se muestran
   // en este paso — no aportan valor acá (el usuario ya las revisó en el
   // detalle de la petición rechazada). Solo se listan los adjuntos propios
   // (FOTO/CALC/PLANO), que además son los únicos eliminables/versionables.

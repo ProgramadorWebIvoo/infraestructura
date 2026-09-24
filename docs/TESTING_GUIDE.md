@@ -266,7 +266,7 @@ verificar que el flujo funciona sin depender de un proveedor SMTP.
 
 ### Preparación — crear un usuario de prueba por rol
 1. Configuración → Usuarios → crear uno por cada rol operativo: Presidencia,
-   Infraestructura/Mant., Cierre de Obra, Procura, Analistas, Finanzas, Catálogos.
+   Infraestructura/Mant., Auditoría, Procura, Analistas, Finanzas, Catálogos.
 2. **Ojo con el select de Rol:** al hacer click y luego click en la opción, a
    veces el navegador cierra el `<select>` nativo antes de que el segundo click
    registre la opción, dejando el rol por defecto (Infraestructura/Mant.) —

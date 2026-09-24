@@ -198,7 +198,7 @@ describe("InvestmentApprovalSection — vista Tabla", () => {
       renderSection({ projects: [], authToken: "token", onApproveInvestment: vi.fn() });
       fireEvent.click(screen.getByLabelText("Vista de tabla"));
 
-      expect(screen.getByText("No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario.")).toBeInTheDocument();
+      expect(screen.getByText("No hay nuevas peticiones aprobadas por Auditoría esperando tope presupuestario.")).toBeInTheDocument();
     } finally {
       restoreSize();
       restoreRO();
@@ -206,7 +206,7 @@ describe("InvestmentApprovalSection — vista Tabla", () => {
   });
 });
 
-describe("InvestmentApprovalSection — retroalimentación de la evaluación IA de Cierre de Obra", () => {
+describe("InvestmentApprovalSection — retroalimentación de la evaluación IA de Auditoría", () => {
   it("muestra el panel completo de evaluación IA (score, resumen, alertas, monto sugerido) cuando el expediente fue evaluado", () => {
     const restoreRO = stubSyncResizeObserver();
     const restoreSize = stubContainerSize(900, 600);
@@ -232,12 +232,12 @@ describe("InvestmentApprovalSection — retroalimentación de la evaluación IA 
       expect(screen.getByText("Expediente completo con cubicación consistente.")).toBeInTheDocument();
       expect(screen.getByText("Falta un plano de detalle eléctrico.")).toBeInTheDocument();
       expect(screen.getByText("Aprobar con seguimiento del plano faltante.")).toBeInTheDocument();
-      // Monto sugerido: a diferencia de Cierre de Obra, en Procura sí se
+      // Monto sugerido: a diferencia de Auditoría, en Procura sí se
       // muestra dentro del panel (showSuggestedAmount).
       expect(screen.getByText("Monto sugerido por IA")).toBeInTheDocument();
       expect(screen.getByText("$4,800.00")).toBeInTheDocument();
       // No hay botón "Reevaluar" — Procura consulta la evaluación ya hecha
-      // por Cierre de Obra, no la dispara ni la repite.
+      // por Auditoría, no la dispara ni la repite.
       expect(screen.queryByRole("button", { name: /Reevaluar/ })).not.toBeInTheDocument();
     } finally {
       restoreSize();
@@ -278,7 +278,7 @@ describe("InvestmentApprovalSection — retroalimentación de la evaluación IA 
       fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
 
       expect(screen.getByText("Sugerido por IA (referencial)")).toBeInTheDocument();
-      // El campo sigue precargado con el estimado de Cierre de Obra (500),
+      // El campo sigue precargado con el estimado de Auditoría (500),
       // no con el monto sugerido por IA (4800) — nunca se autocompleta.
       expect(document.getElementById("procura-approved-amount")).toHaveValue(500);
     } finally {

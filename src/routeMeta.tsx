@@ -31,7 +31,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   [ROUTES.PRESIDENCIA]: { label: "Presidencia", icon: TrendingUp, color: "#38BDF8" },
   [ROUTES.MARKETING]: {label: "Marketing", icon: BanknoteArrowDown, color: "#f59e0b"},
   [ROUTES.INFRAESTRUCTURA]: { label: "Infra / Mant", icon: Building2, color: "#0EA5E9" },
-  [ROUTES.CIERRE_OBRA]: { label: "Cierre de Obra", icon: CheckSquare, color: "#2563EB" },
+  [ROUTES.CIERRE_OBRA]: { label: "Auditoría", icon: CheckSquare, color: "#2563EB" },
   [ROUTES.PROCURA]: { label: "Procura", icon: FileSearch, color: "#9333EA" },
   [ROUTES.ANALISTAS]: { label: "Analistas", icon: Users, color: "#059669" },
   [ROUTES.FINANZAS]: { label: "Finanzas", icon: DollarSign, color: "#E11D48" },

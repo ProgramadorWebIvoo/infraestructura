@@ -214,7 +214,7 @@ describe("SidebarNav", () => {
 
     expect(screen.getByText("Presidencia").closest("a")).toHaveAttribute("href", "/presidencia");
     expect(screen.getByText("Infra / Mant").closest("a")).toHaveAttribute("href", "/infraestructura");
-    expect(screen.getByText("Cierre Obra").closest("a")).toHaveAttribute("href", "/cierre-obra");
+    expect(screen.getByText("Cierre Obra").closest("a")).toHaveAttribute("href", "/auditoria");
     expect(screen.getByText("Procura").closest("a")).toHaveAttribute("href", "/procura");
     expect(screen.getByText("Analistas").closest("a")).toHaveAttribute("href", "/analistas");
     expect(screen.getByText("Finanzas").closest("a")).toHaveAttribute("href", "/finanzas");

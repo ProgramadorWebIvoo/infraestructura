@@ -10,7 +10,7 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import TechnicalReviewSection from "@/views/CierreObraPanel/components/TechnicalReviewSection";
+import TechnicalReviewSection from "@/views/AuditoriaPanel/components/TechnicalReviewSection";
 import { ToastProvider } from "@/components/UI/Toast";
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
@@ -268,7 +268,7 @@ describe("TechnicalReviewSection — revisión (auditoría, sin subida de archiv
     expect(await screen.findByText(/Evaluación IA no disponible para este expediente\./)).toBeInTheDocument();
   });
 
-  it("oculta el panel de evaluación IA del expediente cuando el departamento CIERRE_DE_OBRA tiene la IA desactivada en Config IA", () => {
+  it("oculta el panel de evaluación IA del expediente cuando el departamento AUDITORIA tiene la IA desactivada en Config IA", () => {
     mockIsAiFeatureEnabled.mockReturnValue(false);
     try {
       renderSection();

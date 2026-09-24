@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Workflows del expediente técnico: creación (Infraestructura), revisión y
- * rechazo/reenvío (Cierre de Obra), reevaluación (Procura ↔ Cierre de Obra)
+ * rechazo/reenvío (Auditoría), reevaluación (Procura ↔ Auditoría)
  * y eliminación de adjuntos. Extraído de useProjectsWorkflows.ts (antes 795
  * líneas / 22 handlers en un solo archivo — ver graphify toxic hotspot).
  */
@@ -68,7 +68,7 @@ export function useReviewWorkflows({
       }
 
       if (failedGroups.length === 0) {
-        show("Petición de Infraestructura registrada con éxito y enviada a Cierre de Obra.", "success");
+        show("Petición de Infraestructura registrada con éxito y enviada a Auditoría.", "success");
         if (optimizedCount > 0) {
           show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
         }
@@ -81,14 +81,14 @@ export function useReviewWorkflows({
     [authTokenRef, showToastRef, syncProjectRef],
   );
 
-  /** Cierre de Obra audita la petición — no sube documentación propia, solo
+  /** Auditoría audita la petición — no sube documentación propia, solo
    * confirma lo ya adjuntado por Infraestructura (ver TechnicalReviewSection). */
   const handleReviewProject = useCallback(
     async (projectId: string, notes: string) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
-      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_CIERRE, cierreObraNotes: notes.trim() || undefined });
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_CIERRE, auditNotes: notes.trim() || undefined });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
           method: "POST",
@@ -231,7 +231,7 @@ export function useReviewWorkflows({
       }
 
       if (failedGroups.length === 0) {
-        show("Petición corregida y reenviada a Cierre de Obra.", "success");
+        show("Petición corregida y reenviada a Auditoría.", "success");
         if (optimizedCount > 0) {
           show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
         }
@@ -244,7 +244,7 @@ export function useReviewWorkflows({
     [authTokenRef, showToastRef, syncProjectRef],
   );
 
-  /** Elimina un documento (todas sus versiones) — usado por Cierre de Obra
+  /** Elimina un documento (todas sus versiones) — usado por Auditoría
    * (cualquier momento) e Infraestructura (solo mientras RECHAZADO_CIERRE,
    * al editar/reenviar una petición rechazada, ver AttachmentsSection). */
   const handleDeleteDocument = useCallback(
@@ -265,7 +265,7 @@ export function useReviewWorkflows({
     [authTokenRef, showToastRef, syncProjectRef],
   );
 
-  /** Procura devuelve a Cierre de Obra, con motivo obligatorio, un expediente
+  /** Procura devuelve a Auditoría, con motivo obligatorio, un expediente
    * recién llegado (REVISADO_CIERRE) antes de autorizar inversión — mismo
    * shape de dos fases que handleRejectProject (JSON de motivo + upload
    * multipart opcional de evidencia + refetch). */
@@ -296,7 +296,7 @@ export function useReviewWorkflows({
       }
 
       if (evidenceFiles.length === 0) {
-        show("Expediente enviado a reevaluación de Cierre de Obra.", "success");
+        show("Expediente enviado a reevaluación de Auditoría.", "success");
         return { ok: true, partial: false, failedGroups: [] };
       }
 
@@ -322,7 +322,7 @@ export function useReviewWorkflows({
     [authTokenRef, showToastRef, syncProjectRef, optimisticUpdate],
   );
 
-  /** Cierre de Obra resuelve una reevaluación solicitada por Procura y
+  /** Auditoría resuelve una reevaluación solicitada por Procura y
    * reenvía el expediente a REVISADO_CIERRE. */
   const handleResolveReevaluation = useCallback(
     async (projectId: string, notes?: string) => {

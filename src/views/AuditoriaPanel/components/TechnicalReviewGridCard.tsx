@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contenido de tarjeta para GridView en Revisión de Cálculos y Planos
- * (Cierre de Obra) — el componente genérico (src/components/UI/GridView) no
+ * (Auditoría) — el componente genérico (src/components/UI/GridView) no
  * conoce "peticiones"; este archivo es el consumidor que decide qué pintar
  * dentro de cada tarjeta, vía la prop `renderCard`.
  */

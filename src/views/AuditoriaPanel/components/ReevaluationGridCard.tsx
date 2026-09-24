@@ -2,8 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Contenido de tarjeta para GridView en Reevaluaciones de Procura (Cierre de
- * Obra) — mismo criterio que TechnicalReviewGridCard.tsx, con el motivo de
+ * Contenido de tarjeta para GridView en Reevaluaciones de Procura (Auditoría) — mismo criterio que TechnicalReviewGridCard.tsx, con el motivo de
  * Procura en vez del conteo de insumos.
  */
 

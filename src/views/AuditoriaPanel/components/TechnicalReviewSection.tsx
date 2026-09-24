@@ -2,8 +2,8 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Sección 1 de Cierre de Obra: revisión de cálculos y planos — extraída de
- * CierreObraPanel.
+ * Sección 1 de Auditoría: revisión de cálculos y planos — extraída de
+ * AuditoriaPanel.
  *
  * Orquestador delgado: solo mantiene la selección del expediente activo (vía
  * la tabla) y coordina la apertura de los dos modales — el wizard de
@@ -136,7 +136,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
   const closeReview = () => setSelectedProjectId("");
 
   const emptyMessage = pendingReview.length === 0
-    ? "No hay nuevas peticiones técnicas pendientes de revisión por Cierre de Obra."
+    ? "No hay nuevas peticiones técnicas pendientes de revisión por Auditoría."
     : "No hay expedientes que coincidan con la búsqueda.";
 
   return (
@@ -144,7 +144,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
       <div className="px-6 pt-6 shrink-0">
         <SectionHeader
           icon={<Calculator className="h-5 w-5" />}
-          title="Cierre de Obra: Revisión de Cálculos y Planos"
+          title="Auditoría: Revisión de Cálculos y Planos"
           description="Valide la inversión, revise la cubicación de materiales y aporte la planimetría de cierre."
           color="sky"
         />

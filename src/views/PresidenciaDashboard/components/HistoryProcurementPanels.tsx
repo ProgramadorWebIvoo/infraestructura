@@ -35,7 +35,7 @@ export function BudgetPanel({ detail }: { detail: ProjectHistoryDetail }) {
       <dl className="grid grid-cols-2 gap-3 text-xs">
         <div><dt className="text-text-tertiary">Solicitud creada</dt><dd className="font-semibold text-text-primary">{request.createdDate ?? "—"} · {request.createdBy ?? "—"}</dd></div>
         <div><dt className="text-text-tertiary">Evaluación IA del expediente</dt><dd className="font-semibold text-text-primary">{request.dossierAiScore !== null ? `${request.dossierAiScore}/100` : "Sin evaluar"}</dd></div>
-        <div className="col-span-2"><dt className="text-text-tertiary">Notas de Cierre de Obra</dt><dd className="text-text-primary">{request.reviewNotes ?? "—"}</dd></div>
+        <div className="col-span-2"><dt className="text-text-tertiary">Notas de Auditoría</dt><dd className="text-text-primary">{request.reviewNotes ?? "—"}</dd></div>
         <div className="col-span-2"><dt className="text-text-tertiary">Notas de Procura</dt><dd className="text-text-primary">{request.procuraNotes ?? "—"}</dd></div>
       </dl>
 

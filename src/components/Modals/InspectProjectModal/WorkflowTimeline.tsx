@@ -40,7 +40,7 @@ function getStepState(project: Project, index: number): StepState {
     case 1:
       return "done";
     case 2:
-      return project.cierreObraNotes
+      return project.auditNotes
         ? "done"
         : project.status === ProjectStatus.CREADO
           ? "current"
@@ -175,14 +175,14 @@ export default function WorkflowTimeline({ project }: { project: Project }) {
           </div>
         </div>
 
-        {/* Paso 2: Cierre de Obra */}
+        {/* Paso 2: Auditoría */}
         <div className="flex gap-3 relative">
           <StepBadge index={2} state={stepProps(2).state} />
           <div className="flex-1 min-w-0">
-            <StepHeader icon={FileSearch} role="CIERRE_DE_OBRA" title="Revisión Técnica Cierre de Obra" subtitle="Cálculos de inversión, volumen de material y planimetría." state={stepProps(2).state} />
-            {project.cierreObraNotes ? (
+            <StepHeader icon={FileSearch} role="AUDITORIA" title="Revisión Técnica Auditoría" subtitle="Cálculos de inversión, volumen de material y planimetría." state={stepProps(2).state} />
+            {project.auditNotes ? (
               <div className="mt-2 bg-blue-50/40 p-3 rounded-lg border border-blue-100 text-[11px] text-slate-600">
-                <strong>Notas Cierre de Obra:</strong> {project.cierreObraNotes}
+                <strong>Notas Auditoría:</strong> {project.auditNotes}
                 <div className="mt-1 flex items-center gap-2 text-[10px] text-blue-700 font-mono font-semibold">
                   <span>&bull; Planos: {project.blueprintsCount || 0}</span>
                   <span>&bull; Cálculos: {project.calculationsAdded ? "Adjuntados" : "No"}</span>
@@ -287,7 +287,7 @@ export default function WorkflowTimeline({ project }: { project: Project }) {
         <div className="flex gap-3 relative">
           <StepBadge index={7} state={stepProps(7).state} />
           <div className="flex-1 min-w-0">
-            <StepHeader icon={ShieldCheck} role="CIERRE_DE_OBRA" title="Auditoría & Calidad Cierre de Obra" subtitle="Inspección final física de la infraestructura completada." state={stepProps(7).state} />
+            <StepHeader icon={ShieldCheck} role="AUDITORIA" title="Auditoría & Calidad Auditoría" subtitle="Inspección final física de la infraestructura completada." state={stepProps(7).state} />
             {project.qualityVerified ? (
               <div className="mt-2 bg-green-50/40 p-3 rounded-lg border border-green-100 text-[11px] text-slate-600 flex items-center gap-1.5 font-semibold text-green-800">
                 <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />

@@ -13,7 +13,7 @@ import type { Project } from "@/types";
  */
 export function getPendingCount(projects: Project[], role: string): number {
   switch (role) {
-    case "CIERRE_DE_OBRA":
+    case "AUDITORIA":
       return projects.filter(
         p =>
           p.status === ProjectStatus.CREADO ||

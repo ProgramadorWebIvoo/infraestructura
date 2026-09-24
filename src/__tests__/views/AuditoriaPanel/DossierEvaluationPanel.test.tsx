@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import DossierEvaluationPanel from "@/views/CierreObraPanel/components/DossierEvaluationPanel";
+import DossierEvaluationPanel from "@/views/AuditoriaPanel/components/DossierEvaluationPanel";
 import { ToastProvider } from "@/components/UI/Toast";
 import type { Project } from "@/types";
 
@@ -101,7 +101,7 @@ describe("DossierEvaluationPanel", () => {
     expect(screen.getByText(/Evaluado por anthropic/)).toBeInTheDocument();
   });
 
-  it("no muestra el monto sugerido — es dato de Procura, no de Cierre de Obra", () => {
+  it("no muestra el monto sugerido — es dato de Procura, no de Auditoría", () => {
     const project = makeProject({
       dossierAiScore: 65,
       dossierAiEvaluatedAt: "2026-08-24T00:00:00Z",

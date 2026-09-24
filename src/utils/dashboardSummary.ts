@@ -194,7 +194,7 @@ export function computeDashboardSummary(projects: Project[]): DashboardSummary {
 }
 
 // ---------------------------------------------------------------------------
-// Salud del pipeline (cuellos de botella)
+// Estatus del pipeline (cuellos de botella)
 // ---------------------------------------------------------------------------
 
 /** Estados que no representan un atasco (inicio y cierre del flujo). */
@@ -220,7 +220,7 @@ const PIPELINE_STATUSES: ReadonlySet<string> = new Set(
 );
 
 /**
- * Salud por fase del pipeline: combina volumen (count) con antigüedad del
+ * Estatus por fase del pipeline: combina volumen (count) con antigüedad del
  * atasco (días sin actividad desde updatedAt, con fallback a createdDate).
  * Excluye estados terminales. Ordena por obras estancadas desc, luego volumen.
  */

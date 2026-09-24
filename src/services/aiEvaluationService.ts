@@ -17,11 +17,11 @@ import type { MaterialItem, Project, Proposal } from "@/types";
 import { apiFetch } from "./api";
 
 // ---------------------------------------------------------------------------
-// Evaluación de expediente (Cierre de Obra)
+// Evaluación de expediente (Auditoría)
 // ---------------------------------------------------------------------------
 
 /**
- * Evalúa el expediente completo de un proyecto (Cierre de Obra) — score de
+ * Evalúa el expediente completo de un proyecto (Auditoría) — score de
  * completitud/riesgo, alertas, resumen, recomendación y monto sugerido.
  * A diferencia de evaluateProposals(), devuelve el Project completo con
  * los campos dossierAi* ya persistidos (mismo patrón que review()/

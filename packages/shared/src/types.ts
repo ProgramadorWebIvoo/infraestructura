@@ -179,7 +179,7 @@ export interface Project {
   updatedAt?: string;
   materials: MaterialItem[];
   estimatedTotal: number;
-  cierreObraNotes?: string;
+  auditNotes?: string;
   calculationsAdded?: boolean;
   blueprintsCount?: number;
   dossierAiScore?: number;

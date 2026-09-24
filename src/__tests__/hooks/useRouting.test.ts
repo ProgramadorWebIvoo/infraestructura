@@ -15,7 +15,7 @@ vi.mock("@/services/logger", () => ({
 // GET /auth/permissions ya devuelve la lista resuelta para el usuario
 // autenticado (rol + overrides individuales, ver AccessResolver en el
 // backend) — no una matriz por rol.
-const SUPERADMIN_VIEWS = ["/presidencia", "/infraestructura", "/cierre-obra", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"];
+const SUPERADMIN_VIEWS = ["/presidencia", "/infraestructura", "/auditoria", "/procura", "/analistas", "/finanzas", "/catalogos", "/usuarios", "/config-proveedores", "/config-materiales", "/config-ia"];
 const PRESIDENCIA_VIEWS = ["/presidencia", "/catalogos"];
 
 async function renderLoaded(role: string | undefined) {

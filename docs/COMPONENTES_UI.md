@@ -175,13 +175,13 @@ Tabla de datos genérica con ordenamiento, paginación, skeleton de carga, empty
 
 **Path**: `src/components/UI/GridView/` (`GridView.tsx`, `GridCard.tsx`, `useFullViewport.ts`, `types.ts`)
 
-Variante de visualización alternativa a `Table` — mismos datos, layout de cuadrícula de tarjetas en vez de filas. Genérico sobre `T`, misma filosofía que `Column<T>.render`: el componente no conoce el dominio de los items, el consumidor decide qué pintar dentro de cada tarjeta vía `renderCard`. **No es una extensión/subclase de `Table`** — son dos componentes hermanos e independientes que un mismo consumidor puede alternar sobre el mismo `data`/`items` (ver `RevisedDocumentsSection.tsx`, Cierre de Obra → "Historial de Expedientes", primer y único consumidor hoy).
+Variante de visualización alternativa a `Table` — mismos datos, layout de cuadrícula de tarjetas en vez de filas. Genérico sobre `T`, misma filosofía que `Column<T>.render`: el componente no conoce el dominio de los items, el consumidor decide qué pintar dentro de cada tarjeta vía `renderCard`. **No es una extensión/subclase de `Table`** — son dos componentes hermanos e independientes que un mismo consumidor puede alternar sobre el mismo `data`/`items` (ver `RevisedDocumentsSection.tsx`, Auditoría → "Historial de Expedientes", primer y único consumidor hoy).
 
 - **Import**: `import GridView from "src/components/UI/GridView/GridView"` (default export).
 - **Props** (`GridViewProps<T>`, `types.ts`):
   - `items: T[]` — el dataset, igual rol que `data` en `Table`.
   - `rowKey: (item: T, index: number) => string | number` — igual que `Table.rowKey`.
-  - `renderCard: (item: T, index: number) => ReactNode` — **obligatorio**, contenido interno de cada tarjeta. `GridView`/`GridCard` no imponen ninguna estructura (header/métricas/acciones) — el consumidor arma su propio JSX libremente, normalmente en un archivo separado de su propia vista (ver `ExpedienteGridCard.tsx` en Cierre de Obra) para no mezclar la lógica de dominio con el mecanismo del grid.
+  - `renderCard: (item: T, index: number) => ReactNode` — **obligatorio**, contenido interno de cada tarjeta. `GridView`/`GridCard` no imponen ninguna estructura (header/métricas/acciones) — el consumidor arma su propio JSX libremente, normalmente en un archivo separado de su propia vista (ver `ExpedienteGridCard.tsx` en Auditoría) para no mezclar la lógica de dominio con el mecanismo del grid.
   - `cardAccent?: (item: T) => SemanticColor | undefined` — color de borde/anillo de selección de la tarjeta, resuelto desde `SEMANTIC_COLOR_MAP` (`colorTokens.ts`). El consumidor decide la condición (ej. `danger` si el item representa algo rechazado); `GridView` no interpreta el dominio, solo aplica el rol indicado. Sin esta prop, o si devuelve `undefined`, usa `neutral`.
   - `onSelect?: (item: T) => void` — click en la tarjeta.
   - `selectedKey?: string | number` — resalta la tarjeta cuya `rowKey` coincide (mismo patrón que `Table.selectedRowKey`).
@@ -605,7 +605,7 @@ Previsualizador de un `ProjectDocument` dentro de un `Modal`: PDF vía `pdfjs-di
 Listado de los documentos (planos/hojas de cálculo/fotos) de un proyecto, agrupado por `documentGroupId` — cada documento lógico es una fila con su versión vigente; versiones anteriores viven en un acordeón inline expandible por fila (no listadas sueltas como filas independientes).
 
 - **Props**: `project: Project`, `onDownload`, `onPreview`, `onDelete?` (si se provee, cada fila muestra eliminar/deshacer), `markedForDeletion?: Set<number>`, `auditLogs?: AuditLog[]` (infiere motivo de rechazo de versiones antiguas por proximidad temporal), `mode?: "view"|"manage"` (default `"view"`; `"manage"` habilita "Nueva versión" por fila, usado solo en el wizard de Infraestructura)
-- **Cuándo usarlo**: cualquier vista que liste los documentos adjuntos de un proyecto (Procura, Cierre de Obra, wizard de Infraestructura) — no reimplementar el agrupamiento por versión a mano.
+- **Cuándo usarlo**: cualquier vista que liste los documentos adjuntos de un proyecto (Procura, Auditoría, wizard de Infraestructura) — no reimplementar el agrupamiento por versión a mano.
 - **Convenciones**: usa `VersionHistoryPopover` para el historial expandible; resuelve color/ícono por tipo de archivo vía `SEMANTIC_COLOR_MAP`.
 
 ## PublicSettingsProvider

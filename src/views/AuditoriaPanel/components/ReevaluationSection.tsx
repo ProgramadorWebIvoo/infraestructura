@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Sección de Cierre de Obra: expedientes que Procura devolvió a reevaluación
+ * Sección de Auditoría: expedientes que Procura devolvió a reevaluación
  * (EN_REEVALUACION_CIERRE) antes de autorizar inversión — ver
  * ProjectController::sendToReevaluation(). Muestra el motivo indicado por
  * Procura (último AuditLog de esa acción) y, al abrir un expediente, corre
@@ -11,9 +11,9 @@
  * pasa por el mismo proceso de revisión antes de reenviar, no un simple
  * botón de confirmación. Al terminar, el expediente vuelve a Procura
  * (REVISADO_CIERRE) sin pasar por CREADO, porque la cubicación y planos ya
- * fueron aprobados por Cierre de Obra.
+ * fueron aprobados por Auditoría.
  *
- * Tab explícita del panel (CierreObraPanel/index.tsx), mismo criterio de
+ * Tab explícita del panel (AuditoriaPanel/index.tsx), mismo criterio de
  * layout full-height que TechnicalReviewSection — cuando no hay
  * reevaluaciones pendientes muestra el emptyState de Table en vez de
  * autoocultarse.
@@ -38,7 +38,7 @@ import { viewSwitchVariants } from "@/animations";
 import ReviewWizardModal from "./ReviewWizardModal";
 import ReevaluationGridCard from "./ReevaluationGridCard";
 
-export const REEVALUATION_REQUEST_ACTION = "Solicitud de reevaluación a Cierre de Obra";
+export const REEVALUATION_REQUEST_ACTION = "Solicitud de reevaluación a Auditoría";
 
 interface ReevaluationSectionProps {
   projects: Project[];

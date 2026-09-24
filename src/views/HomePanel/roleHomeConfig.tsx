@@ -9,7 +9,7 @@
  * archivo — el componente HomePanel es puro renderizado de esta config.
  *
  * Los mismos cortes de status que cada panel ya usa para sus propios KPIs
- * (CierreObraPanel, ProcuraPanel, FinanzasPanel, AnalistasPanel,
+ * (AuditoriaPanel, ProcuraPanel, FinanzasPanel, AnalistasPanel,
  * InfraestructuraMantenimientoPanel) — ver ese código para el criterio de
  * negocio detrás de cada corte, no reinventado aquí.
  */
@@ -100,7 +100,7 @@ const MODULE_INFRAESTRUCTURA: HomeModuleLink = {
 
 const MODULE_CIERRE_OBRA: HomeModuleLink = {
   route: ROUTES.CIERRE_OBRA,
-  label: "Cierre de Obra",
+  label: "Auditoría",
   description: "Revisión técnica y auditoría de finalización",
   icon: <CheckSquare className="h-5 w-5" strokeWidth={2.25} />,
   accent: "brand",
@@ -168,7 +168,7 @@ const kpiInfraestructura: HomeKpi[] = [
   }),
 ];
 
-const kpiCierreObra: HomeKpi[] = [
+const kpiAuditoria: HomeKpi[] = [
   kpi({
     key: "pending-review",
     icon: <ClipboardList className="h-4 w-4" strokeWidth={2.25} />,
@@ -296,9 +296,9 @@ const ROLE_HOME_CONFIG: Record<string, RoleHomeConfig> = {
     kpis: kpiInfraestructura,
     modules: [MODULE_INFRAESTRUCTURA],
   },
-  CIERRE_DE_OBRA: {
+  AUDITORIA: {
     tagline: "Revisión técnica y auditoría de finalización de obra.",
-    kpis: kpiCierreObra,
+    kpis: kpiAuditoria,
     modules: [MODULE_CIERRE_OBRA],
   },
   PROCURA: {

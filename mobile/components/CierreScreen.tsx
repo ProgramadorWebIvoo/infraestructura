@@ -22,7 +22,7 @@ export default function CierreScreen({
 
   return (
     <View style={styles.section}>
-      <SectionTitle title="Cierre de Obra" subtitle="Revisión técnica y certificación" />
+      <SectionTitle title="Auditoría" subtitle="Revisión técnica y certificación" />
       {visible.map((project) => (
         <ProjectCard key={project.id} project={project}>
           {project.status === "CREADO" ? (

@@ -33,7 +33,7 @@ function currentRoleOf(status: ProjectStatus): RoleId | null {
   switch (status) {
     case ProjectStatus.CREADO:
     case ProjectStatus.VERIFICANDO_FINALIZACION:
-      return "CIERRE_DE_OBRA";
+      return "AUDITORIA";
     case ProjectStatus.REVISADO_CIERRE:
     case ProjectStatus.COMPARATIVA_ENVIADA:
       return "PROCURA";
@@ -53,10 +53,10 @@ function getNodeState(project: Project, role: RoleId): NodeState {
   switch (role) {
     case "PRESIDENCIA":
       return "done"; // supervisión transversal, siempre en alcance
-    case "CIERRE_DE_OBRA": {
+    case "AUDITORIA": {
       if (isCurrent) return "current";
       if (project.qualityVerified) return "done";
-      if (project.cierreObraNotes) return "partial";
+      if (project.auditNotes) return "partial";
       return "pending";
     }
     case "PROCURA": {
@@ -154,7 +154,7 @@ export default function ProjectOrganigrama({ project }: { project: Project }) {
         {/* 3 columnas: Cierre / Procura-Analistas / Finanzas */}
         <div className="w-full grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center">
-            <OrgNode role="CIERRE_DE_OBRA" code="CIERRE DE OBRA" label="Revisión Técnica" state={stateOf("CIERRE_DE_OBRA")} />
+            <OrgNode role="AUDITORIA" code="CIERRE DE OBRA" label="Revisión Técnica" state={stateOf("AUDITORIA")} />
             <div className="h-2.5 w-0.5 bg-slate-300" />
             <span className="text-[9px] font-mono font-bold text-slate-500 bg-white px-2 py-0.5 border border-slate-200 rounded-lg">Infraestructura</span>
           </div>

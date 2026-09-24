@@ -2,8 +2,8 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Sección 2 de Cierre de Obra: auditoría de fin de obra — extraída de
- * CierreObraPanel.
+ * Sección 2 de Auditoría: auditoría de fin de obra — extraída de
+ * AuditoriaPanel.
  */
 
 import { useMemo, useState } from "react";
@@ -262,9 +262,9 @@ export default function CompletionAuditSection({ projects, onVerifyCompletion, d
               </div>
             )}
 
-            {detailProject.cierreObraNotes && (
+            {detailProject.auditNotes && (
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-[11px] text-slate-500 leading-snug">
-                <span className="font-bold text-slate-500">Revisión Inicial:</span> {detailProject.cierreObraNotes}
+                <span className="font-bold text-slate-500">Revisión Inicial:</span> {detailProject.auditNotes}
               </div>
             )}
 

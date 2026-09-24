@@ -135,7 +135,7 @@ describe("RequestWizardCard", () => {
     const photo = new File(["x"], "foto.png", { type: "image/png" });
     fireEvent.change(screen.getAllByTestId("file-input")[0], { target: { files: [photo] } });
 
-    fireEvent.click(screen.getByRole("button", { name: /Enviar Petición a Cierre de Obra/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Enviar Petición a Auditoría/ }));
 
     await waitFor(() => expect(onAddProject).toHaveBeenCalledTimes(1));
     expect(onAddProject).toHaveBeenCalledWith(
@@ -157,7 +157,7 @@ describe("RequestWizardCard", () => {
     fireEvent.click(screen.getByText("Agregar 1 material"));
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/ }));
 
-    fireEvent.click(screen.getByRole("button", { name: /Enviar Petición a Cierre de Obra/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Enviar Petición a Auditoría/ }));
 
     expect(onAddProject).not.toHaveBeenCalled();
     expect(

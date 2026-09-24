@@ -5,7 +5,7 @@
  * Wizard de revisión técnica (Revisar → Documentación → Confirmar) para un
  * expediente CREADO — extraído de TechnicalReviewSection.tsx. Mantiene su
  * propio estado de progreso (paso actual, notas, preview de documento)
- * aislado del resto del panel de Cierre de Obra.
+ * aislado del resto del panel de Auditoría.
  *
  * Es auditoría, no origen de documentos: el auditor revisa (preview +
  * descarga) lo que Infraestructura ya adjuntó, nunca sube archivos propios
@@ -92,7 +92,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const { isAiFeatureEnabled } = useAiFeatureGate();
-  const showAiEval = isAiFeatureEnabled("CIERRE_DE_OBRA", "ia.cierre_obra.evaluacion_expediente");
+  const showAiEval = isAiFeatureEnabled("AUDITORIA", "ia.auditoria.evaluacion_expediente");
 
   const brand = SEMANTIC_COLOR_MAP.brand;
   const activeDocuments = project?.documents ?? [];
@@ -307,8 +307,8 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
               </div>
             )}
 
-            {/* Paso 2: Revisar documentación adjunta (sin subida — Cierre de
-                Obra audita lo que Infraestructura ya cargó) */}
+            {/* Paso 2: Revisar documentación adjunta (sin subida — Auditoría
+                audita lo que Infraestructura ya cargó) */}
             {stepIndex === 1 && (
               <div className="space-y-4">
                 {activeDocuments.length === 0 ? (

@@ -4,7 +4,7 @@
  *
  * Pruebas unitarias para RejectedPetitionDetailModal — modal de solo lectura
  * con motivo (siempre), observaciones (solo si existen) y correcciones
- * adjuntadas por Cierre de Obra (solo si existen documentos CORRECCION).
+ * adjuntadas por Auditoría (solo si existen documentos CORRECCION).
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
@@ -53,7 +53,7 @@ const baseLog: AuditLog = {
   id: "LOG-1",
   projectId: "PRJ-010",
   projectTitle: "Remodelación depósito",
-  role: "CIERRE_DE_OBRA",
+  role: "AUDITORIA",
   userName: "Ana Cierre",
   action: "Rechazo de petición de obra",
   timestamp: "2026-08-10 10:00:00",
@@ -88,7 +88,7 @@ describe("RejectedPetitionDetailModal", () => {
 
   it("no muestra la sección de correcciones si no hay documentos CORRECCION", () => {
     renderModal();
-    expect(screen.queryByText("Correcciones adjuntadas por Cierre de Obra")).not.toBeInTheDocument();
+    expect(screen.queryByText("Correcciones adjuntadas por Auditoría")).not.toBeInTheDocument();
   });
 
   it("muestra las correcciones adjuntadas si existen", () => {
@@ -101,7 +101,7 @@ describe("RejectedPetitionDetailModal", () => {
         ],
       },
     });
-    expect(screen.getByText("Correcciones adjuntadas por Cierre de Obra")).toBeInTheDocument();
+    expect(screen.getByText("Correcciones adjuntadas por Auditoría")).toBeInTheDocument();
     expect(screen.getByText("correccion.pdf")).toBeInTheDocument();
   });
 

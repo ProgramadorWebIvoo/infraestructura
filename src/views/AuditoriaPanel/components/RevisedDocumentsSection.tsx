@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Sección 3 de Cierre de Obra: documentos de proyectos ya revisados (más
+ * Sección 3 de Auditoría: documentos de proyectos ya revisados (más
  * allá de CREADO) — consulta de solo lectura (preview + descarga). No
  * permite subir nuevas versiones: el versionado (V1→V2) existe únicamente
  * como trazabilidad del ciclo rechazo→corrección→reenvío de Infraestructura

@@ -10,7 +10,7 @@
  * Antes: 795 líneas / 22 handlers en este único archivo, confirmado como
  * toxic hotspot por graphify (complejidad × churn de Git — 14 commits
  * distintos lo tocaron). Dividido en:
- * - `useReviewWorkflows`     → Infraestructura / Cierre de Obra (expediente)
+ * - `useReviewWorkflows`     → Infraestructura / Auditoría (expediente)
  * - `useProcurementWorkflows` → Procura / Analistas (comparativa, propuestas)
  * - `usePaymentWorkflows`     → Finanzas / verificación de cierre
  *

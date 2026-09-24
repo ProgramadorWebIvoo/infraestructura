@@ -77,7 +77,7 @@ export default function RequestWizardCard({ form, materialsCatalog, projectTypes
             title={form.isEditMode ? "Corregir y Reenviar Petición" : "Crear Nueva Petición de Obra / Trabajo"}
             description={
               form.isEditMode
-                ? "Corrija lo indicado por Cierre de Obra y reenvíe la petición para una nueva evaluación."
+                ? "Corrija lo indicado por Auditoría y reenvíe la petición para una nueva evaluación."
                 : "Formule su requerimiento y defina los materiales necesarios para iniciar el flujo de aprobación."
             }
             color="sky"
@@ -173,8 +173,8 @@ export default function RequestWizardCard({ form, materialsCatalog, projectTypes
             {form.isSubmitting
               ? "Enviando..."
               : form.isEditMode
-                ? "Reenviar Petición a Cierre de Obra"
-                : "Enviar Petición a Cierre de Obra"}
+                ? "Reenviar Petición a Auditoría"
+                : "Enviar Petición a Auditoría"}
           </Button>
         ) : (
           <Button

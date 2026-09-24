@@ -186,7 +186,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   };
 
   const emptyMessage = pendingInvestmentApproval.length === 0
-    ? "No hay nuevas peticiones aprobadas por Cierre de Obra esperando tope presupuestario."
+    ? "No hay nuevas peticiones aprobadas por Auditoría esperando tope presupuestario."
     : "No hay peticiones que coincidan con la búsqueda.";
 
   return (
@@ -259,7 +259,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
           activeReviewProject ? (
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
-                {stepIndex === 0 ? "Revisa el expediente y la documentación de Cierre de Obra" : "Confirma el monto autorizado para licitación"}
+                {stepIndex === 0 ? "Revisa el expediente y la documentación de Auditoría" : "Confirma el monto autorizado para licitación"}
               </span>
               <div className="flex items-center gap-2">
                 {stepIndex === 0 && (
@@ -339,15 +339,15 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                         {activeReviewProject.location}
                       </div>
                       <div className="text-slate-500 italic leading-relaxed pt-2 border-t border-brand-100/60">
-                        <span className="font-bold not-italic text-slate-600">Nota Cierre de Obra: </span>
-                        {activeReviewProject.cierreObraNotes}
+                        <span className="font-bold not-italic text-slate-600">Nota Auditoría: </span>
+                        {activeReviewProject.auditNotes}
                       </div>
                     </div>
 
                     {/* Evaluación IA del expediente (mismo panel que ve el
-                        auditor en Cierre de Obra), en modo solo-lectura — acá
+                        auditor en Auditoría), en modo solo-lectura — acá
                         sí se muestra el monto sugerido (showSuggestedAmount),
-                        a diferencia de Cierre de Obra donde es criterio de
+                        a diferencia de Auditoría donde es criterio de
                         aprobación/rechazo técnico, no de presupuesto. */}
                     {activeReviewProject.dossierAiEvaluatedAt && (
                       <DossierEvaluationSummary project={activeReviewProject} showSuggestedAmount />
@@ -370,7 +370,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                         <span className="font-mono font-black text-slate-800">{activeReviewProject.id}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Cierre de Obra</span>
+                        <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px]">Estimado Auditoría</span>
                         <span className="text-right">
                           <span className="font-mono font-black text-brand-700 block">{formatCurrency(activeReviewProject.estimatedTotal)}</span>
                           <BsAmount amount={activeReviewProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
@@ -380,7 +380,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-1 font-bold text-slate-600 uppercase tracking-wider text-[9px]">
                             Sugerido por IA (referencial)
-                            <HelpHint content="Monto propuesto por la evaluación IA del expediente en Cierre de Obra. Es solo referencia — nunca autocompleta este formulario." />
+                            <HelpHint content="Monto propuesto por la evaluación IA del expediente en Auditoría. Es solo referencia — nunca autocompleta este formulario." />
                           </span>
                           <span className="text-right">
                             <span className="font-mono font-black text-slate-500 block">{formatCurrency(activeReviewProject.dossierAiSuggestedAmount ?? 0)}</span>

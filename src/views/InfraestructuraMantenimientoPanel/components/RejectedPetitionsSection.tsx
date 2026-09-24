@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Peticiones rechazadas por Cierre de Obra: muestra dónde/por qué/qué se
+ * Peticiones rechazadas por Auditoría: muestra dónde/por qué/qué se
  * rechazó (motivo desde AuditLog, sin columna propia — mismo criterio que
  * RejectionService::buildDetails) y permite editar y reenviar la misma
  * petición (mismo Project.id) para una nueva evaluación, sin crear una
@@ -233,7 +233,7 @@ export default function RejectedPetitionsSection({
           <SectionHeader
             icon={<XCircle className="h-5 w-5" />}
             title="Peticiones Rechazadas"
-            description="Corrija lo indicado por Cierre de Obra y reenvíe para una nueva evaluación."
+            description="Corrija lo indicado por Auditoría y reenvíe para una nueva evaluación."
             color="rose"
           />
         </div>

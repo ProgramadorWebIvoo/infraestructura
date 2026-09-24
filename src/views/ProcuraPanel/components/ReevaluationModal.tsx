@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Modal de envío a reevaluación desde el wizard de autorización de inversión
- * de Procura — mismo patrón de RejectProjectModal.tsx (Cierre de Obra): un
+ * de Procura — mismo patrón de RejectProjectModal.tsx (Auditoría): un
  * motivo obligatorio, observaciones y evidencia opcionales. El expediente
- * vuelve a Cierre de Obra (mismo Project.id, sin crear uno nuevo) para que
+ * vuelve a Auditoría (mismo Project.id, sin crear uno nuevo) para que
  * corrija lo señalado y lo reenvíe a Procura.
  */
 
@@ -96,7 +96,7 @@ export default function ReevaluationModal({ project, isOpen, onClose, onSendToRe
     >
       <div className="space-y-4">
         <p className={`text-xs ${warning.text600}/80 font-medium leading-relaxed`}>
-          El expediente volverá a Cierre de Obra para que corrija lo indicado y lo reenvíe a Procura. No se crea un expediente nuevo.
+          El expediente volverá a Auditoría para que corrija lo indicado y lo reenvíe a Procura. No se crea un expediente nuevo.
         </p>
         <div>
           <div className="mb-1.5 flex items-center gap-1.5">
@@ -127,7 +127,7 @@ export default function ReevaluationModal({ project, isOpen, onClose, onSendToRe
             onChange={(e) => setObservations(e.target.value)}
             rows={2}
             maxLength={1000}
-            placeholder="Detalles adicionales para Cierre de Obra, aparte del motivo principal."
+            placeholder="Detalles adicionales para Auditoría, aparte del motivo principal."
             className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-hidden focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
           />
           <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{observations.length}/1000</span>
