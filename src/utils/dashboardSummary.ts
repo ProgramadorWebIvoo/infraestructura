@@ -253,3 +253,36 @@ export function computePipelineHealth(projects: Project[]): PipelineStageHealth[
     (a, b) => b.stalledCount - a.stalledCount || b.count - a.count,
   );
 }
+
+// ---------------------------------------------------------------------------
+// Flujo de caja mensual
+// ---------------------------------------------------------------------------
+
+export interface MonthlyCashFlowEntry {
+  month: string;
+  advances: number;
+  finals: number;
+  total: number;
+}
+
+/** Desembolsos reales (anticipos + finiquitos) agrupados por mes, últimos 12 meses con datos.
+ * Fuente única — usada por CashFlowSection y por el reporte ejecutivo exportable. */
+export function computeMonthlyCashFlow(projects: Project[]): MonthlyCashFlowEntry[] {
+  const map = new Map<string, MonthlyCashFlowEntry>();
+  const add = (date: string | undefined, amount: number | undefined, kind: "advances" | "finals") => {
+    if (!date || !amount) return;
+    const key = date.slice(0, 7);
+    const entry = map.get(key) ?? { month: key, advances: 0, finals: 0, total: 0 };
+    entry[kind] += amount;
+    entry.total += amount;
+    map.set(key, entry);
+  };
+  projects.forEach((p) => {
+    add(p.advancePaidDate, p.advancePaidAmount, "advances");
+    add(p.finalPaidDate, p.finalPaidAmount, "finals");
+  });
+  return [...map.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-12)
+    .map(([, e]) => e);
+}

@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Activity, DollarSign, FileSignature, Layers, Loader2, Wallet } from "lucide-react";
+import { Activity, DollarSign, FileDown, FileSignature, Layers, Loader2, Wallet } from "lucide-react";
 import { ProjectStatus } from "@/types";
 import type { Project, AuditLog } from "@/types";
 import { SkeletonStats, SkeletonStatsDark, SkeletonTable, SkeletonCard } from "@/components/SkeletonLoader";
@@ -14,7 +14,9 @@ import { containerVariants } from "@/animations";
 import Tabs, { type TabDefinition } from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import KpiPill from "@/components/UI/KpiPill";
+import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { printExecutiveReport } from "@/utils/executiveReportPdf";
 import KpiSection from "./components/KpiSection";
 import DistributionChart from "./components/DistributionChart";
 import StatusFunnelSection from "./components/StatusFunnelSection";
@@ -157,7 +159,16 @@ export default function PresidenciaDashboard({
           <KpiPill icon={<Activity className="h-3.5 w-3.5" />} label="Auditoría" value={auditLogs.length} accent="info" tooltip="Registros de trazabilidad disponibles en el historial." />
         </div>
 
-        <div className="flex ml-auto">
+        <div className="flex items-center gap-2 ml-auto">
+          <Button
+            size="sm"
+            colorScheme="slate"
+            variant="secondary"
+            icon={<FileDown className="h-3.5 w-3.5" />}
+            onClick={() => printExecutiveReport({ summary, projects, auditLogsCount: auditLogs.length, isExact })}
+          >
+            Reporte Ejecutivo (PDF)
+          </Button>
           <ConnectionStatusBadge isExact={isExact} />
         </div>
       </div>

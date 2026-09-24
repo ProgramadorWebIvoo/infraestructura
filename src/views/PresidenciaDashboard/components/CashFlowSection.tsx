@@ -13,6 +13,7 @@ import { Landmark } from "lucide-react";
 import type { Project } from "@/types";
 import { itemVariants } from "@/animations";
 import Tooltip from "@/components/UI/Tooltip";
+import { computeMonthlyCashFlow } from "@/utils/dashboardSummary";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -21,33 +22,8 @@ interface CashFlowSectionProps {
   projects: Project[];
 }
 
-interface MonthEntry {
-  month: string;
-  advances: number;
-  finals: number;
-  total: number;
-}
-
 export default function CashFlowSection({ projects }: CashFlowSectionProps) {
-  const months = useMemo<MonthEntry[]>(() => {
-    const map = new Map<string, MonthEntry>();
-    const add = (date: string | undefined, amount: number | undefined, kind: "advances" | "finals") => {
-      if (!date || !amount) return;
-      const key = date.slice(0, 7);
-      const entry = map.get(key) ?? { month: key, advances: 0, finals: 0, total: 0 };
-      entry[kind] += amount;
-      entry.total += amount;
-      map.set(key, entry);
-    };
-    projects.forEach((p) => {
-      add(p.advancePaidDate, p.advancePaidAmount, "advances");
-      add(p.finalPaidDate, p.finalPaidAmount, "finals");
-    });
-    return [...map.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-12)
-      .map(([, e]) => e);
-  }, [projects]);
+  const months = useMemo(() => computeMonthlyCashFlow(projects), [projects]);
 
   const maxTotal = Math.max(1, ...months.map((m) => m.total));
   const grandTotal = months.reduce((s, m) => s + m.total, 0);
