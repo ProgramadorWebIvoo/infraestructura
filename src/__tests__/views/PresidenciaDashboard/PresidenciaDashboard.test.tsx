@@ -58,7 +58,7 @@ function renderDashboard(projects: Project[] = [project]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <PresidenciaDashboard projects={projects} auditLogs={[]} authToken="token" />
+      <PresidenciaDashboard projects={projects} auditLogs={[]} authToken="token" onApproveAward={vi.fn()} onRejectAward={vi.fn()} />
     </QueryClientProvider>,
   );
 }
@@ -72,11 +72,11 @@ describe("PresidenciaDashboard — Histórico de Obras reemplaza al Master", () 
     });
   });
 
-  it("ofrece Estadísticas, Histórico de Obras y Auditoría, y ya no el Master de Obras", () => {
+  it("ofrece Estadísticas, Aprobaciones, Histórico de Obras y Auditoría, y ya no el Master de Obras", () => {
     renderDashboard();
 
     const tabs = within(screen.getByRole("tablist", { name: "Secciones de Presidencia" })).getAllByRole("tab");
-    expect(tabs.map((t) => t.textContent?.replace(/\d+$/, "").trim())).toEqual(["Estadísticas", "Histórico de Obras", "Auditoría"]);
+    expect(tabs.map((t) => t.textContent?.replace(/\d+$/, "").trim())).toEqual(["Estadísticas", "Aprobaciones", "Histórico de Obras", "Auditoría"]);
     expect(screen.queryByText(/master de obras/i)).not.toBeInTheDocument();
   });
 

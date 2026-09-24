@@ -262,6 +262,9 @@ function AppRoutes() {
     handleImportSupplierProposals,
     handleSubmitComparative,
     handleSelectContractor,
+    handleApproveAward,
+    handleRejectAward,
+    handleSendToFinance,
     handleRejectProposals,
     handlePayAdvance,
     handleVerifyCompletion,
@@ -401,6 +404,9 @@ function AppRoutes() {
         onImportSupplierProposals={handleImportSupplierProposals}
         onSubmitComparative={handleSubmitComparative}
         onSelectContractor={handleSelectContractor}
+        onApproveAward={handleApproveAward}
+        onRejectAward={handleRejectAward}
+        onSendToFinance={handleSendToFinance}
         onRejectProposals={handleRejectProposals}
         onPayAdvance={handlePayAdvance}
         onVerifyCompletion={handleVerifyCompletion}

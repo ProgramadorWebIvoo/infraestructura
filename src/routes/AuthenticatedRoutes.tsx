@@ -33,7 +33,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     onAddProject, onResubmitProject, onRejectProject, onSendToReevaluation, onResolveReevaluation, onReviewProject, onDeleteDocument, onSyncProject, onApproveInvestment, onAddProposal,
     onRenegotiateProposal, onSendRenegotiationInvite,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
-    onSelectContractor, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
+    onSelectContractor, onApproveAward, onRejectAward, onSendToFinance, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
     authToken, location,
   } = props;
 
@@ -58,7 +58,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.PRESIDENCIA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PRESIDENCIA)} redirectTo={fallbackRoute}>
-              <PresidenciaDashboard projects={projects} auditLogs={auditLogs} authToken={authToken} isLoading={isLoadingApi} />
+              <PresidenciaDashboard projects={projects} auditLogs={auditLogs} authToken={authToken} isLoading={isLoadingApi} onApproveAward={onApproveAward} onRejectAward={onRejectAward} />
             </ProtectedRoute>
           }
         />
@@ -90,7 +90,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.PROCURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PROCURA)} redirectTo={fallbackRoute}>
-              <ProcuraPanel projects={projects} onApproveInvestment={onApproveInvestment} onSendToReevaluation={onSendToReevaluation} onSelectContractor={onSelectContractor} onRejectProposals={onRejectProposals} authToken={authToken} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+              <ProcuraPanel projects={projects} onApproveInvestment={onApproveInvestment} onSendToReevaluation={onSendToReevaluation} onSelectContractor={onSelectContractor} onSendToFinance={onSendToFinance} onRejectProposals={onRejectProposals} authToken={authToken} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />

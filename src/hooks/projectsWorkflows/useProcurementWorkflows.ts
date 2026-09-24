@@ -74,6 +74,69 @@ export function useProcurementWorkflows({
     [authTokenRef, syncProjectRef],
   );
 
+  // Sin optimista: el error se propaga para que la UI conserve su modal/selección.
+  const handleApproveAward = useCallback(
+    async (projectIds: string[], observations?: string) => {
+      const token = authTokenRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        if (projectIds.length === 1) {
+          const project = await apiFetch<Project>(`/projects/${projectIds[0]}/award-approval`, {
+            method: "POST",
+            token,
+            body: JSON.stringify({ observations }),
+          });
+          sync(project);
+        } else {
+          const projects = await apiFetch<Project[]>("/projects/award-approvals/batch", {
+            method: "POST",
+            token,
+            body: JSON.stringify({ projectIds, observations }),
+          });
+          projects.forEach(sync);
+        }
+      } catch (error) {
+        logError("handleApproveAward", error);
+        throw error;
+      }
+    },
+    [authTokenRef, syncProjectRef],
+  );
+
+  const handleRejectAward = useCallback(
+    async (projectId: string, reason: string, observations?: string) => {
+      const token = authTokenRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        const project = await apiFetch<Project>(`/projects/${projectId}/award-rejection`, {
+          method: "POST",
+          token,
+          body: JSON.stringify({ reason, observations }),
+        });
+        sync(project);
+      } catch (error) {
+        logError("handleRejectAward", error);
+        throw error;
+      }
+    },
+    [authTokenRef, syncProjectRef],
+  );
+
+  const handleSendToFinance = useCallback(
+    async (projectId: string) => {
+      const token = authTokenRef.current;
+      const sync = syncProjectRef.current;
+      try {
+        const project = await apiFetch<Project>(`/projects/${projectId}/send-to-finance`, { method: "POST", token });
+        sync(project);
+      } catch (error) {
+        logError("handleSendToFinance", error);
+        throw error;
+      }
+    },
+    [authTokenRef, syncProjectRef],
+  );
+
   const handleRejectProposals = useCallback(
     async (projectId: string, reason: string) => {
       const token = authTokenRef.current;
@@ -237,6 +300,9 @@ export function useProcurementWorkflows({
   return {
     handleApproveInvestment,
     handleSelectContractor,
+    handleApproveAward,
+    handleRejectAward,
+    handleSendToFinance,
     handleRejectProposals,
     handleAddProposal,
     handleRenegotiateProposal,

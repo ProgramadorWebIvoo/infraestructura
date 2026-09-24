@@ -25,9 +25,10 @@ import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
 import BidEvaluationSection from "./components/BidEvaluationSection";
+import SendToFinanceSection from "./components/SendToFinanceSection";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
-type TabKey = "autorizacion" | "comparativa";
+type TabKey = "autorizacion" | "comparativa" | "finanzas";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -40,6 +41,7 @@ interface ProcuraPanelProps {
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   onRejectProposals: (projectId: string, reason: string) => void;
+  onSendToFinance: (projectId: string) => Promise<void>;
   authToken: string;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
@@ -51,6 +53,7 @@ export default function ProcuraPanel({
   onSendToReevaluation,
   onSelectContractor,
   onRejectProposals,
+  onSendToFinance,
   authToken,
   isLoading = false,
   onRefreshData,
@@ -63,6 +66,7 @@ export default function ProcuraPanel({
       pendingApproval: projects.filter((p) => p.status === ProjectStatus.REVISADO_AUDITORIA).length,
       inBidding: projects.filter((p) => p.status === ProjectStatus.CONFIRMADO_PROCURA).length,
       comparative: projects.filter((p) => p.status === ProjectStatus.COMPARATIVA_ENVIADA).length,
+      approvedByPresidencia: projects.filter((p) => p.status === ProjectStatus.APROBADO_PRESIDENCIA).length,
       contracted: projects.filter((p) => p.status === ProjectStatus.CONTRATADO).length,
     }),
     [projects],
@@ -71,6 +75,7 @@ export default function ProcuraPanel({
   const visibleTabs = filterTabs("/procura", [
     { key: "autorizacion", label: "Autorización de Inversión", count: kpis.pendingApproval },
     { key: "comparativa", label: "Evaluación Comparativa", count: kpis.comparative },
+    { key: "finanzas", label: "Envío a Finanzas", count: kpis.approvedByPresidencia },
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
 
@@ -120,6 +125,9 @@ export default function ProcuraPanel({
               onRejectProposals={onRejectProposals}
               onRefresh={onRefreshData}
             />
+          )}
+          {activeTab === "finanzas" && (
+            <SendToFinanceSection projects={projects} onSendToFinance={onSendToFinance} />
           )}
         </TabPanel>
       </motion.div>

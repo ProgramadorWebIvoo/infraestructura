@@ -29,8 +29,9 @@ import StalledProjectsSection from "./components/StalledProjectsSection";
 import InsightsSection from "./components/InsightsSection";
 import AuditLogSection from "./components/AuditLogSection";
 import ProjectHistorySection from "./components/ProjectHistorySection";
+import AwardApprovalsSection from "./components/AwardApprovalsSection";
 
-type PresidenciaTabKey = "estadisticas" | "historico" | "auditoria";
+type PresidenciaTabKey = "aprobaciones" | "estadisticas" | "historico" | "auditoria";
 
 /** Tres puntos con opacidad escalonada — evita el parpadeo en bloque de un solo `animate-pulse`. */
 function AnimatedEllipsis() {
@@ -96,6 +97,8 @@ interface PresidenciaDashboardProps {
   /** Requerido por la tab Auditoría: trae su propio historial paginado/filtrado server-side (useAuditLogs), independiente del `auditLogs` de arriba. */
   authToken: string;
   isLoading?: boolean;
+  onApproveAward: (projectIds: string[], observations?: string) => Promise<void>;
+  onRejectAward: (projectId: string, reason: string, observations?: string) => Promise<void>;
 }
 
 export default function PresidenciaDashboard({
@@ -103,6 +106,8 @@ export default function PresidenciaDashboard({
   auditLogs,
   authToken,
   isLoading = false,
+  onApproveAward,
+  onRejectAward,
 }: PresidenciaDashboardProps) {
   // Resumen ejecutivo: endpoint oficial con fallback a cálculo cliente.
   const { summary, isExact } = useDashboardSummary(projects, authToken);
@@ -116,8 +121,14 @@ export default function PresidenciaDashboard({
     setHistoryProjectId(project.id);
   }, []);
 
+  const pendingAwards = useMemo(
+    () => projects.filter((p) => p.status === ProjectStatus.PENDIENTE_PRESIDENCIA).length,
+    [projects],
+  );
+
   const tabs: TabDefinition[] = [
     { key: "estadisticas", label: "Estadísticas" },
+    { key: "aprobaciones", label: "Aprobaciones", count: pendingAwards },
     { key: "historico", label: "Histórico de Obras" },
     { key: "auditoria", label: "Auditoría", count: auditLogs.length },
   ];
@@ -209,6 +220,12 @@ export default function PresidenciaDashboard({
       </div>
 
       <TabPanel activeKey={activeTab}>
+        {activeTab === "aprobaciones" && (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+            <AwardApprovalsSection projects={projects} onApproveAward={onApproveAward} onRejectAward={onRejectAward} />
+          </motion.div>
+        )}
+
         {activeTab === "estadisticas" && (
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
             <KpiSection
