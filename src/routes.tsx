@@ -32,6 +32,7 @@ export const ROUTES = {
   REGISTRO_PROVEEDORES: "/registro-proveedores",
   PROPUESTA_MATERIALES: "/propuesta-materiales/:token",
   RENEGOCIACION_PUBLICA: "/renegociacion-publica/:token",
+  CIERRE_PUBLICO: "/cierre-publico/:token",
   RESET_PASSWORD: "/reset-password/:token",
 } as const;
 
@@ -51,6 +52,7 @@ export function isPublicRoute(path: string): boolean {
     PUBLIC_ROUTES.has(path) ||
     path.startsWith("/propuesta-materiales/") ||
     path.startsWith("/renegociacion-publica/") ||
+    path.startsWith("/cierre-publico/") ||
     path.startsWith("/reset-password/")
   );
 }
