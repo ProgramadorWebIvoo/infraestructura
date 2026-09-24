@@ -10,6 +10,8 @@ import { GitBranch } from "lucide-react";
 import type { DashboardSummaryFunnelEntry } from "@/types";
 import { STATUS_LABELS } from "@/utils";
 import { itemVariants } from "@/animations";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface StatusFunnelSectionProps {
   funnel: DashboardSummaryFunnelEntry[];
@@ -21,6 +23,7 @@ const fmtMoney = (n: number) =>
 
 export default function StatusFunnelSection({ funnel, totalProjects }: StatusFunnelSectionProps) {
   const maxCount = Math.max(1, ...funnel.map((f) => f.count));
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   return (
     <motion.div
@@ -63,10 +66,14 @@ export default function StatusFunnelSection({ funnel, totalProjects }: StatusFun
                 <span className="text-[10px] font-mono font-bold text-slate-600">
                   ${fmtMoney(entry.approvedAmount)} aprob.
                 </span>
+                <BsAmount amount={entry.approvedAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                 {entry.committedAmount > 0 && (
-                  <span className="text-[10px] font-mono font-bold text-indigo-600">
-                    ${fmtMoney(entry.committedAmount)} comprom.
-                  </span>
+                  <>
+                    <span className="text-[10px] font-mono font-bold text-indigo-600 mt-1">
+                      ${fmtMoney(entry.committedAmount)} comprom.
+                    </span>
+                    <BsAmount amount={entry.committedAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-indigo-400" />
+                  </>
                 )}
               </div>
             </div>

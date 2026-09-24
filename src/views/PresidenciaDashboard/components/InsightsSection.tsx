@@ -13,6 +13,8 @@ import type { DashboardSummary } from "@/types";
 import { itemVariants } from "@/animations";
 import RankBar from "@/components/UI/RankBar";
 import Tooltip from "@/components/UI/Tooltip";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface InsightsSectionProps {
   summary: DashboardSummary;
@@ -34,6 +36,7 @@ function MiniSectionTitle({ icon, label }: { icon: React.ReactNode; label: strin
 }
 
 export default function InsightsSection({ summary }: InsightsSectionProps) {
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const maxContractor = Math.max(1, ...summary.topContractors.map((c) => c.totalAmount));
   const maxLocation = Math.max(1, ...summary.locationBreakdown.map((l) => l.approvedAmount));
   const months = summary.monthlyTrend.slice(-12);
@@ -49,13 +52,19 @@ export default function InsightsSection({ summary }: InsightsSectionProps) {
             <p className="text-[11px] text-slate-400 italic">Aún no hay contratos adjudicados.</p>
           ) : (
             summary.topContractors.map((c, i) => (
-              <RankBar
-                key={c.contractorCode}
-                label={`${i + 1}. ${c.contractorName}`}
-                value={`$${fmtMoney(c.totalAmount)} · ${c.projectCount} obra${c.projectCount === 1 ? "" : "s"}`}
-                amount={c.totalAmount}
-                max={maxContractor}
-              />
+              <div key={c.contractorCode} className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <RankBar
+                    label={`${i + 1}. ${c.contractorName}`}
+                    value={`$${fmtMoney(c.totalAmount)} · ${c.projectCount} obra${c.projectCount === 1 ? "" : "s"}`}
+                    amount={c.totalAmount}
+                    max={maxContractor}
+                  />
+                  <div className="flex justify-end">
+                    <BsAmount amount={c.totalAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                  </div>
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -69,14 +78,18 @@ export default function InsightsSection({ summary }: InsightsSectionProps) {
             <p className="text-[11px] text-slate-400 italic">Sin obras registradas.</p>
           ) : (
             summary.locationBreakdown.map((l) => (
-              <RankBar
-                key={l.location}
-                label={l.location}
-                value={`$${fmtMoney(l.approvedAmount)} · ${l.count} obra${l.count === 1 ? "" : "s"}`}
-                amount={l.approvedAmount}
-                max={maxLocation}
-                muted={l.location === "Sin ubicación"}
-              />
+              <div key={l.location}>
+                <RankBar
+                  label={l.location}
+                  value={`$${fmtMoney(l.approvedAmount)} · ${l.count} obra${l.count === 1 ? "" : "s"}`}
+                  amount={l.approvedAmount}
+                  max={maxLocation}
+                  muted={l.location === "Sin ubicación"}
+                />
+                <div className="flex justify-end">
+                  <BsAmount amount={l.approvedAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                </div>
+              </div>
             ))
           )}
         </div>

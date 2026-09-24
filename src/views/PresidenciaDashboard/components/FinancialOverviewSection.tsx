@@ -12,6 +12,8 @@ import { Wallet, AlertTriangle, HandCoins, CalendarClock, Gauge } from "lucide-r
 import type { DashboardSummary } from "@/types";
 import { itemVariants } from "@/animations";
 import { useBudgetSemaphore, SEMAPHORE_COLORS } from "@/hooks/useBudgetSemaphore";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface FinancialOverviewSectionProps {
   summary: DashboardSummary;
@@ -30,11 +32,15 @@ interface FlowRowProps {
 
 function FlowRow({ label, amount, total, barClass, sub }: FlowRowProps) {
   const pct = total > 0 ? Math.min(100, (amount / total) * 100) : 0;
+  const { convert, hasRates, isLoading } = useCurrencyConversion();
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1">
         <span className="text-[11px] font-bold text-slate-600">{label}</span>
-        <span className="text-xs font-mono font-black text-slate-800">${fmtMoney(amount)}</span>
+        <span className="text-xs font-mono font-black text-slate-800">
+          ${fmtMoney(amount)}
+          <BsAmount amount={amount} convert={convert} hasRates={hasRates} isLoading={isLoading} variant="inline" />
+        </span>
       </div>
       <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
         <div className={`${barClass} h-2 rounded-full transition-all duration-1000`} style={{ width: `${pct}%` }} />
@@ -56,6 +62,7 @@ export default function FinancialOverviewSection({ summary }: FinancialOverviewS
   const { levelOf } = useBudgetSemaphore();
   const semaphoreLevel = levelOf(releasedPctRaw);
   const semaphoreColors = SEMAPHORE_COLORS[semaphoreLevel];
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   return (
     <motion.div
@@ -80,6 +87,7 @@ export default function FinancialOverviewSection({ summary }: FinancialOverviewS
           <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1">
             <AlertTriangle className="h-3 w-3" />
             Sobre-ejecución ${fmtMoney(excessReleased)}
+            <BsAmount amount={excessReleased} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" className="text-rose-500" />
           </span>
         )}
       </div>

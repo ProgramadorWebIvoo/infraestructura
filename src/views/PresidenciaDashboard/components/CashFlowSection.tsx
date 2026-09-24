@@ -14,6 +14,8 @@ import type { Project } from "@/types";
 import { itemVariants } from "@/animations";
 import Tooltip from "@/components/UI/Tooltip";
 import { computeMonthlyCashFlow } from "@/utils/dashboardSummary";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -24,6 +26,7 @@ interface CashFlowSectionProps {
 
 export default function CashFlowSection({ projects }: CashFlowSectionProps) {
   const months = useMemo(() => computeMonthlyCashFlow(projects), [projects]);
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const maxTotal = Math.max(1, ...months.map((m) => m.total));
   const grandTotal = months.reduce((s, m) => s + m.total, 0);
@@ -43,6 +46,7 @@ export default function CashFlowSection({ projects }: CashFlowSectionProps) {
         </div>
         <span className="ml-auto text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1">
           Total ${fmtMoney(grandTotal)}
+          <BsAmount amount={grandTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" className="text-emerald-600" />
         </span>
       </div>
 
@@ -52,7 +56,18 @@ export default function CashFlowSection({ projects }: CashFlowSectionProps) {
         <div role="img" aria-label={`Flujo de caja mensual. ${months.map((m) => `${m.month}: ${fmtMoney(m.total)}`).join(", ")}`}>
           <div className="flex items-end gap-2 h-40 border-b border-slate-100 pb-4">
             {months.map((m) => (
-              <Tooltip key={m.month} content={`${m.month}: $${fmtMoney(m.total)}`} placement="top">
+              <Tooltip
+                key={m.month}
+                content={
+                  <>
+                    {m.month}: ${fmtMoney(m.total)}
+                    {hasRates && (
+                      <span className="ml-1">(Bs. {formatBs(convert(m.total, "USD"))})</span>
+                    )}
+                  </>
+                }
+                placement="top"
+              >
                 <div className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
                   <span className="text-[9px] text-slate-500 font-mono font-bold">{fmtMoney(m.total)}</span>
                   <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50">

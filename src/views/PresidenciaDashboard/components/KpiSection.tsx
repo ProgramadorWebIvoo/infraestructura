@@ -10,6 +10,8 @@ import { motion } from "motion/react";
 import { CheckCircle2, Clock, DollarSign, Layers, TrendingUp, AlertTriangle } from "lucide-react";
 import KpiCard from "@/components/UI/KpiCard";
 import { containerVariants, itemVariants } from "@/animations";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 import KpiDetailModal, { type KpiKind } from "./KpiDetailModal";
 import type { DashboardSummary, Project } from "@/types";
 
@@ -39,6 +41,7 @@ export default function KpiSection({
   completedProjectsCount,
 }: KpiSectionProps) {
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const overBudget = excessReleased > 0;
   const barWidth = Math.min(100, releasedPercent);
   const [inspecting, setInspecting] = useState<KpiKind>(null);
@@ -67,6 +70,7 @@ export default function KpiSection({
           tooltip="Suma de la inversión aprobada en todos los proyectos activos e históricos, sin restar lo ya liquidado."
         >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">${fmt(totalApprovedInvestment)}</span>
+          <BsAmount amount={totalApprovedInvestment} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-slate-400" />
           <div className="flex items-center gap-1.5 mt-2">
             <TrendingUp className="h-3 w-3 text-sky-400" />
             <p className="text-[10px] text-slate-400 font-medium">Inversión autorizada en {totalProjectsCount} proyectos</p>
@@ -84,6 +88,7 @@ export default function KpiSection({
           tooltip="Monto efectivamente pagado a contratistas. Si supera lo aprobado, se marca en rojo el exceso liberado."
         >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">${fmt(totalReleasedFunds)}</span>
+          <BsAmount amount={totalReleasedFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
           {overBudget ? (
             <div className="flex items-center gap-1.5 mt-2.5 px-2 py-1 rounded-lg bg-rose-50 border border-rose-100 w-fit">
               <AlertTriangle className="h-3.5 w-3.5 text-rose-500 shrink-0" />
@@ -112,6 +117,7 @@ export default function KpiSection({
           tooltip="Diferencia entre lo aprobado y lo liquidado: fondos comprometidos que aún no se han pagado."
         >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent">${fmt(pendingFunds)}</span>
+          <BsAmount amount={pendingFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
           <div className="flex items-center gap-1.5 mt-2">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
             <p className="text-[10px] text-slate-400 font-medium">Retenido por ejecutar o pagar</p>

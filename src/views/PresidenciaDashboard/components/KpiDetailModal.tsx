@@ -14,6 +14,8 @@ import Modal from "@/components/UI/Modal";
 import type { DashboardSummary, Project } from "@/types";
 import { STATUS_LABELS } from "@/utils";
 import { approvedOf, releasedOf } from "@/utils/dashboardSummary";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 
 export type KpiKind = "approved" | "released" | "pending" | "projects" | null;
 
@@ -38,14 +40,20 @@ function ExplainBlock({ children }: { children: ReactNode }) {
   );
 }
 
-function Row({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Row({ label, value, sub, bsAmount }: { label: string; value: string; sub?: string; bsAmount?: number }) {
+  const { convert, hasRates, isLoading } = useCurrencyConversion();
   return (
     <div className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
       <div>
         <p className="text-[12px] font-bold text-slate-700">{label}</p>
         {sub && <p className="text-[10px] text-slate-400 font-medium">{sub}</p>}
       </div>
-      <span className="text-[13px] font-black font-mono text-slate-900">{value}</span>
+      <div className="text-right">
+        <span className="text-[13px] font-black font-mono text-slate-900">{value}</span>
+        {bsAmount != null && (
+          <BsAmount amount={bsAmount} convert={convert} hasRates={hasRates} isLoading={isLoading} />
+        )}
+      </div>
     </div>
   );
 }
@@ -63,13 +71,16 @@ function ProjectRow({
   title,
   status,
   amount,
+  bsAmount,
   tone = "slate",
 }: {
   title: string;
   status: string;
   amount: string;
+  bsAmount: number;
   tone?: "rose" | "slate";
 }) {
+  const { convert, hasRates, isLoading } = useCurrencyConversion();
   const amountColor = tone === "rose" ? "text-rose-600" : "text-slate-900";
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
@@ -77,7 +88,10 @@ function ProjectRow({
         <p className="text-[12px] font-bold text-slate-700 truncate">{title}</p>
         <p className="text-[10px] text-slate-400 font-medium">{STATUS_LABELS[status] ?? status}</p>
       </div>
-      <span className={`text-[13px] font-black font-mono shrink-0 ${amountColor}`}>{amount}</span>
+      <div className="text-right shrink-0">
+        <span className={`text-[13px] font-black font-mono ${amountColor}`}>{amount}</span>
+        <BsAmount amount={bsAmount} convert={convert} hasRates={hasRates} isLoading={isLoading} />
+      </div>
     </div>
   );
 }
@@ -103,6 +117,7 @@ export default function KpiDetailModal({
 }: KpiDetailModalProps) {
   const isOpen = kind !== null;
   const meta = kind ? KPI_META[kind] : null;
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   // Proyectos cuyo pagado supera lo aprobado — causantes de la sobre-ejecución.
   const overBudgetProjects = projects
@@ -140,9 +155,10 @@ export default function KpiDetailModal({
             <p className="text-2xl font-black font-mono text-slate-900 mb-1">
               ${fmt(summary.totalApprovedInvestment)}
             </p>
+            <BsAmount amount={summary.totalApprovedInvestment} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="mb-3" />
             <SectionLabel>Desglose por tipo de obra</SectionLabel>
             {summary.typeBreakdown.map((t) => (
-              <Row key={t.type} label={t.type} value={`$${fmt(t.approvedAmount)}`} sub={`${t.count} proyectos`} />
+              <Row key={t.type} label={t.type} value={`$${fmt(t.approvedAmount)}`} sub={`${t.count} proyectos`} bsAmount={t.approvedAmount} />
             ))}
           </div>
         </>
@@ -159,7 +175,8 @@ export default function KpiDetailModal({
             <p className="text-2xl font-black font-mono text-slate-900 mb-1">
               ${fmt(summary.totalReleasedFunds)}
             </p>
-            <p className="text-[11px] text-slate-500 font-bold mb-3">
+            <BsAmount amount={summary.totalReleasedFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+            <p className="text-[11px] text-slate-500 font-bold mb-3 mt-1">
               {Math.min(100, summary.releasedPercent)}% del presupuesto aprobado
             </p>
 
@@ -170,11 +187,12 @@ export default function KpiDetailModal({
                   <span className="text-[11px] font-bold text-rose-700">
                     ${fmt(summary.excessReleased)} en sobre-ejecución, generados por {overBudgetProjects.length}{" "}
                     proyecto{overBudgetProjects.length === 1 ? "" : "s"}
+                    <BsAmount amount={summary.excessReleased} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" className="text-rose-500" />
                   </span>
                 </div>
                 <SectionLabel>Proyectos con exceso sobre lo aprobado</SectionLabel>
                 {overBudgetProjects.map(({ p, excess }) => (
-                  <ProjectRow key={p.id} title={p.title} status={p.status} amount={`+$${fmt(excess)}`} tone="rose" />
+                  <ProjectRow key={p.id} title={p.title} status={p.status} amount={`+$${fmt(excess)}`} bsAmount={excess} tone="rose" />
                 ))}
               </>
             ) : (
@@ -184,7 +202,7 @@ export default function KpiDetailModal({
             )}
 
             <SectionLabel>Comprometido en contratos activos</SectionLabel>
-            <Row label="Total comprometido" value={`$${fmt(summary.totalCommittedAmount)}`} sub="Contratos firmados aún en ejecución" />
+            <Row label="Total comprometido" value={`$${fmt(summary.totalCommittedAmount)}`} sub="Contratos firmados aún en ejecución" bsAmount={summary.totalCommittedAmount} />
           </div>
         </>
       )}
@@ -197,14 +215,15 @@ export default function KpiDetailModal({
             en cada proyecto — dinero retenido en trámite, ordenado de mayor a menor.
           </ExplainBlock>
           <div>
-            <p className="text-2xl font-black font-mono text-slate-900 mb-3">
+            <p className="text-2xl font-black font-mono text-slate-900 mb-1">
               ${fmt(summary.pendingFunds)}
             </p>
+            <BsAmount amount={summary.pendingFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="mb-3" />
             {retainedProjects.length > 0 ? (
               <>
                 <SectionLabel>Proyectos con mayor saldo retenido</SectionLabel>
                 {retainedProjects.map(({ p, retained }) => (
-                  <ProjectRow key={p.id} title={p.title} status={p.status} amount={`$${fmt(retained)}`} />
+                  <ProjectRow key={p.id} title={p.title} status={p.status} amount={`$${fmt(retained)}`} bsAmount={retained} />
                 ))}
               </>
             ) : (
@@ -222,6 +241,7 @@ export default function KpiDetailModal({
                   label={STATUS_LABELS[f.status] ?? f.status}
                   value={`$${fmt(f.committedAmount)}`}
                   sub={`${f.count} proyectos en esta fase`}
+                  bsAmount={f.committedAmount}
                 />
               ))}
           </div>

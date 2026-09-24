@@ -17,6 +17,8 @@ import KpiPill from "@/components/UI/KpiPill";
 import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { printExecutiveReport } from "@/utils/executiveReportPdf";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 import KpiSection from "./components/KpiSection";
 import DistributionChart from "./components/DistributionChart";
 import StatusFunnelSection from "./components/StatusFunnelSection";
@@ -109,6 +111,7 @@ export default function PresidenciaDashboard({
 }: PresidenciaDashboardProps) {
   // Resumen ejecutivo: endpoint oficial con fallback a cálculo cliente.
   const { summary, isExact, lastSync } = useDashboardSummary(projects, authToken);
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const [activeTab, setActiveTab] = useState<PresidenciaTabKey>("estadisticas");
 
   const tabs: TabDefinition[] = [
@@ -153,9 +156,42 @@ export default function PresidenciaDashboard({
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2">
           <KpiPill icon={<Layers className="h-3.5 w-3.5" />} label="Obras" value={totalProjectsCount} accent="brand" tooltip="Total de obras registradas en el sistema, en cualquier estado del flujo." />
-          <KpiPill icon={<DollarSign className="h-3.5 w-3.5" />} label="Aprobado" value={`$${totalApprovedInvestment.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} accent="brand" tooltip="Inversión total aprobada en todos los proyectos." />
-          <KpiPill icon={<Wallet className="h-3.5 w-3.5" />} label="Liquidado" value={`$${totalReleasedFunds.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} accent="success" tooltip="Monto efectivamente pagado a contratistas." />
-          <KpiPill icon={<FileSignature className="h-3.5 w-3.5" />} label="Comprometido" value={`$${totalCommittedAmount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} accent="warning" tooltip="Monto adjudicado en contratos firmados (contratado, en ejecución o verificando finalización) aún no liquidado." />
+          <KpiPill
+            icon={<DollarSign className="h-3.5 w-3.5" />}
+            label="Aprobado"
+            value={`$${totalApprovedInvestment.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+            accent="brand"
+            tooltip={
+              <>
+                Inversión total aprobada en todos los proyectos.
+                <BsAmount amount={totalApprovedInvestment} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-slate-300 mt-1" />
+              </>
+            }
+          />
+          <KpiPill
+            icon={<Wallet className="h-3.5 w-3.5" />}
+            label="Liquidado"
+            value={`$${totalReleasedFunds.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+            accent="success"
+            tooltip={
+              <>
+                Monto efectivamente pagado a contratistas.
+                <BsAmount amount={totalReleasedFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-slate-300 mt-1" />
+              </>
+            }
+          />
+          <KpiPill
+            icon={<FileSignature className="h-3.5 w-3.5" />}
+            label="Comprometido"
+            value={`$${totalCommittedAmount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+            accent="warning"
+            tooltip={
+              <>
+                Monto adjudicado en contratos firmados (contratado, en ejecución o verificando finalización) aún no liquidado.
+                <BsAmount amount={totalCommittedAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-slate-300 mt-1" />
+              </>
+            }
+          />
           <KpiPill icon={<Activity className="h-3.5 w-3.5" />} label="Auditoría" value={auditLogs.length} accent="info" tooltip="Registros de trazabilidad disponibles en el historial." />
         </div>
 
