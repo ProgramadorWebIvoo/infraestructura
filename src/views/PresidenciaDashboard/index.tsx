@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Activity, DollarSign, FileDown, FileSignature, Layers, Loader2, Wallet } from "lucide-react";
 import { ProjectStatus } from "@/types";
@@ -28,10 +28,9 @@ import CashFlowSection from "./components/CashFlowSection";
 import StalledProjectsSection from "./components/StalledProjectsSection";
 import InsightsSection from "./components/InsightsSection";
 import AuditLogSection from "./components/AuditLogSection";
-import MasterTableSection from "./components/MasterTableSection";
 import ProjectHistorySection from "./components/ProjectHistorySection";
 
-type PresidenciaTabKey = "estadisticas" | "historico" | "auditoria" | "master";
+type PresidenciaTabKey = "estadisticas" | "historico" | "auditoria";
 
 /** Tres puntos con opacidad escalonada — evita el parpadeo en bloque de un solo `animate-pulse`. */
 function AnimatedEllipsis() {
@@ -96,9 +95,6 @@ interface PresidenciaDashboardProps {
   auditLogs: AuditLog[];
   /** Requerido por la tab Auditoría: trae su propio historial paginado/filtrado server-side (useAuditLogs), independiente del `auditLogs` de arriba. */
   authToken: string;
-  onSelectProject: (project: Project) => void;
-  /** Refresca proyectos + auditoría desde el backend — opcional: sin esto, las tablas no muestran el botón de refresco. */
-  onRefreshData?: () => Promise<void> | void;
   isLoading?: boolean;
 }
 
@@ -106,20 +102,24 @@ export default function PresidenciaDashboard({
   projects,
   auditLogs,
   authToken,
-  onSelectProject,
-  onRefreshData,
   isLoading = false,
 }: PresidenciaDashboardProps) {
   // Resumen ejecutivo: endpoint oficial con fallback a cálculo cliente.
-  const { summary, isExact, lastSync } = useDashboardSummary(projects, authToken);
+  const { summary, isExact } = useDashboardSummary(projects, authToken);
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const [activeTab, setActiveTab] = useState<PresidenciaTabKey>("estadisticas");
+  const [historyProjectId, setHistoryProjectId] = useState<string | null>(null);
+
+  /** Cualquier acceso a "inspeccionar una obra" (ej. obras estancadas) abre su detalle en el Histórico. */
+  const openProjectHistory = useCallback((project: Project) => {
+    setActiveTab("historico");
+    setHistoryProjectId(project.id);
+  }, []);
 
   const tabs: TabDefinition[] = [
     { key: "estadisticas", label: "Estadísticas" },
     { key: "historico", label: "Histórico de Obras" },
     { key: "auditoria", label: "Auditoría", count: auditLogs.length },
-    { key: "master", label: "Master de Obras", count: projects.length },
   ];
 
   // ── Derived stats (agregados exactos del summary cuando están disponibles) ──
@@ -145,10 +145,7 @@ export default function PresidenciaDashboard({
 
   // La página entera scrollea en flujo normal (tabs y KPI pills incluidos —
   // no van fijos/pinneados: deben desplazarse con el resto del contenido,
-  // como cualquier otra vista). Solo Auditoría y Master de Obras, que usan
-  // Table fillViewport, necesitan un panel con altura acotada propia para
-  // que la tabla scrollee internamente — ese panel se define más abajo,
-  // scopeado a esa pestaña, sin forzar la página completa a una altura fija.
+  // como cualquier otra vista).
   return (
     <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
       <h1 className="sr-only">Presidencia</h1>
@@ -239,7 +236,7 @@ export default function PresidenciaDashboard({
               <CashFlowSection projects={projects} />
             </div>
 
-            <StalledProjectsSection stalledProjects={summary.stalledProjects} projects={projects} onSelectProject={onSelectProject} />
+            <StalledProjectsSection stalledProjects={summary.stalledProjects} projects={projects} onSelectProject={openProjectHistory} />
 
             <InsightsSection summary={summary} />
           </motion.div>
@@ -247,7 +244,7 @@ export default function PresidenciaDashboard({
 
         {activeTab === "historico" && (
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-            <ProjectHistorySection authToken={authToken} />
+            <ProjectHistorySection authToken={authToken} projects={projects} selectedId={historyProjectId} onSelect={setHistoryProjectId} />
           </motion.div>
         )}
 
@@ -257,17 +254,6 @@ export default function PresidenciaDashboard({
           </motion.div>
         )}
 
-        {activeTab === "master" && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col min-h-0"
-            style={{ height: "calc(100vh - 14rem)" }}
-          >
-            <MasterTableSection projects={projects} onSelectProject={onSelectProject} onRefresh={onRefreshData} lastUpdated={lastSync} />
-          </motion.div>
-        )}
       </TabPanel>
     </motion.div>
   );

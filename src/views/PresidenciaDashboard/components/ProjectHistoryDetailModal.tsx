@@ -15,12 +15,14 @@ import EmptyState from "@/components/UI/EmptyState";
 import { SkeletonCard } from "@/components/SkeletonLoader";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useProjectHistoryDetail } from "@/hooks/useProjectHistory";
+import type { Project } from "@/types";
 import type { HistoryStage } from "../projectHistoryTypes";
 import ProjectHistoryFiguresPanel from "./ProjectHistoryFigures";
 import { BudgetPanel, SuppliersPanel } from "./HistoryProcurementPanels";
 import { DrawingsClosurePanel, PaymentsPanel, TimelinePanel } from "./HistoryExecutionPanels";
+import HistoryFlowPanel from "./HistoryFlowPanel";
 
-type DetailTab = "presupuesto" | "proveedores" | "pagos" | "planos" | "linea";
+type DetailTab = "presupuesto" | "proveedores" | "pagos" | "planos" | "flujo" | "linea";
 
 function StageStepper({ stages }: { stages: HistoryStage[] }) {
   const done = SEMANTIC_COLOR_MAP.success;
@@ -46,10 +48,12 @@ function StageStepper({ stages }: { stages: HistoryStage[] }) {
 interface Props {
   authToken: string;
   projectId: string | null;
+  /** Obras cargadas en la sesión: de ahí sale el Project que alimenta la pestaña de flujo. */
+  projects: Project[];
   onClose: () => void;
 }
 
-export default function ProjectHistoryDetailModal({ authToken, projectId, onClose }: Props) {
+export default function ProjectHistoryDetailModal({ authToken, projectId, projects, onClose }: Props) {
   const { data: detail, isLoading, isError } = useProjectHistoryDetail(authToken, projectId);
   const [tab, setTab] = useState<DetailTab>("presupuesto");
 
@@ -84,6 +88,7 @@ export default function ProjectHistoryDetailModal({ authToken, projectId, onClos
               { key: "proveedores", label: "Proveedores y adjudicación", count: detail.suppliers.length },
               { key: "pagos", label: "Pagos", count: detail.payments.items.length },
               { key: "planos", label: "Planos y cierre", count: detail.drawings.length },
+              { key: "flujo", label: "Flujo y organigrama" },
               { key: "linea", label: "Línea de tiempo", count: detail.timeline.length },
             ]}
           />
@@ -91,6 +96,7 @@ export default function ProjectHistoryDetailModal({ authToken, projectId, onClos
           {tab === "proveedores" && <SuppliersPanel suppliers={detail.suppliers} award={detail.award} />}
           {tab === "pagos" && <PaymentsPanel payments={detail.payments} />}
           {tab === "planos" && <DrawingsClosurePanel drawings={detail.drawings} closure={detail.closure} />}
+          {tab === "flujo" && <HistoryFlowPanel project={projects.find((p) => p.id === detail.project.id)} />}
           {tab === "linea" && <TimelinePanel timeline={detail.timeline} />}
         </div>
       )}

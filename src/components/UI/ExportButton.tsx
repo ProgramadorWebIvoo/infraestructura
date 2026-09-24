@@ -8,7 +8,8 @@
  * - pdf   → vista imprimible inyectada y window.print()
  */
 
-import { type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useToastStore } from "@/stores/toastStore";
 import { formatCurrency } from "@/utils";
 
 export type ExportFormat = "csv" | "excel" | "pdf";
@@ -41,7 +42,12 @@ interface ExportButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Nombre base del archivo, sin extensión. La extensión la agrega el componente. */
   filename: string;
   headers: string[];
-  rows: ExportRow[];
+  /**
+   * Filas a exportar, o una función asíncrona que las resuelve al hacer clic
+   * (útil cuando el conjunto completo no está cargado en el cliente, ej.
+   * listados paginados server-side). Si la función falla, se avisa con un toast.
+   */
+  rows: ExportRow[] | (() => Promise<ExportRow[]>);
   /** Encabezado del documento (PDF) y primera fila del libro (Excel). */
   title?: string;
   /** Línea secundaria: fecha, filtros activos, etc. (PDF/Excel). */
@@ -318,17 +324,28 @@ export default function ExportButton({
   className = "",
   ...rest
 }: ExportButtonProps) {
+  const inFlight = useRef(false);
+
   const handleClick = async () => {
-    if (format === "excel") {
-      const blob = await buildXlsx(headers, rows, { title, subtitle, columns, footer });
-      downloadBlob(blob, XLSX_MIME, `${filename}.xlsx`);
-      return;
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const resolvedRows = typeof rows === "function" ? await rows() : rows;
+      if (format === "excel") {
+        const blob = await buildXlsx(headers, resolvedRows, { title, subtitle, columns, footer });
+        downloadBlob(blob, XLSX_MIME, `${filename}.xlsx`);
+        return;
+      }
+      if (format === "pdf") {
+        printPdf({ title, subtitle, headers, rows: resolvedRows, columns, footer });
+        return;
+      }
+      downloadBlob(buildCsv(headers, resolvedRows), "text/csv;charset=utf-8", `${filename}.csv`);
+    } catch {
+      useToastStore.getState().showToast("No se pudo generar la exportación. Intenta de nuevo.", "error");
+    } finally {
+      inFlight.current = false;
     }
-    if (format === "pdf") {
-      printPdf({ title, subtitle, headers, rows, columns, footer });
-      return;
-    }
-    downloadBlob(buildCsv(headers, rows), "text/csv;charset=utf-8", `${filename}.csv`);
   };
 
   return (

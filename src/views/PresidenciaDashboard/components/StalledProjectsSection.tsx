@@ -4,8 +4,7 @@
  *
  * Listado accionable de obras estancadas (summary.stalledProjects) — a
  * diferencia de PipelineHealthSection (que solo agrega por fase), aquí
- * Presidencia ve cada obra puntual y puede inspeccionarla directamente,
- * sin pasar por Master de Obras a buscarla manualmente.
+ * Presidencia ve cada obra puntual y abre su detalle en el Histórico de Obras.
  */
 
 import { motion } from "motion/react";

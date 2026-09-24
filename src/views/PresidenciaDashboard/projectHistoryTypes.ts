@@ -33,6 +33,7 @@ export interface ProjectHistoryRow {
   location: string | null;
   status: string;
   createdDate: string | null;
+  contractor: { code: string; name: string | null; rating: number | null } | null;
   figures: ProjectHistoryFigures;
 }
 
