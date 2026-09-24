@@ -28,6 +28,8 @@ import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { useToast } from "@/components/UI/Toast";
 import { viewSwitchVariants } from "@/animations";
 import { formatNumber } from "@/utils";
+import BsAmount from "@/components/UI/BsAmount";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 
 interface FinalSettlementsSectionProps {
   pendingFinalPayments: Project[];
@@ -51,6 +53,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
   const { showToast } = useToast();
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   // Orden por saldo pendiente descendente: la liquidación más grande primero.
   const rows = useMemo<SettlementRow[]>(() => {
@@ -85,7 +88,12 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
     { key: "contractor", label: "Contratista", sortable: true, render: ({ winner }) => <div className="min-w-0 font-bold text-slate-800 truncate">{winner.contractorName}</div> },
     { key: "paidAdvance", label: "Anticipo Pagado", width: "9rem", align: "right", sortable: true, render: ({ paidAdvance }) => <span className="font-mono font-bold text-slate-600">${paidAdvance.toLocaleString()}</span> },
     { key: "totalCost", label: "Total Obra", width: "9rem", align: "right", sortable: true, render: ({ winner }) => <span className="font-mono font-bold text-slate-600">${winner.totalCost.toLocaleString()}</span> },
-    { key: "balanceDue", label: "Saldo Pendiente", width: "10rem", align: "right", sortable: true, render: ({ balanceDue }) => <span className="font-mono font-black text-slate-900">${formatNumber(balanceDue)}</span> },
+    { key: "balanceDue", label: "Saldo Pendiente", width: "10rem", align: "right", sortable: true, render: ({ balanceDue }) => (
+      <div>
+        <span className="font-mono font-black text-slate-900">${formatNumber(balanceDue)}</span>
+        <BsAmount amount={balanceDue} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
+      </div>
+    ) },
     { key: "action", label: "", width: "11rem", render: ({ project, balanceDue }) => (
       <Button
         id={`btn-pay-final-${project.id}`}
@@ -99,7 +107,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         Aprobar
       </Button>
     ) },
-  ], []);
+  ], [convert, hasRates, isLoadingRates]);
 
   const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {
     setConfirmPayFinal({ projectId, amount, title });
@@ -128,6 +136,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
             <div>
               <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-sky-500 block">Total Pendiente por Liquidar</span>
               <span className="text-lg font-black font-mono text-sky-900">${formatNumber(totalPending)}</span>
+              <BsAmount amount={totalPending} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
             </div>
             <span className="ml-auto text-[10px] font-mono font-bold text-sky-400">{rows.length} obra{rows.length === 1 ? "" : "s"}</span>
           </div>
@@ -174,6 +183,9 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
                   balanceDue={balanceDue}
                   paidAdvance={paidAdvance}
                   onOpenConfirm={() => handleOpenConfirm(project.id, balanceDue, project.title)}
+                  convert={convert}
+                  hasRates={hasRates}
+                  isLoadingRates={isLoadingRates}
                 />
               )}
               cardAccent={() => "info"}
@@ -198,7 +210,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
           }
         }}
         title="Aprobar Pago Final"
-        message={`¿Estás seguro de aprobar el finiquito de $${formatNumber(confirmPayFinal?.amount ?? 0)} para la obra "${confirmPayFinal?.title ?? ""}"? Esta acción cerrará el ciclo financiero del proyecto.`}
+        message={`¿Estás seguro de aprobar el finiquito de $${formatNumber(confirmPayFinal?.amount ?? 0)}${hasRates ? ` (Bs. ${formatBs(convert(confirmPayFinal?.amount ?? 0, "USD"))})` : ""} para la obra "${confirmPayFinal?.title ?? ""}"? Esta acción cerrará el ciclo financiero del proyecto.`}
         variant="warning"
         confirmLabel="Aprobar finiquito"
         isLoading={isPaying}

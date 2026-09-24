@@ -13,6 +13,7 @@ import { CreditCard } from "lucide-react";
 import Button from "@/components/UI/Button";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface FinalSettlementsGridCardProps {
   project: Project;
@@ -20,9 +21,12 @@ interface FinalSettlementsGridCardProps {
   balanceDue: number;
   paidAdvance: number;
   onOpenConfirm: () => void;
+  convert: (amount: number, fromCode: string) => number;
+  hasRates: boolean;
+  isLoadingRates: boolean;
 }
 
-function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, onOpenConfirm }: FinalSettlementsGridCardProps) {
+function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, onOpenConfirm, convert, hasRates, isLoadingRates }: FinalSettlementsGridCardProps) {
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -54,6 +58,7 @@ function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, on
         <div className="text-right">
           <span className="text-[9px] text-slate-400 font-bold block uppercase font-mono tracking-wider text-sky-600 mb-0.5">Saldo a Liquidar:</span>
           <span className="font-mono font-black text-slate-900 text-sm">${formatNumber(balanceDue)}</span>
+          <BsAmount amount={balanceDue} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
         </div>
       </div>
 
