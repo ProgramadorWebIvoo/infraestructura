@@ -39,10 +39,18 @@ export interface ClosureReport {
   finiquitoAmount?: number | null;
 }
 
-export interface PublicClosureResponse {
-  data: ClosureReport;
-  project: { id: string; title: string; location: string };
-  editable: boolean;
+/**
+ * apiFetch desenvuelve `.data`: el informe llega plano. `project`/`editable`
+ * son opcionales porque el backend los envía fuera de `data` (se pierden al
+ * desenvolver); `isClosureEditable` cae al estado del informe cuando faltan.
+ */
+export type PublicClosureResponse = ClosureReport & {
+  project?: { id: string; title: string; location: string };
+  editable?: boolean;
+};
+
+export function isClosureEditable(report: PublicClosureResponse): boolean {
+  return report.editable ?? (report.status === "ABIERTO" || report.status === "RECHAZADO");
 }
 
 export const CLOSURE_PHOTO_MAX_BYTES = 5 * 1024 * 1024;

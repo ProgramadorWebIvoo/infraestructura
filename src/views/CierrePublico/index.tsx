@@ -19,6 +19,7 @@ import ClosurePhotoGrid from "@/components/ClosureReport/ClosurePhotoGrid";
 import {
   CLOSURE_PHOTO_MAX_BYTES,
   CLOSURE_PHOTO_MIMES,
+  isClosureEditable,
   isDecrease,
   validateClosureItem,
   type ClosureReportItem,
@@ -44,11 +45,9 @@ export default function CierrePublico() {
       const data = await apiFetch<PublicClosureResponse>(`/public/closures/${token}`);
       setInfo(data);
       setItems((prev) =>
-        prev.length === 0
-          ? data.data.items
-          : data.data.items.map((fresh) => prev.find((p) => p.id === fresh.id) ?? fresh),
+        prev.length === 0 ? data.items : data.items.map((fresh) => prev.find((p) => p.id === fresh.id) ?? fresh),
       );
-      setNotes((prev) => prev || data.data.contractorNotes || "");
+      setNotes((prev) => prev || data.contractorNotes || "");
     } catch {
       setLoadError("Enlace no válido o no se pudo conectar con el servidor.");
     } finally {
@@ -60,8 +59,8 @@ export default function CierrePublico() {
     void load();
   }, [load]);
 
-  const editable = Boolean(info?.editable) && !submitted;
-  const photos = info?.data.photos ?? [];
+  const editable = info !== null && isClosureEditable(info) && !submitted;
+  const photos = info?.photos ?? [];
   const itemErrors = items.map(validateClosureItem);
   const canSubmit = editable && photos.length > 0 && itemErrors.every((e) => e === null);
 
@@ -140,7 +139,7 @@ export default function CierrePublico() {
     );
   }
 
-  const report = info.data;
+  const report = info;
 
   return (
     <div className="min-h-screen bg-slate-950 font-sans text-white antialiased">
@@ -153,9 +152,13 @@ export default function CierrePublico() {
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Obra {info.project.id}</p>
-          <h2 className="mt-1 text-lg font-black">{info.project.title}</h2>
-          <p className="text-sm text-slate-400">{info.project.location}</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Obra {report.projectId}</p>
+          {info.project && (
+            <>
+              <h2 className="mt-1 text-lg font-black">{info.project.title}</h2>
+              <p className="text-sm text-slate-400">{info.project.location}</p>
+            </>
+          )}
         </section>
 
         {report.rejectionReason && editable && (

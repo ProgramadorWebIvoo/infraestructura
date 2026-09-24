@@ -17,9 +17,10 @@ const photo = { id: 9, itemId: null, uploadedByType: "CONTRATISTA", originalName
 
 function response(overrides: Record<string, unknown> = {}, editable = true) {
   return {
-    data: { id: "tok", projectId: "P1", status: "ABIERTO", revision: 1, contractorNotes: null, submittedAt: null, rejectionReason: null, rejectedByRole: null, items: [baseItem], photos: [photo], ...overrides },
+    id: "tok", projectId: "P1", status: "ABIERTO", revision: 1, contractorNotes: null, submittedAt: null, rejectionReason: null, rejectedByRole: null, items: [baseItem], photos: [photo],
     project: { id: "P1", title: "Tienda Naguanagua", location: "Carabobo" },
     editable,
+    ...overrides,
   };
 }
 
