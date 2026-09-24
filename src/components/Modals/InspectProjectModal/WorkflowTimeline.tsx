@@ -74,7 +74,10 @@ function getStepState(project: Project, index: number): StepState {
     case 7:
       return project.qualityVerified
         ? "done"
-        : project.status === ProjectStatus.EN_EJECUCION || project.status === ProjectStatus.VERIFICANDO_FINALIZACION
+        : project.status === ProjectStatus.EN_EJECUCION ||
+            project.status === ProjectStatus.INFORME_ENVIADO ||
+            project.status === ProjectStatus.VERIFICANDO_FINALIZACION ||
+            project.status === ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO
           ? "current"
           : "pending";
     case 8:

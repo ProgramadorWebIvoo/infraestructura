@@ -34,6 +34,8 @@ function currentRoleOf(status: ProjectStatus): RoleId | null {
     case ProjectStatus.CREADO:
     case ProjectStatus.VERIFICANDO_FINALIZACION:
       return "AUDITORIA";
+    case ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO:
+      return "PROCURA";
     case ProjectStatus.REVISADO_AUDITORIA:
     case ProjectStatus.COMPARATIVA_ENVIADA:
     case ProjectStatus.APROBADO_PRESIDENCIA:

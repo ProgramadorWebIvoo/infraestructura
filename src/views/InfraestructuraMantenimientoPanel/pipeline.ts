@@ -78,7 +78,12 @@ export const PIPELINE_STAGES: readonly PipelineStage[] = [
     key: "ejecucion",
     label: "Ejecución",
     description: "Obra en curso / auditoría",
-    statuses: [ProjectStatus.EN_EJECUCION, ProjectStatus.VERIFICANDO_FINALIZACION],
+    statuses: [
+      ProjectStatus.EN_EJECUCION,
+      ProjectStatus.INFORME_ENVIADO,
+      ProjectStatus.VERIFICANDO_FINALIZACION,
+      ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO,
+    ],
     icon: HardHat,
     color: "bg-cyan-50 text-cyan-600 border-cyan-100",
     active: "border-cyan-500 bg-cyan-50 text-cyan-700 shadow-sm shadow-cyan-200/50",

@@ -76,7 +76,9 @@ export const STATUS_COLORS: Record<string, string> = {
   APROBADO_PRESIDENCIA: "bg-teal-50 text-teal-700 border-teal-200",
   CONTRATADO: "bg-indigo-50 text-indigo-700 border-indigo-200",
   EN_EJECUCION: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  INFORME_ENVIADO: "bg-sky-50 text-sky-700 border-sky-200",
   VERIFICANDO_FINALIZACION: "bg-orange-50 text-orange-700 border-orange-200",
+  PENDIENTE_SOLICITUD_FINIQUITO: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
   LISTO_PAGO_FINAL: "bg-rose-50 text-rose-700 border-rose-200",
   COMPLETADO_PAGADO: "bg-emerald-50 text-emerald-700 border-emerald-200",
   // Flujo de Marketing (marketing_projects)

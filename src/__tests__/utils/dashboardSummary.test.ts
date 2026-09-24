@@ -70,7 +70,9 @@ describe("computeDashboardSummary", () => {
       "APROBADO_PRESIDENCIA",
       "CONTRATADO",
       "EN_EJECUCION",
+      "INFORME_ENVIADO",
       "VERIFICANDO_FINALIZACION",
+      "PENDIENTE_SOLICITUD_FINIQUITO",
       "LISTO_PAGO_FINAL",
       "COMPLETADO_PAGADO",
     ]);

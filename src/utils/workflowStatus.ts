@@ -23,6 +23,7 @@ export function getPendingCount(projects: Project[], role: string): number {
     case "PROCURA":
       return projects.filter(
         p =>
+          p.status === ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO ||
           p.status === ProjectStatus.REVISADO_AUDITORIA ||
           p.status === ProjectStatus.COMPARATIVA_ENVIADA ||
           p.status === ProjectStatus.APROBADO_PRESIDENCIA,

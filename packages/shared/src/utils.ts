@@ -73,7 +73,9 @@ export const STATUS_LABELS: Record<string, string> = {
   APROBADO_PRESIDENCIA: "Aprobado por Presidencia",
   CONTRATADO: "Contratado",
   EN_EJECUCION: "En Ejecución",
-  VERIFICANDO_FINALIZACION: "Verificando",
+  INFORME_ENVIADO: "Informe del contratista enviado",
+  VERIFICANDO_FINALIZACION: "Pendiente de Auditoría",
+  PENDIENTE_SOLICITUD_FINIQUITO: "Pendiente de solicitud de finiquito",
   LISTO_PAGO_FINAL: "Listo para Pago Final",
   COMPLETADO_PAGADO: "Completado",
   // Flujo de Marketing (marketing_projects) — códigos propios, sin

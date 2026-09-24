@@ -16,7 +16,9 @@ import type { DashboardSummary, Project } from "@/types";
 export const COMMITTED_STATUSES: ReadonlySet<string> = new Set([
   "CONTRATADO",
   "EN_EJECUCION",
+  "INFORME_ENVIADO",
   "VERIFICANDO_FINALIZACION",
+  "PENDIENTE_SOLICITUD_FINIQUITO",
   "LISTO_PAGO_FINAL",
 ]);
 
@@ -31,7 +33,9 @@ export const STATUS_ORDER: readonly string[] = [
   "APROBADO_PRESIDENCIA",
   "CONTRATADO",
   "EN_EJECUCION",
+  "INFORME_ENVIADO",
   "VERIFICANDO_FINALIZACION",
+  "PENDIENTE_SOLICITUD_FINIQUITO",
   "LISTO_PAGO_FINAL",
   "COMPLETADO_PAGADO",
 ];
