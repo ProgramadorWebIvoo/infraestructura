@@ -51,7 +51,29 @@ interface AuditLogPage {
   perPage: number;
 }
 
+export interface AuditLogSummary {
+  total: number;
+  withoutProject: number;
+  byRole: { role: string; total: number }[];
+  byAction: { action: string; total: number }[];
+  byProject: { projectId: string; projectTitle: string | null; total: number }[];
+  daily: { day: string; total: number }[];
+}
+
 const PER_PAGE = 25;
+
+/** Serializa los filtros efectivos a query params — usado por `load`, `exportQuery` y el fetch de `summary`. */
+function toParams(filters: AuditLogFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.role) params.set("role", filters.role);
+  if (filters.projectId.trim()) params.set("project_id", filters.projectId.trim());
+  if (filters.action) params.set("action", filters.action);
+  if (filters.user.trim()) params.set("user", filters.user.trim());
+  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+  if (filters.dateTo) params.set("date_to", filters.dateTo);
+  return params;
+}
 
 export function useAuditLogs(authToken: string, enabled: boolean) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -82,14 +104,9 @@ export function useAuditLogs(authToken: string, enabled: boolean) {
       if (!authToken || !enabled) return;
       setIsLoading(true);
       try {
-        const params = new URLSearchParams({ page: String(targetPage), per_page: String(PER_PAGE) });
-        if (effectiveFilters.q.trim()) params.set("q", effectiveFilters.q.trim());
-        if (effectiveFilters.role) params.set("role", effectiveFilters.role);
-        if (effectiveFilters.projectId.trim()) params.set("project_id", effectiveFilters.projectId.trim());
-        if (effectiveFilters.action) params.set("action", effectiveFilters.action);
-        if (effectiveFilters.user.trim()) params.set("user", effectiveFilters.user.trim());
-        if (effectiveFilters.dateFrom) params.set("date_from", effectiveFilters.dateFrom);
-        if (effectiveFilters.dateTo) params.set("date_to", effectiveFilters.dateTo);
+        const params = toParams(effectiveFilters);
+        params.set("page", String(targetPage));
+        params.set("per_page", String(PER_PAGE));
 
         const data = await apiFetch<AuditLogPage>(`/audit-logs?${params.toString()}`, { token: authToken });
         setLogs(data.items ?? []);
@@ -132,20 +149,33 @@ export function useAuditLogs(authToken: string, enabled: boolean) {
   const refresh = useCallback(() => load(page), [load, page]);
 
   /** Query string de los filtros/orden actuales, para pasarla tal cual a /audit-logs/export (mismo criterio que la vista actual, sin la paginación). */
-  const exportQuery = useMemo(() => {
-    const params = new URLSearchParams();
-    if (effectiveFilters.q.trim()) params.set("q", effectiveFilters.q.trim());
-    if (effectiveFilters.role) params.set("role", effectiveFilters.role);
-    if (effectiveFilters.projectId.trim()) params.set("project_id", effectiveFilters.projectId.trim());
-    if (effectiveFilters.action) params.set("action", effectiveFilters.action);
-    if (effectiveFilters.user.trim()) params.set("user", effectiveFilters.user.trim());
-    if (effectiveFilters.dateFrom) params.set("date_from", effectiveFilters.dateFrom);
-    if (effectiveFilters.dateTo) params.set("date_to", effectiveFilters.dateTo);
-    return params.toString();
-  }, [effectiveFilters]);
+  const exportQuery = useMemo(() => toParams(effectiveFilters).toString(), [effectiveFilters]);
+
+  const [summary, setSummary] = useState<AuditLogSummary | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+
+  const loadSummary = useCallback(async () => {
+    if (!authToken || !enabled) return;
+    setIsSummaryLoading(true);
+    try {
+      const data = await apiFetch<AuditLogSummary>(`/audit-logs/summary?${exportQuery}`, { token: authToken });
+      setSummary(data);
+    } catch (err) {
+      logError("useAuditLogs.loadSummary", err);
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  }, [authToken, enabled, exportQuery]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    loadSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, exportQuery]);
 
   return {
     logs, isLoading, hasLoaded, page, lastPage, total, goToPage, refresh,
     filters, updateFilter, clearFilters, activeFilterCount, exportQuery,
+    summary, isSummaryLoading,
   };
 }

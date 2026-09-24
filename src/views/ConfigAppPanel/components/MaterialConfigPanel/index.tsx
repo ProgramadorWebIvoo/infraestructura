@@ -259,6 +259,7 @@ export default function MaterialConfigPanel({ authToken, activeRole }: MaterialC
                 emptyMessage="No se encontraron materiales con ese criterio."
                 fillViewport
                 pageSize={20}
+                onRefresh={loadMaterials}
               />
             </Card>
           </motion.div>

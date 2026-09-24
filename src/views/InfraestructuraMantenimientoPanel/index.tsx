@@ -44,6 +44,8 @@ interface InfraestructuraMantenimientoPanelProps {
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
   projectTypes: { key: string; label: string }[];
   isLoading?: boolean;
+  /** Refresca proyectos + auditoría desde el backend — opcional: sin esto, las tablas no muestran el botón de refresco. */
+  onRefreshData?: () => Promise<void> | void;
 }
 
 export default function InfraestructuraMantenimientoPanel({
@@ -56,6 +58,7 @@ export default function InfraestructuraMantenimientoPanel({
   materialsCatalog,
   projectTypes,
   isLoading = false,
+  onRefreshData,
 }: InfraestructuraMantenimientoPanelProps) {
   const form = useRequestForm({ onAddProject });
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
@@ -134,7 +137,7 @@ export default function InfraestructuraMantenimientoPanel({
           <TabPanel activeKey={activeTab}>
             {activeTab === "crear" && <RequestWizardCard form={form} materialsCatalog={materialsCatalog} projectTypes={projectTypes} />}
             {activeTab === "expedientes" && (
-              <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} />
+              <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} onRefresh={onRefreshData} />
             )}
             {activeTab === "rechazadas" && (
               <RejectedPetitionsSection
@@ -145,6 +148,7 @@ export default function InfraestructuraMantenimientoPanel({
                 projectTypes={projectTypes}
                 onResubmitProject={onResubmitProject}
                 onDeleteDocument={onDeleteDocument}
+                onRefresh={onRefreshData}
               />
             )}
           </TabPanel>

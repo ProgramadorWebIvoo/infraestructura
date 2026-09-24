@@ -26,6 +26,8 @@ interface RatingIaPanelProps {
   onRunNow: () => Promise<RunResponse | void>;
   cronFrecuenciaDias?: string;
   cronEnabled?: boolean;
+  onRefreshLogs?: () => Promise<void> | void;
+  onRefreshSuggestions?: () => Promise<void> | void;
 }
 
 function timeAgo(isoDate: string): string {
@@ -53,6 +55,8 @@ export default function RatingIaPanel({
   onRunNow,
   cronFrecuenciaDias,
   cronEnabled,
+  onRefreshLogs,
+  onRefreshSuggestions,
 }: RatingIaPanelProps) {
   const { showToast } = useToast();
 
@@ -248,6 +252,7 @@ export default function RatingIaPanel({
           isLoading={isLoading}
           emptyMessage="No hay corridas registradas."
           pageSize={10}
+          onRefresh={onRefreshLogs}
         />
       )}
 
@@ -268,6 +273,7 @@ export default function RatingIaPanel({
           isLoading={isLoading}
           emptyMessage="No hay sugerencias."
           pageSize={10}
+          onRefresh={onRefreshSuggestions}
         />
       )}
     </div>

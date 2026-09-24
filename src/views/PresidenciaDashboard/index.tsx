@@ -192,13 +192,7 @@ export default function PresidenciaDashboard({
         )}
 
         {activeTab === "auditoria" && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col min-h-0"
-            style={{ height: "calc(100vh - 14rem)" }}
-          >
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
             <AuditLogSection authToken={authToken} />
           </motion.div>
         )}

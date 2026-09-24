@@ -27,6 +27,7 @@ interface ExchangeRateSyncLogsPanelProps {
   onEditRate?: () => void;
   onSyncNow?: () => Promise<SyncResponse | void>;
   isSyncing?: boolean;
+  onRefresh?: () => Promise<void> | void;
   /** Configuración vigente del cronjob (Monedas > Sincronización de tasa) — para mostrar cuándo corre la próxima sincronización automática. */
   cronHour?: string;
   cronEnabled?: boolean;
@@ -59,6 +60,7 @@ export default function ExchangeRateSyncLogsPanel({
   isSyncing,
   cronHour,
   cronEnabled,
+  onRefresh,
 }: ExchangeRateSyncLogsPanelProps) {
   const { showToast } = useToast();
   const [debugTrace, setDebugTrace] = useState<SyncDebugTraceEntry[] | null>(null);
@@ -304,6 +306,8 @@ export default function ExchangeRateSyncLogsPanel({
           data={logs}
           rowKey={(log) => log.id}
           isLoading={isLoading}
+          onRefresh={onRefresh}
+          lastUpdated={lastSync ? new Date(lastSync.executed_at) : null}
           emptyMessage="No hay registros de sincronización."
           pageSize={10}
         />

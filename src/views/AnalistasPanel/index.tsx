@@ -32,6 +32,7 @@ interface AnalistasPanelProps {
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
   authToken: string;
   isLoading?: boolean;
+  onRefreshData?: () => Promise<void> | void;
 }
 
 export default function AnalistasPanel({
@@ -45,6 +46,7 @@ export default function AnalistasPanel({
   onImportSupplierProposals,
   authToken,
   isLoading = false,
+  onRefreshData,
 }: AnalistasPanelProps) {
   const pendingLicitacion = useMemo(
     () => projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA),
@@ -87,6 +89,7 @@ export default function AnalistasPanel({
           onSubmitComparative={onSubmitComparative}
           onImportSupplierProposals={onImportSupplierProposals}
           authToken={authToken}
+          onRefresh={onRefreshData}
         />
       </motion.div>
     </motion.div>

@@ -12,6 +12,7 @@ import { motion } from "motion/react";
 import { Table as TableIcon, LayoutGrid } from "lucide-react";
 import { SearchInput, SelectFilter, type SelectOption } from "./FilterBar";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
+import { RefreshButton } from "./Table";
 import { springs } from "@/animations";
 
 interface TableToolbarProps {
@@ -47,6 +48,14 @@ interface TableToolbarProps {
     onChange: (mode: "table" | "grid") => void;
     accent?: SemanticColor;
   };
+  /**
+   * Refresco opcional — a diferencia de `onRefresh` en `Table`, vive en la
+   * toolbar compartida por ambas vistas (tabla y grid), así que no
+   * desaparece al alternar `viewToggle`. Omitido, el toolbar no cambia.
+   */
+  onRefresh?: () => Promise<void> | void;
+  /** Momento del último refresco exitoso, para el label "Actualizado hace Ns". */
+  lastUpdated?: Date | null;
 }
 
 export default function TableToolbar({
@@ -62,6 +71,8 @@ export default function TableToolbar({
   noun,
   nounPlural,
   viewToggle,
+  onRefresh,
+  lastUpdated,
 }: TableToolbarProps) {
   const toggleAccent = SEMANTIC_COLOR_MAP[viewToggle?.accent ?? "brand"];
 
@@ -76,6 +87,7 @@ export default function TableToolbar({
         className="md:w-96"
       />
       <div className="flex items-center gap-2">
+        {onRefresh && <RefreshButton onRefresh={onRefresh} lastUpdated={lastUpdated} />}
         {filter && (
           <SelectFilter
             id={filter.id}

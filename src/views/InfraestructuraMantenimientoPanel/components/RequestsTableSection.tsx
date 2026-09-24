@@ -36,6 +36,7 @@ interface RequestsTableSectionProps {
   onStageKeyChange: (key: string) => void;
   /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el consumidor. */
   defaultViewMode?: TableViewMode;
+  onRefresh?: () => Promise<void> | void;
 }
 
 function TypeBadge({ type }: { type: Project["type"] }) {
@@ -47,7 +48,7 @@ function TypeBadge({ type }: { type: Project["type"] }) {
   );
 }
 
-export default function RequestsTableSection({ projects, stageKey, onStageKeyChange, defaultViewMode = "grid" }: RequestsTableSectionProps) {
+export default function RequestsTableSection({ projects, stageKey, onStageKeyChange, defaultViewMode = "grid", onRefresh }: RequestsTableSectionProps) {
   const [query, setQuery] = useState("");
   const [inspectedRequest, setInspectedRequest] = useState<Project | null>(null);
   const { viewMode, viewToggle } = useTableViewMode(defaultViewMode);
@@ -158,6 +159,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
         noun="petición"
         nounPlural="peticiones"
         viewToggle={viewToggle}
+        onRefresh={onRefresh}
       />
 
       <div className="px-6 pt-4 shrink-0">

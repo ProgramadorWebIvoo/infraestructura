@@ -55,9 +55,10 @@ interface InvestmentApprovalSectionProps {
     observations?: string,
     evidenceFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
+  onRefresh?: () => Promise<void> | void;
 }
 
-export default function InvestmentApprovalSection({ projects, authToken, onApproveInvestment, onSendToReevaluation }: InvestmentApprovalSectionProps) {
+export default function InvestmentApprovalSection({ projects, authToken, onApproveInvestment, onSendToReevaluation, onRefresh }: InvestmentApprovalSectionProps) {
   const { showToast } = useToast();
   const [selectedReviewId, setSelectedReviewId] = useState("");
   const [stepIndex, setStepIndex] = useState(0);
@@ -211,6 +212,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
         noun="pendiente"
         nounPlural="pendientes"
         viewToggle={viewToggle}
+        onRefresh={onRefresh}
       />
 
       <AnimatePresence mode="wait">

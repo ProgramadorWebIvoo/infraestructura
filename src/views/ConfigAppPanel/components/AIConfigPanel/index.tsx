@@ -33,6 +33,7 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
     isUsageLoading,
     providerModels,
     loadUsage,
+    loadConfigs,
     createConfig,
     updateConfig,
     deleteConfig,
@@ -207,6 +208,7 @@ export default function AIConfigPanel({ authToken, activeRole }: AIConfigPanelPr
           onToggleActive={handleToggleActive}
           onSync={handleSync}
           onCreateNew={handleOpenCreate}
+          onRefresh={loadConfigs}
         />
 
         {isSuperadmin && (

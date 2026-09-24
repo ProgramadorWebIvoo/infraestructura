@@ -74,7 +74,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.INFRAESTRUCTURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
-              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} onDeleteDocument={onDeleteDocument} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} projectTypes={projectTypes} isLoading={isLoadingApi} />
+              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} onDeleteDocument={onDeleteDocument} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} projectTypes={projectTypes} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />
@@ -82,7 +82,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CIERRE_OBRA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CIERRE_OBRA)} redirectTo={fallbackRoute}>
-              <CierreObraPanel projects={projects} auditLogs={auditLogs} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onResolveReevaluation={onResolveReevaluation} onVerifyCompletion={onVerifyCompletion} onSyncProject={onSyncProject} isLoading={isLoadingApi} />
+              <CierreObraPanel projects={projects} auditLogs={auditLogs} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onResolveReevaluation={onResolveReevaluation} onVerifyCompletion={onVerifyCompletion} onSyncProject={onSyncProject} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />
@@ -90,7 +90,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.PROCURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PROCURA)} redirectTo={fallbackRoute}>
-              <ProcuraPanel projects={projects} onApproveInvestment={onApproveInvestment} onSendToReevaluation={onSendToReevaluation} onSelectContractor={onSelectContractor} onRejectProposals={onRejectProposals} authToken={authToken} isLoading={isLoadingApi} />
+              <ProcuraPanel projects={projects} onApproveInvestment={onApproveInvestment} onSendToReevaluation={onSendToReevaluation} onSelectContractor={onSelectContractor} onRejectProposals={onRejectProposals} authToken={authToken} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />
@@ -98,7 +98,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.ANALISTAS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.ANALISTAS)} redirectTo={fallbackRoute}>
-              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onSendRenegotiationInvite={onSendRenegotiationInvite} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} authToken={authToken} isLoading={isLoadingApi} />
+              <AnalistasPanel projects={projects} contractors={contractors} onAddProposal={onAddProposal} onRenegotiateProposal={onRenegotiateProposal} onSendRenegotiationInvite={onSendRenegotiationInvite} onRemoveProposal={onRemoveProposal} onSubmitComparative={onSubmitComparative} onImportSupplierProposals={onImportSupplierProposals} authToken={authToken} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />
@@ -106,7 +106,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.FINANZAS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.FINANZAS)} redirectTo={fallbackRoute}>
-              <FinanzasPanel projects={projects} authToken={authToken} onPayAdvance={onPayAdvance} onPayFinal={onPayFinal} isLoading={isLoadingApi} />
+              <FinanzasPanel projects={projects} authToken={authToken} onPayAdvance={onPayAdvance} onPayFinal={onPayFinal} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />
@@ -114,7 +114,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CATALOGOS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CATALOGOS)} redirectTo={fallbackRoute}>
-              <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={onUpdateContractorRating} isLoading={isLoadingApi} />
+              <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={onUpdateContractorRating} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />

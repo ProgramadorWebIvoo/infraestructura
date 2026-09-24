@@ -42,6 +42,7 @@ interface ProcuraPanelProps {
   onRejectProposals: (projectId: string, reason: string) => void;
   authToken: string;
   isLoading?: boolean;
+  onRefreshData?: () => Promise<void> | void;
 }
 
 export default function ProcuraPanel({
@@ -52,6 +53,7 @@ export default function ProcuraPanel({
   onRejectProposals,
   authToken,
   isLoading = false,
+  onRefreshData,
 }: ProcuraPanelProps) {
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("autorizacion");
@@ -108,6 +110,7 @@ export default function ProcuraPanel({
               authToken={authToken}
               onApproveInvestment={onApproveInvestment}
               onSendToReevaluation={onSendToReevaluation}
+              onRefresh={onRefreshData}
             />
           )}
           {activeTab === "comparativa" && (
@@ -116,6 +119,7 @@ export default function ProcuraPanel({
               authToken={authToken}
               onSelectContractor={onSelectContractor}
               onRejectProposals={onRejectProposals}
+              onRefresh={onRefreshData}
             />
           )}
         </TabPanel>

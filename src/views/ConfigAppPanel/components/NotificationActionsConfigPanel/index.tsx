@@ -216,6 +216,7 @@ export default function NotificationActionsConfigPanel({ authToken, activeRole }
             emptyMessage="No se encontraron acciones con ese criterio."
             maxHeight="26rem"
             pageSize={20}
+            onRefresh={loadActions}
           />
         </div>
       </Card>

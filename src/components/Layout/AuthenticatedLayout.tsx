@@ -54,14 +54,14 @@ interface AuthenticatedLayoutProps {
 // fallback al suyo propio. Manteniéndolo neutral (solo barras shimmer,
 // mismo lenguaje visual que SkeletonBlock/SkeletonCard/etc en toda la app)
 // nunca compite ni desentona con ninguna forma específica.
-function PageFallback() {
+/* function PageFallback() {
   return (
     <div className="py-2 space-y-3">
       <SkeletonBlock className="h-3 w-32" />
       <SkeletonBlock className="h-24 w-full" />
     </div>
   );
-}
+} */
 
 // El modal se lazy-loadea porque solo se abre bajo demanda
 const InspectProjectModal = lazy(() => import("@/components/Modals/InspectProjectModal"));
@@ -137,7 +137,7 @@ export default function AuthenticatedLayout({
           <main className="flex-1 max-w-8xl mx-auto w-full py-6 space-y-6 px-6">
 
             {/* Route-driven module rendering with smooth view transitions */}
-            <Suspense fallback={<PageFallback />}>
+            <Suspense fallback={null}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}

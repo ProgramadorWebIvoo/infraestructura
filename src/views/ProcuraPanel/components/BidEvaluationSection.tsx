@@ -42,6 +42,7 @@ interface BidEvaluationSectionProps {
   authToken: string;
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   onRejectProposals: (projectId: string, reason: string) => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
 /** Cuadro comparativo completo de un expediente — resumen + tabla, en un modal grande. */
@@ -309,6 +310,7 @@ export default function BidEvaluationSection({
   authToken,
   onSelectContractor,
   onRejectProposals,
+  onRefresh,
 }: BidEvaluationSectionProps) {
   const { levelOf } = useBudgetSemaphore();
   const maxAdvancePercent = useMaxAdvancePercent();
@@ -454,6 +456,7 @@ export default function BidEvaluationSection({
           noun="cuadro"
           nounPlural="cuadros"
           viewToggle={{ ...viewToggle, accent: "success" }}
+          onRefresh={onRefresh}
         />
 
         <AnimatePresence mode="wait">

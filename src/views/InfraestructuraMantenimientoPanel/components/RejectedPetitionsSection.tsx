@@ -53,6 +53,8 @@ interface RejectedPetitionsSectionProps {
   onDeleteDocument: (projectId: string, documentId: number) => Promise<void>;
   /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el consumidor. */
   defaultViewMode?: TableViewMode;
+  /** Refresca proyectos + auditoría desde el backend — opcional: sin esto, la tabla no muestra el botón de refresco. */
+  onRefresh?: () => Promise<void> | void;
 }
 
 function latestRejectionLog(auditLogs: AuditLog[], projectId: string): AuditLog | undefined {
@@ -121,6 +123,7 @@ export default function RejectedPetitionsSection({
   onResubmitProject,
   onDeleteDocument,
   defaultViewMode = "grid",
+  onRefresh,
 }: RejectedPetitionsSectionProps) {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
@@ -247,6 +250,7 @@ export default function RejectedPetitionsSection({
           noun="petición"
           nounPlural="peticiones"
           viewToggle={{ ...viewToggle, accent: "danger" }}
+          onRefresh={onRefresh}
         />
 
         <AnimatePresence mode="wait">

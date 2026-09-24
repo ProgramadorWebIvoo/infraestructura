@@ -119,6 +119,21 @@ interface RefreshToolbarProps {
 }
 
 const RefreshToolbar = memo(function RefreshToolbar({ onRefresh, lastUpdated }: RefreshToolbarProps) {
+  return (
+    <div className="flex items-center justify-end gap-2.5 px-4 py-2 border-b border-slate-100 bg-slate-50/40 shrink-0">
+      <RefreshButton onRefresh={onRefresh} lastUpdated={lastUpdated} />
+    </div>
+  );
+});
+
+/**
+ * Botón de refresco standalone (mismo comportamiento/estados que la toolbar
+ * de `Table`, sin el contenedor con borde/fondo) — pensado para vivir dentro
+ * de `TableToolbar`, donde es visible tanto en vista tabla como grid (a
+ * diferencia de `onRefresh` en `Table`, que solo existe mientras esa vista
+ * está montada). Exportado para reuso fuera de este archivo.
+ */
+export const RefreshButton = memo(function RefreshButton({ onRefresh, lastUpdated }: RefreshToolbarProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
   // Fuerza un re-render por segundo para que "Actualizado hace Ns" avance sin recalcular nada más.
@@ -146,13 +161,12 @@ const RefreshToolbar = memo(function RefreshToolbar({ onRefresh, lastUpdated }: 
 
   const success = SEMANTIC_COLOR_MAP.success;
 
+  const tooltipContent = lastUpdated
+    ? `Actualizar datos · Actualizado hace ${timeAgo(lastUpdated)}`
+    : "Actualizar datos";
+
   return (
-    <div className="flex items-center justify-end gap-2.5 px-4 py-2 border-b border-slate-100 bg-slate-50/40 shrink-0">
-      {lastUpdated && (
-        <span className="text-[10px] font-mono font-semibold text-slate-400">
-          Actualizado hace {timeAgo(lastUpdated)}
-        </span>
-      )}
+    <div className="flex items-center gap-2.5 shrink-0">
       <AnimatePresence>
         {justUpdated && (
           <motion.span
@@ -160,22 +174,22 @@ const RefreshToolbar = memo(function RefreshToolbar({ onRefresh, lastUpdated }: 
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.85 }}
             transition={{ type: "spring", stiffness: 420, damping: 26 }}
-            className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold rounded-full px-2 py-0.5 border ${success.text700} ${success.bg50} ${success.border100}`}
+            className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold rounded-full px-2 py-0.5 border ${success.text700} ${success.bg50} ${success.border100}`}
           >
             <CheckCircle2 className="h-3 w-3" />
             ¡Actualizado!
           </motion.span>
         )}
       </AnimatePresence>
-      <Tooltip content="Actualizar datos" placement="top">
+      <Tooltip content={tooltipContent} placement="top">
         <button
           type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          aria-label="Actualizar datos"
-          className="cursor-pointer p-1.5 rounded-control border border-slate-200 text-slate-500 hover:text-sky-600 hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label={tooltipContent}
+          className="cursor-pointer p-2.5 rounded-control border border-border-default bg-surface text-slate-500 hover:text-sky-600 hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
         </button>
       </Tooltip>
     </div>

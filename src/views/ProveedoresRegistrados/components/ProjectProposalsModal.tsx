@@ -23,6 +23,7 @@ interface ProjectProposalsModalProps {
   proposals: SupplierMaterialProposal[];
   onClose: () => void;
   isOpen: boolean;
+  onRefresh?: () => Promise<void> | void;
 }
 
 const proposalTotal = (p: SupplierMaterialProposal) =>
@@ -34,6 +35,7 @@ export default function ProjectProposalsModal({
   proposals,
   onClose,
   isOpen,
+  onRefresh,
 }: ProjectProposalsModalProps) {
   const [proposalSearch, setProposalSearch] = useState("");
   const [inspectingProposal, setInspectingProposal] = useState<SupplierMaterialProposal | null>(null);
@@ -157,6 +159,7 @@ export default function ProjectProposalsModal({
               columns={proposalColumns}
               data={filteredProposals}
               rowKey={(p) => p.id}
+              onRefresh={onRefresh}
               pageSize={10}
               onRowClick={(p) => setInspectingProposal(p)}
               emptyState={

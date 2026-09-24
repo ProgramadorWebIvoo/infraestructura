@@ -45,9 +45,10 @@ interface TechnicalReviewSectionProps {
     correctionFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onSyncProject: (project: Project) => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
-export default function TechnicalReviewSection({ projects, authToken, onReviewProject, onRejectProject, onSyncProject }: TechnicalReviewSectionProps) {
+export default function TechnicalReviewSection({ projects, authToken, onReviewProject, onRejectProject, onSyncProject, onRefresh }: TechnicalReviewSectionProps) {
   const { containerRef, rows: pageSize } = useContainerRows();
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -170,6 +171,7 @@ export default function TechnicalReviewSection({ projects, authToken, onReviewPr
             noun="pendiente"
             nounPlural="pendientes"
             viewToggle={viewToggle}
+            onRefresh={onRefresh}
           />
 
           <AnimatePresence mode="wait">

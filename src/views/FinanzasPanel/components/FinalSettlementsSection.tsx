@@ -33,6 +33,7 @@ interface FinalSettlementsSectionProps {
   pendingFinalPayments: Project[];
   /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liquidación. */
   onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
+  onRefresh?: () => Promise<void> | void;
 }
 
 interface SettlementRow {
@@ -42,7 +43,7 @@ interface SettlementRow {
   balanceDue: number;
 }
 
-export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal }: FinalSettlementsSectionProps) {
+export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal, onRefresh }: FinalSettlementsSectionProps) {
   const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [isPaying, setIsPaying] = useState(false);
@@ -145,6 +146,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         noun="liquidación pendiente"
         nounPlural="liquidaciones pendientes"
         viewToggle={viewToggle}
+        onRefresh={onRefresh}
       />
 
       <AnimatePresence mode="wait">

@@ -34,6 +34,7 @@ interface AdvancesSectionProps {
   pendingAdvances: Project[];
   /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liberación. */
   onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
+  onRefresh?: () => Promise<void> | void;
 }
 
 interface AdvanceRow {
@@ -42,7 +43,7 @@ interface AdvanceRow {
   advAmount: number;
 }
 
-export default function AdvancesSection({ pendingAdvances, onPayAdvance }: AdvancesSectionProps) {
+export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefresh }: AdvancesSectionProps) {
   const [confirmPayAdvance, setConfirmPayAdvance] = useState<{ projectId: string; amount: number; title: string } | null>(null);
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [isPaying, setIsPaying] = useState(false);
@@ -152,6 +153,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance }: Advan
         noun="anticipo pendiente"
         nounPlural="anticipos pendientes"
         viewToggle={viewToggle}
+        onRefresh={onRefresh}
       />
 
       <AnimatePresence mode="wait">

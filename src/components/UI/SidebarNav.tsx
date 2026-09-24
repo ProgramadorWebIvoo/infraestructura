@@ -27,14 +27,19 @@ import {
   LogOut,
   ChevronRight,
   House,
-  BanknoteArrowDown
+  BanknoteArrowDown,
 } from "lucide-react";
 import SidebarTip from "./SidebarTip";
 import SidebarCollapseHint from "./SidebarCollapseHint";
 import NotificationBell from "./NotificationBell";
 import RoleBadge from "./RoleBadge";
 import ExchangeRatesSidebarSection from "./ExchangeRatesSidebarSection";
-import { navLinkClass, sidebarIconClass, sidebarTextClass, SIDEBAR_FOCUS_RING } from "./sidebarNavClasses";
+import {
+  navLinkClass,
+  sidebarIconClass,
+  sidebarTextClass,
+  SIDEBAR_FOCUS_RING,
+} from "./sidebarNavClasses";
 import { getUserInitials } from "@/utils";
 import { usePrefetchOnIntent } from "@/hooks/usePrefetchOnIntent";
 import { ROUTES } from "@/routes";
@@ -53,16 +58,32 @@ interface SidebarNavProps {
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
-function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, authToken, isCollapsed, onToggleCollapse }: SidebarNavProps) {
+function SidebarNav({
+  isOpen,
+  onClose,
+  user,
+  activeRole,
+  onLogout,
+  canAccess,
+  authToken,
+  isCollapsed,
+  onToggleCollapse,
+}: SidebarNavProps) {
   // Pre-fetch en hover/focus: un handler por ruta del sidebar (ver
   // usePrefetchOnIntent — debounced, respeta saveData/2G, no compite con la
   // navegación real). Los hooks de React no pueden llamarse condicionalmente
   // (ver CLAUDE.md §7 error #1), así que se piden TODOS acá arriba, sin
   // importar si `canAccess` termina ocultando ese link — el propio hook ya
   // es un no-op barato si nunca se dispara el hover.
-  const prefetchPresidencia = usePrefetchOnIntent(ROUTES.PRESIDENCIA, authToken);
+  const prefetchPresidencia = usePrefetchOnIntent(
+    ROUTES.PRESIDENCIA,
+    authToken,
+  );
   const prefetchMarketing = usePrefetchOnIntent(ROUTES.MARKETING, authToken);
-  const prefetchInfraestructura = usePrefetchOnIntent(ROUTES.INFRAESTRUCTURA, authToken);
+  const prefetchInfraestructura = usePrefetchOnIntent(
+    ROUTES.INFRAESTRUCTURA,
+    authToken,
+  );
   const prefetchCierreObra = usePrefetchOnIntent(ROUTES.CIERRE_OBRA, authToken);
   const prefetchProcura = usePrefetchOnIntent(ROUTES.PROCURA, authToken);
   const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
@@ -71,7 +92,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
   const prefetchConfigApp = usePrefetchOnIntent(ROUTES.CONFIG_APP, authToken);
 
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
-  const collapseLabel = isCollapsed ? "Expandir barra de navegación" : "Minimizar barra de navegación";
+  const collapseLabel = isCollapsed
+    ? "Expandir barra de navegación"
+    : "Minimizar barra de navegación";
   const collapseButtonRef = useRef<HTMLButtonElement>(null);
 
   // isCollapsed es una preferencia de desktop (persistida en localStorage) que
@@ -87,7 +110,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
       <div
         aria-hidden="true"
         className={`fixed inset-0 bg-slate-950/60 z-50 transition-opacity duration-300 ease-out lg:hidden ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          isOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
@@ -107,14 +132,18 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
         {/* ── Sidebar Header (Logo/Brand) ─────────────────────────────────── */}
         {/* Sin overflow-hidden: el dropdown de NotificationBell necesita desbordar
             este contenedor para no quedar recortado (antes vivía en el footer). */}
-        <div className={`group/header relative border-b border-slate-800/60 shrink-0 ${effectiveCollapsed ? "py-3" : "p-3"}`}>
+        <div
+          className={`group/header relative border-b border-slate-800/60 shrink-0 ${effectiveCollapsed ? "py-3" : "p-3"}`}
+        >
           {/* Ambient atmospheric light */}
           <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
 
           {/* Subtle top edge highlight */}
           <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent pointer-events-none" />
 
-          <div className={`flex items-center relative ${effectiveCollapsed ? "justify-center" : "justify-between"}`}>
+          <div
+            className={`flex items-center relative ${effectiveCollapsed ? "justify-center" : "justify-between"}`}
+          >
             {effectiveCollapsed ? (
               // Colapsado: solo el ícono de expandir, sin el tile de marca
               // (casa con fondo verde) que ocupaba este lugar antes — el
@@ -132,16 +161,18 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 </button>
               </SidebarTip>
             ) : (
-              <SidebarTip label="IVOO GESTIÓN" disabled={!effectiveCollapsed}>
-                <div className="flex items-center min-w-0 h-10 gap-3">
-                  <div className="relative shrink-0 overflow-hidden">
-                    <img src="/ivoo_logoo.svg" alt="IVOO" className="block h-9 w-auto" />
-                  </div>
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em] leading-none">
-                    Gestión
-                  </span>
+              <div className="flex items-center min-w-0 h-10 gap-3">
+                <div className="relative shrink-0 overflow-hidden">
+                  <img
+                    src="/ivoo_logoo.svg"
+                    alt="IVOO"
+                    className="block h-9 w-auto"
+                  />
                 </div>
-              </SidebarTip>
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em] leading-none">
+                  Gestión
+                </span>
+              </div>
             )}
 
             {!effectiveCollapsed && (
@@ -156,7 +187,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 onClick={onToggleCollapse}
                 className={`hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 opacity-0 transition-all duration-200 cursor-pointer hover:text-white hover:bg-slate-800/60 group-hover/header:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} focus-visible:ring-offset-2 focus-visible:ring-offset-surface-inverted`}
               >
-                <ChevronRight className="h-4 w-4 rotate-180" strokeWidth={2.5} />
+                <ChevronRight
+                  className="h-4 w-4 rotate-180"
+                  strokeWidth={2.5}
+                />
               </button>
             )}
 
@@ -169,7 +203,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
             </button>
           </div>
 
-          <SidebarCollapseHint anchorRef={collapseButtonRef} enabled={!isOpen} />
+          <SidebarCollapseHint
+            anchorRef={collapseButtonRef}
+            enabled={!isOpen}
+          />
 
           {/* Fila propia para rol activo + notificaciones: en colapsado el rail
               de 64px no tiene espacio para el logo y la campana lado a lado en
@@ -179,9 +216,15 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
               Oculta en mobile (hidden lg:flex): ahí MobileTopBar ya muestra rol
               y campana de forma siempre accesible sin abrir el drawer; mostrar
               ambos también aquí duplicaría la campana cuando el drawer se abre. */}
-          <div className={`relative mt-2.5 hidden lg:flex items-center ${effectiveCollapsed ? "justify-center" : "justify-between gap-2"}`}>
+          <div
+            className={`relative mt-2.5 hidden lg:flex items-center ${effectiveCollapsed ? "justify-center" : "justify-between gap-2"}`}
+          >
             <div className={sidebarTextClass(effectiveCollapsed, true)}>
-              <RoleBadge role={activeRole} variant="dark" className="w-full justify-center" />
+              <RoleBadge
+                role={activeRole}
+                variant="dark"
+                className="w-full justify-center"
+              />
             </div>
             <SidebarTip label="Notificaciones" disabled={!effectiveCollapsed}>
               <NotificationBell variant="dark" align="left-start" />
@@ -190,7 +233,10 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
         </div>
 
         {/* ── Sidebar Navigation Items ────────────────────────────────────── */}
-        <nav aria-label="Menú principal" className={`sidebar-scrollbar flex-1 overflow-y-auto py-6 space-y-1 ${effectiveCollapsed ? "px-2" : "px-4"}`}>
+        <nav
+          aria-label="Menú principal"
+          className={`sidebar-scrollbar flex-1 overflow-y-auto py-6 space-y-1 ${effectiveCollapsed ? "px-2" : "px-4"}`}
+        >
           <SidebarTip label="Inicio" disabled={!effectiveCollapsed}>
             <NavLink
               to="/"
@@ -202,7 +248,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
               {({ isActive }) => (
                 <>
                   <House className={sidebarIconClass(isActive)} />
-                  <span className={sidebarTextClass(effectiveCollapsed)}>Inicio</span>
+                  <span className={sidebarTextClass(effectiveCollapsed)}>
+                    Inicio
+                  </span>
                 </>
               )}
             </NavLink>
@@ -223,7 +271,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <TrendingUp className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Presidencia</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Presidencia
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -231,21 +281,23 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
           )}
 
           {canAccess("/marketing") && (
-            <SidebarTip label='Marketing' disabled={!effectiveCollapsed}>
+            <SidebarTip label="Marketing" disabled={!effectiveCollapsed}>
               <NavLink
-                to='/marketing'
+                to="/marketing"
                 id="sidebar-marketing"
                 onClick={onClose}
                 onMouseEnter={prefetchMarketing.onMouseEnter}
                 onFocus={prefetchMarketing.onFocus}
                 onMouseLeave={prefetchMarketing.onMouseLeave}
                 onBlur={prefetchMarketing.onBlur}
-                className={navLinkClass('warning', effectiveCollapsed)}
+                className={navLinkClass("warning", effectiveCollapsed)}
               >
                 {({ isActive }) => (
                   <>
-                    <BanknoteArrowDown className={sidebarIconClass(isActive)}/>
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Marketing</span>
+                    <BanknoteArrowDown className={sidebarIconClass(isActive)} />
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Marketing
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -267,7 +319,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <Building2 className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Infra / Mant</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Infra / Mant
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -289,7 +343,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <CheckSquare className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Cierre Obra</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Cierre Obra
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -311,7 +367,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <FileSearch className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Procura</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Procura
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -333,7 +391,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <Users className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Analistas</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Analistas
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -355,7 +415,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <DollarSign className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Finanzas</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Finanzas
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -377,7 +439,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <UserCog className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Proveedores</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Proveedores
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -415,7 +479,9 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                 {({ isActive }) => (
                   <>
                     <Settings className={sidebarIconClass(isActive)} />
-                    <span className={sidebarTextClass(effectiveCollapsed)}>Configuración</span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Configuración
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -424,18 +490,27 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
         </nav>
 
         {/* ── Exchange Rates Section ───────────────────────────────────────── */}
-        <ExchangeRatesSidebarSection userRole={activeRole} isCollapsed={effectiveCollapsed} />
+        <ExchangeRatesSidebarSection
+          userRole={activeRole}
+          isCollapsed={effectiveCollapsed}
+        />
 
         {/* ── Sidebar Footer ──────────────────────────────────────────────── */}
-        <div className={`border-t border-slate-800/80 shrink-0 space-y-2 ${effectiveCollapsed ? "p-2" : "p-4"}`}>
+        <div
+          className={`border-t border-slate-800/80 shrink-0 space-y-2 ${effectiveCollapsed ? "p-2" : "p-4"}`}
+        >
           {/* User info */}
           {user && (
-            <div className={`flex items-center py-2 rounded-xl text-xs ${effectiveCollapsed ? "justify-center px-0" : "gap-3 px-3"}`}>
+            <div
+              className={`flex items-center py-2 rounded-xl text-xs ${effectiveCollapsed ? "justify-center px-0" : "gap-3 px-3"}`}
+            >
               <SidebarTip
                 label={
                   <>
                     <span className="block text-slate-100">{user.name}</span>
-                    <span className="block text-[10px] font-mono font-normal text-slate-400">{user.email}</span>
+                    <span className="block text-[10px] font-mono font-normal text-slate-400">
+                      {user.email}
+                    </span>
                   </>
                 }
                 disabled={!effectiveCollapsed}
@@ -444,9 +519,15 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
                   {userInitials}
                 </div>
               </SidebarTip>
-              <div className={`${sidebarTextClass(effectiveCollapsed)} min-w-0 flex-1`}>
-                <p className="text-slate-200 font-bold truncate leading-tight">{user.name}</p>
-                <p className="text-[11px] text-slate-500 font-mono truncate leading-tight mt-0.5">{user.email}</p>
+              <div
+                className={`${sidebarTextClass(effectiveCollapsed)} min-w-0 flex-1`}
+              >
+                <p className="text-slate-200 font-bold truncate leading-tight">
+                  {user.name}
+                </p>
+                <p className="text-[11px] text-slate-500 font-mono truncate leading-tight mt-0.5">
+                  {user.email}
+                </p>
               </div>
             </div>
           )}
@@ -458,11 +539,17 @@ function SidebarNav({ isOpen, onClose, user, activeRole, onLogout, canAccess, au
               role="menuitem"
               onClick={onLogout}
               className={`group w-full flex items-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-slate-400 hover:bg-slate-900/50 hover:text-white focus-visible:outline-none focus-visible:ring-2 ${SIDEBAR_FOCUS_RING} ${
-                effectiveCollapsed ? "justify-center gap-0 px-0 py-2.5" : "gap-3 px-3 py-2.5 hover:translate-x-0.5"
+                effectiveCollapsed
+                  ? "justify-center gap-0 px-0 py-2.5"
+                  : "gap-3 px-3 py-2.5 hover:translate-x-0.5"
               }`}
             >
-              <LogOut className={`h-[18px] w-[18px] shrink-0 transition-transform duration-200 ${effectiveCollapsed ? "" : "group-hover:translate-x-0.5"}`} />
-              <span className={sidebarTextClass(effectiveCollapsed)}>Cerrar Sesión</span>
+              <LogOut
+                className={`h-[18px] w-[18px] shrink-0 transition-transform duration-200 ${effectiveCollapsed ? "" : "group-hover:translate-x-0.5"}`}
+              />
+              <span className={sidebarTextClass(effectiveCollapsed)}>
+                Cerrar Sesión
+              </span>
             </button>
           </SidebarTip>
         </div>

@@ -46,6 +46,7 @@ interface ReevaluationSectionProps {
   authToken: string;
   onResolveReevaluation: (projectId: string, notes?: string) => Promise<void> | void;
   onSyncProject: (project: Project) => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
 function latestReevaluationLog(projectId: string, auditLogs: AuditLog[]): AuditLog | undefined {
@@ -54,7 +55,7 @@ function latestReevaluationLog(projectId: string, auditLogs: AuditLog[]): AuditL
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
 }
 
-export default function ReevaluationSection({ projects, auditLogs, authToken, onResolveReevaluation, onSyncProject }: ReevaluationSectionProps) {
+export default function ReevaluationSection({ projects, auditLogs, authToken, onResolveReevaluation, onSyncProject, onRefresh }: ReevaluationSectionProps) {
   const { containerRef, rows: pageSize } = useContainerRows();
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const [selectedId, setSelectedId] = useState("");
@@ -149,6 +150,7 @@ export default function ReevaluationSection({ projects, auditLogs, authToken, on
         noun="expediente"
         nounPlural="expedientes"
         viewToggle={{ ...viewToggle, accent: "warning" }}
+        onRefresh={onRefresh}
       />
 
       <AnimatePresence mode="wait">

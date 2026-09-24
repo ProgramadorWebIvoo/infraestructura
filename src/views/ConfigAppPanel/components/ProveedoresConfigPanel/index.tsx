@@ -284,6 +284,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
                 emptyMessage="No se encontraron proveedores con ese criterio."
                 fillViewport
                 pageSize={20}
+                onRefresh={loadContractors}
               />
             </Card>
           </motion.div>

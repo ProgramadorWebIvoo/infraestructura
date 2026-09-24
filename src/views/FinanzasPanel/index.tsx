@@ -33,9 +33,10 @@ interface FinanzasPanelProps {
   onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   isLoading?: boolean;
+  onRefreshData?: () => Promise<void> | void;
 }
 
-export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, onPayFinal, isLoading = false }: FinanzasPanelProps) {
+export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, onPayFinal, isLoading = false, onRefreshData }: FinanzasPanelProps) {
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("stats");
 
@@ -138,8 +139,8 @@ export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, 
         <TabPanel activeKey={activeTab}>
           {activeTab === "book" && <LedgerSection paidLedger={paidLedger} />}
           {activeTab === "stats" && <FinancialSummarySection projects={projects} paidLedger={paidLedger} />}
-          {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} />}
-          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} />}
+          {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} onRefresh={onRefreshData} />}
+          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} onRefresh={onRefreshData} />}
         </TabPanel>
       </motion.div>
     </motion.div>

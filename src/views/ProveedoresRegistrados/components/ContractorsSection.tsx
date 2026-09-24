@@ -32,6 +32,7 @@ interface ContractorsSectionProps {
   onOpenEdit: (contractor: Contractor) => void;
   onOpenInvite: (contractor: Contractor) => void;
   onOpenHistory: (contractor: Contractor) => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
 export default function ContractorsSection({
@@ -40,6 +41,7 @@ export default function ContractorsSection({
   onOpenEdit,
   onOpenInvite,
   onOpenHistory,
+  onRefresh,
 }: ContractorsSectionProps) {
   const [query, setQuery] = useState("");
   const [detailSupplier, setDetailSupplier] = useState<Contractor | null>(null);
@@ -129,6 +131,7 @@ export default function ContractorsSection({
         noun="proveedor"
         nounPlural="proveedores"
         viewToggle={{ ...viewToggle, accent: "brand" }}
+        onRefresh={onRefresh}
       />
 
       <AnimatePresence mode="wait">

@@ -33,6 +33,7 @@ const DISPLAY_CURRENCY = "USD";
 interface SupplierProposalsListProps {
   proposals: SupplierMaterialProposal[];
   isLoading: boolean;
+  onRefresh?: () => Promise<void> | void;
 }
 
 interface ProjectProposalSummary {
@@ -43,7 +44,7 @@ interface ProjectProposalSummary {
   latestProposalDate: string;
 }
 
-function SupplierProposalsListComponent({ proposals, isLoading }: SupplierProposalsListProps) {
+function SupplierProposalsListComponent({ proposals, isLoading, onRefresh }: SupplierProposalsListProps) {
   const [projectSearch, setProjectSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<ProjectProposalSummary | null>(null);
   const { viewMode, viewToggle } = useTableViewMode("table");
@@ -174,6 +175,7 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
           noun="proyecto"
           nounPlural="proyectos"
           viewToggle={{ ...viewToggle, accent: "info" }}
+          onRefresh={onRefresh}
         />
 
         <AnimatePresence mode="wait">
@@ -244,6 +246,7 @@ function SupplierProposalsListComponent({ proposals, isLoading }: SupplierPropos
           proposals={proposals}
           onClose={() => setSelectedProject(null)}
           isOpen={true}
+          onRefresh={onRefresh}
         />
       )}
     </>

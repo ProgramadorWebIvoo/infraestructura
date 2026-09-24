@@ -37,7 +37,7 @@ interface UsuariosPanelProps {
 export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelProps) {
   const { showToast } = useToast();
   const {
-    users, isLoading, roles,
+    users, isLoading, roles, loadUsers,
     handleCreateUser, handleUpdateUser,
     handleToggleUserStatus, handleSendPasswordReset,
   } = useUsuarios(authToken, showToast);
@@ -289,6 +289,7 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
               }
               fillViewport
               pageSize={20}
+              onRefresh={loadUsers}
             />
           </Card>
         </motion.div>

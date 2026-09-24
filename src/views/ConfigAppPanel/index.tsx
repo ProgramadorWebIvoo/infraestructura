@@ -213,6 +213,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
     isLoading: isLoadingRatingIa,
     isRunning: isRunningRatingIa,
     runNow: runRatingIaNow,
+    loadRunLogs: refreshRatingIaRunLogs,
+    loadSuggestions: refreshRatingIaSuggestions,
   } = useRatingIaBatch(authToken, canUseRatingIaBatch);
 
   const handleUpdateCurrency = async (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => {
@@ -511,6 +513,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                       isSyncing={isSyncing}
                       cronHour={cronHour}
                       cronEnabled={cronEnabled}
+                      onRefresh={refreshSyncLogs}
                     />
                   </div>
                 ) : group === "__debug_mode__" ? (
@@ -525,6 +528,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                     onRunNow={runRatingIaNow}
                     cronFrecuenciaDias={ratingIaFrecuenciaDias}
                     cronEnabled={ratingIaCronEnabled}
+                    onRefreshLogs={refreshRatingIaRunLogs}
+                    onRefreshSuggestions={refreshRatingIaSuggestions}
                   />
                 ) : (
                   <SettingGroupCard

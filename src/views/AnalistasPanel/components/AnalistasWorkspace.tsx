@@ -91,6 +91,7 @@ interface AnalistasWorkspaceProps {
   onSubmitComparative: (projectId: string) => void;
   onImportSupplierProposals?: (projectId: string) => Promise<ImportResult>;
   authToken: string;
+  onRefresh?: () => Promise<void> | void;
 }
 
 export default function AnalistasWorkspace({
@@ -103,6 +104,7 @@ export default function AnalistasWorkspace({
   onSubmitComparative,
   onImportSupplierProposals,
   authToken,
+  onRefresh,
 }: AnalistasWorkspaceProps) {
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
@@ -226,6 +228,7 @@ export default function AnalistasWorkspace({
           noun="expediente"
           nounPlural="expedientes"
           viewToggle={{ ...viewToggle, accent: "success" }}
+          onRefresh={onRefresh}
         />
 
         <AnimatePresence mode="wait">

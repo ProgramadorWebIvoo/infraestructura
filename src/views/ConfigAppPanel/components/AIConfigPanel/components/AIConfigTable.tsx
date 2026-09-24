@@ -48,6 +48,7 @@ export default function AIConfigTable({
   onToggleActive,
   onSync,
   onCreateNew,
+  onRefresh,
 }: {
   configs: AiConfigRecord[];
   isLoading: boolean;
@@ -61,6 +62,7 @@ export default function AIConfigTable({
   onToggleActive: (config: AiConfigRecord) => void;
   onSync: () => void;
   onCreateNew: () => void;
+  onRefresh?: () => Promise<void> | void;
 }) {
   const columns: Column<AiConfigRecord>[] = useMemo(() => [
     {
@@ -211,6 +213,7 @@ export default function AIConfigTable({
           emptyMessage="No hay configuraciones de IA. Crea una nueva para comenzar."
           maxHeight="30rem"
           pageSize={20}
+          onRefresh={onRefresh}
         />
       </Card>
     </motion.div>

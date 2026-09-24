@@ -243,6 +243,7 @@ export default function RolesConfigPanel({ authToken, activeRole }: RolesConfigP
                 emptyMessage="No se encontraron roles con ese criterio."
                 fillViewport
                 pageSize={20}
+                onRefresh={loadRoles}
               />
             </Card>
           </motion.div>

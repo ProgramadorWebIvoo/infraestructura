@@ -35,6 +35,7 @@ interface ProveedoresRegistradosProps {
   authToken: string;
   onUpdateContractorRating: (code: string, rating: number) => Promise<void>;
   isLoading?: boolean;
+  onRefreshData?: () => Promise<void> | void;
 }
 
 type TabKey = "contractors" | "proposals" | "catalog";
@@ -45,10 +46,11 @@ export default function ProveedoresRegistrados({
   authToken,
   onUpdateContractorRating,
   isLoading = false,
+  onRefreshData,
 }: ProveedoresRegistradosProps) {
   const { showToast } = useToast();
-  const { proposals, isLoadingProposals, handleInviteSupplier, fetchLatestInvitation } = useProveedores(authToken, showToast);
-  const { products, isLoadingProducts, categories } = useCatalogProducts(authToken, showToast);
+  const { proposals, isLoadingProposals, handleInviteSupplier, fetchLatestInvitation, loadProposals } = useProveedores(authToken, showToast);
+  const { products, isLoadingProducts, categories, refreshProducts } = useCatalogProducts(authToken, showToast);
   const [activeTab, setActiveTab] = useState<TabKey>("contractors");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
 
@@ -129,10 +131,11 @@ export default function ProveedoresRegistrados({
                 onOpenEdit={handleOpenEdit}
                 onOpenInvite={handleOpenInviteModal}
                 onOpenHistory={handleOpenHistory}
+                onRefresh={onRefreshData}
               />
             )}
             {activeTab === "proposals" && (
-              <SupplierProposalsList proposals={proposals} isLoading={isLoadingProposals} />
+              <SupplierProposalsList proposals={proposals} isLoading={isLoadingProposals} onRefresh={loadProposals} />
             )}
             {activeTab === "catalog" && (
               <CatalogSection
@@ -140,6 +143,7 @@ export default function ProveedoresRegistrados({
                 categories={categories}
                 isLoading={isLoadingProducts}
                 onOpenProduct={setSelectedProduct}
+                onRefresh={refreshProducts}
               />
             )}
           </TabPanel>

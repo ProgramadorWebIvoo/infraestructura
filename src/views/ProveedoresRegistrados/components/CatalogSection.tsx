@@ -28,9 +28,10 @@ interface CatalogSectionProps {
   categories: CatalogCategory[];
   isLoading: boolean;
   onOpenProduct: (product: CatalogProduct) => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
-export default function CatalogSection({ products, categories, isLoading, onOpenProduct }: CatalogSectionProps) {
+export default function CatalogSection({ products, categories, isLoading, onOpenProduct, onRefresh }: CatalogSectionProps) {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const { containerRef, rows: pageSize } = useContainerRows();
@@ -143,6 +144,7 @@ export default function CatalogSection({ products, categories, isLoading, onOpen
           data={filteredProducts}
           rowKey={(p) => p.id}
           isLoading={isLoading}
+          onRefresh={onRefresh}
           pageSize={pageSize}
           fillViewport
           stickyHeader

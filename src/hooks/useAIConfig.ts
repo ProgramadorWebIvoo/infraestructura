@@ -249,6 +249,7 @@ export function useAIConfig(authToken: string) {
     isUsageLoading,
     providerModels,
     loadUsage,
+    loadConfigs,
     createConfig,
     updateConfig,
     deleteConfig,

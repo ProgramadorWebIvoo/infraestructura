@@ -243,6 +243,7 @@ export default function ProjectTypeConfigPanel({ authToken, activeRole }: Projec
                 emptyMessage="No se encontraron tipos de proyecto con ese criterio."
                 fillViewport
                 pageSize={20}
+                onRefresh={loadProjectTypes}
               />
             </Card>
           </motion.div>

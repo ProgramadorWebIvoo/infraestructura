@@ -39,6 +39,7 @@ interface CierreObraPanelProps {
   onVerifyCompletion: (projectId: string) => void;
   onSyncProject: (project: Project) => void;
   isLoading?: boolean;
+  onRefreshData?: () => Promise<void> | void;
 }
 
 export default function CierreObraPanel({
@@ -51,6 +52,7 @@ export default function CierreObraPanel({
   onVerifyCompletion,
   onSyncProject,
   isLoading = false,
+  onRefreshData,
 }: CierreObraPanelProps) {
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("revision");
@@ -115,13 +117,13 @@ export default function CierreObraPanel({
                   </ol>
                 </InfoBanner>
                 <div className="min-h-0 flex-1 flex flex-col">
-                  <TechnicalReviewSection projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onSyncProject={onSyncProject} />
+                  <TechnicalReviewSection projects={projects} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onSyncProject={onSyncProject} onRefresh={onRefreshData} />
                 </div>
               </div>
             )}
             {activeTab === "reevaluacion" && (
               <div className="min-h-0 flex flex-col flex-1">
-                <ReevaluationSection projects={projects} auditLogs={auditLogs} authToken={authToken} onResolveReevaluation={onResolveReevaluation} onSyncProject={onSyncProject} />
+                <ReevaluationSection projects={projects} auditLogs={auditLogs} authToken={authToken} onResolveReevaluation={onResolveReevaluation} onSyncProject={onSyncProject} onRefresh={onRefreshData} />
               </div>
             )}
             {activeTab === "auditoria" && (
