@@ -11,8 +11,10 @@ import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import { Table, type Column } from "@/components/UI/Table";
 import ExportButton, { type ExportColumn, type ExportRow } from "@/components/UI/ExportButton";
+import BsAmount from "@/components/UI/BsAmount";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useContainerRows } from "@/hooks/useContainerRows";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
 export interface LedgerEntry {
   id: string;
@@ -40,17 +42,33 @@ const FILTERS: { key: TypeFilter; label: string }[] = [
   { key: "LIQUIDACIÓN_FINAL", label: "Liquidaciones" },
 ];
 
-// Definidas a nivel de módulo (no dependen de props/estado): antes eran un
-// array literal inline en el JSX de <Table columns={[...]} />, recreado en
-// cada render — columns es dependencia del useMemo de sorting interno de
-// Table.tsx, así que invalidarlo de más re-renderizaba toda la tabla.
-const ledgerColumns: Column<LedgerEntry>[] = [
+type ConvertFn = (amount: number, fromCode: string) => number;
+
+/**
+ * Factory de columnas — antes era un array a nivel de módulo (nunca se
+ * recreaba entre renders), pero la columna de monto ahora necesita el
+ * conversor de tasa vigente. Se memoiza en el componente con useMemo
+ * para conservar la misma garantía: no invalidar el sorting interno de
+ * Table.tsx en cada render, solo cuando cambian las tasas.
+ */
+const buildLedgerColumns = (convert: ConvertFn, hasRates: boolean, isLoadingRates: boolean): Column<LedgerEntry>[] => [
   { key: "voucher", label: "ID Voucher", sortable: true, render: (tx) => <span className="font-mono font-bold text-sky-600 inline-flex items-center gap-1"><ArrowUpRight className="h-4 w-4 text-slate-400 shrink-0" />{tx.voucher}</span> },
   { key: "title", label: "Ref. Obra", sortable: true, render: (tx) => <><div className="font-bold text-slate-800 line-clamp-1">{tx.title}</div><span className="font-mono text-[9px] text-slate-400">ID: {tx.projectId}</span></> },
   { key: "type", label: "Tipo Egreso", sortable: true, render: (tx) => <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold ${tx.type === "ANTICIPO" ? "bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 border border-rose-100" : "bg-gradient-to-br from-sky-50 to-sky-100/50 text-sky-700 border border-sky-100"}`}>{tx.type}</span> },
   { key: "contractorCode", label: "Proveedor (Código)", sortable: true, render: (tx) => <span className="font-mono font-bold text-slate-600">{tx.contractorCode}</span> },
   { key: "date", label: "Fecha Pago", sortable: true, render: (tx) => <span className="font-mono text-slate-500 font-medium">{tx.date}</span> },
-  { key: "amount", label: "Monto Desembolsado", align: "right", sortable: true, render: (tx) => <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span> },
+  {
+    key: "amount",
+    label: "Monto Desembolsado",
+    align: "right",
+    sortable: true,
+    render: (tx) => (
+      <div>
+        <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+        <BsAmount amount={tx.amount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
+      </div>
+    ),
+  },
 ];
 
 export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
@@ -58,6 +76,11 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("TODOS");
   const debouncedLedgerSearch = useDebounce(ledgerSearch, 300);
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const ledgerColumns = useMemo(
+    () => buildLedgerColumns(convert, hasRates, isLoadingRates),
+    [convert, hasRates, isLoadingRates]
+  );
 
   const filteredLedger = useMemo(() => {
     const q = debouncedLedgerSearch.toLowerCase();
@@ -166,6 +189,7 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Total Desembolsado</span>
             </div>
             <p className="text-lg font-black font-mono text-slate-800">${fmtMoney(stats.total)}</p>
+            <BsAmount amount={stats.total} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
             <p className="text-[10px] text-slate-400 font-medium">{stats.count} movimiento(s)</p>
           </div>
           <div className="p-3.5 rounded-xl border border-rose-100 bg-rose-50/40">
@@ -174,6 +198,7 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-400">Anticipos Liberados</span>
             </div>
             <p className="text-lg font-black font-mono text-rose-700">${fmtMoney(stats.advancesTotal)}</p>
+            <BsAmount amount={stats.advancesTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
             <p className="text-[10px] text-rose-400/80 font-medium">{stats.advancesCount} desembolso(s)</p>
           </div>
           <div className="p-3.5 rounded-xl border border-sky-100 bg-sky-50/40">
@@ -182,6 +207,7 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-sky-400">Finiquitos Liquidados</span>
             </div>
             <p className="text-lg font-black font-mono text-sky-700">${fmtMoney(stats.finalsTotal)}</p>
+            <BsAmount amount={stats.finalsTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
             <p className="text-[10px] text-sky-400/80 font-medium">{stats.finalsCount} liquidación(es)</p>
           </div>
         </div>
@@ -235,6 +261,14 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
               </td>
               <td className="py-3 px-4 text-right font-mono font-black text-slate-900">
                 ${fmtMoney(filteredLedger.reduce((sum, tx) => sum + tx.amount, 0))}
+                <BsAmount
+                  amount={filteredLedger.reduce((sum, tx) => sum + tx.amount, 0)}
+                  convert={convert}
+                  hasRates={hasRates}
+                  isLoading={isLoadingRates}
+                  variant="block"
+                  className="text-right"
+                />
               </td>
             </tr>
           }
