@@ -19,6 +19,9 @@ import { SearchInput, SelectFilter } from "@/components/UI/FilterBar";
 import { Table, type Column } from "@/components/UI/Table";
 import { daysBetween, approvedOf, releasedOf, winnerOf } from "@/utils/dashboardSummary";
 import { itemVariants } from "@/animations";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
+import type { UseCurrencyConversionReturn } from "@/hooks/useCurrencyConversion";
 
 const fmtMoney = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -41,7 +44,8 @@ function AdvanceBar({ project }: { project: Project }) {
   );
 }
 
-function getProjectColumns(onSelectProject: (p: Project) => void): Column<Project>[] {
+function getProjectColumns(onSelectProject: (p: Project) => void, currency: UseCurrencyConversionReturn): Column<Project>[] {
+  const { convert, hasRates, isLoading } = currency;
   return [
     {
       key: "title",
@@ -67,7 +71,16 @@ function getProjectColumns(onSelectProject: (p: Project) => void): Column<Projec
         </div>
       ),
     },
-    { key: "estimatedTotal", label: "Estimado Materiales", render: (p) => <span className="font-mono font-bold text-slate-700">${fmtMoney(p.estimatedTotal)}</span> },
+    {
+      key: "estimatedTotal",
+      label: "Estimado Materiales",
+      render: (p) => (
+        <div>
+          <span className="font-mono font-bold text-slate-700">${fmtMoney(p.estimatedTotal)}</span>
+          <BsAmount amount={p.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoading} />
+        </div>
+      ),
+    },
     {
       key: "finalContractValue",
       label: "Contrato Final",
@@ -78,6 +91,7 @@ function getProjectColumns(onSelectProject: (p: Project) => void): Column<Projec
         return (
           <div>
             <div className="font-mono font-black text-slate-900">${fmtMoney(winner.totalCost)}</div>
+            <BsAmount amount={winner.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoading} />
             {p.estimatedTotal > 0 && (
               <div className={`text-[10px] font-mono font-bold ${variance >= 0 ? "text-amber-600" : "text-emerald-600"}`}>
                 {variance >= 0 ? "+" : ""}{variance.toFixed(1)}% vs estimado
@@ -161,7 +175,8 @@ export default function MasterTableSection({ projects, onSelectProject, onRefres
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
-  const projectColumns = useMemo(() => getProjectColumns(onSelectProject), [onSelectProject]);
+  const currency = useCurrencyConversion();
+  const projectColumns = useMemo(() => getProjectColumns(onSelectProject, currency), [onSelectProject, currency]);
   const statusOptions = useMemo(() => buildStatusOptions(), []);
 
   const filteredProjects = useMemo(() => projects.filter(p => {
