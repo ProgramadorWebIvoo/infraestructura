@@ -64,9 +64,9 @@ export function proposalTotal(p: SupplierMaterialProposal): number {
 
 export const STATUS_LABELS: Record<string, string> = {
   CREADO: "Creado",
-  RECHAZADO_CIERRE: "Rechazado",
-  REVISADO_CIERRE: "Revisado (Cierre)",
-  EN_REEVALUACION_CIERRE: "En Reevaluación (Cierre)",
+  RECHAZADO_AUDITORIA: "Rechazado",
+  REVISADO_AUDITORIA: "Revisado (Auditoría)",
+  EN_REEVALUACION_AUDITORIA: "En Reevaluación (Auditoría)",
   CONFIRMADO_PROCURA: "Confirmado (Procura)",
   COMPARATIVA_ENVIADA: "Comparativa Enviada",
   CONTRATADO: "Contratado",

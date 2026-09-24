@@ -73,7 +73,7 @@ export default function InfraestructuraMantenimientoPanel({
       pendingReview: projects.filter((p) => p.status === ProjectStatus.CREADO).length,
       inExecution: projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION).length,
       completed: projects.filter((p) => p.status === ProjectStatus.COMPLETADO_PAGADO).length,
-      rejected: projects.filter((p) => p.status === ProjectStatus.RECHAZADO_CIERRE).length,
+      rejected: projects.filter((p) => p.status === ProjectStatus.RECHAZADO_AUDITORIA).length,
     }),
     [projects],
   );

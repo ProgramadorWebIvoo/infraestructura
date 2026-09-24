@@ -117,7 +117,7 @@ describe("SidebarNav", () => {
 
     expect(screen.getByText("Presidencia")).toBeInTheDocument();
     expect(screen.getByText("Infra / Mant")).toBeInTheDocument();
-    expect(screen.queryByText("Cierre Obra")).not.toBeInTheDocument();
+    expect(screen.queryByText("Auditoría")).not.toBeInTheDocument();
     expect(screen.queryByText("Procura")).not.toBeInTheDocument();
     expect(screen.queryByText("Analistas")).not.toBeInTheDocument();
     expect(screen.queryByText("Finanzas")).not.toBeInTheDocument();
@@ -129,7 +129,7 @@ describe("SidebarNav", () => {
 
     expect(screen.getByText("Presidencia")).toBeInTheDocument();
     expect(screen.getByText("Infra / Mant")).toBeInTheDocument();
-    expect(screen.getByText("Cierre Obra")).toBeInTheDocument();
+    expect(screen.getByText("Auditoría")).toBeInTheDocument();
     expect(screen.getByText("Procura")).toBeInTheDocument();
     expect(screen.getByText("Analistas")).toBeInTheDocument();
     expect(screen.getByText("Finanzas")).toBeInTheDocument();
@@ -214,7 +214,7 @@ describe("SidebarNav", () => {
 
     expect(screen.getByText("Presidencia").closest("a")).toHaveAttribute("href", "/presidencia");
     expect(screen.getByText("Infra / Mant").closest("a")).toHaveAttribute("href", "/infraestructura");
-    expect(screen.getByText("Cierre Obra").closest("a")).toHaveAttribute("href", "/auditoria");
+    expect(screen.getByText("Auditoría").closest("a")).toHaveAttribute("href", "/auditoria");
     expect(screen.getByText("Procura").closest("a")).toHaveAttribute("href", "/procura");
     expect(screen.getByText("Analistas").closest("a")).toHaveAttribute("href", "/analistas");
     expect(screen.getByText("Finanzas").closest("a")).toHaveAttribute("href", "/finanzas");

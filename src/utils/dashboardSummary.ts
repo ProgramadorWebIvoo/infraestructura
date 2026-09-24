@@ -23,8 +23,8 @@ export const COMMITTED_STATUSES: ReadonlySet<string> = new Set([
 /** Orden canónico del flujo, usado para ordenar el funnel. */
 export const STATUS_ORDER: readonly string[] = [
   "CREADO",
-  "REVISADO_CIERRE",
-  "EN_REEVALUACION_CIERRE",
+  "REVISADO_AUDITORIA",
+  "EN_REEVALUACION_AUDITORIA",
   "CONFIRMADO_PROCURA",
   "COMPARATIVA_ENVIADA",
   "CONTRATADO",

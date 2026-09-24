@@ -34,7 +34,7 @@ function currentRoleOf(status: ProjectStatus): RoleId | null {
     case ProjectStatus.CREADO:
     case ProjectStatus.VERIFICANDO_FINALIZACION:
       return "AUDITORIA";
-    case ProjectStatus.REVISADO_CIERRE:
+    case ProjectStatus.REVISADO_AUDITORIA:
     case ProjectStatus.COMPARATIVA_ENVIADA:
       return "PROCURA";
     case ProjectStatus.CONFIRMADO_PROCURA:
@@ -151,10 +151,10 @@ export default function ProjectOrganigrama({ project }: { project: Project }) {
           <div className="w-1/3 h-4 border-t-2 border-r-2 border-slate-300 rounded-tr-lg" />
         </div>
 
-        {/* 3 columnas: Cierre / Procura-Analistas / Finanzas */}
+        {/* 3 columnas: Auditoría / Procura-Analistas / Finanzas */}
         <div className="w-full grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center">
-            <OrgNode role="AUDITORIA" code="CIERRE DE OBRA" label="Revisión Técnica" state={stateOf("AUDITORIA")} />
+            <OrgNode role="AUDITORIA" code="AUDITORÍA" label="Revisión Técnica" state={stateOf("AUDITORIA")} />
             <div className="h-2.5 w-0.5 bg-slate-300" />
             <span className="text-[9px] font-mono font-bold text-slate-500 bg-white px-2 py-0.5 border border-slate-200 rounded-lg">Infraestructura</span>
           </div>

@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Sección de Auditoría: expedientes que Procura devolvió a reevaluación
- * (EN_REEVALUACION_CIERRE) antes de autorizar inversión — ver
+ * (EN_REEVALUACION_AUDITORIA) antes de autorizar inversión — ver
  * ProjectController::sendToReevaluation(). Muestra el motivo indicado por
  * Procura (último AuditLog de esa acción) y, al abrir un expediente, corre
  * el mismo wizard de revisión que TechnicalReviewSection (evaluación IA del
  * expediente, materiales, documentación) en mode="reevaluation" — el auditor
  * pasa por el mismo proceso de revisión antes de reenviar, no un simple
  * botón de confirmación. Al terminar, el expediente vuelve a Procura
- * (REVISADO_CIERRE) sin pasar por CREADO, porque la cubicación y planos ya
+ * (REVISADO_AUDITORIA) sin pasar por CREADO, porque la cubicación y planos ya
  * fueron aprobados por Auditoría.
  *
  * Tab explícita del panel (AuditoriaPanel/index.tsx), mismo criterio de
@@ -63,7 +63,7 @@ export default function ReevaluationSection({ projects, auditLogs, authToken, on
   const warning = SEMANTIC_COLOR_MAP.warning;
 
   const pendingReevaluation = useMemo(
-    () => projects.filter((p) => p.status === ProjectStatus.EN_REEVALUACION_CIERRE),
+    () => projects.filter((p) => p.status === ProjectStatus.EN_REEVALUACION_AUDITORIA),
     [projects],
   );
 

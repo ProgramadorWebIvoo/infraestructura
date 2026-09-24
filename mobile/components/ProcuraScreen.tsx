@@ -16,14 +16,14 @@ export default function ProcuraScreen({
   onApprove: (project: Project) => Promise<void>;
   onSelectContractor: (project: Project, proposal: Proposal) => Promise<void>;
 }) {
-  const visible = projects.filter((project) => ["REVISADO_CIERRE", "COMPARATIVA_ENVIADA"].includes(project.status));
+  const visible = projects.filter((project) => ["REVISADO_AUDITORIA", "COMPARATIVA_ENVIADA"].includes(project.status));
 
   return (
     <View style={styles.section}>
       <SectionTitle title="Procura" subtitle="Presupuesto y adjudicación" />
       {visible.map((project) => (
         <ProjectCard key={project.id} project={project}>
-          {project.status === "REVISADO_CIERRE" ? (
+          {project.status === "REVISADO_AUDITORIA" ? (
             <PrimaryButton label="Aprobar inversión" icon="checkmark-circle" onPress={() => onApprove(project)} />
           ) : (
             (project.proposals ?? []).map((proposal) => (

@@ -88,7 +88,7 @@ export function useReviewWorkflows({
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
-      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_CIERRE, auditNotes: notes.trim() || undefined });
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_AUDITORIA, auditNotes: notes.trim() || undefined });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
           method: "POST",
@@ -121,7 +121,7 @@ export function useReviewWorkflows({
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
 
-      const previous = optimisticUpdate(projectId, { status: ProjectStatus.RECHAZADO_CIERRE });
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.RECHAZADO_AUDITORIA });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/reject-project`, {
           method: "POST",
@@ -245,7 +245,7 @@ export function useReviewWorkflows({
   );
 
   /** Elimina un documento (todas sus versiones) — usado por Auditoría
-   * (cualquier momento) e Infraestructura (solo mientras RECHAZADO_CIERRE,
+   * (cualquier momento) e Infraestructura (solo mientras RECHAZADO_AUDITORIA,
    * al editar/reenviar una petición rechazada, ver AttachmentsSection). */
   const handleDeleteDocument = useCallback(
     async (projectId: string, documentId: number) => {
@@ -266,7 +266,7 @@ export function useReviewWorkflows({
   );
 
   /** Procura devuelve a Auditoría, con motivo obligatorio, un expediente
-   * recién llegado (REVISADO_CIERRE) antes de autorizar inversión — mismo
+   * recién llegado (REVISADO_AUDITORIA) antes de autorizar inversión — mismo
    * shape de dos fases que handleRejectProject (JSON de motivo + upload
    * multipart opcional de evidencia + refetch). */
   const handleSendToReevaluation = useCallback(
@@ -280,7 +280,7 @@ export function useReviewWorkflows({
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
 
-      const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_REEVALUACION_CIERRE });
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_REEVALUACION_AUDITORIA });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/send-to-reevaluation`, {
           method: "POST",
@@ -323,13 +323,13 @@ export function useReviewWorkflows({
   );
 
   /** Auditoría resuelve una reevaluación solicitada por Procura y
-   * reenvía el expediente a REVISADO_CIERRE. */
+   * reenvía el expediente a REVISADO_AUDITORIA. */
   const handleResolveReevaluation = useCallback(
     async (projectId: string, notes?: string) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
-      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_CIERRE });
+      const previous = optimisticUpdate(projectId, { status: ProjectStatus.REVISADO_AUDITORIA });
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/resolve-reevaluation`, {
           method: "POST",

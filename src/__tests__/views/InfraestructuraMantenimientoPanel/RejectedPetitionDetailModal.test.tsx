@@ -41,7 +41,7 @@ const project: Project = {
   description: "Descripción original",
   location: "CD Central",
   createdDate: "2026-08-01",
-  status: ProjectStatus.RECHAZADO_CIERRE,
+  status: ProjectStatus.RECHAZADO_AUDITORIA,
   materials: [{ id: "m1", name: "Cemento", quantity: 1, unit: "Saco", estimatedUnitPrice: 10, condition: "NUEVO" }],
   estimatedTotal: 10,
   documents: [
@@ -54,7 +54,7 @@ const baseLog: AuditLog = {
   projectId: "PRJ-010",
   projectTitle: "Remodelación depósito",
   role: "AUDITORIA",
-  userName: "Ana Cierre",
+  userName: "Ana Auditoría",
   action: "Rechazo de petición de obra",
   timestamp: "2026-08-10 10:00:00",
   details: "La descripción no detalla el alcance del trabajo.",
@@ -72,7 +72,7 @@ describe("RejectedPetitionDetailModal", () => {
   it("muestra siempre el motivo del rechazo", () => {
     renderModal();
     expect(screen.getByText("La descripción no detalla el alcance del trabajo.")).toBeInTheDocument();
-    expect(screen.getByText(/Ana Cierre/)).toBeInTheDocument();
+    expect(screen.getByText(/Ana Auditoría/)).toBeInTheDocument();
   });
 
   it("no muestra la sección de observaciones si no existen", () => {

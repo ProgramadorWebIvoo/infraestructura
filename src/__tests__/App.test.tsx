@@ -39,7 +39,7 @@ vi.mock("@/views/InfraestructuraMantenimientoPanel", () => ({
   default: () => <div data-testid="view-infraestructura">Infraestructura Panel</div>,
 }));
 vi.mock("@/views/AuditoriaPanel", () => ({
-  default: () => <div data-testid="view-cierre">Cierre Obra Panel</div>,
+  default: () => <div data-testid="view-auditoria">Auditoría Panel</div>,
 }));
 vi.mock("@/views/ProcuraPanel", () => ({
   default: () => <div data-testid="view-procura">Procura Panel</div>,

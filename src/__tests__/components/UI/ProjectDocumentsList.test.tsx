@@ -29,7 +29,7 @@ function makeProject(documents: ProjectDocument[]): Project {
     description: "desc",
     location: "loc",
     createdDate: "2026-08-01",
-    status: "REVISADO_CIERRE",
+    status: "REVISADO_AUDITORIA",
     materials: [],
     estimatedTotal: 100,
     documents,

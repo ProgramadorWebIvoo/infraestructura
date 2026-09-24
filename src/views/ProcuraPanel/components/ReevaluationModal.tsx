@@ -72,7 +72,7 @@ export default function ReevaluationModal({ project, isOpen, onClose, onSendToRe
       maxWidth="max-w-md"
       icon={<Undo2 className="h-5 w-5" />}
       iconColor="amber"
-      badge="Reevaluación de cierre"
+      badge="Reevaluación de Auditoría"
       title={project ? `Enviar a reevaluación ${project.id}` : ""}
       infoLine={project ? project.title : ""}
       footer={

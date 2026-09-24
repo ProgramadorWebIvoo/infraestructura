@@ -102,8 +102,8 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
     const q = query.trim().toLowerCase();
     return projects.filter((p) => {
       if (p.status === ProjectStatus.CREADO) return false;
-      if (statusFilter === "REJECTED" && p.status !== ProjectStatus.RECHAZADO_CIERRE) return false;
-      if (statusFilter === "APPROVED" && p.status === ProjectStatus.RECHAZADO_CIERRE) return false;
+      if (statusFilter === "REJECTED" && p.status !== ProjectStatus.RECHAZADO_AUDITORIA) return false;
+      if (statusFilter === "APPROVED" && p.status === ProjectStatus.RECHAZADO_AUDITORIA) return false;
       const projectDate = p.createdDate?.slice(0, 10);
       if (dateFrom && (!projectDate || projectDate < dateFrom)) return false;
       if (dateTo && (!projectDate || projectDate > dateTo)) return false;

@@ -60,7 +60,7 @@ export default function AuditoriaPanel({
   const kpis = useMemo(
     () => ({
       pendingReview: projects.filter((p) => p.status === ProjectStatus.CREADO).length,
-      pendingReevaluation: projects.filter((p) => p.status === ProjectStatus.EN_REEVALUACION_CIERRE).length,
+      pendingReevaluation: projects.filter((p) => p.status === ProjectStatus.EN_REEVALUACION_AUDITORIA).length,
       inExecution: projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION).length,
       underAudit: projects.filter((p) => p.status === ProjectStatus.VERIFICANDO_FINALIZACION).length,
       revised: projects.filter((p) => p.status !== ProjectStatus.CREADO).length,

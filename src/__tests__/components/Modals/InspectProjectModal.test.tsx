@@ -109,7 +109,7 @@ describe("InspectProjectModal", () => {
     renderModal(createProject());
 
     expect(screen.getByText("PRESIDENCIA")).toBeInTheDocument();
-    expect(screen.getByText("CIERRE DE OBRA")).toBeInTheDocument();
+    expect(screen.getByText("AUDITORÍA")).toBeInTheDocument();
     expect(screen.getByText("GERENCIA PROCURA")).toBeInTheDocument();
     expect(screen.getByText("ANALISTAS")).toBeInTheDocument();
     expect(screen.getByText("FINANZAS")).toBeInTheDocument();
@@ -122,9 +122,9 @@ describe("InspectProjectModal", () => {
   it("proyecto CREADO: Auditoría en curso, resto pendiente, trazabilidad en paso 2", () => {
     renderModal(createProject());
 
-    // Organigrama: Presidencia hecho + leyenda; Cierre en curso; Procura/Analistas/Finanzas pendientes
+    // Organigrama: Presidencia hecho + leyenda; Auditoría en curso; Procura/Analistas/Finanzas pendientes
     expect(screen.getAllByText("Hecho").length).toBe(2); // nodo Presidencia + leyenda
-    expect(screen.getAllByText("En curso").length).toBe(3); // nodo Cierre + paso 2 + leyenda
+    expect(screen.getAllByText("En curso").length).toBe(3); // nodo Auditoría + paso 2 + leyenda
     expect(screen.getAllByText("Pendiente").length).toBe(10); // 3 nodos + pasos 3-8 (6) + leyenda
 
     // Trazabilidad: paso 1 completado, pasos 3-8 pendientes

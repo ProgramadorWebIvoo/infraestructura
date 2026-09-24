@@ -73,7 +73,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   const pendingInvestmentApproval = useMemo(
-    () => projects.filter(p => p.status === ProjectStatus.REVISADO_CIERRE),
+    () => projects.filter(p => p.status === ProjectStatus.REVISADO_AUDITORIA),
     [projects],
   );
 
@@ -328,7 +328,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                   <div className="space-y-5">
                     <div className="p-4 bg-gradient-to-br from-brand-50/40 to-white rounded-xl text-xs space-y-2 border border-brand-100/60 font-medium">
                       <div className="flex justify-between items-center">
-                        <strong className="font-bold text-slate-400">Estimado de Materiales (Cierre Obra):</strong>
+                        <strong className="font-bold text-slate-400">Estimado de Materiales (Auditoría):</strong>
                         <span className="text-right">
                           <span className="font-mono font-bold text-brand-700 block">{formatCurrency(activeReviewProject.estimatedTotal)}</span>
                           <BsAmount amount={activeReviewProject.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />

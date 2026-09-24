@@ -228,7 +228,7 @@ describe("useProjectsWorkflows", () => {
     };
 
     it("plain new files never link to an existing document (no more automatic inference)", async () => {
-      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_AUDITORIA });
       const refreshed = createMockProject({ status: ProjectStatus.CREADO });
       mockApiFetch
         .mockResolvedValueOnce(project)
@@ -256,7 +256,7 @@ describe("useProjectsWorkflows", () => {
     });
 
     it("uploads a versionReplacement with new_version_of explicit, regardless of how many existing documents of that type there are", async () => {
-      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_AUDITORIA });
       const refreshed = createMockProject({ status: ProjectStatus.CREADO });
       mockApiFetch
         .mockResolvedValueOnce(project) // POST /resubmit
@@ -290,7 +290,7 @@ describe("useProjectsWorkflows", () => {
     });
 
     it("uploads multiple versionReplacements independently, each with its own new_version_of", async () => {
-      const project = createMockProject({ status: ProjectStatus.RECHAZADO_CIERRE });
+      const project = createMockProject({ status: ProjectStatus.RECHAZADO_AUDITORIA });
       const refreshed = createMockProject({ status: ProjectStatus.CREADO });
       mockApiFetch
         .mockResolvedValueOnce(project)
@@ -325,7 +325,7 @@ describe("useProjectsWorkflows", () => {
 
   describe("handleReviewProject", () => {
     it("POSTs review with notes — Auditoría ya no sube documentos, solo audita", async () => {
-      const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
+      const project = createMockProject({ status: ProjectStatus.REVISADO_AUDITORIA });
       mockApiFetch.mockResolvedValueOnce(project);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
@@ -342,7 +342,7 @@ describe("useProjectsWorkflows", () => {
     });
 
     it("handles review without notes", async () => {
-      const project = createMockProject({ status: ProjectStatus.REVISADO_CIERRE });
+      const project = createMockProject({ status: ProjectStatus.REVISADO_AUDITORIA });
       mockApiFetch.mockResolvedValueOnce(project);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
@@ -408,7 +408,7 @@ describe("useProjectsWorkflows", () => {
   // inmediato con el status esperado, ANTES de que el fetch resuelva.
   describe("actualización optimista (evita el 'parpadeo' de varios segundos)", () => {
     it("handleApproveInvestment aplica CONFIRMADO_PROCURA de inmediato, antes de que resuelva el fetch", async () => {
-      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_CIERRE });
+      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_AUDITORIA });
       getProject.mockReturnValue(current);
 
       let resolveFetch!: (value: Project) => void;
@@ -434,7 +434,7 @@ describe("useProjectsWorkflows", () => {
     });
 
     it("handleApproveInvestment revierte al proyecto anterior si el fetch falla", async () => {
-      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_CIERRE });
+      const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_AUDITORIA });
       getProject.mockReturnValue(current);
       mockApiFetch.mockRejectedValue(new Error("fail"));
 
@@ -446,17 +446,17 @@ describe("useProjectsWorkflows", () => {
       expect(syncProject).toHaveBeenLastCalledWith(current);
     });
 
-    it("handleReviewProject aplica REVISADO_CIERRE de inmediato", async () => {
+    it("handleReviewProject aplica REVISADO_AUDITORIA de inmediato", async () => {
       const current = createMockProject({ id: "PRJ-001", status: ProjectStatus.CREADO });
       getProject.mockReturnValue(current);
-      mockApiFetch.mockResolvedValue(createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_CIERRE }));
+      mockApiFetch.mockResolvedValue(createMockProject({ id: "PRJ-001", status: ProjectStatus.REVISADO_AUDITORIA }));
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
       await result.current.handleReviewProject("PRJ-001", "notas");
 
       expect(syncProject).toHaveBeenNthCalledWith(
         1,
-        expect.objectContaining({ status: ProjectStatus.REVISADO_CIERRE }),
+        expect.objectContaining({ status: ProjectStatus.REVISADO_AUDITORIA }),
       );
     });
 

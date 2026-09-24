@@ -17,13 +17,13 @@ export function getPendingCount(projects: Project[], role: string): number {
       return projects.filter(
         p =>
           p.status === ProjectStatus.CREADO ||
-          p.status === ProjectStatus.EN_REEVALUACION_CIERRE ||
+          p.status === ProjectStatus.EN_REEVALUACION_AUDITORIA ||
           p.status === ProjectStatus.VERIFICANDO_FINALIZACION,
       ).length;
     case "PROCURA":
       return projects.filter(
         p =>
-          p.status === ProjectStatus.REVISADO_CIERRE ||
+          p.status === ProjectStatus.REVISADO_AUDITORIA ||
           p.status === ProjectStatus.COMPARATIVA_ENVIADA,
       ).length;
     case "ANALISTA":

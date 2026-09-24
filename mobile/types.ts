@@ -26,7 +26,7 @@ export type {
 export type Screen =
   | "presidencia"
   | "infraestructura"
-  | "cierre"
+  | "auditoria"
   | "procura"
   | "analistas"
   | "finanzas"
@@ -36,7 +36,7 @@ export type Screen =
 export const screens: Array<{ key: Screen; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
   { key: "presidencia", label: "Presidencia", icon: "trending-up" },
   { key: "infraestructura", label: "Infra", icon: "business" },
-  { key: "cierre", label: "Cierre", icon: "checkbox" },
+  { key: "auditoria", label: "Auditoría", icon: "checkbox" },
   { key: "procura", label: "Procura", icon: "search" },
   { key: "analistas", label: "Analistas", icon: "people" },
   { key: "finanzas", label: "Finanzas", icon: "cash" },
@@ -52,7 +52,7 @@ import type { ProjectStatus } from "../packages/shared/src/types";
 
 export const statusLabels: Record<ProjectStatus, string> = {
   CREADO: "Creado",
-  REVISADO_CIERRE: "Revisado",
+  REVISADO_AUDITORIA: "Revisado",
   CONFIRMADO_PROCURA: "Procura OK",
   COMPARATIVA_ENVIADA: "Comparativa",
   CONTRATADO: "Contratado",
@@ -64,7 +64,7 @@ export const statusLabels: Record<ProjectStatus, string> = {
 
 export const statusColors: Record<ProjectStatus, string> = {
   CREADO: "#0ea5e9",
-  REVISADO_CIERRE: "#3b82f6",
+  REVISADO_AUDITORIA: "#3b82f6",
   CONFIRMADO_PROCURA: "#a855f7",
   COMPARATIVA_ENVIADA: "#f59e0b",
   CONTRATADO: "#6366f1",

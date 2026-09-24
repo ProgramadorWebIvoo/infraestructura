@@ -48,7 +48,7 @@ function getStepState(project: Project, index: number): StepState {
     case 3:
       return project.approvedInvestmentAmount
         ? "done"
-        : project.status === ProjectStatus.REVISADO_CIERRE
+        : project.status === ProjectStatus.REVISADO_AUDITORIA
           ? "current"
           : "pending";
     case 4:

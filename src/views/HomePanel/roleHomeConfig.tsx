@@ -98,8 +98,8 @@ const MODULE_INFRAESTRUCTURA: HomeModuleLink = {
   accent: "info",
 };
 
-const MODULE_CIERRE_OBRA: HomeModuleLink = {
-  route: ROUTES.CIERRE_OBRA,
+const MODULE_AUDITORIA: HomeModuleLink = {
+  route: ROUTES.AUDITORIA,
   label: "Auditoría",
   description: "Revisión técnica y auditoría de finalización",
   icon: <CheckSquare className="h-5 w-5" strokeWidth={2.25} />,
@@ -175,17 +175,17 @@ const kpiAuditoria: HomeKpi[] = [
     label: "Por revisar",
     filter: (p) => p.filter((x) => x.status === ProjectStatus.CREADO),
     accent: "info",
-    route: ROUTES.CIERRE_OBRA,
+    route: ROUTES.AUDITORIA,
   }),
   kpi({
     key: "under-audit",
     icon: <ShieldCheck className="h-4 w-4" strokeWidth={2.25} />,
-    label: "En auditoría de cierre",
+    label: "En auditoría",
     filter: (p) => p.filter((x) => x.status === ProjectStatus.VERIFICANDO_FINALIZACION),
     accent: "success",
-    route: ROUTES.CIERRE_OBRA,
+    route: ROUTES.AUDITORIA,
     amount: sumApproved,
-    amountLabel: "Inversión en cierre",
+    amountLabel: "Inversión en auditoría",
   }),
 ];
 
@@ -194,7 +194,7 @@ const kpiProcura: HomeKpi[] = [
     key: "pending-approval",
     icon: <ClipboardList className="h-4 w-4" strokeWidth={2.25} />,
     label: "Por autorizar",
-    filter: (p) => p.filter((x) => x.status === ProjectStatus.REVISADO_CIERRE),
+    filter: (p) => p.filter((x) => x.status === ProjectStatus.REVISADO_AUDITORIA),
     accent: "info",
     route: ROUTES.PROCURA,
     amount: sumApproved,
@@ -279,12 +279,12 @@ const ROLE_HOME_CONFIG: Record<string, RoleHomeConfig> = {
   SUPERADMIN: {
     tagline: "Acceso completo a todos los módulos del sistema.",
     kpis: kpiGlobal,
-    modules: [MODULE_PRESIDENCIA, MODULE_INFRAESTRUCTURA, MODULE_CIERRE_OBRA, MODULE_PROCURA, MODULE_ANALISTAS, MODULE_FINANZAS, MODULE_CATALOGOS],
+    modules: [MODULE_PRESIDENCIA, MODULE_INFRAESTRUCTURA, MODULE_AUDITORIA, MODULE_PROCURA, MODULE_ANALISTAS, MODULE_FINANZAS, MODULE_CATALOGOS],
   },
   ADMIN: {
     tagline: "Acceso administrativo a los módulos operativos.",
     kpis: kpiGlobal,
-    modules: [MODULE_INFRAESTRUCTURA, MODULE_CIERRE_OBRA, MODULE_PROCURA, MODULE_ANALISTAS, MODULE_FINANZAS, MODULE_CATALOGOS],
+    modules: [MODULE_INFRAESTRUCTURA, MODULE_AUDITORIA, MODULE_PROCURA, MODULE_ANALISTAS, MODULE_FINANZAS, MODULE_CATALOGOS],
   },
   PRESIDENCIA: {
     tagline: "Panorama ejecutivo de inversión y avance de obra.",
@@ -299,7 +299,7 @@ const ROLE_HOME_CONFIG: Record<string, RoleHomeConfig> = {
   AUDITORIA: {
     tagline: "Revisión técnica y auditoría de finalización de obra.",
     kpis: kpiAuditoria,
-    modules: [MODULE_CIERRE_OBRA],
+    modules: [MODULE_AUDITORIA],
   },
   PROCURA: {
     tagline: "Autorización de inversión y evaluación de comparativas.",

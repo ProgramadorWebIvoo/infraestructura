@@ -90,7 +90,7 @@ const makeProject = (over: Partial<Project> & { id: string }): Project => ({
   description: "",
   location: "Tienda Chacao",
   createdDate: "2026-07-01",
-  status: ProjectStatus.REVISADO_CIERRE,
+  status: ProjectStatus.REVISADO_AUDITORIA,
   materials: [{ id: "m1", name: "Cemento", quantity: 2, unit: "Saco", estimatedUnitPrice: 10, condition: "NUEVO" }],
   estimatedTotal: 500,
   ...over,
@@ -172,12 +172,12 @@ describe("InvestmentApprovalSection — vista Tabla", () => {
     }
   });
 
-  it("filtra únicamente proyectos en estado REVISADO_CIERRE", () => {
+  it("filtra únicamente proyectos en estado REVISADO_AUDITORIA", () => {
     const restoreRO = stubSyncResizeObserver();
     const restoreSize = stubContainerSize(900, 600);
     try {
       const projects = [
-        makeProject({ id: "P1", status: ProjectStatus.REVISADO_CIERRE }),
+        makeProject({ id: "P1", status: ProjectStatus.REVISADO_AUDITORIA }),
         makeProject({ id: "P2", status: ProjectStatus.EN_EJECUCION }),
       ];
       renderSection({ projects, authToken: "token", onApproveInvestment: vi.fn() });

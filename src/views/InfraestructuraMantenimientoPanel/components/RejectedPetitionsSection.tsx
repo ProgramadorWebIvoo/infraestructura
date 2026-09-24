@@ -134,7 +134,7 @@ export default function RejectedPetitionsSection({
   const allRejected = useMemo(
     () =>
       projects
-        .filter((p) => p.status === ProjectStatus.RECHAZADO_CIERRE)
+        .filter((p) => p.status === ProjectStatus.RECHAZADO_AUDITORIA)
         .map((p) => ({ project: p, log: latestRejectionLog(auditLogs, p.id) }))
         .sort((a, b) => (b.log?.timestamp ?? "").localeCompare(a.log?.timestamp ?? "")),
     [projects, auditLogs],

@@ -26,7 +26,7 @@ vi.mock("@/routes", () => ({
     PRESIDENCIA: "/presidencia",
     MARKETING: "/marketing",
     INFRAESTRUCTURA: "/infraestructura",
-    CIERRE_OBRA: "/auditoria",
+    AUDITORIA: "/auditoria",
     PROCURA: "/procura",
     ANALISTAS: "/analistas",
     FINANZAS: "/finanzas",

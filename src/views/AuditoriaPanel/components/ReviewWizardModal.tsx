@@ -51,7 +51,7 @@ import BsAmount from "@/components/UI/BsAmount";
  * "review": primera revisión de un expediente CREADO, terminando en envío a
  * Procura. "reevaluation": mismo wizard (dossier IA, materiales, documentos)
  * pero para un expediente que Procura devolvió con un motivo
- * (EN_REEVALUACION_CIERRE) — sin botón de rechazo (ver
+ * (EN_REEVALUACION_AUDITORIA) — sin botón de rechazo (ver
  * ReevaluationSection.tsx) y terminando en reenvío a Procura, no en un envío
  * inicial.
  */
@@ -87,7 +87,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
   const { showToast } = useToast();
   const [stepIndex, setStepIndex] = useState(0);
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
-  const [cierreNotes, setCierreNotes] = useState("");
+  const [auditNotes, setAuditNotes] = useState("");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
@@ -100,7 +100,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
   const resetWizard = () => {
     setStepIndex(0);
     setFurthestStepIndex(0);
-    setCierreNotes("");
+    setAuditNotes("");
   };
 
   const handleClose = () => {
@@ -122,7 +122,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
     if (!project || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onConfirm(project.id, cierreNotes);
+      await onConfirm(project.id, auditNotes);
       resetWizard();
       onClose();
     } finally {
@@ -154,7 +154,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
               <div className="flex items-center gap-2">
                 {onOpenRejectModal && (
                   <Button
-                    id="btn-cierre-reject-project"
+                    id="btn-auditoria-reject-project"
                     variant="danger"
                     disabled={isSubmitting}
                     onClick={onOpenRejectModal}
@@ -183,7 +183,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                   </Button>
                 ) : (
                   <Button
-                    id="btn-cierre-submit-review"
+                    id="btn-auditoria-submit-review"
                     variant="primary"
                     colorScheme="sky"
                     isLoading={isSubmitting}
@@ -288,21 +288,21 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
 
                 <div>
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <label htmlFor="cierre-notes" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <label htmlFor="audit-notes" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Notas de Revisión y Corrección (opcional)
                     </label>
                     <HelpHint content="Deje constancia de correcciones de cubicación, planos validados o requerimientos de andamiaje. No es obligatorio para continuar." />
                   </div>
                   <textarea
-                    id="cierre-notes"
+                    id="audit-notes"
                     rows={3}
                     placeholder="Indique los resultados de la revisión física, correcciones de cubicaciones de concreto, planos validados o andamiaje requerido."
-                    value={cierreNotes}
-                    onChange={(e) => setCierreNotes(e.target.value)}
+                    value={auditNotes}
+                    onChange={(e) => setAuditNotes(e.target.value)}
                     maxLength={1000}
                     className="w-full text-xs px-3.5 py-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-brand-500 bg-white"
                   ></textarea>
-                  <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{cierreNotes.length}/1000</span>
+                  <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{auditNotes.length}/1000</span>
                 </div>
               </div>
             )}
@@ -347,7 +347,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-bold text-slate-600 uppercase tracking-wider text-[9px] shrink-0">Notas</span>
-                    <span className="font-medium text-slate-600 text-right leading-snug">{cierreNotes || "—"}</span>
+                    <span className="font-medium text-slate-600 text-right leading-snug">{auditNotes || "—"}</span>
                   </div>
                 </div>
 

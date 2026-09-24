@@ -365,7 +365,7 @@ app/
 CREADO
     │
     ▼ (AUDITORIA: review)
-REVISADO_CIERRE
+REVISADO_AUDITORIA
     │
     ▼ (PROCURA: approve-investment)
 CONFIRMADO_PROCURA
@@ -395,7 +395,7 @@ COMPLETADO_PAGADO
 
 **Validaciones de estado en `ProjectController`:**
 - `review`: solo desde `CREADO`
-- `approveInvestment`: solo desde `REVISADO_CIERRE`
+- `approveInvestment`: solo desde `REVISADO_AUDITORIA`
 - `addProposal`/`submitComparative`/`importSupplierProposals`: solo desde `CONFIRMADO_PROCURA`/`COMPARATIVA_ENVIADA`
 - `rejectProposals`: solo desde `COMPARATIVA_ENVIADA` → vuelve a `CONFIRMADO_PROCURA`
 - `selectContractor`: solo desde `COMPARATIVA_ENVIADA`
@@ -484,7 +484,7 @@ mobile/
 │   ├── PublicContractorScreen.tsx
 │   ├── PresidenciaScreen.tsx
 │   ├── InfraScreen.tsx
-│   ├── CierreScreen.tsx
+│   ├── AuditoriaScreen.tsx
 │   ├── ProcuraScreen.tsx
 │   ├── AnalistasScreen.tsx
 │   ├── FinanzasScreen.tsx

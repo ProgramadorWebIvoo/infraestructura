@@ -62,8 +62,8 @@ describe("computeDashboardSummary", () => {
     expect(s.excessReleased).toBe(0);
     expect(s.funnel.map((f) => f.status)).toEqual([
       "CREADO",
-      "REVISADO_CIERRE",
-      "EN_REEVALUACION_CIERRE",
+      "REVISADO_AUDITORIA",
+      "EN_REEVALUACION_AUDITORIA",
       "CONFIRMADO_PROCURA",
       "COMPARATIVA_ENVIADA",
       "CONTRATADO",
@@ -255,15 +255,15 @@ describe("computePipelineHealth", () => {
 
   it("ordena por obras estancadas desc, luego por volumen", () => {
     const projects = [
-      makeProject({ id: "A", status: ProjectStatus.REVISADO_CIERRE, createdDate: daysAgo(20).slice(0, 10) }),
-      makeProject({ id: "B", status: ProjectStatus.REVISADO_CIERRE, createdDate: daysAgo(20).slice(0, 10) }),
+      makeProject({ id: "A", status: ProjectStatus.REVISADO_AUDITORIA, createdDate: daysAgo(20).slice(0, 10) }),
+      makeProject({ id: "B", status: ProjectStatus.REVISADO_AUDITORIA, createdDate: daysAgo(20).slice(0, 10) }),
       makeProject({ id: "C", status: ProjectStatus.CONFIRMADO_PROCURA, createdDate: daysAgo(3).slice(0, 10) }),
       makeProject({ id: "D", status: ProjectStatus.CONFIRMADO_PROCURA, createdDate: daysAgo(3).slice(0, 10) }),
       makeProject({ id: "E", status: ProjectStatus.CONFIRMADO_PROCURA, createdDate: daysAgo(3).slice(0, 10) }),
     ];
     const stages = computePipelineHealth(projects);
-    // REVISADO_CIERRE tiene 2 estancadas; CONFIRMADO_PROCURA tiene 3 obras pero 0 estancadas
-    expect(stages[0].status).toBe(ProjectStatus.REVISADO_CIERRE);
+    // REVISADO_AUDITORIA tiene 2 estancadas; CONFIRMADO_PROCURA tiene 3 obras pero 0 estancadas
+    expect(stages[0].status).toBe(ProjectStatus.REVISADO_AUDITORIA);
     expect(stages[0].stalledCount).toBe(2);
   });
 

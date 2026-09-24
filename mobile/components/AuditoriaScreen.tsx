@@ -7,7 +7,7 @@ import SectionTitle from "./SectionTitle";
 import ProjectCard from "./ProjectCard";
 import PrimaryButton from "./PrimaryButton";
 
-export default function CierreScreen({
+export default function AuditoriaScreen({
   projects,
   onReview,
   onVerify,

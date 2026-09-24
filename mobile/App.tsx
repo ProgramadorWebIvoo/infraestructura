@@ -23,7 +23,7 @@ import LoginScreen from "./components/LoginScreen";
 import PublicContractorScreen from "./components/PublicContractorScreen";
 import PresidenciaScreen from "./components/PresidenciaScreen";
 import InfraScreen from "./components/InfraScreen";
-import CierreScreen from "./components/CierreScreen";
+import AuditoriaScreen from "./components/AuditoriaScreen";
 import ProcuraScreen from "./components/ProcuraScreen";
 import AnalistasScreen from "./components/AnalistasScreen";
 import FinanzasScreen from "./components/FinanzasScreen";
@@ -158,8 +158,8 @@ function MainScreen() {
               }
             />
           )}
-          {screen === "cierre" && (
-            <CierreScreen
+          {screen === "auditoria" && (
+            <AuditoriaScreen
               projects={projects}
               onReview={(projectId) =>
                 execMutation(`/projects/${projectId}/review`, {

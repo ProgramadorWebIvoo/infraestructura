@@ -47,7 +47,7 @@ export const CODEBASE_ROUTE_MAP: Record<string, CodebaseRouteInfo> = {
     hooks: ["useProjects", "useCatalog"],
     godNodes: ["apiFetch()", "downloadProjectDocument", "usePolledFetch"],
   },
-  [ROUTES.CIERRE_OBRA]: {
+  [ROUTES.AUDITORIA]: {
     component: "AuditoriaPanel",
     file: "views/AuditoriaPanel/index.tsx",
     hooks: ["useProjects"],

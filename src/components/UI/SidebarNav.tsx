@@ -84,7 +84,7 @@ function SidebarNav({
     ROUTES.INFRAESTRUCTURA,
     authToken,
   );
-  const prefetchAuditoria = usePrefetchOnIntent(ROUTES.CIERRE_OBRA, authToken);
+  const prefetchAuditoria = usePrefetchOnIntent(ROUTES.AUDITORIA, authToken);
   const prefetchProcura = usePrefetchOnIntent(ROUTES.PROCURA, authToken);
   const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
   const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
@@ -332,7 +332,7 @@ function SidebarNav({
             <SidebarTip label="Auditoría" disabled={!effectiveCollapsed}>
               <NavLink
                 to="/auditoria"
-                id="sidebar-cierre"
+                id="sidebar-auditoria"
                 onClick={onClose}
                 onMouseEnter={prefetchAuditoria.onMouseEnter}
                 onFocus={prefetchAuditoria.onFocus}
@@ -344,7 +344,7 @@ function SidebarNav({
                   <>
                     <CheckSquare className={sidebarIconClass(isActive)} />
                     <span className={sidebarTextClass(effectiveCollapsed)}>
-                      Cierre Obra
+                      Auditoría
                     </span>
                   </>
                 )}

@@ -13,14 +13,14 @@
 3. [Estados del Proyecto](#3-estados-del-proyecto)
 4. [Flujo Completo Paso a Paso](#4-flujo-completo-paso-a-paso)
    - [Fase 1 — Registro de Obra](#fase-1--registro-de-obra-infraestructuramantenimiento)
-   - [Fase 2 — Revisión Técnica](#fase-2--revisión-técnica-cierre-de-obra)
+   - [Fase 2 — Revisión Técnica](#fase-2--revisión-técnica-auditoría)
    - [Fase 3 — Aprobación de Inversión](#fase-3--aprobación-de-inversión-procura)
    - [Fase 4 — Licitación y Cuadro Comparativo](#fase-4--licitación-y-cuadro-comparativo-analistas)
    - [Fase 5 — Adjudicación o Rechazo](#fase-5--adjudicación-o-rechazo-procura)
    - [Fase 6 — Pago de Anticipo](#fase-6--pago-de-anticipo-finanzas)
    - [Fase 7 — Ejecución en Campo](#fase-7--ejecución-en-campo)
-   - [Fase 8 — Reporte de Finalización](#fase-8--reporte-de-finalización-cierre-de-obra)
-   - [Fase 9 — Verificación de Calidad](#fase-9--verificación-de-calidad-cierre-de-obra)
+   - [Fase 8 — Reporte de Finalización](#fase-8--reporte-de-finalización-auditoría)
+   - [Fase 9 — Verificación de Calidad](#fase-9--verificación-de-calidad-auditoría)
    - [Fase 10 — Pago Final y Cierre](#fase-10--pago-final-y-cierre-finanzas)
 5. [Flujo de Proveedores de Materiales (Paralelo)](#5-flujo-de-proveedores-de-materiales-paralelo)
 6. [Diagrama de Estado](#6-diagrama-de-estado)
@@ -35,7 +35,7 @@
 IVOO Gestión es un sistema multi-rol para gestionar el ciclo de vida completo de obras de infraestructura y mantenimiento. Cada obra pasa secuencialmente por distintos departamentos, con trazabilidad en tiempo real de cada acción registrada en una bitácora de auditoría.
 
 ```
-INFRAESTRUCTURA → CIERRE DE OBRA → PROCURA → ANALISTAS → PROCURA → FINANZAS → CAMPO → CIERRE DE OBRA → FINANZAS
+INFRAESTRUCTURA → AUDITORÍA → PROCURA → ANALISTAS → PROCURA → FINANZAS → CAMPO → AUDITORÍA → FINANZAS
 ```
 
 ---
@@ -64,7 +64,7 @@ Cada proyecto transita por los siguientes estados en orden:
 | # | Estado (código) | Etiqueta en UI | Responsable que lo genera |
 |---|---|---|---|
 | 1 | `CREADO` | Enviado a Auditoría | Infraestructura |
-| 2 | `REVISADO_CIERRE` | Revisado — Para Procura | Auditoría |
+| 2 | `REVISADO_AUDITORIA` | Revisado — Para Procura | Auditoría |
 | 3 | `CONFIRMADO_PROCURA` | Confirmado — En Licitación | Procura |
 | 4 | `COMPARATIVA_ENVIADA` | Comparativa Lista | Analistas |
 | 5 | `CONTRATADO` | Pendiente Anticipo Finanzas | Procura |
@@ -113,7 +113,7 @@ Cada proyecto transita por los siguientes estados en orden:
 ### Fase 2 — Revisión Técnica (Auditoría)
 
 **Módulo:** `/auditoria`  
-**Estado resultante:** `REVISADO_CIERRE`  
+**Estado resultante:** `REVISADO_AUDITORIA`  
 **Rol requerido:** `AUDITORIA`
 
 **Qué hace el usuario:**
@@ -128,7 +128,7 @@ Cada proyecto transita por los siguientes estados en orden:
 6. Presiona **"Aprobar Revisión Técnica"**.
 
 **Lo que ocurre en el sistema:**
-- El proyecto actualiza su estado a `REVISADO_CIERRE`.
+- El proyecto actualiza su estado a `REVISADO_AUDITORIA`.
 - Se guardan las notas, cantidad de planos y flag de cálculos en el proyecto.
 - Log de auditoría: `AUDITORIA | Revisión técnica de cálculos y planos`.
 - El proyecto pasa a la cola de Procura.
@@ -145,7 +145,7 @@ Cada proyecto transita por los siguientes estados en orden:
 
 **Qué hace el usuario:**
 1. Ingresa al módulo **Procura**, sección "Proyectos para Aprobación de Inversión".
-2. Ve los proyectos en estado `REVISADO_CIERRE`.
+2. Ve los proyectos en estado `REVISADO_AUDITORIA`.
 3. Selecciona un proyecto y revisa el estimado total enviado por Infraestructura.
 4. Define el **monto máximo de inversión aprobado** (puede diferir del estimado inicial).
 5. Escribe **notas de aprobación** (justificación presupuestaria, restricciones).
@@ -413,7 +413,7 @@ El sistema registra la propuesta vinculada al proyecto y al proveedor. Queda dis
                     │                   FLUJO PRINCIPAL                    │
                     └─────────────────────────────────────────────────────┘
 
-[INFRAESTRUCTURA]        [CIERRE OBRA]          [PROCURA]
+[INFRAESTRUCTURA]        [AUDITORÍA]          [PROCURA]
   Registra obra   ──►   Revisión técnica  ──►  Aprueba inversión
   status: CREADO        status: REVISADO_       status: CONFIRMADO_
                         CIERRE                  PROCURA
@@ -442,12 +442,12 @@ El sistema registra la propuesta vinculada al proyecto y al proveedor. Queda dis
                                               [CAMPO]                       │
                                            Obra en ejecución                │
                                                      │                      │
-                                              [CIERRE OBRA]                 │
+                                              [AUDITORÍA]                 │
                                           Reporta finalización              │
                                           status: VERIFICANDO_              │
                                           FINALIZACION                      │
                                                      │                      │
-                                              [CIERRE OBRA]    ─ No OK ─►  │
+                                              [AUDITORÍA]    ─ No OK ─►  │
                                           Verifica calidad                  │
                                                      │ OK                   │
                                                      ▼               (vuelve a EN_EJECUCION)
@@ -503,7 +503,7 @@ Cada acción sobre un proyecto genera automáticamente un registro en la tabla `
 
 > La matriz de acceso completa la sirve el backend (`GET /api/auth/permissions`, fuente de verdad: `config/permissions.php`) — el frontend ya no la hardcodea, así que esta tabla es un reflejo, no la fuente. Actualizar `config/permissions.php` es lo único necesario si cambia el acceso de un rol.
 
-| Módulo / Ruta | SUPERADMIN | ADMIN | PRESIDENCIA | INFRAESTRUCTURA | CIERRE_OBRA | PROCURA | ANALISTA | FINANZAS | CATALOGOS |
+| Módulo / Ruta | SUPERADMIN | ADMIN | PRESIDENCIA | INFRAESTRUCTURA | AUDITORIA | PROCURA | ANALISTA | FINANZAS | CATALOGOS |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `/presidencia` (Dashboard) | ✓ | — | ✓ | — | — | — | — | — | — |
 | `/infraestructura` | ✓ | ✓ | — | ✓ | — | — | — | — | — |

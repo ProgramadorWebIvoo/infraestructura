@@ -4,6 +4,7 @@
 - Tipo: refactor (UI + identificadores)
 - Qué: rol `CIERRE_DE_OBRA` -> `AUDITORIA`, ruta `/cierre-obra` -> `/auditoria`, carpeta `CierreObraPanel` -> `AuditoriaPanel`, campo `cierreObraNotes` -> `auditNotes`, feature IA `ia.auditoria.evaluacion_expediente`, acción 'Solicitud de reevaluación a Auditoría'. Rótulo "Salud del Pipeline" -> "Estatus del Pipeline" en Presidencia.
 - Requiere el renombre equivalente en backend (contrato común).
+- Complemento: estados `REVISADO_CIERRE/RECHAZADO_CIERRE/EN_REEVALUACION_CIERRE` -> `*_AUDITORIA`, `ROUTES.CIERRE_OBRA` -> `ROUTES.AUDITORIA`, `MODULE_AUDITORIA`, ids de test/sidebar, texto "Cierre Obra" -> "Auditoría", `CierreScreen` (mobile) -> `AuditoriaScreen`.
 
 ## [2026-08-13] — Fix: barra de "cambios pendientes" no reaccionaba con TagMultiSelect + diff legible en el historial de auditoría
 - Tipo: fix (bug) + UX

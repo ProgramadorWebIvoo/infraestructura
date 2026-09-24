@@ -17,7 +17,7 @@ proveedores (portal público → import → cuadro comparativo).
 |---|---|
 | `d82cd70` | FEAT(4.1) Conversión a Bs. en INFRAESTRUCTURA + fix de redondeo global |
 | `2405ee2` | PERF Optimización: Table, navbar y contextos globales |
-| `3402ba1` | FEAT(4.2) Conversión a Bs. en CIERRE DE OBRA (Revisión y Auditoría) |
+| `3402ba1` | FEAT(4.2) Conversión a Bs. en AUDITORÍA (Revisión y Auditoría) |
 | `8b27e03` | FEAT(4.3) Conversión a Bs. en PROCURA |
 | `7e465ac` | FEAT(4.4) Conversión a Bs. en ANALISTAS + estandarización de `BsAmount` |
 | *(pendiente)* | Conversión multi-moneda en PROVEEDORES (backend + frontend) |

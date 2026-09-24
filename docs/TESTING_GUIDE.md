@@ -250,7 +250,7 @@ verificar que el flujo funciona sin depender de un proveedor SMTP.
 
 ### Prueba
 1. Login como un usuario `SUPERADMIN`/`ADMIN`.
-2. Recorrer cada vista del sidebar: Presidencia, Infra/Mant, Cierre Obra,
+2. Recorrer cada vista del sidebar: Presidencia, Infra/Mant, Auditoría,
    Procura, Analistas, Finanzas, Proveedores, Configuración (Usuarios,
    Proveedores).
 3. En cada una, F12 → Network, filtrar por `/api/` y confirmar `200` en:

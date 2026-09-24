@@ -60,7 +60,7 @@ export default function ProcuraPanel({
 
   const kpis = useMemo(
     () => ({
-      pendingApproval: projects.filter((p) => p.status === ProjectStatus.REVISADO_CIERRE).length,
+      pendingApproval: projects.filter((p) => p.status === ProjectStatus.REVISADO_AUDITORIA).length,
       inBidding: projects.filter((p) => p.status === ProjectStatus.CONFIRMADO_PROCURA).length,
       comparative: projects.filter((p) => p.status === ProjectStatus.COMPARATIVA_ENVIADA).length,
       contracted: projects.filter((p) => p.status === ProjectStatus.CONTRATADO).length,
