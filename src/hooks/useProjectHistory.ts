@@ -94,6 +94,7 @@ export function useProjectHistoryList(authToken: string) {
     isError: query.isError,
     invalidRange,
     refetch: query.refetch,
+    dataUpdatedAt: query.dataUpdatedAt,
     filters,
     updateFilter,
     clearFilters,
