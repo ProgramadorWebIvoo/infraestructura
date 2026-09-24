@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Activity, DollarSign, Layers, Loader2, Wallet } from "lucide-react";
+import { Activity, DollarSign, FileSignature, Layers, Loader2, Wallet } from "lucide-react";
 import { ProjectStatus } from "@/types";
 import type { Project, AuditLog } from "@/types";
 import { SkeletonStats, SkeletonStatsDark, SkeletonTable, SkeletonCard } from "@/components/SkeletonLoader";
@@ -21,6 +21,7 @@ import StatusFunnelSection from "./components/StatusFunnelSection";
 import FinancialOverviewSection from "./components/FinancialOverviewSection";
 import PipelineHealthSection from "./components/PipelineHealthSection";
 import CashFlowSection from "./components/CashFlowSection";
+import StalledProjectsSection from "./components/StalledProjectsSection";
 import InsightsSection from "./components/InsightsSection";
 import AuditLogSection from "./components/AuditLogSection";
 import MasterTableSection from "./components/MasterTableSection";
@@ -128,6 +129,7 @@ export default function PresidenciaDashboard({
 
   const totalApprovedInvestment = summary.totalApprovedInvestment;
   const totalReleasedFunds = summary.totalReleasedFunds;
+  const totalCommittedAmount = summary.totalCommittedAmount;
   const pendingFunds = summary.pendingFunds;
   const releasedPercent = Math.min(100, summary.releasedPercent);
   const excessReleased = summary.excessReleased;
@@ -151,6 +153,7 @@ export default function PresidenciaDashboard({
           <KpiPill icon={<Layers className="h-3.5 w-3.5" />} label="Obras" value={totalProjectsCount} accent="brand" tooltip="Total de obras registradas en el sistema, en cualquier estado del flujo." />
           <KpiPill icon={<DollarSign className="h-3.5 w-3.5" />} label="Aprobado" value={`$${totalApprovedInvestment.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} accent="brand" tooltip="Inversión total aprobada en todos los proyectos." />
           <KpiPill icon={<Wallet className="h-3.5 w-3.5" />} label="Liquidado" value={`$${totalReleasedFunds.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} accent="success" tooltip="Monto efectivamente pagado a contratistas." />
+          <KpiPill icon={<FileSignature className="h-3.5 w-3.5" />} label="Comprometido" value={`$${totalCommittedAmount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} accent="warning" tooltip="Monto adjudicado en contratos firmados (contratado, en ejecución o verificando finalización) aún no liquidado." />
           <KpiPill icon={<Activity className="h-3.5 w-3.5" />} label="Auditoría" value={auditLogs.length} accent="info" tooltip="Registros de trazabilidad disponibles en el historial." />
         </div>
 
@@ -186,6 +189,8 @@ export default function PresidenciaDashboard({
               <PipelineHealthSection summary={summary} projects={projects} />
               <CashFlowSection projects={projects} />
             </div>
+
+            <StalledProjectsSection stalledProjects={summary.stalledProjects} projects={projects} onSelectProject={onSelectProject} />
 
             <InsightsSection summary={summary} />
           </motion.div>
