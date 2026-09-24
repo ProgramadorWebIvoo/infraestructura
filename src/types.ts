@@ -222,12 +222,34 @@ export interface CatalogProductPriceHistoryEntry {
   id: number;
   catalog_product_id: number;
   supplier_code: string;
+  quantity: number | null;
   price_usd: number;
   original_currency: string;
   original_price: number;
   fx_rate_to_usd: number;
   fx_rate_source: string;
   quoted_at: string;
+  project_id: string | null;
+  origin: "PORTAL_PROV" | "PROJECT_PROPOSAL";
+}
+
+/** Estadísticas de histórico de un producto — Fase 4 (histórico) / base de la vista de inflación (Fase 5). */
+export interface CatalogProductPriceStats {
+  productId: number;
+  lastPriceUsd: number | null;
+  lastCurrency: string | null;
+  lastQuotedAt: string | null;
+  minPriceUsd: number | null;
+  maxPriceUsd: number | null;
+  avgPriceUsd: number | null;
+  variationUsd: number | null;
+  variationPercent: number | null;
+  dataPoints: number;
+}
+
+export interface CatalogProductPriceHistoryResponse {
+  series: CatalogProductPriceHistoryEntry[];
+  stats: CatalogProductPriceStats;
 }
 
 export interface PendingCustomProductLine {

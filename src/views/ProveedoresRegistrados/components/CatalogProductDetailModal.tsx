@@ -14,9 +14,10 @@ import { Boxes, Package, TrendingUp, ChevronLeft, ChevronRight } from "lucide-re
 import Modal from "@/components/UI/Modal";
 import EmptyState from "@/components/UI/EmptyState";
 import Button from "@/components/UI/Button";
+import VariationBadge from "@/components/UI/VariationBadge";
 import { SkeletonPriceChart, SkeletonSupplierList } from "@/components/SkeletonLoader";
 import { apiFetch } from "@/services/api";
-import type { CatalogProduct, CatalogProductPriceHistoryEntry } from "@/types";
+import type { CatalogProduct, CatalogProductPriceHistoryEntry, CatalogProductPriceHistoryResponse, CatalogProductPriceStats } from "@/types";
 import { getErrorMessage } from "@/services/logger";
 import Tooltip from "@/components/UI/Tooltip";
 
@@ -121,6 +122,7 @@ function PriceHistorySparkline({ entries }: { entries: CatalogProductPriceHistor
 
 export default function CatalogProductDetailModal({ product, onClose }: CatalogProductDetailModalProps) {
   const [history, setHistory] = useState<CatalogProductPriceHistoryEntry[]>([]);
+  const [priceStats, setPriceStats] = useState<CatalogProductPriceStats | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [detail, setDetail] = useState<CatalogProduct | null>(null);
@@ -139,6 +141,7 @@ export default function CatalogProductDetailModal({ product, onClose }: CatalogP
   useEffect(() => {
     if (!product) {
       setHistory([]);
+      setPriceStats(null);
       setHistoryError("");
       setDetail(null);
       return;
@@ -149,8 +152,11 @@ export default function CatalogProductDetailModal({ product, onClose }: CatalogP
 
     setIsLoadingHistory(true);
     setHistoryError("");
-    apiFetch<CatalogProductPriceHistoryEntry[]>(`/catalog/products/${product.id}/price-history`)
-      .then(setHistory)
+    apiFetch<CatalogProductPriceHistoryResponse>(`/catalog/products/${product.id}/price-history`)
+      .then((response) => {
+        setHistory(response.series);
+        setPriceStats(response.stats);
+      })
       .catch((err) => setHistoryError(getErrorMessage(err, "No se pudo cargar el histórico de precios.")))
       .finally(() => setIsLoadingHistory(false));
 
@@ -218,7 +224,39 @@ export default function CatalogProductDetailModal({ product, onClose }: CatalogP
                 <p className="text-xs font-medium text-danger-700">{historyError}</p>
               </div>
             ) : (
-              <PriceHistorySparkline entries={history} />
+              <>
+                {priceStats && priceStats.dataPoints > 0 && (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-2.5">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Último</div>
+                      <div className="mt-1 font-mono text-xs font-black text-text-primary">{formatCurrency(priceStats.lastPriceUsd ?? 0)}</div>
+                    </div>
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-2.5">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Mínimo</div>
+                      <div className="mt-1 font-mono text-xs font-black text-text-primary">{formatCurrency(priceStats.minPriceUsd ?? 0)}</div>
+                    </div>
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-2.5">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Máximo</div>
+                      <div className="mt-1 font-mono text-xs font-black text-text-primary">{formatCurrency(priceStats.maxPriceUsd ?? 0)}</div>
+                    </div>
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-2.5">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Promedio</div>
+                      <div className="mt-1 font-mono text-xs font-black text-text-primary">{formatCurrency(priceStats.avgPriceUsd ?? 0)}</div>
+                    </div>
+                    <div className="rounded-control border border-border-subtle bg-surface-sunken/50 p-2.5">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Variación</div>
+                      <div className="mt-1">
+                        {priceStats.variationPercent != null ? (
+                          <VariationBadge percent={priceStats.variationPercent} />
+                        ) : (
+                          <span className="text-xs font-medium text-text-muted">—</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <PriceHistorySparkline entries={history} />
+              </>
             )}
           </div>
 
