@@ -43,7 +43,7 @@ export const EMPTY_AUDIT_LOG_FILTERS: AuditLogFilters = {
   dateTo: "",
 };
 
-interface AuditLogPage {
+export interface AuditLogPage {
   items: AuditLog[];
   currentPage: number;
   lastPage: number;

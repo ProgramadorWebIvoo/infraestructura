@@ -16,7 +16,7 @@ import { useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   Activity, CheckCircle2, ChevronDown, DollarSign, Download, Edit3, Eye, FilePlus2,
-  KeyRound, Loader2, PlusCircle, SlidersHorizontal, Trash2, Upload, XCircle, X,
+  FileSpreadsheet, FileText, KeyRound, Loader2, PlusCircle, SlidersHorizontal, Trash2, Upload, XCircle, X,
 } from "lucide-react";
 import type { AuditLog } from "@/types";
 import { Table, RefreshButton, type Column } from "@/components/UI/Table";
@@ -26,10 +26,21 @@ import { getRoleColor } from "@/utils";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTokens";
 import AuditInspectModal from "@/components/Modals/AuditInspectModal";
 import { itemVariants } from "@/animations";
-import { useAuditLogs, type AuditLogFilters } from "@/hooks/useAuditLogs";
-import { downloadAuditLogsExport } from "@/services/api";
+import { useAuditLogs, type AuditLogFilters, type AuditLogPage } from "@/hooks/useAuditLogs";
+import { downloadAuditLogsExport, apiFetch } from "@/services/api";
 import { useToast } from "@/components/UI/Toast";
+import { buildXlsx, printPdf, downloadBlob, XLSX_MIME, type ExportRow, type ExportColumn } from "@/components/UI/ExportButton";
 import AuditSummaryStats from "./AuditSummaryStats";
+
+/** Tope de filas traídas para Excel/PDF (a diferencia del CSV, que el backend
+ * transmite en streaming sin límite): ambos formatos arman el archivo
+ * completo en memoria del navegador (write-excel-file / tabla HTML para
+ * imprimir), así que un historial sin filtrar de decenas de miles de logs
+ * podría colgar la pestaña. Si el filtro activo trae más que esto, se avisa
+ * y se exportan solo los más recientes — para el histórico completo sigue
+ * estando "Exportar CSV". */
+const MAX_ROWS_FOR_RICH_EXPORT = 3000;
+const EXPORT_FETCH_PAGE_SIZE = 500;
 
 /** Clases violeta "crudas" para la categoría Seguridad/Autenticación — excepción documentada
  * (CLAUDE.md §3): SEMANTIC_COLOR_MAP no tiene un 7º color solo para este badge puntual. */
@@ -171,10 +182,64 @@ interface AuditLogSectionProps {
   authToken: string;
 }
 
+/** Trae TODAS las filas que matchean `exportQuery` (no solo la página visible en
+ * pantalla) para Excel/PDF, paginando contra el mismo /audit-logs de siempre
+ * con `per_page` alto. Se detiene en MAX_ROWS_FOR_RICH_EXPORT — devuelve
+ * también `truncated` para que el llamador pueda avisar al usuario. */
+async function fetchAllAuditLogsForExport(
+  exportQuery: string,
+  authToken: string,
+): Promise<{ items: AuditLog[]; truncated: boolean; total: number }> {
+  const items: AuditLog[] = [];
+  let page = 1;
+  let lastPage = 1;
+  let total = 0;
+
+  do {
+    const params = new URLSearchParams(exportQuery);
+    params.set("page", String(page));
+    params.set("per_page", String(EXPORT_FETCH_PAGE_SIZE));
+
+    const data = await apiFetch<AuditLogPage>(`/audit-logs?${params.toString()}`, { token: authToken });
+    items.push(...(data.items ?? []));
+    lastPage = data.lastPage ?? 1;
+    total = data.total ?? items.length;
+    page += 1;
+  } while (page <= lastPage && items.length < MAX_ROWS_FOR_RICH_EXPORT);
+
+  return { items: items.slice(0, MAX_ROWS_FOR_RICH_EXPORT), truncated: total > MAX_ROWS_FOR_RICH_EXPORT, total };
+}
+
+const AUDIT_EXPORT_HEADERS = ["ID", "Proyecto", "Rol", "Usuario", "Acción", "Fecha", "Detalles", "Observaciones"];
+const AUDIT_EXPORT_COLUMNS: ExportColumn[] = [
+  { width: 10 },
+  { width: 30 },
+  { width: 16, align: "center" },
+  { width: 20 },
+  { width: 30 },
+  { width: 18, align: "center" },
+  { width: 36 },
+  { width: 36 },
+];
+
+function toAuditExportRows(logs: AuditLog[]): ExportRow[] {
+  return logs.map((log) => [
+    log.id,
+    log.projectTitle || "—",
+    log.role,
+    log.userName || "—",
+    log.action,
+    log.timestamp,
+    log.details || "",
+    log.observations || "",
+  ]);
+}
+
 export default function AuditLogSection({ authToken }: AuditLogSectionProps) {
   const { showToast } = useToast();
   const [inspectedAuditLog, setInspectedAuditLog] = useState<AuditLog | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [richExportFormat, setRichExportFormat] = useState<"excel" | "pdf" | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   /** Confirmación visual de drill-down: qué campo de filtro acaba de recibir un valor desde un clic en el resumen ejecutivo — se apaga sola tras el pulso. */
   const [flashedFilter, setFlashedFilter] = useState<"role" | "action" | "projectId" | null>(null);
@@ -198,6 +263,40 @@ export default function AuditLogSection({ authToken }: AuditLogSectionProps) {
       showToast("No se pudo exportar el historial de auditoría.", "error");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  /** Excel y PDF — misma lógica de ExportButton (usada en Finanzas/LedgerSection),
+   * pero invocada a mano porque esta tabla pagina server-side: antes de generar
+   * el archivo hay que traer TODAS las filas del filtro activo, no solo la
+   * página cargada en pantalla. */
+  const handleRichExport = async (format: "excel" | "pdf") => {
+    setRichExportFormat(format);
+    try {
+      const { items, truncated, total: matchedTotal } = await fetchAllAuditLogsForExport(exportQuery, authToken);
+      const subtitle = `Generado el ${new Date().toLocaleString("es-VE", { dateStyle: "long" })} — ${items.length} de ${matchedTotal} registro(s) según los filtros activos.`;
+      const exportPayload = {
+        headers: AUDIT_EXPORT_HEADERS,
+        rows: toAuditExportRows(items),
+        columns: AUDIT_EXPORT_COLUMNS,
+        title: "Trazabilidad / Auditoría",
+        subtitle,
+      };
+
+      if (format === "excel") {
+        const blob = await buildXlsx(exportPayload.headers, exportPayload.rows, exportPayload);
+        downloadBlob(blob, XLSX_MIME, `auditoria-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      } else {
+        printPdf(exportPayload);
+      }
+
+      if (truncated) {
+        showToast(`Se exportaron los ${MAX_ROWS_FOR_RICH_EXPORT} registros más recientes de ${matchedTotal} — para el histórico completo usa "Exportar CSV".`, "info");
+      }
+    } catch {
+      showToast("No se pudo generar el archivo de auditoría.", "error");
+    } finally {
+      setRichExportFormat(null);
     }
   };
 
@@ -269,12 +368,33 @@ export default function AuditLogSection({ authToken }: AuditLogSectionProps) {
             <RefreshButton onRefresh={refresh} />
             <button
               type="button"
+              onClick={() => handleRichExport("excel")}
+              disabled={richExportFormat !== null || total === 0}
+              aria-label="Exportar auditoría a Excel"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {richExportFormat === "excel" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+              Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRichExport("pdf")}
+              disabled={richExportFormat !== null || total === 0}
+              aria-label="Exportar auditoría a PDF"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {richExportFormat === "pdf" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+              PDF
+            </button>
+            <button
+              type="button"
               onClick={handleExport}
               disabled={isExporting || total === 0}
+              title="Exporta el histórico completo del filtro activo, sin límite de filas (streaming)."
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none shadow-xs"
             >
               {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              Exportar CSV
+              CSV
             </button>
           </div>
         </div>

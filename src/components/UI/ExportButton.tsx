@@ -34,7 +34,7 @@ export interface ExportFooter {
 
 export const PDF_PRINT_ROOT_ID = "export-print-root";
 
-const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 interface ExportButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   format: ExportFormat;
@@ -114,7 +114,11 @@ function columnFormat(col?: ExportColumn): string | undefined {
   return undefined;
 }
 
-async function buildXlsx(
+/** Exportado para consumidores que necesitan construir el archivo fuera del ciclo
+ * de click del botón (ej. AuditLogSection: primero trae del backend TODAS las
+ * filas que matchean los filtros —la tabla solo tiene la página actual en
+ * memoria— y luego genera el Excel con ese set completo). */
+export async function buildXlsx(
   headers: string[],
   rows: ExportRow[],
   opts: { title?: string; subtitle?: string; columns?: ExportColumn[]; footer?: ExportFooter }
@@ -202,7 +206,7 @@ async function buildXlsx(
   }).toBlob();
 }
 
-function downloadBlob(content: BlobPart, mime: string, downloadName: string): void {
+export function downloadBlob(content: BlobPart, mime: string, downloadName: string): void {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -212,7 +216,8 @@ function downloadBlob(content: BlobPart, mime: string, downloadName: string): vo
   URL.revokeObjectURL(url);
 }
 
-function printPdf(opts: { title?: string; subtitle?: string; headers: string[]; rows: ExportRow[]; columns?: ExportColumn[]; footer?: ExportFooter }): void {
+/** Exportado — mismo motivo que buildXlsx: consumidores con dataset server-side paginado. */
+export function printPdf(opts: { title?: string; subtitle?: string; headers: string[]; rows: ExportRow[]; columns?: ExportColumn[]; footer?: ExportFooter }): void {
   document.getElementById(PDF_PRINT_ROOT_ID)?.remove();
 
   const { title, subtitle, headers, rows, columns = [], footer } = opts;
