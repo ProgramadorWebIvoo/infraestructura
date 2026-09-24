@@ -29,8 +29,9 @@ import StalledProjectsSection from "./components/StalledProjectsSection";
 import InsightsSection from "./components/InsightsSection";
 import AuditLogSection from "./components/AuditLogSection";
 import MasterTableSection from "./components/MasterTableSection";
+import ProjectHistorySection from "./components/ProjectHistorySection";
 
-type PresidenciaTabKey = "estadisticas" | "auditoria" | "master";
+type PresidenciaTabKey = "estadisticas" | "historico" | "auditoria" | "master";
 
 /** Tres puntos con opacidad escalonada — evita el parpadeo en bloque de un solo `animate-pulse`. */
 function AnimatedEllipsis() {
@@ -116,6 +117,7 @@ export default function PresidenciaDashboard({
 
   const tabs: TabDefinition[] = [
     { key: "estadisticas", label: "Estadísticas" },
+    { key: "historico", label: "Histórico de Obras" },
     { key: "auditoria", label: "Auditoría", count: auditLogs.length },
     { key: "master", label: "Master de Obras", count: projects.length },
   ];
@@ -240,6 +242,12 @@ export default function PresidenciaDashboard({
             <StalledProjectsSection stalledProjects={summary.stalledProjects} projects={projects} onSelectProject={onSelectProject} />
 
             <InsightsSection summary={summary} />
+          </motion.div>
+        )}
+
+        {activeTab === "historico" && (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+            <ProjectHistorySection authToken={authToken} />
           </motion.div>
         )}
 
