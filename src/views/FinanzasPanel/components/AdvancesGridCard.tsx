@@ -15,15 +15,19 @@ import { CreditCard } from "lucide-react";
 import Button from "@/components/UI/Button";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
+import BsAmount from "@/components/UI/BsAmount";
 
 interface AdvancesGridCardProps {
   project: Project;
   winner: Proposal;
   advAmount: number;
   onOpenConfirm: () => void;
+  convert: (amount: number, fromCode: string) => number;
+  hasRates: boolean;
+  isLoadingRates: boolean;
 }
 
-function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm }: AdvancesGridCardProps) {
+function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm, convert, hasRates, isLoadingRates }: AdvancesGridCardProps) {
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -56,6 +60,7 @@ function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm }: Advance
         <div className="text-right">
           <span className="text-[9px] text-slate-400 font-bold block uppercase font-mono tracking-wider text-rose-500 mb-0.5">Monto a Pagar:</span>
           <span className="font-mono font-black text-slate-900 text-sm">${formatNumber(advAmount)}</span>
+          <BsAmount amount={advAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
         </div>
       </div>
 

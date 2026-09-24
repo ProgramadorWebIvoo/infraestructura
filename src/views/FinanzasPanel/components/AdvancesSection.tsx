@@ -29,6 +29,8 @@ import { useTableViewMode } from "@/hooks/useTableViewMode";
 import { useToast } from "@/components/UI/Toast";
 import { viewSwitchVariants } from "@/animations";
 import { formatNumber } from "@/utils";
+import BsAmount from "@/components/UI/BsAmount";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 
 interface AdvancesSectionProps {
   pendingAdvances: Project[];
@@ -51,6 +53,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
   const { showToast } = useToast();
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   // Solo obras con un ganador resuelto (winner) participan del flujo —
   // sin propuesta adjudicada no hay monto de anticipo que calcular. Orden
@@ -92,7 +95,12 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
     ) },
     { key: "negotiatedAdvancePercent", label: "% Anticipo", width: "7rem", align: "right", sortable: true, render: ({ winner }) => <span className="font-mono font-black text-emerald-600">{winner.negotiatedAdvancePercent}%</span> },
     { key: "totalCost", label: "Total Obra", width: "9rem", align: "right", sortable: true, render: ({ winner }) => <span className="font-mono font-bold text-slate-600">${winner.totalCost.toLocaleString()}</span> },
-    { key: "advAmount", label: "Monto Anticipo", width: "10rem", align: "right", sortable: true, render: ({ advAmount }) => <span className="font-mono font-black text-slate-900">${formatNumber(advAmount)}</span> },
+    { key: "advAmount", label: "Monto Anticipo", width: "10rem", align: "right", sortable: true, render: ({ advAmount }) => (
+      <div>
+        <span className="font-mono font-black text-slate-900">${formatNumber(advAmount)}</span>
+        <BsAmount amount={advAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
+      </div>
+    ) },
     { key: "action", label: "", width: "11rem", render: ({ project, advAmount }) => (
       <Button
         id={`btn-pay-advance-${project.id}`}
@@ -106,7 +114,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         Liberar
       </Button>
     ) },
-  ], []);
+  ], [convert, hasRates, isLoadingRates]);
 
   const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {
     setConfirmPayAdvance({ projectId, amount, title });
@@ -135,6 +143,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
             <div>
               <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-rose-500 block">Total Pendiente por Liberar</span>
               <span className="text-lg font-black font-mono text-rose-900">${formatNumber(totalPending)}</span>
+              <BsAmount amount={totalPending} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
             </div>
             <span className="ml-auto text-[10px] font-mono font-bold text-rose-400">{rows.length} obra{rows.length === 1 ? "" : "s"}</span>
           </div>
@@ -180,6 +189,9 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
                   winner={winner}
                   advAmount={advAmount}
                   onOpenConfirm={() => handleOpenConfirm(project.id, advAmount, project.title)}
+                  convert={convert}
+                  hasRates={hasRates}
+                  isLoadingRates={isLoadingRates}
                 />
               )}
               cardAccent={() => "danger"}
@@ -204,7 +216,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
           }
         }}
         title="Liberar Anticipo"
-        message={`¿Estás seguro de liberar el anticipo de $${formatNumber(confirmPayAdvance?.amount ?? 0)} para la obra "${confirmPayAdvance?.title ?? ""}"? Esta acción registrará el pago en el diario de egresos y cambiará el estado del proyecto a "En ejecución".`}
+        message={`¿Estás seguro de liberar el anticipo de $${formatNumber(confirmPayAdvance?.amount ?? 0)}${hasRates ? ` (Bs. ${formatBs(convert(confirmPayAdvance?.amount ?? 0, "USD"))})` : ""} para la obra "${confirmPayAdvance?.title ?? ""}"? Esta acción registrará el pago en el diario de egresos y cambiará el estado del proyecto a "En ejecución".`}
         variant="warning"
         confirmLabel="Liberar anticipo"
         isLoading={isPaying}
