@@ -66,6 +66,8 @@ describe("computeDashboardSummary", () => {
       "EN_REEVALUACION_AUDITORIA",
       "CONFIRMADO_PROCURA",
       "COMPARATIVA_ENVIADA",
+      "PENDIENTE_PRESIDENCIA",
+      "APROBADO_PRESIDENCIA",
       "CONTRATADO",
       "EN_EJECUCION",
       "VERIFICANDO_FINALIZACION",

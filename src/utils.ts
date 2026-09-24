@@ -72,6 +72,8 @@ export const STATUS_COLORS: Record<string, string> = {
   REVISADO_AUDITORIA: "bg-blue-50 text-blue-700 border-blue-200",
   CONFIRMADO_PROCURA: "bg-purple-50 text-purple-700 border-purple-200",
   COMPARATIVA_ENVIADA: "bg-amber-50 text-amber-700 border-amber-200",
+  PENDIENTE_PRESIDENCIA: "bg-violet-50 text-violet-700 border-violet-200",
+  APROBADO_PRESIDENCIA: "bg-teal-50 text-teal-700 border-teal-200",
   CONTRATADO: "bg-indigo-50 text-indigo-700 border-indigo-200",
   EN_EJECUCION: "bg-cyan-50 text-cyan-700 border-cyan-200",
   VERIFICANDO_FINALIZACION: "bg-orange-50 text-orange-700 border-orange-200",

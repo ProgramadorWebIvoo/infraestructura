@@ -24,7 +24,8 @@ export function getPendingCount(projects: Project[], role: string): number {
       return projects.filter(
         p =>
           p.status === ProjectStatus.REVISADO_AUDITORIA ||
-          p.status === ProjectStatus.COMPARATIVA_ENVIADA,
+          p.status === ProjectStatus.COMPARATIVA_ENVIADA ||
+          p.status === ProjectStatus.APROBADO_PRESIDENCIA,
       ).length;
     case "ANALISTA":
       return projects.filter(
@@ -42,7 +43,7 @@ export function getPendingCount(projects: Project[], role: string): number {
         p => p.status === ProjectStatus.EN_EJECUCION,
       ).length;
     case "PRESIDENCIA":
-      return projects.length;
+      return projects.filter(p => p.status === ProjectStatus.PENDIENTE_PRESIDENCIA).length;
     default:
       return 0;
   }

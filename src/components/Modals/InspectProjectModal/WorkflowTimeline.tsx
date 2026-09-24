@@ -58,10 +58,12 @@ function getStepState(project: Project, index: number): StepState {
           ? "current"
           : "pending";
     case 5:
-      return project.selectedContractorCode
-        ? "done"
-        : project.status === ProjectStatus.COMPARATIVA_ENVIADA
-          ? "current"
+      return project.status === ProjectStatus.COMPARATIVA_ENVIADA ||
+        project.status === ProjectStatus.PENDIENTE_PRESIDENCIA ||
+        project.status === ProjectStatus.APROBADO_PRESIDENCIA
+        ? "current"
+        : project.selectedContractorCode
+          ? "done"
           : "pending";
     case 6:
       return project.advancePaidAmount

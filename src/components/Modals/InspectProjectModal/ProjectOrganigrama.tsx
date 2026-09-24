@@ -36,7 +36,10 @@ function currentRoleOf(status: ProjectStatus): RoleId | null {
       return "AUDITORIA";
     case ProjectStatus.REVISADO_AUDITORIA:
     case ProjectStatus.COMPARATIVA_ENVIADA:
+    case ProjectStatus.APROBADO_PRESIDENCIA:
       return "PROCURA";
+    case ProjectStatus.PENDIENTE_PRESIDENCIA:
+      return "PRESIDENCIA";
     case ProjectStatus.CONFIRMADO_PROCURA:
       return "ANALISTA";
     case ProjectStatus.CONTRATADO:

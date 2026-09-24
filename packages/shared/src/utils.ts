@@ -69,6 +69,8 @@ export const STATUS_LABELS: Record<string, string> = {
   EN_REEVALUACION_AUDITORIA: "En Reevaluación (Auditoría)",
   CONFIRMADO_PROCURA: "Confirmado (Procura)",
   COMPARATIVA_ENVIADA: "Comparativa Enviada",
+  PENDIENTE_PRESIDENCIA: "Pendiente de Presidencia",
+  APROBADO_PRESIDENCIA: "Aprobado por Presidencia",
   CONTRATADO: "Contratado",
   EN_EJECUCION: "En Ejecución",
   VERIFICANDO_FINALIZACION: "Verificando",

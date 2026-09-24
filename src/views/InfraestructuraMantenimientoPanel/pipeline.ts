@@ -7,7 +7,7 @@
  * Fuente única para el pipeline del departamento y los filtros de la lista.
  */
 
-import { Calculator, CheckCircle2, DollarSign, FilePlus2, HardHat, Scale } from "lucide-react";
+import { Calculator, CheckCircle2, DollarSign, FilePlus2, HardHat, Landmark, Scale } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
@@ -51,10 +51,19 @@ export const PIPELINE_STAGES: readonly PipelineStage[] = [
     key: "procura",
     label: "Procura",
     description: "Ofertas y adjudicación",
-    statuses: [ProjectStatus.CONFIRMADO_PROCURA, ProjectStatus.COMPARATIVA_ENVIADA],
+    statuses: [ProjectStatus.CONFIRMADO_PROCURA, ProjectStatus.COMPARATIVA_ENVIADA, ProjectStatus.APROBADO_PRESIDENCIA],
     icon: Scale,
     color: "bg-purple-50 text-purple-600 border-purple-100",
     active: "border-purple-500 bg-purple-50 text-purple-700 shadow-sm shadow-purple-200/50",
+  },
+  {
+    key: "presidencia",
+    label: "Presidencia",
+    description: "Aprobación de adjudicación",
+    statuses: [ProjectStatus.PENDIENTE_PRESIDENCIA],
+    icon: Landmark,
+    color: "bg-amber-50 text-amber-600 border-amber-100",
+    active: "border-amber-500 bg-amber-50 text-amber-700 shadow-sm shadow-amber-200/50",
   },
   {
     key: "finanzas",
