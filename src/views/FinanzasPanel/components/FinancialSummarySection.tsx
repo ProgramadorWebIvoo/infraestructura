@@ -19,7 +19,11 @@ import { itemVariants } from "@/animations";
 import { computeDashboardSummary, approvedOf, releasedOf, daysBetween, STALLED_THRESHOLD_DAYS } from "@/utils/dashboardSummary";
 import RankBar from "@/components/UI/RankBar";
 import Tooltip from "@/components/UI/Tooltip";
+import BsAmount from "@/components/UI/BsAmount";
+import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 import type { LedgerEntry } from "./LedgerSection";
+
+type ConvertFn = (amount: number, fromCode: string) => number;
 
 const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -73,9 +77,12 @@ interface MetricCardProps {
   accent: string;
   iconBg: string;
   tooltip?: string;
+  convert: ConvertFn;
+  hasRates: boolean;
+  isLoadingRates: boolean;
 }
 
-function MetricCard({ icon, label, amount, sub, accent, iconBg, tooltip }: MetricCardProps) {
+function MetricCard({ icon, label, amount, sub, accent, iconBg, tooltip, convert, hasRates, isLoadingRates }: MetricCardProps) {
   return (
     <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
       <div className="flex items-center gap-2 mb-2">
@@ -92,6 +99,7 @@ function MetricCard({ icon, label, amount, sub, accent, iconBg, tooltip }: Metri
         </span>
       </div>
       <p className={`text-lg font-black font-mono ${accent}`}>${fmtMoney(amount)}</p>
+      <BsAmount amount={amount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
       <p className="text-[10px] text-slate-400 font-medium">{sub}</p>
     </div>
   );
@@ -111,10 +119,15 @@ interface StatPillProps {
   accent: string;
   iconBg: string;
   tooltip?: string;
+  /** Monto crudo en USD a convertir — solo se pasa cuando `value` representa dinero. */
+  bsAmount?: number;
+  convert: ConvertFn;
+  hasRates: boolean;
+  isLoadingRates: boolean;
 }
 
 /** Pill compacto para KPIs financieros secundarios (fila superior de contexto). */
-function StatPill({ icon, label, value, sub, accent, iconBg, tooltip }: StatPillProps) {
+function StatPill({ icon, label, value, sub, accent, iconBg, tooltip, bsAmount, convert, hasRates, isLoadingRates }: StatPillProps) {
   return (
     <div className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
       <div className={`p-2 rounded-lg shrink-0 ${iconBg}`}>{icon}</div>
@@ -130,6 +143,9 @@ function StatPill({ icon, label, value, sub, accent, iconBg, tooltip }: StatPill
           )}
         </p>
         <p className={`text-base font-black font-mono leading-tight ${accent}`}>{value}</p>
+        {bsAmount !== undefined && (
+          <BsAmount amount={bsAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
+        )}
         <p className="text-[9px] text-slate-400 font-medium truncate">{sub}</p>
       </div>
     </div>
@@ -148,6 +164,9 @@ function SectionTitle({ icon, label }: { icon: React.ReactNode; label: string })
 const CARD = "bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all duration-300";
 
 export default function FinancialSummarySection({ projects, paidLedger }: FinancialSummarySectionProps) {
+  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  /** Sufijo "· Bs. X" para incrustar en los `value` de texto de RankBar — solo cuando la tasa ya cargó. */
+  const bsSuffix = (amount: number) => (hasRates ? ` · Bs. ${formatBs(convert(amount, "USD"))}` : "");
   const summary = computeDashboardSummary(projects);
   const { totalApprovedInvestment, totalCommittedAmount, totalReleasedFunds, pendingFunds, excessReleased } = summary;
   const base = totalApprovedInvestment || 1;
@@ -230,6 +249,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1">
             <AlertTriangle className="h-3 w-3" />
             Sobre-ejecución ${fmtMoney(excessReleased)}
+            <BsAmount amount={excessReleased} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" className="text-rose-600" />
           </span>
         )}
       </div>
@@ -261,6 +281,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             sub="Referencia del total (100%)"
             accent="text-sky-700"
             tooltip="Suma del monto aprobado de todos los proyectos del portafolio — es la base (100%) sobre la que se calculan los demás porcentajes."
+            convert={convert}
+            hasRates={hasRates}
+            isLoadingRates={isLoadingRates}
           />
           <MetricCard
             icon={<TrendingUp className="h-4 w-4 text-indigo-600" />}
@@ -270,6 +293,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             sub={`${Math.round(committedPct)}% del presupuesto aprobado`}
             accent="text-indigo-700"
             tooltip="Monto contractual comprometido con proveedores (adjudicado), aunque aún no se haya desembolsado."
+            convert={convert}
+            hasRates={hasRates}
+            isLoadingRates={isLoadingRates}
           />
           <MetricCard
             icon={<Wallet className="h-4 w-4 text-emerald-600" />}
@@ -279,6 +305,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             sub={overBudget ? "Excede lo aprobado" : `${Math.round(releasedPct)}% del presupuesto aprobado`}
             accent="text-emerald-700"
             tooltip="Total efectivamente desembolsado (anticipos + finiquitos pagados) hasta la fecha."
+            convert={convert}
+            hasRates={hasRates}
+            isLoadingRates={isLoadingRates}
           />
           <MetricCard
             icon={<Lock className="h-4 w-4 text-amber-600" />}
@@ -288,6 +317,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             sub={overBudget ? "No hay pendiente" : `${Math.round(pendingPct)}% del presupuesto aprobado`}
             accent="text-amber-700"
             tooltip="Diferencia entre lo aprobado y lo liberado — dinero todavía disponible para desembolsar."
+            convert={convert}
+            hasRates={hasRates}
+            isLoadingRates={isLoadingRates}
           />
         </div>
       </div>
@@ -338,6 +370,10 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           sub={`sobre ${projectsWithBudget.length} obra(s) con presupuesto`}
           accent="text-violet-700"
           tooltip="Presupuesto aprobado total dividido entre la cantidad de obras que tienen presupuesto asignado."
+          bsAmount={avgApprovedPerProject}
+          convert={convert}
+          hasRates={hasRates}
+          isLoadingRates={isLoadingRates}
         />
         <StatPill
           icon={<Gauge className="h-4 w-4 text-emerald-600" />}
@@ -347,6 +383,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           sub="liberado sobre lo comprometido"
           accent="text-emerald-700"
           tooltip="Qué porción de lo comprometido con proveedores ya se ha desembolsado efectivamente."
+          convert={convert}
+          hasRates={hasRates}
+          isLoadingRates={isLoadingRates}
         />
         <StatPill
           icon={<AlertTriangle className="h-4 w-4 text-rose-600" />}
@@ -356,6 +395,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           sub="liberado supera lo aprobado"
           accent="text-rose-700"
           tooltip="Cantidad de obras donde el monto liberado superó el presupuesto originalmente aprobado."
+          convert={convert}
+          hasRates={hasRates}
+          isLoadingRates={isLoadingRates}
         />
         <StatPill
           icon={<Timer className="h-4 w-4 text-amber-600" />}
@@ -365,6 +407,10 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
           sub={`${allAtRiskProjects.length} obra(s) estancada(s)`}
           accent="text-amber-700"
           tooltip={`Fondos aprobados y aún no liberados en obras sin actividad reciente (${STALLED_THRESHOLD_DAYS}+ días sin actualización).`}
+          bsAmount={totalAtRiskAmount}
+          convert={convert}
+          hasRates={hasRates}
+          isLoadingRates={isLoadingRates}
         />
       </div>
     </motion.div>
@@ -384,7 +430,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
                 <RankBar
                   key={t.type}
                   label={t.type}
-                  value={`$${fmtMoney(t.approvedAmount)} · ${t.count} obra${t.count === 1 ? "" : "s"}`}
+                  value={`$${fmtMoney(t.approvedAmount)}${bsSuffix(t.approvedAmount)} · ${t.count} obra${t.count === 1 ? "" : "s"}`}
                   amount={t.approvedAmount}
                   max={maxType}
                 />
@@ -403,7 +449,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
               <RankBar
                 key={l.location}
                 label={l.location}
-                value={`$${fmtMoney(l.approvedAmount)} · ${l.count} obra${l.count === 1 ? "" : "s"}`}
+                value={`$${fmtMoney(l.approvedAmount)}${bsSuffix(l.approvedAmount)} · ${l.count} obra${l.count === 1 ? "" : "s"}`}
                 amount={l.approvedAmount}
                 max={maxLocation}
                 muted={l.location === "Sin ubicación"}
@@ -425,7 +471,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             <RankBar
               key={sp.id}
               label={sp.title}
-              value={`$${fmtMoney(sp.exposedAmount)} · ${sp.daysSinceUpdate}d sin actividad`}
+              value={`$${fmtMoney(sp.exposedAmount)}${bsSuffix(sp.exposedAmount)} · ${sp.daysSinceUpdate}d sin actividad`}
               amount={sp.exposedAmount}
               max={maxAtRisk}
             />
@@ -444,6 +490,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Monto Promedio por Desembolso</span>
           </div>
           <p className="text-xl font-black font-mono text-slate-800">${fmtMoney(avgDisbursement)}</p>
+          <BsAmount amount={avgDisbursement} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
           <p className="text-[10px] text-slate-400 font-medium">sobre {paidLedger.length} movimiento(s)</p>
         </div>
         <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
@@ -452,6 +499,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Mayor Desembolso Registrado</span>
           </div>
           <p className="text-xl font-black font-mono text-slate-800">${fmtMoney(largestDisbursement.amount)}</p>
+          <BsAmount amount={largestDisbursement.amount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
           <p className="text-[10px] text-slate-400 font-medium truncate">
             {largestDisbursement.amount > 0 ? `${largestDisbursement.title} · ${largestDisbursement.date}` : "Sin desembolsos aún"}
           </p>
@@ -470,7 +518,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             <RankBar
               key={c.contractorCode}
               label={`${i + 1}. ${c.contractorName}`}
-              value={`$${fmtMoney(c.totalAmount)} · ${c.projectCount} obra${c.projectCount === 1 ? "" : "s"}`}
+              value={`$${fmtMoney(c.totalAmount)}${bsSuffix(c.totalAmount)} · ${c.projectCount} obra${c.projectCount === 1 ? "" : "s"}`}
               amount={c.totalAmount}
               max={maxContractor}
             />
@@ -497,7 +545,7 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
             {monthlyDisbursements.map(([month, amount]) => (
               <div key={month} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">
                 <span className="text-[9px] text-slate-500 font-mono font-bold whitespace-nowrap">${fmtMoney(amount)}</span>
-                <Tooltip content={`${month}: $${fmtMoney(amount)} (${Math.round((amount / maxMonth) * 100)}% del máximo)`} placement="top">
+                <Tooltip content={`${month}: $${fmtMoney(amount)}${bsSuffix(amount)} (${Math.round((amount / maxMonth) * 100)}% del máximo)`} placement="top">
                   <div className="w-full flex-1 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50/50 cursor-help">
                     <div
                       className="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-md transition-all duration-700"
