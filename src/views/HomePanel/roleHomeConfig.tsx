@@ -106,6 +106,14 @@ const MODULE_AUDITORIA: HomeModuleLink = {
   accent: "brand",
 };
 
+const MODULE_RESIDENTE: HomeModuleLink = {
+  route: ROUTES.RESIDENTE,
+  label: "Mis obras",
+  description: "Verificación en campo de las obras a su cargo",
+  icon: <HardHat className="h-5 w-5" strokeWidth={2.25} />,
+  accent: "warning",
+};
+
 const MODULE_PROCURA: HomeModuleLink = {
   route: ROUTES.PROCURA,
   label: "Procura",
@@ -300,6 +308,11 @@ const ROLE_HOME_CONFIG: Record<string, RoleHomeConfig> = {
     tagline: "Revisión técnica y auditoría de finalización de obra.",
     kpis: kpiAuditoria,
     modules: [MODULE_AUDITORIA],
+  },
+  RESIDENTE: {
+    tagline: "Verificación en campo de las obras a su cargo.",
+    kpis: [],
+    modules: [MODULE_RESIDENTE],
   },
   PROCURA: {
     tagline: "Autorización de inversión y evaluación de comparativas.",

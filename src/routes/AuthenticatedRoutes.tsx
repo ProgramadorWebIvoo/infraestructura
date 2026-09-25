@@ -15,6 +15,7 @@ const PresidenciaDashboard = lazy(ROUTE_PREFETCH[ROUTES.PRESIDENCIA]!.loadChunk)
 const MarketingUnderConstruction = lazy(ROUTE_PREFETCH[ROUTES.MARKETING]!.loadChunk);
 const InfraestructuraMantenimientoPanel = lazy(ROUTE_PREFETCH[ROUTES.INFRAESTRUCTURA]!.loadChunk);
 const AuditoriaPanel = lazy(ROUTE_PREFETCH[ROUTES.AUDITORIA]!.loadChunk);
+const ResidentePanel = lazy(ROUTE_PREFETCH[ROUTES.RESIDENTE]!.loadChunk);
 const ProcuraPanel = lazy(ROUTE_PREFETCH[ROUTES.PROCURA]!.loadChunk);
 const AnalistasPanel = lazy(ROUTE_PREFETCH[ROUTES.ANALISTAS]!.loadChunk);
 const FinanzasPanel = lazy(ROUTE_PREFETCH[ROUTES.FINANZAS]!.loadChunk);
@@ -83,6 +84,14 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.AUDITORIA)} redirectTo={fallbackRoute}>
               <AuditoriaPanel projects={projects} auditLogs={auditLogs} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onResolveReevaluation={onResolveReevaluation} closureActions={closureActions} onSyncProject={onSyncProject} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.RESIDENTE}
+          element={
+            <ProtectedRoute canAccess={canAccess(ROUTES.RESIDENTE)} redirectTo={fallbackRoute}>
+              <ResidentePanel />
             </ProtectedRoute>
           }
         />

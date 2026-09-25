@@ -17,7 +17,8 @@ import {
   DollarSign,
   UserCog,
   SlidersHorizontal,
-  BanknoteArrowDown
+  BanknoteArrowDown,
+  HardHat
 } from "lucide-react";
 import { ROUTES } from "./routes.tsx";
 
@@ -32,6 +33,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   [ROUTES.MARKETING]: {label: "Marketing", icon: BanknoteArrowDown, color: "#f59e0b"},
   [ROUTES.INFRAESTRUCTURA]: { label: "Infra / Mant", icon: Building2, color: "#0EA5E9" },
   [ROUTES.AUDITORIA]: { label: "Auditoría", icon: CheckSquare, color: "#2563EB" },
+  [ROUTES.RESIDENTE]: { label: "Residente", icon: HardHat, color: "#F97316" },
   [ROUTES.PROCURA]: { label: "Procura", icon: FileSearch, color: "#9333EA" },
   [ROUTES.ANALISTAS]: { label: "Analistas", icon: Users, color: "#059669" },
   [ROUTES.FINANZAS]: { label: "Finanzas", icon: DollarSign, color: "#E11D48" },

@@ -18,6 +18,7 @@ import {
   Building2,
   TrendingUp,
   CheckSquare,
+  HardHat,
   FileSearch,
   Users,
   DollarSign,
@@ -85,7 +86,8 @@ function SidebarNav({
     authToken,
   );
   const prefetchAuditoria = usePrefetchOnIntent(ROUTES.AUDITORIA, authToken);
-  const prefetchProcura = usePrefetchOnIntent(ROUTES.PROCURA, authToken);
+  const prefetchResidente = usePrefetchOnIntent(ROUTES.RESIDENTE, authToken);
+  const prefetchProcura =usePrefetchOnIntent(ROUTES.PROCURA, authToken);
   const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
   const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
   const prefetchCatalogos = usePrefetchOnIntent(ROUTES.CATALOGOS, authToken);
@@ -345,6 +347,30 @@ function SidebarNav({
                     <CheckSquare className={sidebarIconClass(isActive)} />
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Auditoría
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            </SidebarTip>
+          )}
+
+          {canAccess("/residente") && (
+            <SidebarTip label="Mis obras" disabled={!effectiveCollapsed}>
+              <NavLink
+                to="/residente"
+                id="sidebar-residente"
+                onClick={onClose}
+                onMouseEnter={prefetchResidente.onMouseEnter}
+                onFocus={prefetchResidente.onFocus}
+                onMouseLeave={prefetchResidente.onMouseLeave}
+                onBlur={prefetchResidente.onBlur}
+                className={navLinkClass("warning", effectiveCollapsed)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <HardHat className={sidebarIconClass(isActive)} />
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Mis obras
                     </span>
                   </>
                 )}

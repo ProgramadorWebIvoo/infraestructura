@@ -16,6 +16,7 @@ export const ROLE_LABELS: Record<string, string> = {
   PRESIDENCIA: "Presidencia",
   INFRAESTRUCTURA: "Infraestructura / Mant.",
   AUDITORIA: "Auditoría",
+  RESIDENTE: "Residente",
   PROCURA: "Procura",
   ANALISTA: "Analistas",
   FINANZAS: "Finanzas",
