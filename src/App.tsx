@@ -6,7 +6,7 @@
  * las rutas con control de acceso por rol.
  */
 
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider, removeOldestQuery } from "@tanstack/react-query-persist-client";
@@ -269,9 +269,31 @@ function AppRoutes() {
     handlePayAdvance,
     handleVerifyCompletion,
     handlePayFinal,
+    handleResidentApproval,
+    handleRejectClosure,
+    handleAuditApproval,
+    handleRequestFiniquito,
+    handleReturnFiniquito,
+    handleUploadResidentPhoto,
+    handleResendClosureLink,
+    handleAssignResident,
     resetData,
     loadApiData,
   } = useProjects(authToken, showToast, activeRole);
+
+  const closureActions = useMemo(
+    () => ({
+      handleResidentApproval,
+      handleRejectClosure,
+      handleAuditApproval,
+      handleRequestFiniquito,
+      handleReturnFiniquito,
+      handleUploadResidentPhoto,
+      handleResendClosureLink,
+      handleAssignResident,
+    }),
+    [handleResidentApproval, handleRejectClosure, handleAuditApproval, handleRequestFiniquito, handleReturnFiniquito, handleUploadResidentPhoto, handleResendClosureLink, handleAssignResident],
+  );
 
   // ---- Logout compuesto (limpia auth + datos) ----
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -411,6 +433,7 @@ function AppRoutes() {
         onPayAdvance={handlePayAdvance}
         onVerifyCompletion={handleVerifyCompletion}
         onPayFinal={handlePayFinal}
+        closureActions={closureActions}
         authToken={authToken}
         location={location}
       />

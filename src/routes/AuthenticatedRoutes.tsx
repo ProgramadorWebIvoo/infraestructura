@@ -33,7 +33,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     onAddProject, onResubmitProject, onRejectProject, onSendToReevaluation, onResolveReevaluation, onReviewProject, onDeleteDocument, onSyncProject, onApproveInvestment, onAddProposal,
     onRenegotiateProposal, onSendRenegotiationInvite,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
-    onSelectContractor, onApproveAward, onRejectAward, onSendToFinance, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal,
+    onSelectContractor, onApproveAward, onRejectAward, onSendToFinance, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal, closureActions,
     authToken, location,
   } = props;
 
@@ -74,7 +74,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.INFRAESTRUCTURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.INFRAESTRUCTURA)} redirectTo={fallbackRoute}>
-              <InfraestructuraMantenimientoPanel onAddProject={onAddProject} onResubmitProject={onResubmitProject} onDeleteDocument={onDeleteDocument} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} projectTypes={projectTypes} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+              <InfraestructuraMantenimientoPanel closureActions={closureActions} currentUser={user} onAddProject={onAddProject} onResubmitProject={onResubmitProject} onDeleteDocument={onDeleteDocument} projects={projects} auditLogs={auditLogs} authToken={authToken} materialsCatalog={materialsCatalog} projectTypes={projectTypes} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />

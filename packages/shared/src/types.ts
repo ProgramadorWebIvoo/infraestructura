@@ -225,6 +225,13 @@ export interface Project {
   finalPaidDate?: string;
   qualityVerified?: boolean;
   completionVerifiedDate?: string;
+  /** Ingeniero residente / coordinador de mantenimiento asignado a la obra. */
+  residentUserId?: number | null;
+  residentName?: string | null;
+  closureReportStatus?: string | null;
+  closureReportRevision?: number | null;
+  /** Finiquito propuesto por Auditoría (solo con el informe de cierre cargado). */
+  finiquitoAmount?: number | null;
   /** Congelaciones de tasa de cambio — ver RateFreeze. Solo viene poblado cuando el backend carga la relación (detailRelations()). */
   rateFreezes?: RateFreeze[];
 }

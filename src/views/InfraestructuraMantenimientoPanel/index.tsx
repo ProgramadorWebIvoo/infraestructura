@@ -18,11 +18,13 @@ import TabPanel from "@/components/UI/TabPanel";
 import RequestWizardCard from "./components/RequestWizardCard";
 import RequestsTableSection from "./components/RequestsTableSection";
 import RejectedPetitionsSection from "./components/RejectedPetitionsSection";
+import ResidentClosureSection from "./components/ResidentClosureSection";
 import RejectedWarningLabel from "./components/RejectedWarningLabel";
 import { useRequestForm } from "@/hooks/useRequestForm";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
+import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 
-type TabKey = "crear" | "expedientes" | "rechazadas";
+type TabKey = "crear" | "expedientes" | "rechazadas" | "cierre";
 
 export type { FieldKey, FieldErrors } from "@/hooks/useRequestForm";
 
@@ -46,6 +48,8 @@ interface InfraestructuraMantenimientoPanelProps {
   isLoading?: boolean;
   /** Refresca proyectos + auditoría desde el backend — opcional: sin esto, las tablas no muestran el botón de refresco. */
   onRefreshData?: () => Promise<void> | void;
+  closureActions: ClosureActions;
+  currentUser: { id: number; role?: string } | null;
 }
 
 export default function InfraestructuraMantenimientoPanel({
@@ -59,6 +63,8 @@ export default function InfraestructuraMantenimientoPanel({
   projectTypes,
   isLoading = false,
   onRefreshData,
+  closureActions,
+  currentUser,
 }: InfraestructuraMantenimientoPanelProps) {
   const form = useRequestForm({ onAddProject });
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
@@ -74,6 +80,7 @@ export default function InfraestructuraMantenimientoPanel({
       inExecution: projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION).length,
       completed: projects.filter((p) => p.status === ProjectStatus.COMPLETADO_PAGADO).length,
       rejected: projects.filter((p) => p.status === ProjectStatus.RECHAZADO_AUDITORIA).length,
+      awaitingResident: projects.filter((p) => p.status === ProjectStatus.INFORME_ENVIADO).length,
     }),
     [projects],
   );
@@ -82,6 +89,7 @@ export default function InfraestructuraMantenimientoPanel({
     { key: "crear", label: "Crear" },
     { key: "expedientes", label: "Expedientes", count: kpis.total },
     { key: "rechazadas", label: "Rechazadas", count: kpis.rejected, showDot: kpis.rejected > 0 && activeTab !== "rechazadas" },
+    { key: "cierre", label: "Ejecución y cierre", count: kpis.awaitingResident, showDot: kpis.awaitingResident > 0 && activeTab !== "cierre" },
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
 
@@ -150,6 +158,9 @@ export default function InfraestructuraMantenimientoPanel({
                 onDeleteDocument={onDeleteDocument}
                 onRefresh={onRefreshData}
               />
+            )}
+            {activeTab === "cierre" && (
+              <ResidentClosureSection projects={projects} authToken={authToken} actions={closureActions} currentUser={currentUser} />
             )}
           </TabPanel>
         </motion.div>

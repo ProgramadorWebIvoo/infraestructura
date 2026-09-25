@@ -22,6 +22,7 @@ import { useWorkflowContext, type UseProjectsWorkflowsOptions } from "./projects
 import { useReviewWorkflows } from "./projectsWorkflows/useReviewWorkflows";
 import { useProcurementWorkflows } from "./projectsWorkflows/useProcurementWorkflows";
 import { usePaymentWorkflows } from "./projectsWorkflows/usePaymentWorkflows";
+import { useClosureWorkflows } from "./projectsWorkflows/useClosureWorkflows";
 
 export type { UseProjectsWorkflowsOptions };
 
@@ -31,10 +32,12 @@ export function useProjectsWorkflows(options: UseProjectsWorkflowsOptions) {
   const review = useReviewWorkflows(ctx);
   const procurement = useProcurementWorkflows(ctx);
   const payments = usePaymentWorkflows(ctx);
+  const closure = useClosureWorkflows(ctx);
 
   return {
     ...review,
     ...procurement,
     ...payments,
+    ...closure,
   };
 }
