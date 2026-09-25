@@ -54,7 +54,11 @@ export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, 
       pendingAdvances: pendingAdvances.length,
       pendingFinal: pendingFinalPayments.length,
       inExecution: projects.filter(
-        p => p.status === ProjectStatus.EN_EJECUCION || p.status === ProjectStatus.VERIFICANDO_FINALIZACION,
+        p =>
+          p.status === ProjectStatus.EN_EJECUCION ||
+          p.status === ProjectStatus.INFORME_ENVIADO ||
+          p.status === ProjectStatus.VERIFICANDO_FINALIZACION ||
+          p.status === ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO,
       ).length,
       completed: projects.filter(p => p.status === ProjectStatus.COMPLETADO_PAGADO).length,
     }),

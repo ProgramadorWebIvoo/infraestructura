@@ -160,7 +160,7 @@ const kpiInfraestructura: HomeKpi[] = [
     key: "in-execution",
     icon: <Building2 className="h-4 w-4" strokeWidth={2.25} />,
     label: "En ejecución",
-    filter: (p) => p.filter((x) => x.status === ProjectStatus.EN_EJECUCION),
+    filter: (p) => p.filter((x) => x.status === ProjectStatus.EN_EJECUCION || x.status === ProjectStatus.INFORME_ENVIADO),
     accent: "brand",
     route: ROUTES.INFRAESTRUCTURA,
     amount: sumApproved,

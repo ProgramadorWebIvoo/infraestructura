@@ -62,7 +62,8 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         const winner = project.proposals?.find(p => p.contractorCode === project.selectedContractorCode);
         if (!winner) return null;
         const paidAdvance = project.advancePaidAmount || 0;
-        return { project, winner, paidAdvance, balanceDue: winner.totalCost - paidAdvance };
+        // El finiquito lo propone Auditoría (contratado − anticipo − disminuciones); sin él, el saldo simple.
+        return { project, winner, paidAdvance, balanceDue: project.finiquitoAmount ?? winner.totalCost - paidAdvance };
       })
       .filter((row): row is SettlementRow => row !== null)
       .sort((a, b) => b.balanceDue - a.balanceDue);

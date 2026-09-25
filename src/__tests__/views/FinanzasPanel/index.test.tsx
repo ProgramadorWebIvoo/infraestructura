@@ -256,6 +256,41 @@ describe("FinanzasPanel", () => {
     }
   });
 
+  it("precarga el monto con el finiquito propuesto por Auditoría", async () => {
+    const restoreRO = stubSyncResizeObserver();
+    const restoreSize = stubContainerSize(900, 600);
+    try {
+      const onPayFinal = vi.fn().mockResolvedValue(undefined);
+      const projects = [
+        makeProject({
+          id: "PRJ-1",
+          title: "Obra lista para finiquito",
+          status: ProjectStatus.LISTO_PAGO_FINAL,
+          selectedContractorCode: "CON-100",
+          advancePaidAmount: 3000,
+          finiquitoAmount: 6800,
+          proposals: [makeProposal({ contractorCode: "CON-100", totalCost: 10000 })],
+        }),
+      ];
+
+      render(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={onPayFinal} />);
+
+      fireEvent.click(screen.getByRole("tab", { name: /Finiquitos/ }));
+      fireEvent.click(screen.getByLabelText("Vista de tabla"));
+      fireEvent.click(screen.getByRole("button", { name: /Aprobar$/ }));
+
+      const dialog = await screen.findByRole("dialog");
+      const proofFile = new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
+      fireEvent.change(within(dialog).getByTestId("file-input"), { target: { files: [proofFile] } });
+      fireEvent.click(within(dialog).getByRole("button", { name: /Aprobar finiquito/ }));
+
+      await waitFor(() => expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 6800, proofFile));
+    } finally {
+      restoreSize();
+      restoreRO();
+    }
+  });
+
   it("muestra el skeleton mientras isLoading es true, sin renderizar las tabs", () => {
     render(<FinanzasPanel projects={[]} onPayAdvance={noop} onPayFinal={noop} isLoading />);
 
