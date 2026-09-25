@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { CheckCircle2, ImagePlus, XCircle } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
@@ -8,7 +8,17 @@ import { getErrorMessage } from "@/services/logger";
 import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 import type { Project } from "@/types";
 import ClosureReportDetail from "./ClosureReportDetail";
-import { CLOSURE_PHOTO_MAX_BYTES, CLOSURE_PHOTO_MIMES } from "./types";
+import ClosureMeasurementSummary from "./ClosureMeasurementSummary";
+import {
+  countDifferences,
+  initialDrafts,
+  measurementErrors,
+  previewFiniquito,
+  toMeasurementPayload,
+  type MeasurementDraft,
+  type MeasurementDrafts,
+} from "./closureMeasurements";
+import { CLOSURE_PHOTO_MAX_BYTES, CLOSURE_PHOTO_MIMES, type ClosureReport } from "./types";
 
 export type ClosureReviewMode = "resident" | "audit" | "procura";
 
@@ -17,7 +27,7 @@ interface ModeConfig {
   approveLabel: string;
   rejectLabel: string;
   rejectHint: string;
-  approve: (actions: ClosureActions, projectId: string, notes: string) => Promise<void>;
+  approve: (actions: ClosureActions, projectId: string, notes: string, drafts: MeasurementDrafts, report: ClosureReport) => Promise<void>;
   reject: (actions: ClosureActions, projectId: string, reason: string) => Promise<void>;
 }
 
@@ -27,7 +37,7 @@ const MODES: Record<ClosureReviewMode, ModeConfig> = {
     approveLabel: "Dar visto bueno y pasar a Auditoría",
     rejectLabel: "Rechazar y devolver al contratista",
     rejectHint: "El contratista recibirá el motivo por correo y podrá corregir y reenviar el informe.",
-    approve: (a, id, notes) => a.handleResidentApproval(id, notes || undefined),
+    approve: (a, id, notes, drafts, report) => a.handleResidentApproval(id, notes || undefined, toMeasurementPayload(report.items, drafts, "resident")),
     reject: (a, id, reason) => a.handleRejectClosure(id, reason),
   },
   audit: {
@@ -35,7 +45,7 @@ const MODES: Record<ClosureReviewMode, ModeConfig> = {
     approveLabel: "Verificar y enviar a Procura",
     rejectLabel: "Rechazar y devolver al contratista",
     rejectHint: "La obra vuelve a ejecución y el contratista debe corregir y reenviar el informe.",
-    approve: (a, id, notes) => a.handleAuditApproval(id, notes || undefined),
+    approve: (a, id, notes, drafts, report) => a.handleAuditApproval(id, notes || undefined, toMeasurementPayload(report.items, drafts, "audit")),
     reject: (a, id, reason) => a.handleRejectClosure(id, reason),
   },
   procura: {
@@ -74,6 +84,26 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
     setRejecting(false);
     onClose();
   };
+
+  const stage = mode === "resident" || mode === "audit" ? mode : null;
+  const measuring = stage !== null && !readOnly;
+  const [drafts, setDrafts] = useState<MeasurementDrafts>({});
+
+  useEffect(() => {
+    if (report && stage) setDrafts(initialDrafts(report.items, stage));
+  }, [report, stage]);
+
+  const errors = useMemo(() => (report && measuring && stage ? measurementErrors(report.items, drafts, stage) : {}), [report, measuring, stage, drafts]);
+  const hasErrors = Object.keys(errors).length > 0;
+
+  const handleDraftChange = (itemId: number, patch: Partial<MeasurementDraft>) =>
+    setDrafts((current) => ({ ...current, [itemId]: { ...current[itemId], ...patch } }));
+
+  const finiquitoPreview = useMemo(() => {
+    if (!report || mode !== "audit" || !project) return null;
+    const winner = project.proposals?.find((p) => p.id === project.selectedProposalId);
+    return previewFiniquito({ contractedTotal: winner?.totalCost, advancePaid: project.advancePaidAmount, items: report.items, drafts });
+  }, [report, mode, project, drafts]);
 
   const hasResidentPhoto = report?.photos.some((p) => p.uploadedByType === "RESIDENTE") ?? false;
   const needsPhoto = mode === "resident" && !hasResidentPhoto;
@@ -141,8 +171,8 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
                 <Button
                   colorScheme="emerald"
                   isLoading={isBusy}
-                  disabled={!report || needsPhoto}
-                  onClick={() => project && run(() => config.approve(actions, project.id, notes.trim()), "No se pudo registrar la aprobación.")}
+                  disabled={!report || needsPhoto || (measuring && hasErrors)}
+                  onClick={() => project && report && run(() => config.approve(actions, project.id, notes.trim(), drafts, report), "No se pudo registrar la aprobación.")}
                 >
                   {config.approveLabel}
                 </Button>
@@ -153,7 +183,26 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
       }
     >
       <div className="space-y-5">
-        <ClosureReportDetail report={report} isLoading={isLoading} showFiniquito={mode !== "resident"} />
+        <ClosureReportDetail
+          report={report}
+          isLoading={isLoading}
+          showFiniquito={mode !== "resident"}
+          tableMode={measuring && stage ? stage : "readonly"}
+          drafts={drafts}
+          errors={errors}
+          onDraftChange={handleDraftChange}
+          disabled={isBusy}
+          summary={
+            measuring && stage && report ? (
+              <ClosureMeasurementSummary
+                stage={stage}
+                differences={countDifferences(report.items, drafts, stage)}
+                totalItems={report.items.length}
+                finiquitoPreview={finiquitoPreview}
+              />
+            ) : undefined
+          }
+        />
 
         {!readOnly && mode === "resident" && (
           <div className="space-y-2">

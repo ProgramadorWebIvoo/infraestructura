@@ -78,7 +78,42 @@ describe("ResidentClosureSection", () => {
     await waitFor(() => expect(approve).toBeEnabled());
     await userEvent.click(approve);
 
-    await waitFor(() => expect(actions.handleResidentApproval).toHaveBeenCalledWith("P1", undefined));
+    await waitFor(() =>
+      expect(actions.handleResidentApproval).toHaveBeenCalledWith("P1", undefined, [{ id: 1, residentQuantity: 8, note: undefined }]),
+    );
+  });
+
+  it("prellena lo verificado con lo declarado y exige nota si el residente difiere", async () => {
+    apiFetch.mockImplementation(async (url: string) => (url === "/residents" ? [] : withResidentPhoto));
+    const actions = renderSection([project()]);
+
+    await userEvent.click(screen.getByRole("button", { name: /revisar informe/i }));
+    const qty = await screen.findByLabelText(/verificado en obra/i);
+    expect(qty).toHaveValue(8);
+    expect(screen.getByText(/sin diferencias respecto a lo declarado/i)).toBeInTheDocument();
+
+    await userEvent.clear(qty);
+    await userEvent.type(qty, "6");
+    expect(await screen.findByText(/1 partida con diferencia/i)).toBeInTheDocument();
+    const approve = screen.getByRole("button", { name: /dar visto bueno/i });
+    await waitFor(() => expect(approve).toBeDisabled());
+
+    await userEvent.type(screen.getByLabelText(/justifique la diferencia/i), "Solo 6 instalados");
+    await waitFor(() => expect(approve).toBeEnabled());
+    await userEvent.click(approve);
+    await waitFor(() =>
+      expect(actions.handleResidentApproval).toHaveBeenCalledWith("P1", undefined, [{ id: 1, residentQuantity: 6, note: "Solo 6 instalados" }]),
+    );
+  });
+
+  it("no permite guardar sin cantidad verificada", async () => {
+    apiFetch.mockImplementation(async (url: string) => (url === "/residents" ? [] : withResidentPhoto));
+    renderSection([project()]);
+
+    await userEvent.click(screen.getByRole("button", { name: /revisar informe/i }));
+    await userEvent.clear(await screen.findByLabelText(/verificado en obra/i));
+    await waitFor(() => expect(screen.getByRole("button", { name: /dar visto bueno/i })).toBeDisabled());
+    expect(screen.getByText(/registre la cantidad verificada/i)).toBeInTheDocument();
   });
 
   it("rechazar exige motivo", async () => {

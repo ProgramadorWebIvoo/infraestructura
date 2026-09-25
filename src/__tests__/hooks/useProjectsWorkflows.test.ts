@@ -794,16 +794,36 @@ describe("useProjectsWorkflows", () => {
 
   // ── Cierre (residente / Auditoría / Procura) ──────────────────────────
   describe("closure workflows", () => {
+    const residentItems = [{ id: 1, residentQuantity: 8, note: "Faltan 4" }];
+    const auditItems = [{ id: 1, auditQuantity: 9, note: "Se comprobó 9" }];
+
     it.each([
-      ["handleResidentApproval", "resident-approval", { notes: "ok" }],
-      ["handleAuditApproval", "audit-approval", { notes: "ok" }],
-      ["handleRequestFiniquito", "finiquito-request", { notes: "ok" }],
-    ] as const)("%s postea a closure-report/%s y sincroniza", async (handler, action, body) => {
+      ["handleResidentApproval", "resident-approval", { notes: "ok", items: residentItems }, residentItems],
+      ["handleAuditApproval", "audit-approval", { notes: "ok", items: auditItems }, auditItems],
+    ] as const)("%s envía las mediciones a closure-report/%s y sincroniza", async (handler, action, body, items) => {
       const updated = createMockProject({ status: ProjectStatus.VERIFICANDO_FINALIZACION });
       mockApiFetch.mockResolvedValue(updated);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
-      await result.current[handler]("PRJ-001", "ok");
+      await (result.current[handler] as (id: string, notes: string, items: unknown[]) => Promise<void>)("PRJ-001", "ok", items);
+
+      expect(mockApiFetch).toHaveBeenCalledWith(`/projects/PRJ-001/closure-report/${action}`, {
+        method: "POST",
+        token: "valid-token",
+        body: JSON.stringify(body),
+      });
+      expect(syncProject).toHaveBeenCalledWith(updated);
+    });
+
+    it("handleRequestFiniquito postea a closure-report/finiquito-request y sincroniza", async () => {
+      const updated = createMockProject({ status: ProjectStatus.LISTO_PAGO_FINAL });
+      mockApiFetch.mockResolvedValue(updated);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current.handleRequestFiniquito("PRJ-001", "ok");
+
+      const action = "finiquito-request";
+      const body = { notes: "ok" };
 
       expect(mockApiFetch).toHaveBeenCalledWith(`/projects/PRJ-001/closure-report/${action}`, {
         method: "POST",
@@ -834,7 +854,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await expect(result.current.handleAuditApproval("PRJ-001")).rejects.toThrow("422");
+      await expect(result.current.handleAuditApproval("PRJ-001", undefined, [])).rejects.toThrow("422");
       expect(syncProject).not.toHaveBeenCalled();
     });
 

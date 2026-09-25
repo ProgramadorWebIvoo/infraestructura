@@ -13,6 +13,7 @@ import type { Project } from "@/types";
 import { apiFetch } from "@/services/api";
 import { logError } from "@/services/logger";
 import type { WorkflowContext } from "./shared";
+import type { AuditMeasurement, ResidentMeasurement } from "@/components/ClosureReport/closureMeasurements";
 
 export function useClosureWorkflows({ authTokenRef, syncProjectRef }: WorkflowContext) {
   const post = useCallback(
@@ -32,9 +33,15 @@ export function useClosureWorkflows({ authTokenRef, syncProjectRef }: WorkflowCo
     [authTokenRef, syncProjectRef],
   );
 
-  const handleResidentApproval = useCallback((projectId: string, notes?: string) => post(projectId, "resident-approval", { notes }, "handleResidentApproval"), [post]);
+  const handleResidentApproval = useCallback(
+    (projectId: string, notes: string | undefined, items: ResidentMeasurement[]) => post(projectId, "resident-approval", { notes, items }, "handleResidentApproval"),
+    [post],
+  );
   const handleRejectClosure = useCallback((projectId: string, reason: string) => post(projectId, "rejection", { reason }, "handleRejectClosure"), [post]);
-  const handleAuditApproval = useCallback((projectId: string, notes?: string) => post(projectId, "audit-approval", { notes }, "handleAuditApproval"), [post]);
+  const handleAuditApproval = useCallback(
+    (projectId: string, notes: string | undefined, items: AuditMeasurement[]) => post(projectId, "audit-approval", { notes, items }, "handleAuditApproval"),
+    [post],
+  );
   const handleRequestFiniquito = useCallback((projectId: string, notes?: string) => post(projectId, "finiquito-request", { notes }, "handleRequestFiniquito"), [post]);
   const handleReturnFiniquito = useCallback((projectId: string, reason: string) => post(projectId, "finiquito-return", { reason }, "handleReturnFiniquito"), [post]);
 
