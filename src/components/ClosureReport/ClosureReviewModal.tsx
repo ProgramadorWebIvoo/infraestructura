@@ -37,15 +37,15 @@ const MODES: Record<ClosureReviewMode, ModeConfig> = {
     approveLabel: "Dar visto bueno y pasar a Auditoría",
     rejectLabel: "Rechazar y devolver al contratista",
     rejectHint: "El contratista recibirá el motivo por correo y podrá corregir y reenviar el informe.",
-    approve: (a, id, notes, drafts, report) => a.handleResidentApproval(id, notes || undefined, toMeasurementPayload(report.items, drafts, "resident")),
+    approve: (a, id, notes, drafts, report) => a.handleResidentApproval(id, notes || undefined, toMeasurementPayload(report.items, drafts)),
     reject: (a, id, reason) => a.handleRejectClosure(id, reason),
   },
   audit: {
-    title: "Verificación independiente de Auditoría",
+    title: "Verificación de Auditoría",
     approveLabel: "Verificar y enviar a Procura",
     rejectLabel: "Rechazar y devolver al contratista",
     rejectHint: "La obra vuelve a ejecución y el contratista debe corregir y reenviar el informe.",
-    approve: (a, id, notes, drafts, report) => a.handleAuditApproval(id, notes || undefined, toMeasurementPayload(report.items, drafts, "audit")),
+    approve: (a, id, notes, drafts, report) => a.handleAuditApproval(id, notes || undefined),
     reject: (a, id, reason) => a.handleRejectClosure(id, reason),
   },
   procura: {
@@ -85,15 +85,14 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
     onClose();
   };
 
-  const stage = mode === "resident" || mode === "audit" ? mode : null;
-  const measuring = stage !== null && !readOnly;
+  const measuring = mode === "resident" && !readOnly;
   const [drafts, setDrafts] = useState<MeasurementDrafts>({});
 
   useEffect(() => {
-    if (report && stage) setDrafts(initialDrafts(report.items, stage));
-  }, [report, stage]);
+    if (report && mode === "resident") setDrafts(initialDrafts(report.items));
+  }, [report, mode]);
 
-  const errors = useMemo(() => (report && measuring && stage ? measurementErrors(report.items, drafts, stage) : {}), [report, measuring, stage, drafts]);
+  const errors = useMemo(() => (report && measuring ? measurementErrors(report.items, drafts) : {}), [report, measuring, drafts]);
   const hasErrors = Object.keys(errors).length > 0;
 
   const handleDraftChange = (itemId: number, patch: Partial<MeasurementDraft>) =>
@@ -102,8 +101,8 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
   const finiquitoPreview = useMemo(() => {
     if (!report || mode !== "audit" || !project) return null;
     const winner = project.proposals?.find((p) => p.id === project.selectedProposalId);
-    return previewFiniquito({ contractedTotal: winner?.totalCost, advancePaid: project.advancePaidAmount, items: report.items, drafts });
-  }, [report, mode, project, drafts]);
+    return previewFiniquito({ contractedTotal: winner?.totalCost, advancePaid: project.advancePaidAmount, items: report.items });
+  }, [report, mode, project]);
 
   const hasResidentPhoto = report?.photos.some((p) => p.uploadedByType === "RESIDENTE") ?? false;
   const needsPhoto = mode === "resident" && !hasResidentPhoto;
@@ -141,7 +140,7 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
       isOpen={project !== null}
       onClose={close}
       closeDisabled={isBusy}
-      maxWidth={mode === "audit" ? "max-w-6xl" : "max-w-4xl"}
+      maxWidth="max-w-4xl"
       title={config.title}
       infoLine={project?.title}
       icon={<CheckCircle2 className="h-5 w-5" />}
@@ -187,16 +186,16 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
           report={report}
           isLoading={isLoading}
           showFiniquito={mode !== "resident"}
-          tableMode={measuring && stage ? stage : "readonly"}
+          tableMode={measuring ? "resident" : "readonly"}
           drafts={drafts}
           errors={errors}
           onDraftChange={handleDraftChange}
           disabled={isBusy}
           summary={
-            measuring && stage && report ? (
+            report && (measuring || (mode === "audit" && !readOnly)) ? (
               <ClosureMeasurementSummary
-                stage={stage}
-                differences={countDifferences(report.items, drafts, stage)}
+                stage={mode === "audit" ? "audit" : "resident"}
+                differences={countDifferences(report.items, drafts)}
                 totalItems={report.items.length}
                 finiquitoPreview={finiquitoPreview}
               />

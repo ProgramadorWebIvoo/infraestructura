@@ -54,8 +54,8 @@ describe("FiniquitoRequestSection", () => {
     apiFetch.mockResolvedValue({
       ...report,
       items: [
-        { id: 1, name: "Cable", unit: "m", contractedQuantity: 100, executedQuantity: 100, residentQuantity: 90, auditQuantity: 90, finalQuantity: 90, unitPriceUsd: 2, note: null },
-        { id: 2, name: "Tomacorriente", unit: "und", contractedQuantity: 12, executedQuantity: 12, residentQuantity: 12, auditQuantity: 12, finalQuantity: 12, unitPriceUsd: 50, note: null },
+        { id: 1, name: "Cable", unit: "m", contractedQuantity: 100, executedQuantity: 100, residentQuantity: 90, finalQuantity: 90, unitPriceUsd: 2, note: null },
+        { id: 2, name: "Tomacorriente", unit: "und", contractedQuantity: 12, executedQuantity: 12, residentQuantity: 12, finalQuantity: 12, unitPriceUsd: 50, note: null },
       ],
     });
     setup([project()]);

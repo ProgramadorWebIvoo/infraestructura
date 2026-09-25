@@ -11,8 +11,6 @@ export interface ClosureReportItem {
   residentQuantity?: number | null;
   residentNote?: string | null;
   /** Cantidad fijada por Auditoría (null hasta que verifica). */
-  auditQuantity?: number | null;
-  auditNote?: string | null;
   /** Cantidad que rige el finiquito: Auditoría, o residente, o contratista. */
   finalQuantity?: number;
 }

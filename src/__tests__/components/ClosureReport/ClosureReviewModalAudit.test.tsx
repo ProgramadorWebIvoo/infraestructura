@@ -50,61 +50,29 @@ describe("ClosureReviewModal — Auditoría", () => {
     apiFetch.mockResolvedValue(report);
   });
 
-  it("prellena la cantidad final con la medición del residente y muestra las cuatro cifras y las notas", async () => {
+  it("muestra la medición del residente y sus notas sin campos editables", async () => {
     setup();
 
-    const finalCable = await screen.findByLabelText(/cantidad final/i, { selector: "#closure-qty-1" });
-    expect(finalCable).toHaveValue(90);
-    expect(screen.getByText(/Faltan 10 m/)).toBeInTheDocument();
-    expect(screen.getByText(/sin diferencias respecto a la medición del residente/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Faltan 10 m/)).toBeInTheDocument();
+    expect(screen.getByTestId("closure-item-1")).toHaveTextContent("90");
+    expect(document.querySelector("#closure-qty-1")).toBeNull();
   });
 
-  it("muestra el finiquito estimado y lo recalcula con la cantidad final", async () => {
+  it("muestra el finiquito estimado con la medición del residente", async () => {
     setup();
 
     // 10000 − 3000 − (100−90)×2 = 6980
     expect(await screen.findByText("$6,980.00")).toBeInTheDocument();
-
-    const finalCable = screen.getByLabelText(/cantidad final/i, { selector: "#closure-qty-1" });
-    await userEvent.clear(finalCable);
-    await userEvent.type(finalCable, "95");
-    // 10000 − 3000 − (100−95)×2 = 6990
-    expect(await screen.findByText("$6,990.00")).toBeInTheDocument();
   });
 
-  it("exige nota cuando la final difiere de la del residente y envía las mediciones", async () => {
+  it("aprueba sin enviar cantidades", async () => {
     const actions = setup();
 
-    const finalCable = await screen.findByLabelText(/cantidad final/i, { selector: "#closure-qty-1" });
-    const approve = screen.getByRole("button", { name: /verificar y enviar a procura/i });
-    await waitFor(() => expect(approve).toBeEnabled());
-
-    await userEvent.clear(finalCable);
-    await userEvent.type(finalCable, "95");
-    await waitFor(() => expect(approve).toBeDisabled());
-    expect(screen.getByText(/1 partida con diferencia/i)).toBeInTheDocument();
-
-    await userEvent.type(screen.getByLabelText(/justifique la diferencia con la medición del residente/i), "Se comprobó 95 m");
+    const approve = await screen.findByRole("button", { name: /verificar y enviar a procura/i });
     await waitFor(() => expect(approve).toBeEnabled());
     await userEvent.click(approve);
 
-    await waitFor(() =>
-      expect(actions.handleAuditApproval).toHaveBeenCalledWith("P1", undefined, [
-        { id: 1, auditQuantity: 95, note: "Se comprobó 95 m" },
-        { id: 2, auditQuantity: 12, note: undefined },
-      ]),
-    );
-  });
-
-  it("no permite superar lo contratado", async () => {
-    setup();
-
-    const finalCable = await screen.findByLabelText(/cantidad final/i, { selector: "#closure-qty-1" });
-    await userEvent.clear(finalCable);
-    await userEvent.type(finalCable, "120");
-
-    // El input limita al máximo contratado: nunca se envía más de 100.
-    await waitFor(() => expect(Number((finalCable as HTMLInputElement).value)).toBeLessThanOrEqual(100));
+    await waitFor(() => expect(actions.handleAuditApproval).toHaveBeenCalledWith("P1", undefined));
   });
 
   it("rechazar exige motivo y no depende de las mediciones", async () => {

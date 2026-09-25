@@ -807,11 +807,24 @@ describe("useProjectsWorkflows", () => {
   // ── Cierre (residente / Auditoría / Procura) ──────────────────────────
   describe("closure workflows", () => {
     const residentItems = [{ id: 1, residentQuantity: 8, note: "Faltan 4" }];
-    const auditItems = [{ id: 1, auditQuantity: 9, note: "Se comprobó 9" }];
+
+    it("handleAuditApproval envía solo las notas a closure-report/audit-approval y sincroniza", async () => {
+      const updated = createMockProject({ status: ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO });
+      mockApiFetch.mockResolvedValue(updated);
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current.handleAuditApproval("PRJ-001", "ok");
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/closure-report/audit-approval", {
+        method: "POST",
+        token: "valid-token",
+        body: JSON.stringify({ notes: "ok" }),
+      });
+      expect(syncProject).toHaveBeenCalledWith(updated);
+    });
 
     it.each([
       ["handleResidentApproval", "resident-approval", { notes: "ok", items: residentItems }, residentItems],
-      ["handleAuditApproval", "audit-approval", { notes: "ok", items: auditItems }, auditItems],
     ] as const)("%s envía las mediciones a closure-report/%s y sincroniza", async (handler, action, body, items) => {
       const updated = createMockProject({ status: ProjectStatus.VERIFICANDO_FINALIZACION });
       mockApiFetch.mockResolvedValue(updated);
@@ -846,9 +859,9 @@ describe("useProjectsWorkflows", () => {
     });
 
     it.each([
-      ["handleRejectClosure", "rejection"],
-      ["handleReturnFiniquito", "finiquito-return"],
-    ] as const)("%s envía el motivo", async (handler, action) => {
+      ["handleRejectClosure", "rejection", { reason: "Faltan fotos", target: "CONTRATISTA" }],
+      ["handleReturnFiniquito", "finiquito-return", { reason: "Faltan fotos" }],
+    ] as const)("%s envía el motivo", async (handler, action, body) => {
       mockApiFetch.mockResolvedValue(createMockProject());
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
@@ -857,7 +870,7 @@ describe("useProjectsWorkflows", () => {
       expect(mockApiFetch).toHaveBeenCalledWith(`/projects/PRJ-001/closure-report/${action}`, {
         method: "POST",
         token: "valid-token",
-        body: JSON.stringify({ reason: "Faltan fotos" }),
+        body: JSON.stringify(body),
       });
     });
 
@@ -866,7 +879,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await expect(result.current.handleAuditApproval("PRJ-001", undefined, [])).rejects.toThrow("422");
+      await expect(result.current.handleAuditApproval("PRJ-001")).rejects.toThrow("422");
       expect(syncProject).not.toHaveBeenCalled();
     });
 

@@ -11,11 +11,11 @@ interface ClosureMeasurementSummaryProps {
 
 /** Resumen en vivo sobre la tabla de partidas: cuántas difieren y, para Auditoría, el finiquito estimado. */
 export default function ClosureMeasurementSummary({ stage, differences, totalItems, finiquitoPreview }: ClosureMeasurementSummaryProps) {
-  const base = stage === "resident" ? "lo declarado por el contratista" : "la medición del residente";
+  const base = "lo declarado por el contratista";
 
   return (
     <div className="flex flex-wrap items-center gap-3" data-testid="closure-measurement-summary">
-      <p
+      {stage === "resident" && <p
         className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${
           differences > 0 ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-700"
         }`}
@@ -25,7 +25,7 @@ export default function ClosureMeasurementSummary({ stage, differences, totalIte
         {differences > 0
           ? `${differences} ${differences === 1 ? "partida con diferencia" : "partidas con diferencia"} respecto a ${base} (de ${totalItems})`
           : `Sin diferencias respecto a ${base}`}
-      </p>
+      </p>}
       {stage === "audit" && finiquitoPreview != null && (
         <p className="flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">
           <Scale className="h-4 w-4" aria-hidden />

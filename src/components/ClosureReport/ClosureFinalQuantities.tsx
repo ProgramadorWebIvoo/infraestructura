@@ -8,7 +8,7 @@ interface ClosureFinalQuantitiesProps {
   authToken: string;
 }
 
-const finalOf = (item: ClosureReportItem) => item.finalQuantity ?? item.auditQuantity ?? item.residentQuantity ?? item.executedQuantity;
+const finalOf = (item: ClosureReportItem) => item.finalQuantity ?? item.residentQuantity ?? item.executedQuantity;
 
 /**
  * Resumen compacto de las cantidades finales verificadas (final / contratado por partida),

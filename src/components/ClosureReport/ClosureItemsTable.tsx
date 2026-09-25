@@ -5,8 +5,8 @@ import FieldError from "@/components/UI/FieldError";
 import { differs, differsFromBaseline, parseQuantity, type MeasurementDraft, type MeasurementDrafts } from "./closureMeasurements";
 import { isDecrease, type ClosureReportItem } from "./types";
 
-/** readonly: comparación completa · resident: el residente mide · audit: Auditoría fija la cantidad final. */
-export type ClosureTableMode = "readonly" | "resident" | "audit";
+/** readonly: comparación completa · resident: el residente mide. */
+export type ClosureTableMode = "readonly" | "resident";
 
 interface ClosureItemsTableProps {
   items: ClosureReportItem[];
@@ -44,18 +44,16 @@ function StageNote({ label, value }: { label: string; value?: string | null }) {
 }
 
 /**
- * Comparación por partida de las cuatro cifras del cierre — contratado, declarado por el
- * contratista, verificado por el residente y cantidad final de Auditoría. Tarjetas apiladas
+ * Comparación por partida de las cifras del cierre — contratado, declarado por el
+ * contratista y verificado por el residente (que rige el finiquito). Tarjetas apiladas
  * en móvil y tabla en escritorio (misma estructura, solo cambia la rejilla).
  */
 export default function ClosureItemsTable({ items, mode = "readonly", drafts = {}, errors = {}, onDraftChange, disabled = false }: ClosureItemsTableProps) {
-  const showResident = mode === "audit" || (mode === "readonly" && items.some((i) => i.residentQuantity != null));
-  const showFinal = mode === "audit" || (mode === "readonly" && items.some((i) => i.auditQuantity != null));
-  const columns = 3 + (mode === "resident" ? 1 : 0) + (showResident ? 1 : 0) + (showFinal && mode === "readonly" ? 1 : 0) + (mode === "audit" ? 1 : 0);
+  const showResident = mode === "readonly" && items.some((i) => i.residentQuantity != null);
+  const columns = 3 + (mode === "resident" ? 1 : 0) + (showResident ? 1 : 0);
   const gridClass = GRID_BY_COLUMNS[columns] ?? GRID_BY_COLUMNS[5];
   const editable = mode !== "readonly";
-  const stage = mode === "audit" ? "audit" : "resident";
-  const editLabel = mode === "audit" ? "Cantidad final" : "Verificado en obra";
+  const editLabel = "Verificado en obra";
 
   return (
     <div className="space-y-2" role="table" aria-label="Comparación de partidas del cierre">
@@ -65,17 +63,14 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
         <span role="columnheader" className="text-right">Contratista</span>
         {showResident && <span role="columnheader" className="text-right">Residente</span>}
         {mode === "resident" && <span role="columnheader" className="text-right">{editLabel}</span>}
-        {mode === "audit" && <span role="columnheader" className="text-right">{editLabel}</span>}
-        {mode === "readonly" && showFinal && <span role="columnheader" className="text-right">Final</span>}
       </div>
 
       {items.map((item) => {
         const draft = drafts[item.id];
         const error = errors[item.id];
-        const differsNow = editable && draft ? differsFromBaseline(item, draft, stage) : false;
+        const differsNow = editable && draft ? differsFromBaseline(item, draft) : false;
         const contractorDecrease = isDecrease(item);
         const residentDiffers = differs(item.residentQuantity, item.executedQuantity);
-        const finalDiffers = differs(item.auditQuantity, item.residentQuantity ?? item.executedQuantity);
 
         return (
           <motion.div
@@ -84,7 +79,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
             role="row"
             data-testid={`closure-item-${item.id}`}
             className={`rounded-xl border p-3 ${
-              error ? "border-rose-300 bg-rose-50/40" : differsNow || residentDiffers || finalDiffers ? "border-amber-200 bg-amber-50/40" : "border-border-default bg-surface"
+              error ? "border-rose-300 bg-rose-50/40" : differsNow || residentDiffers ? "border-amber-200 bg-amber-50/40" : "border-border-default bg-surface"
             }`}
           >
             <div className={`grid grid-cols-2 items-start gap-2 ${gridClass}`}>
@@ -101,11 +96,6 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
               {showResident && (
                 <div role="cell">
                   <Cell label="Residente" tone={residentDiffers ? "warn" : undefined}>{item.residentQuantity ?? "—"}</Cell>
-                </div>
-              )}
-              {mode === "readonly" && showFinal && (
-                <div role="cell">
-                  <Cell label="Final" tone={finalDiffers ? "alert" : undefined}>{item.finalQuantity ?? item.auditQuantity ?? "—"}</Cell>
                 </div>
               )}
               {editable && draft && (
@@ -129,7 +119,6 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
             <div className="mt-2 space-y-1">
               <StageNote label="Contratista" value={item.note} />
               {mode !== "resident" && <StageNote label="Residente" value={item.residentNote} />}
-              {mode === "readonly" && <StageNote label="Auditoría" value={item.auditNote} />}
             </div>
 
             <AnimatePresence initial={false}>
@@ -143,7 +132,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
                 >
                   <label htmlFor={`closure-note-${item.id}`} className="mt-2 flex items-center gap-1 text-[11px] font-bold text-amber-700">
                     <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
-                    {mode === "audit" ? "Justifique la diferencia con la medición del residente" : "Justifique la diferencia con lo declarado por el contratista"}
+                    Justifique la diferencia con lo declarado por el contratista
                   </label>
                   <textarea
                     id={`closure-note-${item.id}`}
