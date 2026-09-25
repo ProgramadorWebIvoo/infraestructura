@@ -36,6 +36,7 @@ import {
   Truck,
   Package,
   Hammer,
+  MapPin,
   Shield,
   KeyRound,
 } from "lucide-react";
@@ -68,6 +69,7 @@ import UsuariosPanel from "./components/UsuariosPanel";
 import ProveedoresConfigPanel from "./components/ProveedoresConfigPanel";
 import MaterialConfigPanel from "./components/MaterialConfigPanel";
 import ProjectTypeConfigPanel from "./components/ProjectTypeConfigPanel";
+import LocalizationConfigPanel from "./components/LocalizationConfigPanel";
 import RolesConfigPanel from "./components/RolesConfigPanel";
 import NotificationActionsConfigPanel from "./components/NotificationActionsConfigPanel";
 import AIConfigPanel from "./components/AIConfigPanel";
@@ -117,6 +119,7 @@ const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "proveedores", title: "Proveedores", route: "/config-proveedores" },
   { key: "materiales", title: "Materiales", route: "/config-materiales" },
   { key: "tipos-proyecto", title: "Tipos de Proyecto", route: "/config-project-types" },
+  { key: "ubicaciones", title: "Ubicaciones", route: "/config-localizations" },
   { key: "modelos-ia", title: "Modelos de IA", route: "/config-ia" },
   { key: "config-keys", title: "Configuración de Keys", route: "/config-keys" },
 ];
@@ -137,6 +140,7 @@ const SECTION_META: Record<string, { group: string; icon: ReactNode }> = {
   cronjobs: { group: "Negocio", icon: <RefreshCw className="h-4 w-4" /> },
   materiales: { group: "Catálogos", icon: <Package className="h-4 w-4" /> },
   "tipos-proyecto": { group: "Catálogos", icon: <Hammer className="h-4 w-4" /> },
+  ubicaciones: { group: "Catálogos", icon: <MapPin className="h-4 w-4" /> },
   roles: { group: "Catálogos", icon: <Shield className="h-4 w-4" /> },
   usuarios: { group: "Administración", icon: <Users className="h-4 w-4" /> },
   proveedores: { group: "Administración", icon: <Truck className="h-4 w-4" /> },
@@ -464,6 +468,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                 <MaterialConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "tipos-proyecto" ? (
                 <ProjectTypeConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "ubicaciones" ? (
+                <LocalizationConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "config-keys" ? (
                 <KeysConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : (
