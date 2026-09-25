@@ -17,6 +17,8 @@ import Button from "@/components/UI/Button";
 import { springs } from "@/animations";
 import type { UseRequestFormReturn } from "@/hooks/useRequestForm";
 import { useRequestWizard } from "@/hooks/useRequestWizard";
+import { useActiveLocalizations } from "@/hooks/useActiveLocalizations";
+import { useToast } from "@/components/UI/Toast";
 import RequestFormSection from "./RequestFormSection";
 import MaterialAdderSection from "./MaterialAdderSection";
 import AttachmentsSection from "./AttachmentsSection";
@@ -31,7 +33,7 @@ interface RequestWizardCardProps {
   form: UseRequestFormReturn;
   materialsCatalog: { name: string; unit: string; estimatedUnitPrice: number }[];
   projectTypes: { key: string; label: string }[];
-  /** Requerido en modo edición para preview/descarga de adjuntos existentes. */
+  /** Session sentinel: gates the registered-locations fetch; in edit mode also needed to preview/download existing attachments. */
   authToken?: string;
   /**
    * "standalone" (default): se muestra suelto en la página, con su propio
@@ -46,6 +48,8 @@ interface RequestWizardCardProps {
 
 export default function RequestWizardCard({ form, materialsCatalog, projectTypes, authToken, variant = "standalone" }: RequestWizardCardProps) {
   const wizard = useRequestWizard({ form });
+  const { showToast } = useToast();
+  const { localizations } = useActiveLocalizations(authToken ?? "", showToast);
   const isEmbedded = variant === "embedded";
 
   const handleSubmit = async () => {
@@ -102,6 +106,11 @@ export default function RequestWizardCard({ form, materialsCatalog, projectTypes
               onTitleChange={form.setTitle}
               location={form.location}
               onLocationChange={form.setLocation}
+              locationMode={form.locationMode}
+              onLocationModeChange={form.setLocationMode}
+              selectedLocalization={form.selectedLocalization}
+              onLocalizationSelect={form.setSelectedLocalization}
+              localizations={localizations}
               type={form.type}
               onTypeChange={form.setType}
               typeOptions={projectTypes}
@@ -109,8 +118,6 @@ export default function RequestWizardCard({ form, materialsCatalog, projectTypes
               onDescriptionChange={form.setDescription}
               errors={{ ...wizard.stepErrors, ...form.fieldErrors }}
               typeReadOnly={form.isEditMode}
-              residentUserId={form.residentUserId}
-              onResidentChange={form.isEditMode ? undefined : form.setResidentUserId}
             />
           )}
 

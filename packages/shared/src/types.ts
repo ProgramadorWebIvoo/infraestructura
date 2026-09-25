@@ -225,7 +225,10 @@ export interface Project {
   finalPaidDate?: string;
   qualityVerified?: boolean;
   completionVerifiedDate?: string;
-  /** Ingeniero residente / coordinador de mantenimiento asignado a la obra. */
+  /** Ubicación registrada de la obra (null = ubicación personalizada). `location` conserva la copia "título — ciudad". */
+  localizationId?: number | null;
+  localizationTitle?: string | null;
+  /** Residente efectivo: el de la ubicación registrada o, si es personalizada, el que eligió Auditoría. */
   residentUserId?: number | null;
   residentName?: string | null;
   closureReportStatus?: string | null;

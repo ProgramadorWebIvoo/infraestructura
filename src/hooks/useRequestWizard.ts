@@ -24,7 +24,7 @@ export function useRequestWizard({ form }: UseRequestWizardParams) {
   const [stepErrors, setStepErrors] = useState<FieldErrors>({});
 
   const validateStep = (index: number): FieldErrors => {
-    if (index === 0) return validateDatosStep(form);
+    if (index === 0) return validateDatosStep({ ...form, localizationId: form.selectedLocalization?.id ?? null });
     if (index === 1) return validateMaterialesStep(form);
     return validateAdjuntosStep(form);
   };

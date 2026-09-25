@@ -11,6 +11,7 @@
 import { useCallback } from "react";
 import type { Project, ProjectDocument } from "@/types";
 import { ProjectStatus } from "@/types";
+import type { NewProjectPayload, ResubmitProjectPayload } from "@/utils/projectLocation";
 import { apiFetch } from "@/services/api";
 import { getErrorMessage, logError } from "@/services/logger";
 import { describeUploadFailures, uploadDocumentGroup, type UploadDocumentGroupResult, type WorkflowContext } from "./shared";
@@ -31,7 +32,7 @@ export function useReviewWorkflows({
    */
   const handleAddProject = useCallback(
     async (
-      newProj: Omit<Project, "id" | "createdDate" | "status">,
+      newProj: NewProjectPayload,
       files: { photos: File[]; documents: File[]; plans: File[] },
     ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
       const token = authTokenRef.current;
@@ -177,7 +178,7 @@ export function useReviewWorkflows({
   const handleResubmitProject = useCallback(
     async (
       projectId: string,
-      updated: Omit<Project, "id" | "createdDate" | "status" | "type">,
+      updated: ResubmitProjectPayload,
       files: { photos: File[]; documents: File[]; plans: File[] },
       existingDocuments: ProjectDocument[] = [],
       versionReplacements: { documentId: number; documentType: ProjectDocument["documentType"]; file: File }[] = [],

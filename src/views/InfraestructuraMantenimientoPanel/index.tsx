@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Clock, FilePlus2, HardHat } from "lucide-react";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
 import { ProjectStatus } from "@/types";
+import type { NewProjectPayload, ResubmitProjectPayload } from "@/utils/projectLocation";
 import { containerVariants, itemVariants, springs } from "@/animations";
 import { SkeletonCard, SkeletonBlock, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
 import KpiPill from "@/components/UI/KpiPill";
@@ -30,12 +31,12 @@ export type { FieldKey, FieldErrors } from "@/hooks/useRequestForm";
 
 interface InfraestructuraMantenimientoPanelProps {
   onAddProject: (
-    project: Omit<Project, "id" | "createdDate" | "status">,
+    project: NewProjectPayload,
     files: { photos: File[]; documents: File[]; plans: File[] },
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onResubmitProject: (
     projectId: string,
-    project: Omit<Project, "id" | "createdDate" | "status" | "type">,
+    project: ResubmitProjectPayload,
     files: { photos: File[]; documents: File[]; plans: File[] },
     existingDocuments: ProjectDocument[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
@@ -143,7 +144,7 @@ export default function InfraestructuraMantenimientoPanel({
 
         <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
           <TabPanel activeKey={activeTab}>
-            {activeTab === "crear" && <RequestWizardCard form={form} materialsCatalog={materialsCatalog} projectTypes={projectTypes} />}
+            {activeTab === "crear" && <RequestWizardCard form={form} materialsCatalog={materialsCatalog} projectTypes={projectTypes} authToken={authToken} />}
             {activeTab === "expedientes" && (
               <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} onRefresh={onRefreshData} />
             )}

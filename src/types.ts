@@ -24,6 +24,27 @@ export type {
 import type { Contractor } from "@ivoo/shared";
 
 // ---------------------------------------------------------------------------
+// Ubicaciones registradas (GET /localizations*)
+// ---------------------------------------------------------------------------
+
+export type LocalizationType = "TIENDA" | "PLANTA" | "OFICINA" | "OTRO";
+
+export interface Localization {
+  id: number;
+  title: string;
+  address: string | null;
+  city: string;
+  region: string | null;
+  type: LocalizationType;
+  notes: string | null;
+  isActive: boolean;
+  residentUserId: number;
+  residentName: string | null;
+  /** Solo en el listado de administración. */
+  projectsCount?: number;
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard ejecutivo de Presidencia (GET /api/dashboard/summary)
 // ---------------------------------------------------------------------------
 

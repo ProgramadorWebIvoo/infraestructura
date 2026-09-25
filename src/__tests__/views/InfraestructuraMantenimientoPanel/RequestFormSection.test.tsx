@@ -18,6 +18,11 @@ describe("RequestFormSection", () => {
     onTitleChange: vi.fn(),
     location: "",
     onLocationChange: vi.fn(),
+    locationMode: "custom" as const,
+    onLocationModeChange: vi.fn(),
+    selectedLocalization: null,
+    onLocalizationSelect: vi.fn(),
+    localizations: [],
     type: "INFRAESTRUCTURA",
     onTypeChange: vi.fn(),
     typeOptions: [
@@ -32,7 +37,7 @@ describe("RequestFormSection", () => {
     render(<RequestFormSection {...baseProps} />);
 
     expect(screen.getByLabelText("Título de la Obra")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ubicación / Tienda / CD")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ubicación personalizada")).toBeInTheDocument();
     expect(screen.getByLabelText("Descripción del Trabajo")).toBeInTheDocument();
   });
 
@@ -61,5 +66,34 @@ describe("RequestFormSection", () => {
     expect(screen.getByRole("radiogroup", { name: "Tipo de requerimiento" })).toBeInTheDocument();
     fireEvent.click(mantRadio);
     expect(onTypeChange).toHaveBeenCalledWith("MANTENIMIENTO");
+  });
+
+  it("en modo Registradas muestra el botón del catálogo y la tarjeta con el residente heredado", () => {
+    const { rerender } = render(<RequestFormSection {...baseProps} locationMode="registered" />);
+    expect(screen.getByRole("button", { name: /Elegir ubicación registrada/ })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Ubicación personalizada")).not.toBeInTheDocument();
+
+    rerender(
+      <RequestFormSection
+        {...baseProps}
+        locationMode="registered"
+        selectedLocalization={{ id: 1, label: "Tienda Sur — Valencia", residentName: "Rita" }}
+      />,
+    );
+    expect(screen.getByText("Tienda Sur — Valencia")).toBeInTheDocument();
+    expect(screen.getByText(/Residente: Rita/)).toBeInTheDocument();
+  });
+
+  it("ya no ofrece selector de residente en el formulario", () => {
+    render(<RequestFormSection {...baseProps} />);
+    expect(screen.queryByLabelText(/residente/i)).not.toBeInTheDocument();
+  });
+
+  it("cambia de pestaña entre Registradas y Personalizada", () => {
+    const onLocationModeChange = vi.fn();
+    render(<RequestFormSection {...baseProps} onLocationModeChange={onLocationModeChange} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Registradas" }));
+    expect(onLocationModeChange).toHaveBeenCalledWith("registered");
   });
 });

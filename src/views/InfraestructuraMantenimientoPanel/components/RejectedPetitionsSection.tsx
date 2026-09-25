@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Eye, Pencil, SearchX, XCircle } from "lucide-react";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
 import { ProjectStatus } from "@/types";
+import type { ResubmitProjectPayload } from "@/utils/projectLocation";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import Modal from "@/components/UI/Modal";
@@ -45,7 +46,7 @@ interface RejectedPetitionsSectionProps {
   projectTypes: { key: string; label: string }[];
   onResubmitProject: (
     projectId: string,
-    project: Omit<Project, "id" | "createdDate" | "status" | "type">,
+    project: ResubmitProjectPayload,
     files: { photos: File[]; documents: File[]; plans: File[] },
     existingDocuments: ProjectDocument[],
     versionReplacements: { documentId: number; documentType: ProjectDocument["documentType"]; file: File }[],

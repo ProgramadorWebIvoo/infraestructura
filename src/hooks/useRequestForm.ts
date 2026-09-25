@@ -9,6 +9,7 @@
 
 import { useMemo, useState } from "react";
 import type { MaterialItem, Project, ProjectDocument } from "@/types";
+import { buildLocationInput, type LocationMode, type NewProjectPayload, type ResubmitProjectPayload } from "@/utils/projectLocation";
 import { datosStepSchema, materialesStepSchema, adjuntosStepSchema } from "@/schemas/requestForm.schema";
 
 /** Convierte el resultado de un safeParse fallido a FieldErrors (un mensaje por FieldKey). */
@@ -24,8 +25,15 @@ function toFieldErrors(issues: { path: PropertyKey[]; message: string }[]): Fiel
 /** Alias legible en los call sites de useRequestForm — ver UseRequestFormParams::existingProject. */
 type RequestFormExistingProject = Pick<
   Project,
-  "id" | "title" | "type" | "description" | "location" | "materials" | "documents" | "residentUserId"
+  "id" | "title" | "type" | "description" | "location" | "localizationId" | "localizationTitle" | "residentName" | "materials" | "documents"
 >;
+
+/** Registered location picked in the form (id + display label + its resident). */
+export interface LocalizationChoice {
+  id: number;
+  label: string;
+  residentName?: string | null;
+}
 
 export type FieldKey = "title" | "location" | "description" | "materials" | "attachments";
 export type FieldErrors = Partial<Record<FieldKey, string>>;
@@ -33,6 +41,9 @@ export type FieldErrors = Partial<Record<FieldKey, string>>;
 interface FormFields {
   title: string;
   location: string;
+  /** Defaults to "custom" (free text) when omitted. */
+  locationMode?: LocationMode;
+  localizationId?: number | null;
   description: string;
   addedMaterials: Omit<MaterialItem, "id">[];
   photoFiles: File[];
@@ -41,7 +52,7 @@ interface FormFields {
   hasExistingAttachments?: boolean;
 }
 
-type DatosStepFields = Pick<FormFields, "title" | "location" | "description">;
+type DatosStepFields = Pick<FormFields, "title" | "location" | "locationMode" | "localizationId" | "description">;
 type MaterialesStepFields = Pick<FormFields, "addedMaterials">;
 type AdjuntosStepFields = Pick<FormFields, "photoFiles" | "documentFiles" | "planFiles"> & {
   /** Modo edición: ya hay adjuntos persistidos en el proyecto (subidos en el envío original) — no se exige un archivo nuevo. */
@@ -81,7 +92,7 @@ export interface VersionReplacement {
 
 interface UseRequestFormParams {
   onAddProject: (
-    project: Omit<Project, "id" | "createdDate" | "status">,
+    project: NewProjectPayload,
     files: { photos: File[]; documents: File[]; plans: File[] },
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   /** Modo edición: petición rechazada que se está corrigiendo y reenviando (mismo id, no crea un proyecto nuevo). */
@@ -89,7 +100,7 @@ interface UseRequestFormParams {
   /** Requerido cuando existingProject está presente — handleSubmit lo usa en vez de onAddProject. */
   onResubmitProject?: (
     projectId: string,
-    project: Omit<Project, "id" | "createdDate" | "status" | "type">,
+    project: ResubmitProjectPayload,
     files: { photos: File[]; documents: File[]; plans: File[] },
     existingDocuments: ProjectDocument[],
     versionReplacements: VersionReplacement[],
@@ -104,8 +115,14 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
   const [title, setTitle] = useState(existingProject?.title ?? "");
   const [type, setType] = useState<string>(existingProject?.type ?? "INFRAESTRUCTURA");
   const [description, setDescription] = useState(existingProject?.description ?? "");
-  const [location, setLocation] = useState(existingProject?.location ?? "");
-  const [residentUserId, setResidentUserId] = useState<number | null>(existingProject?.residentUserId ?? null);
+  const [location, setLocation] = useState(existingProject?.localizationId ? "" : (existingProject?.location ?? ""));
+  // Registered location (picked from the catalog) vs. custom free text — exactly one is sent (F2-R D10).
+  const [locationMode, setLocationMode] = useState<LocationMode>(existingProject?.localizationId ? "registered" : "custom");
+  const [selectedLocalization, setSelectedLocalization] = useState<LocalizationChoice | null>(
+    existingProject?.localizationId
+      ? { id: existingProject.localizationId, label: existingProject.localizationTitle ?? existingProject.location, residentName: existingProject.residentName }
+      : null,
+  );
 
   const [addedMaterials, setAddedMaterials] = useState<Omit<MaterialItem, "id">[]>(
     existingProject?.materials?.map(({ id: _id, ...rest }) => rest) ?? [],
@@ -191,7 +208,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
     if (isSubmitting) return;
 
     const errors = validateRequestForm({
-      title, location, description, addedMaterials, photoFiles, documentFiles, planFiles, hasExistingAttachments,
+      title, location, locationMode, localizationId: selectedLocalization?.id ?? null, description, addedMaterials, photoFiles, documentFiles, planFiles, hasExistingAttachments,
     });
     if (Object.values(errors).some(Boolean)) {
       setFieldErrors(errors);
@@ -210,9 +227,10 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
         })
         .filter((r): r is VersionReplacement => r !== null);
 
+      const locationInput = buildLocationInput(locationMode, selectedLocalization?.id ?? null, location.trim());
       const result = existingProject
-        ? await onResubmitProject!(existingProject.id, { title, description, location, materials, estimatedTotal: materialsSubtotal }, files, existingDocuments, replacements)
-        : await onAddProject({ title, type, description, location, materials, estimatedTotal: materialsSubtotal, residentUserId }, files);
+        ? await onResubmitProject!(existingProject.id, { title, description, ...locationInput, materials, estimatedTotal: materialsSubtotal }, files, existingDocuments, replacements)
+        : await onAddProject({ title, type, description, ...locationInput, materials, estimatedTotal: materialsSubtotal }, files);
 
       if (result.ok) {
         // Adjuntos marcados para eliminar: recién se borran de verdad acá,
@@ -224,7 +242,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
           );
         }
 
-        setTitle(""); setDescription(""); setLocation("");
+        setTitle(""); setDescription(""); setLocation(""); setSelectedLocalization(null); setLocationMode("custom");
         setAddedMaterials([]);
         setReviewedMaterialIndexes(new Set());
         setPhotoFiles([]); setDocumentFiles([]); setPlanFiles([]);
@@ -242,7 +260,8 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
     type, setType,
     description, setDescription: (v: string) => { setDescription(v); clearError("description"); },
     location, setLocation: (v: string) => { setLocation(v); clearError("location"); },
-    residentUserId, setResidentUserId,
+    locationMode, setLocationMode: (m: LocationMode) => { setLocationMode(m); clearError("location"); },
+    selectedLocalization, setSelectedLocalization: (l: LocalizationChoice | null) => { setSelectedLocalization(l); clearError("location"); },
     addedMaterials, setAddedMaterials: handleAddedMaterialsChange,
     reviewedMaterialIndexes, markMaterialReviewed,
     materialsSubtotal,

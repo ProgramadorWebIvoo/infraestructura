@@ -81,6 +81,8 @@ const rejectionLog: AuditLog = {
   details: "La descripción no detalla el alcance del trabajo.",
 };
 
+vi.mock("@/hooks/useActiveLocalizations", () => ({ useActiveLocalizations: () => ({ localizations: [], isLoading: false }) }));
+
 describe("RejectedPetitionsSection", () => {
   it("muestra un estado vacío (no se autoculta) si no hay peticiones rechazadas", () => {
     render(
@@ -153,7 +155,7 @@ describe("RejectedPetitionsSection", () => {
     fireEvent.click(screen.getByRole("button", { name: /Editar y reenviar/ }));
 
     expect(screen.getByLabelText("Título de la Obra")).toHaveValue("Remodelación depósito");
-    expect(screen.getByLabelText("Ubicación / Tienda / CD")).toHaveValue("CD Central");
+    expect(screen.getByLabelText("Ubicación personalizada")).toHaveValue("CD Central");
     expect(screen.getByText("No editable al reenviar")).toBeInTheDocument();
   });
 

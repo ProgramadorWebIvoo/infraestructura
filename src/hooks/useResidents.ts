@@ -7,7 +7,7 @@ export interface ResidentOption {
   name: string;
 }
 
-/** Usuarios INFRAESTRUCTURA activos asignables como ingeniero residente (GET /residents). */
+/** Active users with role RESIDENTE, assignable as a location's / custom work's resident (GET /residents). */
 export function useResidents(): ResidentOption[] {
   const [residents, setResidents] = useState<ResidentOption[]>([]);
 

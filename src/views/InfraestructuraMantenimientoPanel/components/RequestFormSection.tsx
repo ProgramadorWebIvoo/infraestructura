@@ -8,11 +8,14 @@
  */
 
 import { useEffect } from "react";
-import { Building2, MapPin } from "lucide-react";
+import { Building2 } from "lucide-react";
 import TextField from "@/components/UI/TextField";
 import SegmentedControl from "@/components/UI/SegmentedControl";
-import ResidentSelect from "@/components/ResidentSelect";
 import type { ProjectTypeOption } from "@/hooks/useProjectTypes";
+import type { LocalizationChoice } from "@/hooks/useRequestForm";
+import type { Localization } from "@/types";
+import type { LocationMode } from "@/utils/projectLocation";
+import LocationPicker from "./LocationPicker";
 
 export interface RequestFormErrors {
   title?: string;
@@ -25,6 +28,12 @@ interface RequestFormSectionProps {
   onTitleChange: (v: string) => void;
   location: string;
   onLocationChange: (v: string) => void;
+  locationMode: LocationMode;
+  onLocationModeChange: (mode: LocationMode) => void;
+  selectedLocalization: LocalizationChoice | null;
+  onLocalizationSelect: (choice: LocalizationChoice | null) => void;
+  /** Active registered locations (GET /localizations/active). */
+  localizations: Localization[];
   type: string;
   onTypeChange: (v: string) => void;
   /** Catálogo administrable (GET /project-types) — ver useProjectTypes. */
@@ -34,9 +43,6 @@ interface RequestFormSectionProps {
   errors?: RequestFormErrors;
   /** Modo edición (reenvío tras rechazo): el tipo no es editable — el backend de resubmit no lo acepta. */
   typeReadOnly?: boolean;
-  /** Si se define, muestra el selector opcional de ingeniero residente (solo alta; en reenvío se edita desde el detalle). */
-  residentUserId?: number | null;
-  onResidentChange?: (id: number | null) => void;
 }
 
 const FIELD_IDS: Record<keyof RequestFormErrors, string> = {
@@ -52,6 +58,11 @@ export default function RequestFormSection({
   onTitleChange,
   location,
   onLocationChange,
+  locationMode,
+  onLocationModeChange,
+  selectedLocalization,
+  onLocalizationSelect,
+  localizations,
   type,
   onTypeChange,
   typeOptions,
@@ -59,8 +70,6 @@ export default function RequestFormSection({
   onDescriptionChange,
   errors = {},
   typeReadOnly = false,
-  residentUserId = null,
-  onResidentChange,
 }: RequestFormSectionProps) {
   const typeLabel = typeOptions.find((o) => o.key === type)?.label ?? type;
   // Foco en el primer campo inválido para guiar la corrección
@@ -84,27 +93,19 @@ export default function RequestFormSection({
           />
         </div>
         <div className="md:col-span-2">
-          <TextField
-            id={FIELD_IDS.location}
-            label="Ubicación / Tienda / CD"
-            placeholder="Ej. Tienda IVOO Chacao / CD Central"
-            value={location}
-            onChange={onLocationChange}
+          <LocationPicker
+            fieldId={FIELD_IDS.location}
+            mode={locationMode}
+            onModeChange={onLocationModeChange}
+            location={location}
+            onLocationChange={onLocationChange}
+            selected={selectedLocalization}
+            onSelect={onLocalizationSelect}
+            localizations={localizations}
             error={errors.location}
-            icon={<MapPin className="h-4 w-4" />}
-            required
           />
         </div>
       </div>
-
-      {onResidentChange && (
-        <div>
-          <label htmlFor="req-resident" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Ingeniero residente / coordinador (opcional)
-          </label>
-          <ResidentSelect id="req-resident" value={residentUserId} onChange={onResidentChange} />
-        </div>
-      )}
 
       <div>
         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">

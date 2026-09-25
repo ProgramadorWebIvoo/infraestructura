@@ -13,8 +13,19 @@ import { z } from "zod";
 
 export const datosStepSchema = z.object({
   title: z.string().trim().min(1, "El título de la obra o trabajo es obligatorio."),
-  location: z.string().trim().min(1, "La ubicación exacta es obligatoria."),
+  locationMode: z.enum(["registered", "custom"]).default("custom"),
+  localizationId: z.number().nullable().default(null),
+  location: z.string(),
   description: z.string().trim().min(1, "Describe el alcance del trabajo a realizar."),
+}).superRefine((fields, ctx) => {
+  // Exactly one location source: a registered one (id) or the free text (F2-R D10).
+  if (fields.locationMode === "registered") {
+    if (fields.localizationId === null) {
+      ctx.addIssue({ code: "custom", path: ["location"], message: "Elige una ubicación registrada o usa una personalizada." });
+    }
+  } else if (fields.location.trim() === "") {
+    ctx.addIssue({ code: "custom", path: ["location"], message: "La ubicación exacta es obligatoria." });
+  }
 });
 
 export const materialesStepSchema = z.object({
