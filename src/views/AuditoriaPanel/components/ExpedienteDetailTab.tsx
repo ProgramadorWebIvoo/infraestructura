@@ -12,6 +12,7 @@ import { AlertTriangle, Calendar, HardHat, MapPin, Package } from "lucide-react"
 import type { Project } from "@/types";
 import StatusBadge from "@/components/UI/StatusBadge";
 import Button from "@/components/UI/Button";
+import { ProjectStatus } from "@/types";
 import { canChangeProjectResident } from "@/utils/projectLocation";
 
 interface ExpedienteDetailTabProps {
@@ -19,9 +20,12 @@ interface ExpedienteDetailTabProps {
   rejectionCount: number;
   /** Opens the "Cambiar residente" flow (custom-location works only, D14). */
   onChangeResident?: (project: Project) => void;
+  /** Resends the contractor closure link (D16); shown only while the work is in execution. */
+  onResendLink?: (project: Project) => void;
+  isResendingLink?: boolean;
 }
 
-export default function ExpedienteDetailTab({ project, rejectionCount, onChangeResident }: ExpedienteDetailTabProps) {
+export default function ExpedienteDetailTab({ project, rejectionCount, onChangeResident, onResendLink, isResendingLink }: ExpedienteDetailTabProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="md:col-span-2 space-y-3">
@@ -79,6 +83,11 @@ export default function ExpedienteDetailTab({ project, rejectionCount, onChangeR
             {onChangeResident && canChangeProjectResident(project) && (
               <Button size="sm" className="mt-1.5" onClick={() => onChangeResident(project)}>
                 Cambiar residente
+              </Button>
+            )}
+            {onResendLink && project.status === ProjectStatus.EN_EJECUCION && (
+              <Button size="sm" variant="secondary" className="mt-1.5 ml-1.5" isLoading={isResendingLink} onClick={() => onResendLink(project)}>
+                Reenviar enlace al contratista
               </Button>
             )}
           </div>

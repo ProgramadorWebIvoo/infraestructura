@@ -50,6 +50,8 @@ interface RevisedDocumentsSectionProps {
   authToken: string;
   /** Saves a resident change (PATCH /projects/{id}/resident); omit to hide the action. */
   onChangeResident?: (projectId: string, residentUserId: number, reason: string) => Promise<void>;
+  /** Resends the contractor closure link (POST closure-report/resend-link); omit to hide the action. */
+  onResendLink?: (projectId: string) => Promise<{ mailSent: boolean }>;
   /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el
    * consumidor, no recordada automáticamente entre sesiones. */
   defaultViewMode?: TableViewMode;
@@ -63,11 +65,25 @@ const STATUS_FILTER_OPTIONS = [
   { value: "APPROVED", label: "Aprobados" },
 ];
 
-export default function RevisedDocumentsSection({ projects, auditLogs, authToken, onChangeResident, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
+export default function RevisedDocumentsSection({ projects, auditLogs, authToken, onChangeResident, onResendLink, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
   const { containerRef, rows: pageSize } = useContainerRows();
   const [selectedId, setSelectedId] = useState("");
   const [residentTarget, setResidentTarget] = useState<Project | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const resendLink = async (project: Project) => {
+    if (!onResendLink) return;
+    setResendingId(project.id);
+    try {
+      const { mailSent } = await onResendLink(project.id);
+      showToast(mailSent ? "Enlace reenviado al contratista." : "No se pudo enviar el correo; revise el contacto del contratista.", mailSent ? "success" : "error");
+    } catch (error) {
+      showToast(getErrorMessage(error, "No se pudo reenviar el enlace."), "error");
+    } finally {
+      setResendingId(null);
+    }
+  };
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -319,7 +335,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
                 un salto visual al cambiar de pestaña. */}
             <TabPanel activeKey={modalTab} className="mt-4 min-h-90">
               {modalTab === "detalle" && (
-                <ExpedienteDetailTab project={selectedProject} rejectionCount={rejectionCountOf(selectedProject.id, auditLogs)} onChangeResident={onChangeResident ? setResidentTarget : undefined} />
+                <ExpedienteDetailTab project={selectedProject} rejectionCount={rejectionCountOf(selectedProject.id, auditLogs)} onChangeResident={onChangeResident ? setResidentTarget : undefined} onResendLink={onResendLink ? resendLink : undefined} isResendingLink={resendingId === selectedProject.id} />
               )}
               {modalTab === "historial" && (
                 <ProjectIterationsTimeline projectId={selectedProject.id} auditLogs={auditLogs} />

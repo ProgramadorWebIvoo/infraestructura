@@ -75,15 +75,25 @@ describe("ClosureReviewModal — Auditoría", () => {
     await waitFor(() => expect(actions.handleAuditApproval).toHaveBeenCalledWith("P1", undefined));
   });
 
-  it("rechazar exige motivo y no depende de las mediciones", async () => {
+  it("rechazar exige motivo y por defecto devuelve al contratista", async () => {
     const actions = setup();
 
-    await userEvent.click(await screen.findByRole("button", { name: /rechazar y devolver al contratista/i }));
-    const confirm = screen.getByRole("button", { name: /rechazar y devolver al contratista/i });
+    await userEvent.click(await screen.findByRole("button", { name: /rechazar…/i }));
+    const confirm = screen.getByRole("button", { name: /rechazar: devolver al contratista/i });
     expect(confirm).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText(/motivo del rechazo/i), "No coincide");
     await userEvent.click(confirm);
-    await waitFor(() => expect(actions.handleRejectClosure).toHaveBeenCalledWith("P1", "No coincide"));
+    await waitFor(() => expect(actions.handleRejectClosure).toHaveBeenCalledWith("P1", "No coincide", "CONTRATISTA"));
+  });
+
+  it("permite elegir al residente como destino del rechazo", async () => {
+    const actions = setup();
+
+    await userEvent.click(await screen.findByRole("button", { name: /rechazar…/i }));
+    await userEvent.click(screen.getByLabelText(/devolver al residente/i));
+    await userEvent.type(screen.getByLabelText(/motivo del rechazo/i), "Medición dudosa");
+    await userEvent.click(screen.getByRole("button", { name: /rechazar: devolver al residente/i }));
+    await waitFor(() => expect(actions.handleRejectClosure).toHaveBeenCalledWith("P1", "Medición dudosa", "RESIDENTE"));
   });
 });

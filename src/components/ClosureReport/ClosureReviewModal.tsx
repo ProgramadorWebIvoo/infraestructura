@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { CheckCircle2, ImagePlus, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
 import { useToast } from "@/components/UI/Toast";
@@ -9,44 +9,28 @@ import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflo
 import type { Project } from "@/types";
 import ClosureReportDetail from "./ClosureReportDetail";
 import ClosureMeasurementSummary from "./ClosureMeasurementSummary";
-import {
-  countDifferences,
-  initialDrafts,
-  measurementErrors,
-  previewFiniquito,
-  toMeasurementPayload,
-  type MeasurementDraft,
-  type MeasurementDrafts,
-} from "./closureMeasurements";
-import { CLOSURE_PHOTO_MAX_BYTES, CLOSURE_PHOTO_MIMES, type ClosureReport } from "./types";
+import { previewFiniquito } from "./closureMeasurements";
 
-export type ClosureReviewMode = "resident" | "audit" | "procura";
+export type ClosureReviewMode = "audit" | "procura";
+export type RejectionTarget = "CONTRATISTA" | "RESIDENTE";
 
 interface ModeConfig {
   title: string;
   approveLabel: string;
   rejectLabel: string;
   rejectHint: string;
-  approve: (actions: ClosureActions, projectId: string, notes: string, drafts: MeasurementDrafts, report: ClosureReport) => Promise<void>;
-  reject: (actions: ClosureActions, projectId: string, reason: string) => Promise<void>;
+  approve: (actions: ClosureActions, projectId: string, notes: string) => Promise<void>;
+  reject: (actions: ClosureActions, projectId: string, reason: string, target: RejectionTarget) => Promise<void>;
 }
 
 const MODES: Record<ClosureReviewMode, ModeConfig> = {
-  resident: {
-    title: "Corroborar ejecución de la obra",
-    approveLabel: "Dar visto bueno y pasar a Auditoría",
-    rejectLabel: "Rechazar y devolver al contratista",
-    rejectHint: "El contratista recibirá el motivo por correo y podrá corregir y reenviar el informe.",
-    approve: (a, id, notes, drafts, report) => a.handleResidentApproval(id, notes || undefined, toMeasurementPayload(report.items, drafts)),
-    reject: (a, id, reason) => a.handleRejectClosure(id, reason),
-  },
   audit: {
     title: "Verificación de Auditoría",
     approveLabel: "Verificar y enviar a Procura",
     rejectLabel: "Rechazar y devolver al contratista",
     rejectHint: "La obra vuelve a ejecución y el contratista debe corregir y reenviar el informe.",
-    approve: (a, id, notes, drafts, report) => a.handleAuditApproval(id, notes || undefined),
-    reject: (a, id, reason) => a.handleRejectClosure(id, reason),
+    approve: (a, id, notes) => a.handleAuditApproval(id, notes || undefined),
+    reject: (a, id, reason, target) => a.handleRejectClosure(id, reason, target),
   },
   procura: {
     title: "Solicitud de pago del finiquito",
@@ -63,40 +47,33 @@ interface ClosureReviewModalProps {
   mode: ClosureReviewMode;
   authToken: string;
   actions: ClosureActions;
-  /** Solo lectura: muestra el informe sin acciones (p. ej. residente distinto al asignado). */
+  /** Solo lectura: muestra el informe sin acciones. */
   readOnly?: boolean;
   onClose: () => void;
 }
 
+const TARGET_OPTIONS: { value: RejectionTarget; label: string; hint: string }[] = [
+  { value: "CONTRATISTA", label: "Devolver al contratista", hint: "El informe está mal: la obra vuelve a ejecución y el contratista lo corrige y reenvía." },
+  { value: "RESIDENTE", label: "Devolver al residente", hint: "La medición está en duda: se borran las mediciones y el residente debe volver a verificar en obra." },
+];
+
 export default function ClosureReviewModal({ project, mode, authToken, actions, readOnly = false, onClose }: ClosureReviewModalProps) {
   const config = MODES[mode];
   const { showToast } = useToast();
-  const { report, isLoading, reload } = useClosureReport(project?.id ?? null, authToken);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const { report, isLoading } = useClosureReport(project?.id ?? null, authToken);
   const [notes, setNotes] = useState("");
   const [reason, setReason] = useState("");
+  const [target, setTarget] = useState<RejectionTarget>("CONTRATISTA");
   const [rejecting, setRejecting] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
   const close = () => {
     setNotes("");
     setReason("");
+    setTarget("CONTRATISTA");
     setRejecting(false);
     onClose();
   };
-
-  const measuring = mode === "resident" && !readOnly;
-  const [drafts, setDrafts] = useState<MeasurementDrafts>({});
-
-  useEffect(() => {
-    if (report && mode === "resident") setDrafts(initialDrafts(report.items));
-  }, [report, mode]);
-
-  const errors = useMemo(() => (report && measuring ? measurementErrors(report.items, drafts) : {}), [report, measuring, drafts]);
-  const hasErrors = Object.keys(errors).length > 0;
-
-  const handleDraftChange = (itemId: number, patch: Partial<MeasurementDraft>) =>
-    setDrafts((current) => ({ ...current, [itemId]: { ...current[itemId], ...patch } }));
 
   const finiquitoPreview = useMemo(() => {
     if (!report || mode !== "audit" || !project) return null;
@@ -104,8 +81,8 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
     return previewFiniquito({ contractedTotal: winner?.totalCost, advancePaid: project.advancePaidAmount, items: report.items });
   }, [report, mode, project]);
 
-  const hasResidentPhoto = report?.photos.some((p) => p.uploadedByType === "RESIDENTE") ?? false;
-  const needsPhoto = mode === "resident" && !hasResidentPhoto;
+  const rejectHint = mode === "audit" ? TARGET_OPTIONS.find((o) => o.value === target)?.hint : config.rejectHint;
+  const rejectLabel = mode === "audit" ? `Rechazar: ${TARGET_OPTIONS.find((o) => o.value === target)?.label.toLowerCase()}` : config.rejectLabel;
 
   const run = async (action: () => Promise<void>, failMessage: string) => {
     setIsBusy(true);
@@ -116,22 +93,6 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
       showToast(getErrorMessage(error, failMessage), "error");
     } finally {
       setIsBusy(false);
-    }
-  };
-
-  const handlePhoto = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || !project) return;
-    if (!CLOSURE_PHOTO_MIMES.includes(file.type) || file.size > CLOSURE_PHOTO_MAX_BYTES) {
-      showToast("Solo imágenes JPG, PNG o WEBP de máximo 5 MB.", "error");
-      return;
-    }
-    try {
-      await actions.handleUploadResidentPhoto(project.id, file);
-      await reload();
-    } catch (error) {
-      showToast(getErrorMessage(error, "No se pudo subir la foto."), "error");
     }
   };
 
@@ -159,19 +120,21 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
                   isLoading={isBusy}
                   disabled={!reason.trim()}
                   icon={<XCircle className="h-4 w-4" />}
-                  onClick={() => project && run(() => config.reject(actions, project.id, reason.trim()), "No se pudo registrar el rechazo.")}
+                  onClick={() => project && run(() => config.reject(actions, project.id, reason.trim(), target), "No se pudo registrar el rechazo.")}
                 >
-                  {config.rejectLabel}
+                  {rejectLabel}
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="secondary" onClick={() => setRejecting(true)} disabled={isBusy || !report}>{config.rejectLabel}</Button>
+                <Button variant="secondary" onClick={() => setRejecting(true)} disabled={isBusy || !report}>
+                  {mode === "audit" ? "Rechazar…" : config.rejectLabel}
+                </Button>
                 <Button
                   colorScheme="emerald"
                   isLoading={isBusy}
-                  disabled={!report || needsPhoto || (measuring && hasErrors)}
-                  onClick={() => project && report && run(() => config.approve(actions, project.id, notes.trim(), drafts, report), "No se pudo registrar la aprobación.")}
+                  disabled={!report}
+                  onClick={() => project && run(() => config.approve(actions, project.id, notes.trim()), "No se pudo registrar la aprobación.")}
                 >
                   {config.approveLabel}
                 </Button>
@@ -185,32 +148,21 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
         <ClosureReportDetail
           report={report}
           isLoading={isLoading}
-          showFiniquito={mode !== "resident"}
-          tableMode={measuring ? "resident" : "readonly"}
-          drafts={drafts}
-          errors={errors}
-          onDraftChange={handleDraftChange}
+          showFiniquito
           disabled={isBusy}
-          summary={
-            report && (measuring || (mode === "audit" && !readOnly)) ? (
-              <ClosureMeasurementSummary
-                stage={mode === "audit" ? "audit" : "resident"}
-                differences={countDifferences(report.items, drafts)}
-                totalItems={report.items.length}
-                finiquitoPreview={finiquitoPreview}
-              />
-            ) : undefined
-          }
+          summary={report && mode === "audit" && !readOnly ? <ClosureMeasurementSummary stage="audit" differences={0} totalItems={report.items.length} finiquitoPreview={finiquitoPreview} /> : undefined}
         />
 
-        {!readOnly && mode === "resident" && (
-          <div className="space-y-2">
-            <input ref={fileInput} type="file" accept={CLOSURE_PHOTO_MIMES.join(",")} className="hidden" onChange={handlePhoto} />
-            <Button size="sm" variant="secondary" icon={<ImagePlus className="h-3.5 w-3.5" />} onClick={() => fileInput.current?.click()}>
-              Adjuntar foto de verificación en obra
-            </Button>
-            {needsPhoto && <p className="text-[11px] text-amber-700">Adjunte al menos una foto de verificación para dar el visto bueno.</p>}
-          </div>
+        {!readOnly && rejecting && mode === "audit" && (
+          <fieldset className="space-y-2">
+            <legend className="mb-1 text-xs font-bold text-slate-600">Destino del rechazo</legend>
+            {TARGET_OPTIONS.map((option) => (
+              <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                <input type="radio" name="closure-reject-target" value={option.value} checked={target === option.value} onChange={() => setTarget(option.value)} disabled={isBusy} />
+                {option.label}
+              </label>
+            ))}
+          </fieldset>
         )}
 
         {!readOnly && (
@@ -226,7 +178,7 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
               onChange={(e) => (rejecting ? setReason(e.target.value) : setNotes(e.target.value))}
               className="w-full rounded-xl border border-slate-200 p-3 text-sm"
             />
-            {rejecting && <p className="mt-1 text-[11px] text-slate-500">{config.rejectHint}</p>}
+            {rejecting && <p className="mt-1 text-[11px] text-slate-500">{rejectHint}</p>}
           </div>
         )}
       </div>

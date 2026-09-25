@@ -139,6 +139,7 @@ export default function AuditoriaPanel({
                   auditLogs={auditLogs}
                   authToken={authToken}
                   onChangeResident={closureActions.handleAssignResident}
+                  onResendLink={closureActions.handleResendClosureLink}
                 />
               </div>
             )}
