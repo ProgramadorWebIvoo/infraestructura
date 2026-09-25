@@ -373,7 +373,7 @@ function FooterHint({
     idle: "Powered by ChatGPT · Gemini · Claude",
     loading: "Evaluando propuestas...",
     result: (acceptSuccess
-      ? "Contratista adjudicado exitosamente."
+      ? "Contratista seleccionado. Pendiente de aprobación de Presidencia."
       : acceptError
         ? "Error al adjudicar. Puede reintentar o cerrar."
         : "Puede aceptar la recomendación o cerrar y decidir manualmente.") + cachedNote,

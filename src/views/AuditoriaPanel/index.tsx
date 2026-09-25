@@ -114,7 +114,7 @@ export default function AuditoriaPanel({
                   <ol className="space-y-1.5 list-none">
                     <li><strong className="text-sky-900">1.</strong> Auditoría realiza la cubicación de materiales y planos de ingeniería iniciales.</li>
                     <li><strong className="text-sky-900">2.</strong> Al finalizar el trabajo, audita físicamente la obra y certifica si cumple con los estándares estipulados.</li>
-                    <li><strong className="text-sky-900">3.</strong> Su aprobación final viaja a la Base de Datos para que <strong>Finanzas</strong> proceda con la liberación del finiquito.</li>
+                    <li><strong className="text-sky-900">3.</strong> Su verificación final pasa a <strong>Procura</strong>, que solicita a Finanzas la liberación del finiquito.</li>
                   </ol>
                 </InfoBanner>
                 <div className="min-h-0 flex-1 flex flex-col">

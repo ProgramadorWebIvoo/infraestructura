@@ -81,7 +81,7 @@ export default function HireConfirmDialog({
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
         <motion.p variants={itemVariants} className="text-sm text-slate-600 leading-relaxed">
           ¿Estás seguro de adjudicar el contrato a <strong className="text-slate-800">"{contractorName}"</strong>? Esta acción seleccionará a
-          este contratista como ganador y enviará el proyecto a Finanzas para liberación del anticipo.
+          este contratista como ganador y enviará la adjudicación a Presidencia para su aprobación. Una vez aprobada, Procura la enviará a Finanzas para liberar el anticipo.
         </motion.p>
 
         {/* Semáforo de ejecución presupuestaria — gauge circular en vez de
