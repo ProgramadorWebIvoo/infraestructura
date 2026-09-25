@@ -90,7 +90,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.PROCURA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.PROCURA)} redirectTo={fallbackRoute}>
-              <ProcuraPanel projects={projects} onApproveInvestment={onApproveInvestment} onSendToReevaluation={onSendToReevaluation} onSelectContractor={onSelectContractor} onSendToFinance={onSendToFinance} onRejectProposals={onRejectProposals} authToken={authToken} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+              <ProcuraPanel projects={projects} onApproveInvestment={onApproveInvestment} onSendToReevaluation={onSendToReevaluation} onSelectContractor={onSelectContractor} onSendToFinance={onSendToFinance} closureActions={closureActions} onRejectProposals={onRejectProposals} authToken={authToken} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />

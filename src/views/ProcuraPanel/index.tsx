@@ -26,9 +26,11 @@ import TabPanel from "@/components/UI/TabPanel";
 import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
 import BidEvaluationSection from "./components/BidEvaluationSection";
 import SendToFinanceSection from "./components/SendToFinanceSection";
+import FiniquitoRequestSection from "./components/FiniquitoRequestSection";
+import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
-type TabKey = "autorizacion" | "comparativa" | "finanzas";
+type TabKey = "autorizacion" | "comparativa" | "finanzas" | "finiquito";
 
 interface ProcuraPanelProps {
   projects: Project[];
@@ -42,6 +44,7 @@ interface ProcuraPanelProps {
   onSelectContractor: (projectId: string, contractorCode: string, proposalId: string) => Promise<void>;
   onRejectProposals: (projectId: string, reason: string) => void;
   onSendToFinance: (projectId: string) => Promise<void>;
+  closureActions: ClosureActions;
   authToken: string;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
@@ -54,6 +57,7 @@ export default function ProcuraPanel({
   onSelectContractor,
   onRejectProposals,
   onSendToFinance,
+  closureActions,
   authToken,
   isLoading = false,
   onRefreshData,
@@ -67,6 +71,7 @@ export default function ProcuraPanel({
       inBidding: projects.filter((p) => p.status === ProjectStatus.CONFIRMADO_PROCURA).length,
       comparative: projects.filter((p) => p.status === ProjectStatus.COMPARATIVA_ENVIADA).length,
       approvedByPresidencia: projects.filter((p) => p.status === ProjectStatus.APROBADO_PRESIDENCIA).length,
+      pendingFiniquito: projects.filter((p) => p.status === ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO).length,
       contracted: projects.filter((p) => p.status === ProjectStatus.CONTRATADO).length,
     }),
     [projects],
@@ -76,6 +81,7 @@ export default function ProcuraPanel({
     { key: "autorizacion", label: "Autorización de Inversión", count: kpis.pendingApproval },
     { key: "comparativa", label: "Evaluación Comparativa", count: kpis.comparative },
     { key: "finanzas", label: "Envío a Finanzas", count: kpis.approvedByPresidencia },
+    { key: "finiquito", label: "Solicitud de finiquito", count: kpis.pendingFiniquito },
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
 
@@ -128,6 +134,9 @@ export default function ProcuraPanel({
           )}
           {activeTab === "finanzas" && (
             <SendToFinanceSection projects={projects} onSendToFinance={onSendToFinance} />
+          )}
+          {activeTab === "finiquito" && (
+            <FiniquitoRequestSection projects={projects} authToken={authToken} actions={closureActions} />
           )}
         </TabPanel>
       </motion.div>
