@@ -38,7 +38,7 @@ export interface EffectiveQuantity {
 }
 
 export interface ModificationsResponse {
-  data: ModificationRequest[];
+  requests: ModificationRequest[];
   effectiveQuantities: Record<string, EffectiveQuantity>;
   hasPending: boolean;
   canRequest: boolean;

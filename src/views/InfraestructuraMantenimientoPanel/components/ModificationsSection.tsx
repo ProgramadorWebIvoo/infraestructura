@@ -53,9 +53,9 @@ function ProjectModifications({ project, authToken }: { project: Project; authTo
       </header>
 
       {isLoading && !state && <p className="text-xs text-slate-400">Cargando…</p>}
-      {state && state.data.length === 0 && <p className="text-xs italic text-slate-400">Sin modificaciones solicitadas.</p>}
+      {state && state.requests.length === 0 && <p className="text-xs italic text-slate-400">Sin modificaciones solicitadas.</p>}
 
-      {state?.data.map((request) => {
+      {state?.requests.map((request) => {
         const status = MODIFICATION_STATUS[request.status];
         const c = SEMANTIC_COLOR_MAP[status.color];
         return (
