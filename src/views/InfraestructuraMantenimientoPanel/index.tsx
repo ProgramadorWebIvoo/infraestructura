@@ -19,11 +19,12 @@ import TabPanel from "@/components/UI/TabPanel";
 import RequestWizardCard from "./components/RequestWizardCard";
 import RequestsTableSection from "./components/RequestsTableSection";
 import RejectedPetitionsSection from "./components/RejectedPetitionsSection";
+import ModificationsSection from "./components/ModificationsSection";
 import RejectedWarningLabel from "./components/RejectedWarningLabel";
 import { useRequestForm } from "@/hooks/useRequestForm";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
-type TabKey = "crear" | "expedientes" | "rechazadas";
+type TabKey = "crear" | "expedientes" | "modificaciones" | "rechazadas";
 
 export type { FieldKey, FieldErrors } from "@/hooks/useRequestForm";
 
@@ -82,6 +83,7 @@ export default function InfraestructuraMantenimientoPanel({
   const visibleTabs = filterTabs("/infraestructura", [
     { key: "crear", label: "Crear" },
     { key: "expedientes", label: "Expedientes", count: kpis.total },
+    { key: "modificaciones", label: "Modificaciones", count: kpis.inExecution },
     { key: "rechazadas", label: "Rechazadas", count: kpis.rejected, showDot: kpis.rejected > 0 && activeTab !== "rechazadas" },
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
@@ -140,6 +142,7 @@ export default function InfraestructuraMantenimientoPanel({
             {activeTab === "expedientes" && (
               <RequestsTableSection projects={projects} stageKey={stageKey} onStageKeyChange={setStageKey} onRefresh={onRefreshData} />
             )}
+            {activeTab === "modificaciones" && <ModificationsSection projects={projects} authToken={authToken} />}
             {activeTab === "rechazadas" && (
               <RejectedPetitionsSection
                 projects={projects}
