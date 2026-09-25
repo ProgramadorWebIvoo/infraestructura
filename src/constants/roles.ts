@@ -22,6 +22,8 @@ export const ROLE_LABELS: Record<string, string> = {
   FINANZAS: "Finanzas",
   CATALOGOS: "Catálogos",
   MARKETING: "Marketing",
+  SOLICITANTE: "Solicitante de la obra",
+  RESIDENTE_ASIGNADO: "Residente asignado a la obra",
 };
 
 export function roleLabel(role: string): string {
