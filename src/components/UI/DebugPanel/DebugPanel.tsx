@@ -49,11 +49,12 @@ import DebugEntryList from "./DebugEntryList";
 import DebugQueryPanel from "./DebugQueryPanel";
 import DebugInfoPanel from "./DebugInfoPanel";
 import DebugActionsPanel from "./DebugActionsPanel";
+import DebugClosurePanel from "./DebugClosurePanel";
 import DebugCodebasePanel from "./DebugCodebasePanel";
 import DebugPerformancePanel from "./DebugPerformancePanel";
 import { matchesSearch, downloadJson } from "./debugUtils";
 
-type PanelTab = DebugEntryKind | "query" | "info" | "actions" | "codebase" | "performance";
+type PanelTab = DebugEntryKind | "query" | "info" | "actions" | "closure" | "codebase" | "performance";
 
 const TABS: { key: PanelTab; label: string }[] = [
   { key: "http", label: "Network" },
@@ -64,10 +65,11 @@ const TABS: { key: PanelTab; label: string }[] = [
   { key: "performance", label: "Performance" },
   { key: "codebase", label: "Codebase" },
   { key: "actions", label: "Acciones" },
+  { key: "closure", label: "Cierre F2" },
   { key: "info", label: "Info" },
 ];
 
-const NON_ENTRY_TABS: PanelTab[] = ["query", "info", "actions", "codebase", "performance"];
+const NON_ENTRY_TABS: PanelTab[] = ["query", "info", "actions", "closure", "codebase", "performance"];
 
 const HTTP_METHOD_FILTERS = ["all", "GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 const HTTP_STATUS_FILTERS = ["all", "2xx", "3xx", "4xx", "5xx"] as const;
@@ -380,6 +382,8 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             <DebugCodebasePanel />
           ) : activeTab === "actions" ? (
             <DebugActionsPanel />
+          ) : activeTab === "closure" ? (
+            <DebugClosurePanel />
           ) : activeTab === "info" ? (
             <DebugInfoPanel authUser={authUser} activeRole={activeRole} />
           ) : (
