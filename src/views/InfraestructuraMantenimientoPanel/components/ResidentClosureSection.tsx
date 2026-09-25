@@ -15,7 +15,6 @@ import EmptyState from "@/components/UI/EmptyState";
 import SectionHeader from "@/components/UI/SectionHeader";
 import StatusBadge from "@/components/UI/StatusBadge";
 import { useToast } from "@/components/UI/Toast";
-import ResidentSelect from "@/components/ResidentSelect";
 import ClosureReviewModal from "@/components/ClosureReport/ClosureReviewModal";
 import { getErrorMessage } from "@/services/logger";
 import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
@@ -41,15 +40,6 @@ export default function ResidentClosureSection({ projects, authToken, actions, c
 
   const awaitingReview = useMemo(() => projects.filter((p) => p.status === ProjectStatus.INFORME_ENVIADO), [projects]);
   const inExecution = useMemo(() => projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION), [projects]);
-
-  const assign = async (projectId: string, residentUserId: number | null) => {
-    try {
-      await actions.handleAssignResident(projectId, residentUserId);
-      showToast("Residente actualizado.", "success");
-    } catch (error) {
-      showToast(getErrorMessage(error, "No se pudo asignar el residente."), "error");
-    }
-  };
 
   const resend = async (projectId: string) => {
     setResendingId(projectId);
@@ -86,7 +76,6 @@ export default function ResidentClosureSection({ projects, authToken, actions, c
                     {project.location} · Residente: {project.residentName ?? "Sin asignar"}
                   </div>
                 </div>
-                <ResidentSelect size="sm" value={project.residentUserId ?? null} onChange={(id) => void assign(project.id, id)} />
                 <StatusBadge code={project.status} />
                 <Button size="sm" colorScheme="sky" variant={readOnly ? "secondary" : "primary"} onClick={() => setReviewing(project)}>
                   {readOnly ? "Ver informe" : "Revisar informe"}
@@ -114,7 +103,6 @@ export default function ResidentClosureSection({ projects, authToken, actions, c
                     {project.closureReportStatus === "RECHAZADO" && " · Informe devuelto al contratista"}
                   </div>
                 </div>
-                <ResidentSelect size="sm" value={project.residentUserId ?? null} onChange={(id) => void assign(project.id, id)} />
                 <Button
                   size="sm"
                   variant="secondary"

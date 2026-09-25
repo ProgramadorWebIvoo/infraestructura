@@ -29,7 +29,7 @@ interface AuditoriaPanelProps {
   projects: Project[];
   auditLogs: AuditLog[];
   authToken: string;
-  onReviewProject: (projectId: string, notes: string) => void;
+  onReviewProject: (projectId: string, notes: string, residentUserId?: number | null) => void | Promise<void>;
   onRejectProject: (
     projectId: string,
     reason: string,
@@ -138,6 +138,7 @@ export default function AuditoriaPanel({
                   projects={projects}
                   auditLogs={auditLogs}
                   authToken={authToken}
+                  onChangeResident={closureActions.handleAssignResident}
                 />
               </div>
             )}

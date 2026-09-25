@@ -39,6 +39,8 @@ import Stepper, { type StepDefinition } from "@/components/UI/Stepper";
 import { HelpHint } from "@/components/UI/HintSignals";
 import AlertBanner from "@/components/UI/AlertBanner";
 import DossierEvaluationPanel from "./DossierEvaluationPanel";
+import ReviewResidentField from "./ReviewResidentField";
+import { reviewNeedsResidentChoice, reviewResidentPayload } from "@/utils/projectLocation";
 import { AttachmentsSummary, MaterialDetailRow, ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import { downloadProjectDocument } from "@/services/api";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
@@ -76,7 +78,7 @@ interface ReviewWizardModalProps {
   mode?: WizardMode;
   /** Motivo (+ observaciones opcionales) indicado por Procura — solo en mode="reevaluation". */
   reevaluationContext?: { reason: string; observations?: string };
-  onConfirm: (projectId: string, notes: string) => void | Promise<void>;
+  onConfirm: (projectId: string, notes: string, residentUserId?: number | null) => void | Promise<void>;
   onSyncProject: (project: Project) => void;
   onClose: () => void;
   /** Requerido en mode="review" — mode="reevaluation" no ofrece rechazar, ver docblock arriba. */
@@ -88,6 +90,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
   const [stepIndex, setStepIndex] = useState(0);
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
   const [auditNotes, setAuditNotes] = useState("");
+  const [residentUserId, setResidentUserId] = useState<number | null>(null);
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
@@ -101,6 +104,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
     setStepIndex(0);
     setFurthestStepIndex(0);
     setAuditNotes("");
+    setResidentUserId(null);
   };
 
   const handleClose = () => {
@@ -118,11 +122,14 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
     }
   };
 
+  // First review of a custom-location work: Auditoría must pick the resident (D14).
+  const missingResident = mode === "review" && !!project && reviewNeedsResidentChoice(project) && residentUserId === null;
+
   const handleSubmitReview = async () => {
     if (!project || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onConfirm(project.id, auditNotes);
+      await onConfirm(project.id, auditNotes, reviewResidentPayload(project, residentUserId));
       resetWizard();
       onClose();
     } finally {
@@ -187,6 +194,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                     variant="primary"
                     colorScheme="sky"
                     isLoading={isSubmitting}
+                    disabled={missingResident}
                     onClick={handleSubmitReview}
                     icon={<Upload className="h-4 w-4" />}
                   >
@@ -304,6 +312,8 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                   ></textarea>
                   <span className="text-[9px] text-slate-400 font-mono mt-1 block text-right">{auditNotes.length}/1000</span>
                 </div>
+
+                {mode === "review" && <ReviewResidentField project={project} value={residentUserId} onChange={setResidentUserId} />}
               </div>
             )}
 

@@ -8,16 +8,20 @@
  * bloque único apilado que tenía el modal antes de las tabs.
  */
 
-import { AlertTriangle, Calendar, MapPin, Package } from "lucide-react";
+import { AlertTriangle, Calendar, HardHat, MapPin, Package } from "lucide-react";
 import type { Project } from "@/types";
 import StatusBadge from "@/components/UI/StatusBadge";
+import Button from "@/components/UI/Button";
+import { canChangeProjectResident } from "@/utils/projectLocation";
 
 interface ExpedienteDetailTabProps {
   project: Project;
   rejectionCount: number;
+  /** Opens the "Cambiar residente" flow (custom-location works only, D14). */
+  onChangeResident?: (project: Project) => void;
 }
 
-export default function ExpedienteDetailTab({ project, rejectionCount }: ExpedienteDetailTabProps) {
+export default function ExpedienteDetailTab({ project, rejectionCount, onChangeResident }: ExpedienteDetailTabProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="md:col-span-2 space-y-3">
@@ -64,6 +68,19 @@ export default function ExpedienteDetailTab({ project, rejectionCount }: Expedie
               Ubicación
             </span>
             <p className="text-[11px] text-slate-600">{project.location}</p>
+            <p className="text-[10px] font-medium text-slate-400">{project.localizationId ? "Ubicación registrada" : "Ubicación personalizada"}</p>
+          </div>
+          <div>
+            <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <HardHat className="h-3 w-3 shrink-0" />
+              Residente
+            </span>
+            <p className="text-[11px] text-slate-600">{project.residentName ?? "Sin asignar"}</p>
+            {onChangeResident && canChangeProjectResident(project) && (
+              <Button size="sm" className="mt-1.5" onClick={() => onChangeResident(project)}>
+                Cambiar residente
+              </Button>
+            )}
           </div>
           <div>
             <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">

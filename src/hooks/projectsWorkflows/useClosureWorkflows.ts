@@ -72,12 +72,12 @@ export function useClosureWorkflows({ authTokenRef, syncProjectRef }: WorkflowCo
   );
 
   const handleAssignResident = useCallback(
-    async (projectId: string, residentUserId: number | null) => {
+    async (projectId: string, residentUserId: number, reason: string) => {
       try {
         const project = await apiFetch<Project>(`/projects/${projectId}/resident`, {
           method: "PATCH",
           token: authTokenRef.current,
-          body: JSON.stringify({ residentUserId }),
+          body: JSON.stringify({ residentUserId, reason }),
         });
         syncProjectRef.current(project);
       } catch (error) {

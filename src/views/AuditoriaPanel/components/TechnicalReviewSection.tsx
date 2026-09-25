@@ -37,7 +37,7 @@ import RejectProjectModal from "./RejectProjectModal";
 interface TechnicalReviewSectionProps {
   projects: Project[];
   authToken: string;
-  onReviewProject: (projectId: string, notes: string) => void;
+  onReviewProject: (projectId: string, notes: string, residentUserId?: number | null) => void | Promise<void>;
   onRejectProject: (
     projectId: string,
     reason: string,

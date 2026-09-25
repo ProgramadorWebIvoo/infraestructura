@@ -52,6 +52,13 @@ vi.mock("@/services/aiEvaluationService", () => ({
   evaluateDossier: vi.fn().mockRejectedValue(new Error("not configured in this test")),
 }));
 
+vi.mock("@/hooks/useResidents", () => ({
+  useResidents: () => [
+    { id: 1, name: "Rita" },
+    { id: 2, name: "Omar" },
+  ],
+}));
+
 const mockIsAiFeatureEnabled = vi.fn(() => true);
 vi.mock("@/hooks/useAiFeatureGate", () => ({
   useAiFeatureGate: () => ({ isAiFeatureEnabled: mockIsAiFeatureEnabled, isLoading: false }),
@@ -249,15 +256,42 @@ describe("TechnicalReviewSection — revisión (auditoría, sin subida de archiv
     expect(screen.getByLabelText("Notas de Revisión y Corrección (opcional)")).toHaveValue("");
   });
 
-  it("permite confirmar la revisión sin escribir notas ni requerir archivos adjuntos", async () => {
+  it("permite confirmar la revisión sin notas ni adjuntos, eligiendo el residente de una obra personalizada", async () => {
     const { onReviewProject } = renderSection();
 
     fireEvent.click(screen.getByText(pendingProject.title));
+    fireEvent.click(screen.getByRole("combobox", { name: "Ingeniero residente" }));
+    fireEvent.click(await screen.findByText("Omar"));
     fireEvent.click(screen.getByRole("button", { name: /Continuar/ })); // paso 2
     fireEvent.click(screen.getByRole("button", { name: /Continuar/ })); // paso 3
     fireEvent.click(screen.getByRole("button", { name: /Guardar y Enviar a Procura/ }));
 
-    expect(onReviewProject).toHaveBeenCalledWith("PRJ-020", "");
+    expect(onReviewProject).toHaveBeenCalledWith("PRJ-020", "", 2);
+  });
+
+  it("no deja enviar la revisión de una obra personalizada sin residente", () => {
+    const { onReviewProject } = renderSection();
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
+
+    const submit = screen.getByRole("button", { name: /Guardar y Enviar a Procura/ });
+    expect(submit).toBeDisabled();
+    fireEvent.click(submit);
+    expect(onReviewProject).not.toHaveBeenCalled();
+  });
+
+  it("con ubicación registrada muestra el residente heredado y no envía residentUserId", () => {
+    const { onReviewProject } = renderSection(undefined, undefined, [{ ...pendingProject, localizationId: 4, localizationTitle: "Tienda Sur — Valencia", residentName: "Rita" }]);
+
+    fireEvent.click(screen.getByText(pendingProject.title));
+    expect(screen.getByText(/hereda a su residente/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Continuar/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Guardar y Enviar a Procura/ }));
+
+    expect(onReviewProject).toHaveBeenCalledWith("PRJ-020", "", undefined);
   });
 
   it("muestra el panel de evaluación IA del expediente cuando el gate de Config IA está habilitado (default)", async () => {

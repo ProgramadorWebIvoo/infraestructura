@@ -341,6 +341,18 @@ describe("useProjectsWorkflows", () => {
       expect(syncProject).toHaveBeenCalledWith(project);
     });
 
+    it("envía residentUserId solo cuando Auditoría lo elige (obra personalizada)", async () => {
+      mockApiFetch.mockResolvedValue(createMockProject({ status: ProjectStatus.REVISADO_AUDITORIA }));
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handleReviewProject("PRJ-001", "ok", 12);
+      expect(JSON.parse(mockApiFetch.mock.calls[0][1].body)).toEqual({ notes: "ok", residentUserId: 12 });
+
+      mockApiFetch.mockClear();
+      await result.current.handleReviewProject("PRJ-001", "ok");
+      expect(JSON.parse(mockApiFetch.mock.calls[0][1].body)).toEqual({ notes: "ok" });
+    });
+
     it("handles review without notes", async () => {
       const project = createMockProject({ status: ProjectStatus.REVISADO_AUDITORIA });
       mockApiFetch.mockResolvedValueOnce(project);
@@ -858,16 +870,16 @@ describe("useProjectsWorkflows", () => {
       expect(syncProject).not.toHaveBeenCalled();
     });
 
-    it("handleAssignResident hace PATCH con residentUserId", async () => {
+    it("handleAssignResident hace PATCH con residentUserId y motivo", async () => {
       mockApiFetch.mockResolvedValue(createMockProject());
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
-      await result.current.handleAssignResident("PRJ-001", 7);
+      await result.current.handleAssignResident("PRJ-001", 7, "Rotación de personal");
 
       expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/resident", {
         method: "PATCH",
         token: "valid-token",
-        body: JSON.stringify({ residentUserId: 7 }),
+        body: JSON.stringify({ residentUserId: 7, reason: "Rotación de personal" }),
       });
     });
   });

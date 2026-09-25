@@ -33,11 +33,13 @@ import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "@/hooks/useTableViewMode";
 import { downloadProjectDocument, fetchAllProjectDocuments } from "@/services/api";
 import { useToast } from "@/components/UI/Toast";
+import { getErrorMessage } from "@/services/logger";
 import { ProjectStatus } from "@/types";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
 import ProjectIterationsTimeline from "./ProjectIterationsTimeline";
 import ExpedienteDetailTab from "./ExpedienteDetailTab";
 import ExpedienteGridCard from "./ExpedienteGridCard";
+import ChangeResidentModal from "@/components/ChangeResidentModal";
 import { rejectionCountOf } from "./rejectionAudit";
 
 type ModalTabKey = "detalle" | "historial" | "archivos";
@@ -46,6 +48,8 @@ interface RevisedDocumentsSectionProps {
   projects: Project[];
   auditLogs: AuditLog[];
   authToken: string;
+  /** Saves a resident change (PATCH /projects/{id}/resident); omit to hide the action. */
+  onChangeResident?: (projectId: string, residentUserId: number, reason: string) => Promise<void>;
   /** Vista con la que arranca la sección (Tabla o Grid) — configurable por el
    * consumidor, no recordada automáticamente entre sesiones. */
   defaultViewMode?: TableViewMode;
@@ -59,10 +63,11 @@ const STATUS_FILTER_OPTIONS = [
   { value: "APPROVED", label: "Aprobados" },
 ];
 
-export default function RevisedDocumentsSection({ projects, auditLogs, authToken, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
+export default function RevisedDocumentsSection({ projects, auditLogs, authToken, onChangeResident, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
   const { containerRef, rows: pageSize } = useContainerRows();
   const [selectedId, setSelectedId] = useState("");
+  const [residentTarget, setResidentTarget] = useState<Project | null>(null);
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -314,7 +319,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
                 un salto visual al cambiar de pestaña. */}
             <TabPanel activeKey={modalTab} className="mt-4 min-h-90">
               {modalTab === "detalle" && (
-                <ExpedienteDetailTab project={selectedProject} rejectionCount={rejectionCountOf(selectedProject.id, auditLogs)} />
+                <ExpedienteDetailTab project={selectedProject} rejectionCount={rejectionCountOf(selectedProject.id, auditLogs)} onChangeResident={onChangeResident ? setResidentTarget : undefined} />
               )}
               {modalTab === "historial" && (
                 <ProjectIterationsTimeline projectId={selectedProject.id} auditLogs={auditLogs} />
@@ -346,6 +351,21 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
           document={previewDoc}
           authToken={authToken}
           onDownload={handleDownload}
+        />
+      )}
+      {onChangeResident && (
+        <ChangeResidentModal
+          project={residentTarget}
+          onClose={() => setResidentTarget(null)}
+          onSubmit={async (projectId, residentUserId, reason) => {
+            try {
+              await onChangeResident(projectId, residentUserId, reason);
+              showToast("Residente actualizado.", "success");
+            } catch (error) {
+              showToast(getErrorMessage(error, "No se pudo cambiar el residente."), "error");
+              throw error;
+            }
+          }}
         />
       )}
     </Card>

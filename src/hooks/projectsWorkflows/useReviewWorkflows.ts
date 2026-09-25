@@ -85,7 +85,7 @@ export function useReviewWorkflows({
   /** Auditoría audita la petición — no sube documentación propia, solo
    * confirma lo ya adjuntado por Infraestructura (ver TechnicalReviewSection). */
   const handleReviewProject = useCallback(
-    async (projectId: string, notes: string) => {
+    async (projectId: string, notes: string, residentUserId?: number | null) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
@@ -94,13 +94,13 @@ export function useReviewWorkflows({
         const project = await apiFetch<Project>(`/projects/${projectId}/review`, {
           method: "POST",
           token,
-          body: JSON.stringify({ notes: notes.trim() || undefined }),
+          body: JSON.stringify({ notes: notes.trim() || undefined, residentUserId: residentUserId ?? undefined }),
         });
         sync(project);
       } catch (error) {
         logError("handleReviewProject", error);
         if (previous) sync(previous);
-        show("No se pudo guardar la revisión técnica.", "error");
+        show(`No se pudo guardar la revisión técnica: ${getErrorMessage(error, "intente de nuevo")}`, "error");
       }
     },
     [authTokenRef, showToastRef, syncProjectRef, optimisticUpdate],
