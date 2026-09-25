@@ -267,7 +267,6 @@ function AppRoutes() {
     handleSendToFinance,
     handleRejectProposals,
     handlePayAdvance,
-    handleVerifyCompletion,
     handlePayFinal,
     handleResidentApproval,
     handleRejectClosure,
@@ -431,7 +430,6 @@ function AppRoutes() {
         onSendToFinance={handleSendToFinance}
         onRejectProposals={handleRejectProposals}
         onPayAdvance={handlePayAdvance}
-        onVerifyCompletion={handleVerifyCompletion}
         onPayFinal={handlePayFinal}
         closureActions={closureActions}
         authToken={authToken}

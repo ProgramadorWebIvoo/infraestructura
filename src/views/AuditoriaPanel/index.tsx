@@ -20,6 +20,7 @@ import TechnicalReviewSection from "./components/TechnicalReviewSection";
 import ReevaluationSection from "./components/ReevaluationSection";
 import CompletionAuditSection from "./components/CompletionAuditSection";
 import RevisedDocumentsSection from "./components/RevisedDocumentsSection";
+import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
 type TabKey = "revision" | "reevaluacion" | "auditoria" | "documentos";
@@ -36,7 +37,7 @@ interface AuditoriaPanelProps {
     correctionFiles?: File[],
   ) => Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }>;
   onResolveReevaluation: (projectId: string, notes?: string) => Promise<void> | void;
-  onVerifyCompletion: (projectId: string) => void;
+  closureActions: ClosureActions;
   onSyncProject: (project: Project) => void;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
@@ -49,7 +50,7 @@ export default function AuditoriaPanel({
   onReviewProject,
   onRejectProject,
   onResolveReevaluation,
-  onVerifyCompletion,
+  closureActions,
   onSyncProject,
   isLoading = false,
   onRefreshData,
@@ -128,7 +129,7 @@ export default function AuditoriaPanel({
             )}
             {activeTab === "auditoria" && (
               <div className="min-h-0 flex flex-col flex-1">
-                <CompletionAuditSection projects={projects} onVerifyCompletion={onVerifyCompletion} />
+                <CompletionAuditSection projects={projects} authToken={authToken} closureActions={closureActions} />
               </div>
             )}
             {activeTab === "documentos" && (

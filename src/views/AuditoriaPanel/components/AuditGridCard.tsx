@@ -11,7 +11,6 @@
 import { memo } from "react";
 import { MapPin } from "lucide-react";
 import type { Project, BaseCurrency } from "@/types";
-import { ProjectStatus } from "@/types";
 import StatusBadge from "@/components/UI/StatusBadge";
 import { ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import BsAmount from "@/components/UI/BsAmount";
@@ -25,7 +24,6 @@ interface AuditGridCardProps {
 }
 
 function AuditGridCard({ project, convert, hasRates, isLoadingRates, baseCurrency }: AuditGridCardProps) {
-  const isUnderAudit = project.status === ProjectStatus.VERIFICANDO_FINALIZACION;
   const fmtBase = (usd: number) => `${baseCurrency?.symbol ?? "$"}${(usd / (baseCurrency?.rateToUsd ?? 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
@@ -44,11 +42,7 @@ function AuditGridCard({ project, convert, hasRates, isLoadingRates, baseCurrenc
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-        <StatusBadge
-          code={isUnderAudit ? "VERIFICANDO_FINALIZACION" : "EN_EJECUCION"}
-          label={isUnderAudit ? "Paso 2 de 2 · Auditoría" : "Paso 1 de 2 · En Curso"}
-          className="text-[9px]"
-        />
+        <StatusBadge code={project.status} className="text-[9px]" />
         <div className="text-right">
           <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{fmtBase(project.estimatedTotal)}</div>
           {convert && (

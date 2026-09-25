@@ -68,7 +68,7 @@ describe("useProjectsWorkflows", () => {
     expect(result.current.handleSelectContractor).toBeDefined();
     expect(result.current.handleRejectProposals).toBeDefined();
     expect(result.current.handlePayAdvance).toBeDefined();
-    expect(result.current.handleVerifyCompletion).toBeDefined();
+    expect(result.current.handleAuditApproval).toBeDefined();
     expect(result.current.handlePayFinal).toBeDefined();
   });
 
@@ -792,65 +792,63 @@ describe("useProjectsWorkflows", () => {
     });
   });
 
-  // ── Auditoría ─────────────────────────────────────────────────────────
-  describe("handleVerifyCompletion", () => {
-    it("calls report-finished when project is EN_EJECUCION", async () => {
-      const project = createMockProject({ status: ProjectStatus.EN_EJECUCION });
-      getProject.mockReturnValue(project);
-      mockApiFetch.mockResolvedValue(project);
-
-      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
-
-      await result.current.handleVerifyCompletion("PRJ-001");
-
-      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/report-finished", {
-        method: "POST",
-        token: "valid-token",
-      });
-    });
-
-    it("calls verify-completion when project is NOT EN_EJECUCION", async () => {
-      const project = createMockProject({ status: ProjectStatus.VERIFICANDO_FINALIZACION });
-      getProject.mockReturnValue(project);
-      mockApiFetch.mockResolvedValue(project);
-
-      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
-
-      await result.current.handleVerifyCompletion("PRJ-001");
-
-      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/verify-completion", {
-        method: "POST",
-        token: "valid-token",
-        body: expect.stringContaining("qualityVerified"),
-      });
-    });
-
-    it("syncs the updated project", async () => {
-      const project = createMockProject({ status: ProjectStatus.EN_EJECUCION });
+  // ── Cierre (residente / Auditoría / Procura) ──────────────────────────
+  describe("closure workflows", () => {
+    it.each([
+      ["handleResidentApproval", "resident-approval", { notes: "ok" }],
+      ["handleAuditApproval", "audit-approval", { notes: "ok" }],
+      ["handleRequestFiniquito", "finiquito-request", { notes: "ok" }],
+    ] as const)("%s postea a closure-report/%s y sincroniza", async (handler, action, body) => {
       const updated = createMockProject({ status: ProjectStatus.VERIFICANDO_FINALIZACION });
-      getProject.mockReturnValue(project);
       mockApiFetch.mockResolvedValue(updated);
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current[handler]("PRJ-001", "ok");
 
-      await result.current.handleVerifyCompletion("PRJ-001");
-
+      expect(mockApiFetch).toHaveBeenCalledWith(`/projects/PRJ-001/closure-report/${action}`, {
+        method: "POST",
+        token: "valid-token",
+        body: JSON.stringify(body),
+      });
       expect(syncProject).toHaveBeenCalledWith(updated);
     });
 
-    it("shows error toast on failure", async () => {
-      const project = createMockProject({ status: ProjectStatus.EN_EJECUCION });
-      getProject.mockReturnValue(project);
-      mockApiFetch.mockRejectedValue(new Error("fail"));
+    it.each([
+      ["handleRejectClosure", "rejection"],
+      ["handleReturnFiniquito", "finiquito-return"],
+    ] as const)("%s envía el motivo", async (handler, action) => {
+      mockApiFetch.mockResolvedValue(createMockProject());
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current[handler]("PRJ-001", "Faltan fotos");
+
+      expect(mockApiFetch).toHaveBeenCalledWith(`/projects/PRJ-001/closure-report/${action}`, {
+        method: "POST",
+        token: "valid-token",
+        body: JSON.stringify({ reason: "Faltan fotos" }),
+      });
+    });
+
+    it("propaga el error para que la UI conserve el modal", async () => {
+      mockApiFetch.mockRejectedValue(new Error("422"));
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handleVerifyCompletion("PRJ-001");
+      await expect(result.current.handleAuditApproval("PRJ-001")).rejects.toThrow("422");
+      expect(syncProject).not.toHaveBeenCalled();
+    });
 
-      expect(showToast).toHaveBeenCalledWith(
-        expect.stringContaining("No se pudo actualizar"),
-        "error",
-      );
+    it("handleAssignResident hace PATCH con residentUserId", async () => {
+      mockApiFetch.mockResolvedValue(createMockProject());
+
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+      await result.current.handleAssignResident("PRJ-001", 7);
+
+      expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/resident", {
+        method: "PATCH",
+        token: "valid-token",
+        body: JSON.stringify({ residentUserId: 7 }),
+      });
     });
   });
 

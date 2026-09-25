@@ -146,7 +146,6 @@ const defaultUseProjects = () => ({
   handleSelectContractor: vi.fn(),
   handleRejectProposals: vi.fn(),
   handlePayAdvance: vi.fn(),
-  handleVerifyCompletion: vi.fn(),
   handlePayFinal: vi.fn(),
   resetData: vi.fn(),
 });

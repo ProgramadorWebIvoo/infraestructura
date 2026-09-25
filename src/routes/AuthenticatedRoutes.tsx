@@ -33,7 +33,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
     onAddProject, onResubmitProject, onRejectProject, onSendToReevaluation, onResolveReevaluation, onReviewProject, onDeleteDocument, onSyncProject, onApproveInvestment, onAddProposal,
     onRenegotiateProposal, onSendRenegotiationInvite,
     onRemoveProposal, onImportSupplierProposals, onSubmitComparative,
-    onSelectContractor, onApproveAward, onRejectAward, onSendToFinance, onRejectProposals, onPayAdvance, onVerifyCompletion, onPayFinal, closureActions,
+    onSelectContractor, onApproveAward, onRejectAward, onSendToFinance, onRejectProposals, onPayAdvance, onPayFinal, closureActions,
     authToken, location,
   } = props;
 
@@ -82,7 +82,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.AUDITORIA}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.AUDITORIA)} redirectTo={fallbackRoute}>
-              <AuditoriaPanel projects={projects} auditLogs={auditLogs} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onResolveReevaluation={onResolveReevaluation} onVerifyCompletion={onVerifyCompletion} onSyncProject={onSyncProject} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+              <AuditoriaPanel projects={projects} auditLogs={auditLogs} authToken={authToken} onReviewProject={onReviewProject} onRejectProject={onRejectProject} onResolveReevaluation={onResolveReevaluation} closureActions={closureActions} onSyncProject={onSyncProject} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />

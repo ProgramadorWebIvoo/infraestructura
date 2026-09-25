@@ -133,40 +133,9 @@ export function usePaymentWorkflows({
     [authTokenRef, showToastRef, syncProjectRef],
   );
 
-  const handleVerifyCompletion = useCallback(
-    async (projectId: string) => {
-      const token = authTokenRef.current;
-      const show = showToastRef.current;
-      const sync = syncProjectRef.current;
-      const get = getProjectRef.current;
-      const project = get(projectId);
-      const isStartingVerification = project?.status === ProjectStatus.EN_EJECUCION;
-      const nextStatus = isStartingVerification ? ProjectStatus.VERIFICANDO_FINALIZACION : ProjectStatus.LISTO_PAGO_FINAL;
-
-      const previous = optimisticUpdate(projectId, { status: nextStatus });
-      try {
-        const updated = await apiFetch<Project>(
-          `/projects/${projectId}/${isStartingVerification ? "report-finished" : "verify-completion"}`,
-          {
-            method: "POST",
-            token,
-            body: isStartingVerification ? undefined : JSON.stringify({ qualityVerified: true }),
-          },
-        );
-        sync(updated);
-      } catch (error) {
-        logError("handleVerifyCompletion", error);
-        if (previous) sync(previous);
-        show("No se pudo actualizar la verificación de cierre.", "error");
-      }
-    },
-    [authTokenRef, showToastRef, syncProjectRef, getProjectRef, optimisticUpdate],
-  );
-
   return {
     handlePayAdvance,
     handlePayFinal,
     handleFreezeRateManually,
-    handleVerifyCompletion,
   };
 }
