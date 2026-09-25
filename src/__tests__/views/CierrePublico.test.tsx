@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CierrePublico from "@/views/CierrePublico";
@@ -80,5 +80,46 @@ describe("CierrePublico", () => {
     renderPage();
 
     expect(await screen.findByText("Faltan fotos")).toBeInTheDocument();
+  });
+});
+
+describe("CierrePublico — presentación", () => {
+  beforeEach(() => apiFetch.mockReset());
+
+  it("marca la disminución con insignia y exige justificación", async () => {
+    apiFetch.mockResolvedValueOnce(response({ items: [{ ...baseItem, executedQuantity: 8 }] }));
+    renderPage();
+
+    expect(await screen.findByText(/Disminución · 67% ejecutado/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Justifique la disminución.");
+    expect(screen.getByRole("button", { name: /enviar informe/i })).toBeDisabled();
+  });
+
+  it("muestra el progreso del informe completo", async () => {
+    apiFetch.mockResolvedValueOnce(response());
+    renderPage();
+
+    const bar = await screen.findByRole("progressbar", { name: /avance del informe/i });
+    expect(bar).toHaveAttribute("aria-valuenow", "3");
+  });
+
+  it("sube las fotos soltadas en la zona de arrastre", async () => {
+    apiFetch.mockResolvedValueOnce(response({ photos: [] })).mockResolvedValueOnce({}).mockResolvedValueOnce(response());
+    renderPage();
+
+    const dropzone = await screen.findByRole("button", { name: /agregar fotos de evidencia/i });
+    const file = new File(["x"], "obra.png", { type: "image/png" });
+    fireEvent.drop(dropzone, { dataTransfer: { files: [file] } });
+
+    await waitFor(() => expect(apiFetch.mock.calls[1][0]).toBe("/public/closures/tok/photos"));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(3));
+  });
+
+  it("no permite soltar fotos cuando el informe está bloqueado", async () => {
+    apiFetch.mockResolvedValueOnce(response({ status: "ENVIADO" }, false));
+    renderPage();
+
+    await screen.findByText(/está en revisión/i);
+    expect(screen.queryByRole("button", { name: /agregar fotos de evidencia/i })).not.toBeInTheDocument();
   });
 });

@@ -8,19 +8,22 @@
  * en revisión (backend: PublicClosureReportController).
  */
 
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, ImagePlus, Loader2, Lock, Send } from "lucide-react";
+import { motion } from "motion/react";
+import { AlertTriangle, CheckCircle2, Loader2, Lock, MapPin, Send } from "lucide-react";
 import { useToast } from "@/components/UI/Toast";
 import Button from "@/components/UI/Button";
-import NumericInput from "@/components/UI/NumericInput";
+import { containerVariants, itemVariants, springs } from "@/animations";
 import { apiFetch } from "@/services/api";
-import ClosurePhotoGrid from "@/components/ClosureReport/ClosurePhotoGrid";
+import { BackgroundDecor, TopBar } from "./components/PublicChrome";
+import ClosureStepper from "./components/ClosureStepper";
+import ClosureItemCards from "./components/ClosureItemCards";
+import PhotoDropzone from "./components/PhotoDropzone";
 import {
   CLOSURE_PHOTO_MAX_BYTES,
   CLOSURE_PHOTO_MIMES,
   isClosureEditable,
-  isDecrease,
   validateClosureItem,
   type ClosureReportItem,
   type PublicClosureResponse,
@@ -29,7 +32,6 @@ import {
 export default function CierrePublico() {
   const { token } = useParams<{ token: string }>();
   const { showToast } = useToast();
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const [info, setInfo] = useState<PublicClosureResponse | null>(null);
   const [items, setItems] = useState<ClosureReportItem[]>([]);
@@ -67,30 +69,35 @@ export default function CierrePublico() {
   const updateItem = (id: number, patch: Partial<ClosureReportItem>) =>
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
-  const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
+  const uploadOne = async (file: File): Promise<boolean> => {
     if (!CLOSURE_PHOTO_MIMES.includes(file.type)) {
-      showToast("Solo se permiten imágenes JPG, PNG o WEBP.", "error");
-      return;
+      showToast(`«${file.name}»: solo se permiten imágenes JPG, PNG o WEBP.`, "error");
+      return false;
     }
     if (file.size > CLOSURE_PHOTO_MAX_BYTES) {
-      showToast("La imagen debe pesar máximo 5 MB.", "error");
-      return;
+      showToast(`«${file.name}»: la imagen debe pesar máximo 5 MB.`, "error");
+      return false;
     }
 
     const form = new FormData();
     form.append("image", file);
-    setIsUploading(true);
     try {
       await apiFetch(`/public/closures/${token}/photos`, { method: "POST", body: form });
-      await load();
+      return true;
     } catch (error) {
       showToast(error instanceof Error ? error.message : "No se pudo subir la foto.", "error");
-    } finally {
-      setIsUploading(false);
+      return false;
     }
+  };
+
+  const handleFiles = async (files: File[]) => {
+    setIsUploading(true);
+    let uploaded = false;
+    for (const file of files) {
+      uploaded = (await uploadOne(file)) || uploaded;
+    }
+    if (uploaded) await load();
+    setIsUploading(false);
   };
 
   const handleDelete = async (photoId: number) => {
@@ -123,18 +130,42 @@ export default function CierrePublico() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950">
+        <BackgroundDecor />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="relative z-10 flex flex-col items-center gap-3 text-slate-400"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+          <span className="text-xs font-semibold uppercase tracking-widest">Cargando informe…</span>
+        </motion.div>
       </div>
     );
   }
 
   if (loadError || !info) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-950 p-6 text-center text-slate-300">
-        <AlertTriangle className="h-8 w-8 text-slate-500" />
-        <h2 className="text-xl font-black">{loadError || "Enlace no disponible"}</h2>
-        <p className="text-sm text-slate-500">Verifique el enlace recibido o contacte a IVOO.</p>
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-6 text-white">
+        <BackgroundDecor />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 space-y-3 text-center"
+        >
+          <motion.span
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ ...springs.snappy, delay: 0.1 }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-500"
+          >
+            <AlertTriangle className="h-7 w-7" />
+          </motion.span>
+          <h2 className="text-xl font-black text-slate-300">{loadError || "Enlace no disponible"}</h2>
+          <p className="text-sm text-slate-500">Verifique el enlace recibido o contacte a IVOO.</p>
+        </motion.div>
       </div>
     );
   }
@@ -142,138 +173,130 @@ export default function CierrePublico() {
   const report = info;
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-white antialiased">
-      <header className="border-b border-white/10 bg-slate-950/80 px-4 py-5 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <h1 className="text-base font-black tracking-tight">IVOO — Informe de Cierre de Obra</h1>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Portal público del contratista</p>
-        </div>
-      </header>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white antialiased">
+      <BackgroundDecor />
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Obra {report.projectId}</p>
-          {info.project && (
+      <div className="relative z-10">
+        <TopBar />
+
+        <motion.main variants={containerVariants} initial="hidden" animate="visible" className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+          <motion.section variants={itemVariants} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Obra {report.projectId}
+              {report.revision > 1 && <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-slate-300">Revisión {report.revision}</span>}
+            </p>
+            {info.project && (
+              <>
+                <h2 className="mt-1 text-lg font-black text-white">{info.project.title}</h2>
+                <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-400">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  {info.project.location}
+                </p>
+              </>
+            )}
+          </motion.section>
+
+          {report.rejectionReason && editable && (
+            <motion.section
+              variants={itemVariants}
+              role="alert"
+              className="flex gap-3 rounded-2xl border border-rose-500/30 bg-gradient-to-br from-rose-500/15 to-rose-500/5 p-4 text-sm text-rose-100"
+            >
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-300" />
+              <div>
+                <p className="font-black text-rose-200">Su informe fue devuelto para corrección</p>
+                <p className="mt-1 text-rose-100/90">{report.rejectionReason}</p>
+              </div>
+            </motion.section>
+          )}
+
+          {submitted ? (
+            <motion.section
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-3 rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-8 text-center"
+            >
+              <motion.span
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ ...springs.snappy, delay: 0.15 }}
+                className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/15 text-emerald-400"
+              >
+                <CheckCircle2 className="h-9 w-9" strokeWidth={2.25} />
+              </motion.span>
+              <motion.h3 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.3 }} className="text-xl font-black text-emerald-300">
+                Informe enviado
+              </motion.h3>
+              <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38, duration: 0.3 }} className="text-sm text-emerald-200/80">
+                Infraestructura corroborará la ejecución. Si requiere ajustes, recibirá un correo con este mismo enlace.
+              </motion.p>
+            </motion.section>
+          ) : (
             <>
-              <h2 className="mt-1 text-lg font-black">{info.project.title}</h2>
-              <p className="text-sm text-slate-400">{info.project.location}</p>
+              {editable ? (
+                <motion.div variants={itemVariants}>
+                  <ClosureStepper itemsValid={itemErrors.every((e) => e === null)} hasPhotos={photos.length > 0} readyToSend={canSubmit} />
+                </motion.div>
+              ) : (
+                <motion.p variants={itemVariants} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-300">
+                  <Lock className="h-4 w-4 shrink-0" /> El informe ya fue enviado y está en revisión; no puede modificarse.
+                </motion.p>
+              )}
+
+              <motion.section variants={itemVariants} aria-labelledby="closure-items-title" className="space-y-3">
+                <h3 id="closure-items-title" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  Partidas ejecutadas
+                </h3>
+                <ClosureItemCards items={items} errors={itemErrors} editable={editable} onChange={updateItem} />
+              </motion.section>
+
+              <motion.section variants={itemVariants} className="space-y-2">
+                <label htmlFor="closure-notes" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  Observaciones generales
+                </label>
+                <textarea
+                  id="closure-notes"
+                  value={notes}
+                  disabled={!editable}
+                  maxLength={2000}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-200 outline-hidden transition focus:border-emerald-400/60 focus:ring-1 focus:ring-emerald-400/60 disabled:opacity-60"
+                />
+              </motion.section>
+
+              <motion.section variants={itemVariants} aria-labelledby="closure-photos-title" className="space-y-3">
+                <h3 id="closure-photos-title" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  Fotos de evidencia (mínimo 1)
+                </h3>
+                <PhotoDropzone photos={photos} editable={editable} isUploading={isUploading} onFiles={(files) => void handleFiles(files)} onDelete={(p) => void handleDelete(p.id)} />
+              </motion.section>
+
+              {editable && (
+                <motion.div variants={itemVariants} className="flex justify-end border-t border-white/10 pt-4">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    colorScheme="emerald"
+                    className="w-full sm:w-auto"
+                    isLoading={isSubmitting}
+                    disabled={!canSubmit}
+                    icon={<Send className="h-4 w-4" />}
+                    onClick={() => void handleSubmit()}
+                  >
+                    Enviar informe
+                  </Button>
+                </motion.div>
+              )}
             </>
           )}
-        </section>
+        </motion.main>
 
-        {report.rejectionReason && editable && (
-          <section role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            <p className="font-bold">Su informe fue devuelto para corrección</p>
-            <p className="mt-1">{report.rejectionReason}</p>
-          </section>
-        )}
-
-        {submitted ? (
-          <section className="space-y-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
-            <h3 className="text-xl font-black text-emerald-300">Informe enviado</h3>
-            <p className="text-sm text-emerald-200/80">
-              Infraestructura corroborará la ejecución. Si requiere ajustes, recibirá un correo con este mismo enlace.
-            </p>
-          </section>
-        ) : (
-          <>
-            {!editable && (
-              <p className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-300">
-                <Lock className="h-4 w-4" /> El informe ya fue enviado y está en revisión; no puede modificarse.
-              </p>
-            )}
-
-            <section className="overflow-x-auto rounded-2xl border border-white/10">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-white/5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  <tr>
-                    <th className="px-3 py-2">Partida</th>
-                    <th className="px-3 py-2 text-right">Contratado</th>
-                    <th className="px-3 py-2">Ejecutado</th>
-                    <th className="px-3 py-2">Justificación</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <tr key={item.id} className="border-t border-white/5 align-top">
-                      <td className="px-3 py-2 font-semibold">{item.name}</td>
-                      <td className="px-3 py-2 text-right font-mono">
-                        {item.contractedQuantity} {item.unit}
-                      </td>
-                      <td className="px-3 py-2">
-                        <NumericInput
-                          value={item.executedQuantity}
-                          max={item.contractedQuantity}
-                          onChange={(v) => updateItem(item.id, { executedQuantity: v === "" ? 0 : v })}
-                          className={editable ? "" : "pointer-events-none opacity-60"}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
-                          value={item.note ?? ""}
-                          disabled={!editable}
-                          maxLength={500}
-                          placeholder={isDecrease(item) ? "Obligatoria: motivo de la disminución" : "Opcional"}
-                          onChange={(e) => updateItem(item.id, { note: e.target.value })}
-                          className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white"
-                        />
-                        {editable && itemErrors[index] && <p className="mt-1 text-[11px] text-amber-400">{itemErrors[index]}</p>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-
-            <section className="space-y-2">
-              <label htmlFor="closure-notes" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                Observaciones generales
-              </label>
-              <textarea
-                id="closure-notes"
-                value={notes}
-                disabled={!editable}
-                maxLength={2000}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-              />
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Fotos de evidencia (mínimo 1)</h3>
-                {editable && (
-                  <>
-                    <input ref={fileInput} type="file" accept={CLOSURE_PHOTO_MIMES.join(",")} className="hidden" onChange={handleUpload} />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      isLoading={isUploading}
-                      icon={<ImagePlus className="h-3.5 w-3.5" />}
-                      onClick={() => fileInput.current?.click()}
-                    >
-                      Agregar foto
-                    </Button>
-                  </>
-                )}
-              </div>
-              <ClosurePhotoGrid photos={photos} canDelete={() => editable} onDelete={(p) => void handleDelete(p.id)} />
-            </section>
-
-            {editable && (
-              <div className="flex justify-end">
-                <Button type="button" isLoading={isSubmitting} disabled={!canSubmit} icon={<Send className="h-4 w-4" />} onClick={() => void handleSubmit()}>
-                  Enviar informe
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </main>
+        <footer className="mt-10 border-t border-white/10 px-4 py-6 text-center text-xs font-medium text-slate-600">
+          IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()} — Portal de Cierre de Obra
+        </footer>
+      </div>
     </div>
   );
 }
