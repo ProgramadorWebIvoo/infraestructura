@@ -141,7 +141,7 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
       isOpen={project !== null}
       onClose={close}
       closeDisabled={isBusy}
-      maxWidth={mode === "audit" ? "max-w-5xl" : "max-w-4xl"}
+      maxWidth={mode === "audit" ? "max-w-6xl" : "max-w-4xl"}
       title={config.title}
       infoLine={project?.title}
       icon={<CheckCircle2 className="h-5 w-5" />}

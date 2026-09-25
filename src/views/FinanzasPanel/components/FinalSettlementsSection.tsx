@@ -19,6 +19,7 @@ import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
 import PayWithProofModal from "./PayWithProofModal";
+import ClosureFinalQuantities from "@/components/ClosureReport/ClosureFinalQuantities";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
@@ -36,6 +37,7 @@ interface FinalSettlementsSectionProps {
   /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liquidación. */
   onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   onRefresh?: () => Promise<void> | void;
+  authToken?: string;
 }
 
 interface SettlementRow {
@@ -45,7 +47,7 @@ interface SettlementRow {
   balanceDue: number;
 }
 
-export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal, onRefresh }: FinalSettlementsSectionProps) {
+export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal, onRefresh, authToken = "" }: FinalSettlementsSectionProps) {
   const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
   const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [isPaying, setIsPaying] = useState(false);
@@ -212,6 +214,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         }}
         title="Aprobar Pago Final"
         message={`¿Estás seguro de aprobar el finiquito de $${formatNumber(confirmPayFinal?.amount ?? 0)}${hasRates ? ` (Bs. ${formatBs(convert(confirmPayFinal?.amount ?? 0, "USD"))})` : ""} para la obra "${confirmPayFinal?.title ?? ""}"? Esta acción cerrará el ciclo financiero del proyecto.`}
+        details={confirmPayFinal && <ClosureFinalQuantities projectId={confirmPayFinal.projectId} authToken={authToken} />}
         variant="warning"
         confirmLabel="Aprobar finiquito"
         isLoading={isPaying}

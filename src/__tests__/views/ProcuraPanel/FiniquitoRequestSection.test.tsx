@@ -50,6 +50,22 @@ describe("FiniquitoRequestSection", () => {
     expect(screen.getByText(/6[.,]?800/)).toBeInTheDocument();
   });
 
+  it("muestra el resumen compacto de cantidades finales junto al monto", async () => {
+    apiFetch.mockResolvedValue({
+      ...report,
+      items: [
+        { id: 1, name: "Cable", unit: "m", contractedQuantity: 100, executedQuantity: 100, residentQuantity: 90, auditQuantity: 90, finalQuantity: 90, unitPriceUsd: 2, note: null },
+        { id: 2, name: "Tomacorriente", unit: "und", contractedQuantity: 12, executedQuantity: 12, residentQuantity: 12, auditQuantity: 12, finalQuantity: 12, unitPriceUsd: 50, note: null },
+      ],
+    });
+    setup([project()]);
+
+    const summary = await screen.findByTestId("closure-final-quantities");
+    expect(summary).toHaveTextContent("1 de 2 ajustadas");
+    expect(summary).toHaveTextContent("Cable: 90/100 m");
+    expect(summary).toHaveTextContent("Tomacorriente: 12/12 und");
+  });
+
   it("solicita el pago del finiquito", async () => {
     const actions = setup([project()]);
 

@@ -15,6 +15,7 @@ import Card from "@/components/UI/Card";
 import EmptyState from "@/components/UI/EmptyState";
 import SectionHeader from "@/components/UI/SectionHeader";
 import ClosureReviewModal from "@/components/ClosureReport/ClosureReviewModal";
+import ClosureFinalQuantities from "@/components/ClosureReport/ClosureFinalQuantities";
 import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
@@ -59,6 +60,9 @@ export default function FiniquitoRequestSection({ projects, authToken, actions }
               <Button size="sm" colorScheme="emerald" onClick={() => setReviewing(project)}>
                 Revisar y solicitar pago
               </Button>
+              <div className="basis-full">
+                <ClosureFinalQuantities projectId={project.id} authToken={authToken} />
+              </div>
             </li>
           ))}
         </ul>

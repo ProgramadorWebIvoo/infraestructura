@@ -144,7 +144,7 @@ export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, 
           {activeTab === "book" && <LedgerSection paidLedger={paidLedger} />}
           {activeTab === "stats" && <FinancialSummarySection projects={projects} paidLedger={paidLedger} />}
           {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} onRefresh={onRefreshData} />}
-          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} onRefresh={onRefreshData} />}
+          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} onRefresh={onRefreshData} authToken={authToken} />}
         </TabPanel>
       </motion.div>
     </motion.div>

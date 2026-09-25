@@ -9,6 +9,7 @@
  * (el FileDropZone), solo el mensaje de texto.
  */
 
+import type { ReactNode } from "react";
 import { AlertTriangle, CheckCircle, Paperclip } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Spinner from "@/components/UI/Spinner";
@@ -21,6 +22,8 @@ interface PayWithProofModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  /** Contenido extra bajo el mensaje (p. ej. resumen de cantidades finales del cierre). */
+  details?: ReactNode;
   confirmLabel: string;
   variant?: "danger" | "warning" | "info";
   isLoading?: boolean;
@@ -44,6 +47,7 @@ export default function PayWithProofModal({
   onConfirm,
   title,
   message,
+  details,
   confirmLabel,
   variant = "warning",
   isLoading = false,
@@ -88,6 +92,7 @@ export default function PayWithProofModal({
       }
     >
       <p className="text-sm text-slate-600 leading-relaxed mb-4">{message}</p>
+      {details && <div className="mb-4">{details}</div>}
 
       <FileDropZone
         id="payment-proof-file"
