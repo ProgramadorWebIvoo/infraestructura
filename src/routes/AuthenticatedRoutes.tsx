@@ -91,7 +91,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.RESIDENTE}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.RESIDENTE)} redirectTo={fallbackRoute}>
-              <ResidentePanel />
+              <ResidentePanel authToken={authToken} />
             </ProtectedRoute>
           }
         />

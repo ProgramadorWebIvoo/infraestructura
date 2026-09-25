@@ -45,10 +45,10 @@ export interface ResidentProject extends Omit<ResidentProjectDto, "closure"> {
 }
 
 export interface ResidentDocument {
-  id: string;
-  name?: string;
-  type?: string;
-  [key: string]: unknown;
+  id: number;
+  documentType: string;
+  originalName: string;
+  mimeType: string | null;
 }
 
 /** Los ítems del residente no traen precios; se completan a `null` para reutilizar los componentes del cierre. */

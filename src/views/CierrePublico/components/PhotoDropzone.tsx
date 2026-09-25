@@ -7,13 +7,15 @@ import { CLOSURE_PHOTO_MIMES, type ClosureReportPhoto } from "@/components/Closu
 interface PhotoDropzoneProps {
   photos: ClosureReportPhoto[];
   editable: boolean;
+  /** Permite borrar fotos (por defecto sí cuando es editable). */
+  canDelete?: boolean;
   isUploading: boolean;
   onFiles: (files: File[]) => void;
   onDelete: (photo: ClosureReportPhoto) => void;
 }
 
 /** Zona de arrastre + miniaturas de las fotos de evidencia (JPG/PNG/WEBP, máx. 5 MB c/u). */
-export default function PhotoDropzone({ photos, editable, isUploading, onFiles, onDelete }: PhotoDropzoneProps) {
+export default function PhotoDropzone({ photos, editable, canDelete = true, isUploading, onFiles, onDelete }: PhotoDropzoneProps) {
   const reduceMotion = useReducedMotion();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -83,7 +85,7 @@ export default function PhotoDropzone({ photos, editable, isUploading, onFiles, 
                   <img src={src} alt={photo.originalName} loading="lazy" className="h-28 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                 </a>
                 <p className="truncate px-2 py-1 text-[10px] font-semibold text-slate-400">{photo.originalName}</p>
-                {editable && (
+                {editable && canDelete && (
                   <button
                     type="button"
                     aria-label={`Eliminar ${photo.originalName}`}
