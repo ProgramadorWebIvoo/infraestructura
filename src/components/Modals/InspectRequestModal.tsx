@@ -13,6 +13,7 @@ import Modal from "@/components/UI/Modal";
 import StatusBadge from "@/components/UI/StatusBadge";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
+import ClosureFollowUp from "@/views/InfraestructuraMantenimientoPanel/components/ClosureFollowUp";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -97,6 +98,8 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
               </span>
             </div>
           </section>
+
+          <ClosureFollowUp project={project} />
 
           {/* ── Materiales ── */}
           <section>
