@@ -22,7 +22,7 @@ interface Fixture {
 
 export const CLOSURE_STEPS = [
   { status: "EN_EJECUCION", label: "En ejecución", viewer: "Contratista, por enlace público" },
-  { status: "INFORME_ENVIADO", label: "Informe enviado", viewer: "Residente: Infraestructura > Ejecución y cierre" },
+  { status: "INFORME_ENVIADO", label: "Informe enviado", viewer: "Residente: Mis obras (/residente); creador: Expedientes" },
   { status: "VERIFICANDO_FINALIZACION", label: "Pendiente de Auditoría", viewer: "Auditoría" },
   { status: "PENDIENTE_SOLICITUD_FINIQUITO", label: "Pendiente de solicitud de finiquito", viewer: "Procura > Solicitud de finiquito" },
   { status: "LISTO_PAGO_FINAL", label: "Listo para pago final", viewer: "Finanzas" },
