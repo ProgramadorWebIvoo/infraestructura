@@ -24,7 +24,7 @@ function toFieldErrors(issues: { path: PropertyKey[]; message: string }[]): Fiel
 /** Alias legible en los call sites de useRequestForm — ver UseRequestFormParams::existingProject. */
 type RequestFormExistingProject = Pick<
   Project,
-  "id" | "title" | "type" | "description" | "location" | "materials" | "documents"
+  "id" | "title" | "type" | "description" | "location" | "materials" | "documents" | "residentUserId"
 >;
 
 export type FieldKey = "title" | "location" | "description" | "materials" | "attachments";
@@ -105,6 +105,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
   const [type, setType] = useState<string>(existingProject?.type ?? "INFRAESTRUCTURA");
   const [description, setDescription] = useState(existingProject?.description ?? "");
   const [location, setLocation] = useState(existingProject?.location ?? "");
+  const [residentUserId, setResidentUserId] = useState<number | null>(existingProject?.residentUserId ?? null);
 
   const [addedMaterials, setAddedMaterials] = useState<Omit<MaterialItem, "id">[]>(
     existingProject?.materials?.map(({ id: _id, ...rest }) => rest) ?? [],
@@ -211,7 +212,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
 
       const result = existingProject
         ? await onResubmitProject!(existingProject.id, { title, description, location, materials, estimatedTotal: materialsSubtotal }, files, existingDocuments, replacements)
-        : await onAddProject({ title, type, description, location, materials, estimatedTotal: materialsSubtotal }, files);
+        : await onAddProject({ title, type, description, location, materials, estimatedTotal: materialsSubtotal, residentUserId }, files);
 
       if (result.ok) {
         // Adjuntos marcados para eliminar: recién se borran de verdad acá,
@@ -241,6 +242,7 @@ export function useRequestForm({ onAddProject, existingProject, onResubmitProjec
     type, setType,
     description, setDescription: (v: string) => { setDescription(v); clearError("description"); },
     location, setLocation: (v: string) => { setLocation(v); clearError("location"); },
+    residentUserId, setResidentUserId,
     addedMaterials, setAddedMaterials: handleAddedMaterialsChange,
     reviewedMaterialIndexes, markMaterialReviewed,
     materialsSubtotal,

@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { Building2, MapPin } from "lucide-react";
 import TextField from "@/components/UI/TextField";
 import SegmentedControl from "@/components/UI/SegmentedControl";
+import ResidentSelect from "@/components/ResidentSelect";
 import type { ProjectTypeOption } from "@/hooks/useProjectTypes";
 
 export interface RequestFormErrors {
@@ -33,6 +34,9 @@ interface RequestFormSectionProps {
   errors?: RequestFormErrors;
   /** Modo edición (reenvío tras rechazo): el tipo no es editable — el backend de resubmit no lo acepta. */
   typeReadOnly?: boolean;
+  /** Si se define, muestra el selector opcional de ingeniero residente (solo alta; en reenvío se edita desde el detalle). */
+  residentUserId?: number | null;
+  onResidentChange?: (id: number | null) => void;
 }
 
 const FIELD_IDS: Record<keyof RequestFormErrors, string> = {
@@ -55,6 +59,8 @@ export default function RequestFormSection({
   onDescriptionChange,
   errors = {},
   typeReadOnly = false,
+  residentUserId = null,
+  onResidentChange,
 }: RequestFormSectionProps) {
   const typeLabel = typeOptions.find((o) => o.key === type)?.label ?? type;
   // Foco en el primer campo inválido para guiar la corrección
@@ -90,6 +96,15 @@ export default function RequestFormSection({
           />
         </div>
       </div>
+
+      {onResidentChange && (
+        <div>
+          <label htmlFor="req-resident" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Ingeniero residente / coordinador (opcional)
+          </label>
+          <ResidentSelect id="req-resident" value={residentUserId} onChange={onResidentChange} />
+        </div>
+      )}
 
       <div>
         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">

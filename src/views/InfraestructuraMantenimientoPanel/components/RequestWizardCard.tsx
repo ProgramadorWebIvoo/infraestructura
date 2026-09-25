@@ -109,6 +109,8 @@ export default function RequestWizardCard({ form, materialsCatalog, projectTypes
               onDescriptionChange={form.setDescription}
               errors={{ ...wizard.stepErrors, ...form.fieldErrors }}
               typeReadOnly={form.isEditMode}
+              residentUserId={form.residentUserId}
+              onResidentChange={form.isEditMode ? undefined : form.setResidentUserId}
             />
           )}
 

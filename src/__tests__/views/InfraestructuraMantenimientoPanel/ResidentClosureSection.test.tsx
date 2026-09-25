@@ -53,10 +53,12 @@ describe("isReadOnlyForResident", () => {
 });
 
 describe("ResidentClosureSection", () => {
-  beforeEach(() => apiFetch.mockReset());
+  beforeEach(() => {
+    apiFetch.mockReset();
+    apiFetch.mockImplementation(async (url: string) => (url === "/residents" ? [{ id: 5, name: "Ana" }] : report));
+  });
 
   it("exige foto de verificación antes de dar el visto bueno", async () => {
-    apiFetch.mockResolvedValue(report);
     renderSection([project()]);
 
     await userEvent.click(screen.getByRole("button", { name: /revisar informe/i }));
@@ -65,8 +67,10 @@ describe("ResidentClosureSection", () => {
     expect(screen.getByText(/al menos una foto de verificación/i)).toBeInTheDocument();
   });
 
+  const withResidentPhoto = { ...report, photos: [...report.photos, { id: 2, itemId: null, uploadedByType: "RESIDENTE", originalName: "b.jpg", path: "projects/P1/closure-report/photos/2" }] };
+
   it("habilita el visto bueno con foto del residente y lo registra", async () => {
-    apiFetch.mockResolvedValue({ ...report, photos: [...report.photos, { id: 2, itemId: null, uploadedByType: "RESIDENTE", originalName: "b.jpg", path: "projects/P1/closure-report/photos/2" }] });
+    apiFetch.mockImplementation(async (url: string) => (url === "/residents" ? [] : withResidentPhoto));
     const actions = renderSection([project()]);
 
     await userEvent.click(screen.getByRole("button", { name: /revisar informe/i }));
@@ -78,7 +82,6 @@ describe("ResidentClosureSection", () => {
   });
 
   it("rechazar exige motivo", async () => {
-    apiFetch.mockResolvedValue(report);
     const actions = renderSection([project()]);
 
     await userEvent.click(screen.getByRole("button", { name: /revisar informe/i }));
@@ -92,7 +95,6 @@ describe("ResidentClosureSection", () => {
   });
 
   it("muestra solo lectura si hay otro residente asignado", async () => {
-    apiFetch.mockResolvedValue(report);
     renderSection([project({ residentUserId: 9, residentName: "Ana" })]);
 
     await userEvent.click(screen.getByRole("button", { name: /ver informe/i }));
