@@ -80,6 +80,11 @@ vi.mock("@/hooks/useConfigAuditLogs", () => ({
   }),
 }));
 
+let mockDocumentTypes: Array<{ id: number; key: string; label: string; isRequired: boolean; isActive: boolean; sortOrder: number }> = [];
+vi.mock("@/hooks/useContractorDocumentTypes", () => ({
+  useContractorDocumentTypes: () => ({ types: mockDocumentTypes, isLoading: false, hasError: false }),
+}));
+
 const CONTRACTOR: ConfigContractor = {
   code: "PRV-001",
   name: "Construcciones del Sur S.A.",
@@ -99,6 +104,7 @@ const mockOnContractorMutated = vi.fn();
 describe("ProveedoresConfigPanel (integración)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDocumentTypes = [];
     mockApiFetch.mockResolvedValue([CONTRACTOR]);
   });
 
@@ -137,6 +143,27 @@ describe("ProveedoresConfigPanel (integración)", () => {
       expect(mockShowToast).toHaveBeenCalledWith("Proveedor creado correctamente.", "success");
     });
     expect(mockOnContractorMutated).toHaveBeenCalled();
+  });
+
+  it("bloquea la creación si falta un documento obligatorio", async () => {
+    mockDocumentTypes = [{ id: 1, key: "rif", label: "RIF de la empresa", isRequired: true, isActive: true, sortOrder: 10 }];
+    render(<ProveedoresConfigPanel authToken="token" activeRole="ADMIN" onContractorMutated={mockOnContractorMutated} />);
+    await waitFor(() => expect(screen.getByText("Construcciones del Sur S.A.")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: "Nuevo proveedor" }));
+    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Nombre \/ Empresa/), { target: { value: "Eléctricos Andinos" } });
+    fireEvent.change(screen.getByLabelText(/^RIF/), { target: { value: "J-11122233-4" } });
+    fireEvent.change(screen.getByLabelText(/Especialidad/), { target: { value: "Instalaciones eléctricas" } });
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: "contacto@electricos.com" } });
+    mockApiFetch.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Crear proveedor" }));
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith("Adjunta los documentos obligatorios: RIF de la empresa.", "error");
+    });
+    expect(mockApiFetch).not.toHaveBeenCalled();
   });
 
   it("rechaza el guardado si faltan campos obligatorios", async () => {

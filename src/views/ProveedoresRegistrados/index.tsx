@@ -36,6 +36,7 @@ interface ProveedoresRegistradosProps {
   onUpdateContractorRating: (code: string, rating: number) => Promise<void>;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
+  activeRole?: string;
 }
 
 type TabKey = "contractors" | "proposals" | "catalog";
@@ -47,6 +48,7 @@ export default function ProveedoresRegistrados({
   onUpdateContractorRating,
   isLoading = false,
   onRefreshData,
+  activeRole,
 }: ProveedoresRegistradosProps) {
   const { showToast } = useToast();
   const { proposals, isLoadingProposals, handleInviteSupplier, fetchLatestInvitation, loadProposals } = useProveedores(authToken, showToast);
@@ -132,6 +134,8 @@ export default function ProveedoresRegistrados({
                 onOpenInvite={handleOpenInviteModal}
                 onOpenHistory={handleOpenHistory}
                 onRefresh={onRefreshData}
+                authToken={authToken}
+                activeRole={activeRole}
               />
             )}
             {activeTab === "proposals" && (

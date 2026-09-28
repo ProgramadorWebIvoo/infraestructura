@@ -20,6 +20,9 @@ import { RequiredMark } from "@/components/UI/HintSignals";
 import { isValidEmail, joinRif } from "@/utils/validators";
 import { containerVariants, itemVariants, springs } from "@/animations";
 import { providerRegistrationSchema } from "@/schemas/providerRegistration.schema";
+import ContractorDocumentDropZones from "@/components/Contractor/ContractorDocumentDropZones";
+import { useContractorDocumentTypes } from "@/hooks/useContractorDocumentTypes";
+import { buildContractorFormData, missingRequiredTypes } from "@/services/contractorDocuments";
 
 interface RegistrationFormProps {
   onAddContractor: (contractor: Contractor) => void;
@@ -54,6 +57,9 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
   const [contact, setContact] = useState("");
   const [submittedCode, setSubmittedCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { types: documentTypes, isLoading: isLoadingTypes, hasError: typesFailed } = useContractorDocumentTypes();
+  const [documentFiles, setDocumentFiles] = useState<Record<number, File | undefined>>({});
+  const missingDocuments = missingRequiredTypes(documentTypes, documentFiles);
 
   // Estados de validación por campo (para feedback visual)
   const [touched, setTouched] = useState({ name: false, rif: false, specialty: false, contact: false });
@@ -86,18 +92,18 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
       return;
     }
 
+    if (missingDocuments.length > 0) {
+      showToast(`Adjunta los documentos obligatorios: ${missingDocuments.map((t) => t.label).join(", ")}.`, "warning");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const contractor = await apiFetch<Contractor>("/contractors", {
         method: "POST",
-        body: JSON.stringify({
-          name: cleanName,
-          rif,
-          specialty: cleanSpecialty,
-          email: cleanContact,
-          // rating: no se envía desde el portal público; el backend asigna valor por defecto
-        }),
+        // rating: no se envía desde el portal público; el backend asigna valor por defecto
+        body: buildContractorFormData({ name: cleanName, rif, specialty: cleanSpecialty, email: cleanContact }, documentFiles),
       });
 
       onAddContractor(contractor);
@@ -106,6 +112,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
       setRifDigits("");
       setSpecialty("");
       setContact("");
+      setDocumentFiles({});
       setTouched({ name: false, rif: false, specialty: false, contact: false });
     } catch (err) {
       showToast(getErrorMessage(err, "No se pudo registrar el proveedor en este momento. Intenta nuevamente."), "error");
@@ -303,10 +310,27 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
           )}
         </div>
 
+        <fieldset className="space-y-3 border-t border-slate-100 pt-4">
+          <legend className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Documentos del proveedor</legend>
+          {isLoadingTypes && <p className="text-xs font-medium text-slate-400">Cargando documentos requeridos...</p>}
+          {typesFailed && (
+            <p className="text-xs font-medium text-rose-500" role="alert">
+              No se pudo cargar la lista de documentos requeridos. Recarga la página para intentarlo de nuevo.
+            </p>
+          )}
+          <ContractorDocumentDropZones
+            idPrefix="public-provider"
+            types={documentTypes}
+            files={documentFiles}
+            onChange={(typeId, file) => setDocumentFiles((prev) => ({ ...prev, [typeId]: file }))}
+            onFileRejected={(fileName, reason) => showToast(`${fileName}: ${reason}`, "warning")}
+          />
+        </fieldset>
+
         <motion.button
           id="btn-public-provider-submit"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isLoadingTypes || typesFailed || missingDocuments.length > 0}
           whileHover={!isSubmitting ? { scale: 1.012, y: -1 } : undefined}
           whileTap={!isSubmitting ? { scale: 0.985 } : undefined}
           transition={{ duration: 0.15, ease: "easeOut" }}

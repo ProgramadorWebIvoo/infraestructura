@@ -33,6 +33,8 @@ interface ContractorsSectionProps {
   onOpenInvite: (contractor: Contractor) => void;
   onOpenHistory: (contractor: Contractor) => void;
   onRefresh?: () => Promise<void> | void;
+  authToken?: string;
+  activeRole?: string;
 }
 
 export default function ContractorsSection({
@@ -42,6 +44,8 @@ export default function ContractorsSection({
   onOpenInvite,
   onOpenHistory,
   onRefresh,
+  authToken,
+  activeRole,
 }: ContractorsSectionProps) {
   const [query, setQuery] = useState("");
   const [detailSupplier, setDetailSupplier] = useState<Contractor | null>(null);
@@ -171,7 +175,7 @@ export default function ContractorsSection({
         )}
       </AnimatePresence>
 
-      <SupplierDetailModal supplier={detailSupplier} onClose={() => setDetailSupplier(null)} />
+      <SupplierDetailModal supplier={detailSupplier} onClose={() => setDetailSupplier(null)} authToken={authToken} activeRole={activeRole} />
     </Card>
   );
 }

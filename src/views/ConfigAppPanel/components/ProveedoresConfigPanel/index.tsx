@@ -25,6 +25,8 @@ import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
 import { providerConfigSchema } from "@/schemas/providerConfig.schema";
+import { useContractorDocumentTypes } from "@/hooks/useContractorDocumentTypes";
+import { buildContractorFormData, missingRequiredTypes } from "@/services/contractorDocuments";
 import { useConfigAuditLogs, type ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 
 interface ProveedoresConfigPanelProps {
@@ -62,6 +64,8 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<ContractorForm>(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const { types: documentTypes } = useContractorDocumentTypes();
+  const [documentFiles, setDocumentFiles] = useState<Record<number, File | undefined>>({});
 
   // ---- Toggle state ----
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
@@ -117,6 +121,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
     setModalMode("create");
     setEditingCode(null);
     setForm(EMPTY_FORM);
+    setDocumentFiles({});
     setIsModalOpen(true);
   };
 
@@ -151,6 +156,14 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
     const hasEmail = form.email.trim() !== "";
     const hasPhone = form.phone.trim() !== "";
 
+    if (modalMode === "create") {
+      const missing = missingRequiredTypes(documentTypes, documentFiles);
+      if (missing.length > 0) {
+        showToast(`Adjunta los documentos obligatorios: ${missing.map((t) => t.label).join(", ")}.`, "error");
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       const payload = {
@@ -167,7 +180,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
         const created = await apiFetch<ConfigContractor & { auditLog?: ConfigAuditLogRecord }>("/contractors/config", {
           method: "POST",
           token: authToken,
-          body: JSON.stringify(payload),
+          body: buildContractorFormData(payload, documentFiles),
         });
         setContractors((prev) => [...prev, created]);
         if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);
@@ -298,12 +311,16 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
             isSaving={isSaving}
             onClose={handleCloseModal}
             onSave={handleSave}
+            documentTypes={documentTypes}
+            documentFiles={documentFiles}
+            onDocumentChange={(typeId, file) => setDocumentFiles((prev) => ({ ...prev, [typeId]: file }))}
           />
 
           <ContractorDetailModal
             contractor={detailContractor}
             onClose={() => setDetailContractor(null)}
             authToken={authToken}
+            activeRole={activeRole}
           />
 
           {/* ── Confirm Toggle Status ── */}

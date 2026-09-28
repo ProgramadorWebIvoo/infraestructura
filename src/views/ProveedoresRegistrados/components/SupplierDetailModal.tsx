@@ -11,11 +11,14 @@ import { Mail, Phone, Building2, Star } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Card from "@/components/UI/Card";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import ContractorDocumentsSection from "@/components/Contractor/ContractorDocumentsSection";
 import type { Contractor } from "@/types";
 
 interface SupplierDetailModalProps {
   supplier: Contractor | null;
   onClose: () => void;
+  authToken?: string;
+  activeRole?: string;
 }
 
 function DetailField({ label, children, icon }: { label: string; children: ReactNode; icon?: ReactNode }) {
@@ -39,7 +42,7 @@ function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNod
   );
 }
 
-export default function SupplierDetailModal({ supplier, onClose }: SupplierDetailModalProps) {
+export default function SupplierDetailModal({ supplier, onClose, authToken, activeRole }: SupplierDetailModalProps) {
   const statusBadge = supplier?.status === "ACTIVE"
     ? { label: "Activo", role: "success" as const }
     : supplier?.status === "INACTIVE"
@@ -111,6 +114,9 @@ export default function SupplierDetailModal({ supplier, onClose }: SupplierDetai
               </DetailField>
             </div>
           </Card>
+
+          {/* ── Documentos ── */}
+          {authToken && <ContractorDocumentsSection contractorCode={supplier.code} authToken={authToken} activeRole={activeRole} />}
 
           {/* ── Desempeño y Estado ── */}
           <Card hoverable={false} className="p-4 bg-surface-raised">

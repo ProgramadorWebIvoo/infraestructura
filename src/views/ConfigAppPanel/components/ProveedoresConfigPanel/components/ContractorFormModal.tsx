@@ -13,6 +13,8 @@ import NumericInput from "@/components/UI/NumericInput";
 import { RequiredMark } from "@/components/UI/HintSignals";
 import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
 import { isValidEmail, isValidPhone, joinRif, splitRif } from "@/utils/validators";
+import ContractorDocumentDropZones from "@/components/Contractor/ContractorDocumentDropZones";
+import type { ContractorDocumentType } from "@/services/contractorDocuments";
 import { STATUS_OPTIONS, type ContractorForm } from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel/types";
 
 const labelClass = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
@@ -28,6 +30,10 @@ interface ContractorFormModalProps {
   isSaving: boolean;
   onClose: () => void;
   onSave: () => void;
+  /** Tipos de documento a pedir al crear (D9b: misma regla que el registro público). */
+  documentTypes?: ContractorDocumentType[];
+  documentFiles?: Record<number, File | undefined>;
+  onDocumentChange?: (typeId: number, file: File | undefined) => void;
 }
 
 export default function ContractorFormModal({
@@ -39,6 +45,9 @@ export default function ContractorFormModal({
   isSaving,
   onClose,
   onSave,
+  documentTypes = [],
+  documentFiles = {},
+  onDocumentChange,
 }: ContractorFormModalProps) {
   const hasEmail = form.email.trim().length > 0;
   const hasPhone = form.phone.trim().length > 0;
@@ -232,6 +241,14 @@ export default function ContractorFormModal({
             />
           </div>
         </div>
+
+        {/* Documentos obligatorios — solo al crear; luego se gestionan en el detalle del proveedor */}
+        {mode === "create" && documentTypes.length > 0 && onDocumentChange && (
+          <div className="space-y-2">
+            <p className={labelClass}>Documentos del proveedor</p>
+            <ContractorDocumentDropZones idPrefix="contractor-form" types={documentTypes} files={documentFiles} onChange={onDocumentChange} />
+          </div>
+        )}
 
         {/* Origin hint on create */}
         {mode === "create" && (

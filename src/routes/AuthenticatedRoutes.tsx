@@ -123,7 +123,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.CATALOGOS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.CATALOGOS)} redirectTo={fallbackRoute}>
-              <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={onUpdateContractorRating} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+              <ProveedoresRegistrados contractors={contractors} projects={projects} authToken={authToken} onUpdateContractorRating={onUpdateContractorRating} isLoading={isLoadingApi} onRefreshData={onRefreshData} activeRole={activeRole} />
             </ProtectedRoute>
           }
         />

@@ -16,6 +16,7 @@ import Spinner from "@/components/UI/Spinner";
 import Card from "@/components/UI/Card";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { SOURCE_BADGE, STATUS_BADGE, type ConfigContractor } from "@/views/ConfigAppPanel/components/ProveedoresConfigPanel/types";
+import ContractorDocumentsSection from "@/components/Contractor/ContractorDocumentsSection";
 import { useAiFeatureGate } from "@/hooks/useAiFeatureGate";
 import { getContractorRatingSuggestion, type ContractorRatingSuggestion } from "@/services/aiEvaluationService";
 import { getErrorMessage } from "@/services/logger";
@@ -24,6 +25,7 @@ interface ContractorDetailModalProps {
   contractor: ConfigContractor | null;
   onClose: () => void;
   authToken: string;
+  activeRole?: string;
 }
 
 /**
@@ -125,7 +127,7 @@ function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNod
   );
 }
 
-export default function ContractorDetailModal({ contractor, onClose, authToken }: ContractorDetailModalProps) {
+export default function ContractorDetailModal({ contractor, onClose, authToken, activeRole }: ContractorDetailModalProps) {
   const source = contractor ? (SOURCE_BADGE[contractor.registrationSource] ?? SOURCE_BADGE.INTERNAL) : null;
   const sourceSemantic = source ? SEMANTIC_COLOR_MAP[source.role] : null;
   const status = contractor ? (STATUS_BADGE[contractor.status] ?? STATUS_BADGE.PENDING_REVIEW) : null;
@@ -223,6 +225,9 @@ export default function ContractorDetailModal({ contractor, onClose, authToken }
               </DetailField>
             </div>
           </Card>
+
+          {/* ── Documentos ── */}
+          <ContractorDocumentsSection contractorCode={contractor.code} authToken={authToken} activeRole={activeRole} />
 
           {/* ── Auditoría ── */}
           <Card hoverable={false} className="p-4 bg-surface-raised">
