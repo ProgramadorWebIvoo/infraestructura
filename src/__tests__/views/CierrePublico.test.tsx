@@ -35,8 +35,9 @@ function renderPage() {
 }
 
 describe("validateClosureItem", () => {
-  it("rechaza excedentes y exige nota en disminuciones", () => {
-    expect(validateClosureItem({ ...baseItem, executedQuantity: 13 })).toMatch(/superar/);
+  it("exige nota en aumentos y disminuciones", () => {
+    expect(validateClosureItem({ ...baseItem, executedQuantity: 13 })).toMatch(/aumento/);
+    expect(validateClosureItem({ ...baseItem, executedQuantity: 13, note: "Obra extra" })).toBeNull();
     expect(validateClosureItem({ ...baseItem, executedQuantity: 8 })).toMatch(/Justifique/);
     expect(validateClosureItem({ ...baseItem, executedQuantity: 8, note: "Menos puntos" })).toBeNull();
     expect(validateClosureItem(baseItem)).toBeNull();

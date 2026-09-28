@@ -8,17 +8,15 @@ export interface MeasurementDraft {
 
 export type MeasurementDrafts = Record<number, MeasurementDraft>;
 
-/** Cantidad contra la que se compara la medición del residente: lo declarado por el contratista. */
+/** Cantidad contra la que se compara el informe del residente: lo contratado (es independiente del contratista). */
 export function baselineQuantity(item: ClosureReportItem): number {
-  return item.executedQuantity;
+  return item.contractedQuantity;
 }
 
-/** Valor inicial del borrador: lo que ya midió esa etapa (p. ej. tras una devolución) o la cantidad base. */
+/** Borrador inicial: vacío hasta que el residente mida (o lo que ya midió tras una devolución). */
 export function initialDrafts(items: ClosureReportItem[]): MeasurementDrafts {
   return Object.fromEntries(
-    items.map((item) => {
-      return [item.id, { quantity: String(item.residentQuantity ?? baselineQuantity(item)), note: item.residentNote ?? "" }];
-    }),
+    items.map((item) => [item.id, { quantity: item.residentQuantity != null ? String(item.residentQuantity) : "", note: item.residentNote ?? "" }]),
   );
 }
 
@@ -39,8 +37,7 @@ export function validateMeasurement(item: ClosureReportItem, draft: MeasurementD
   const quantity = parseQuantity(draft.quantity);
   if (quantity === null) return "Registre la cantidad verificada.";
   if (quantity < 0) return "No puede ser negativa.";
-  if (quantity > item.contractedQuantity) return `No puede superar lo contratado (${item.contractedQuantity}).`;
-  if (differsFromBaseline(item, draft) && !draft.note.trim()) return "Justifique la diferencia con lo declarado por el contratista.";
+  if (differsFromBaseline(item, draft) && !draft.note.trim()) return "Justifique el aumento o la disminución respecto a lo contratado.";
   return null;
 }
 
@@ -77,7 +74,7 @@ export function previewFiniquito({ contractedTotal, advancePaid, items }: Finiqu
   if (contractedTotal == null) return null;
   const reductions = items.reduce((sum, item) => {
     const final = item.finalQuantity ?? item.residentQuantity ?? item.executedQuantity;
-    return sum + Math.max(0, item.contractedQuantity - final) * (item.unitPriceUsd ?? 0);
+    return sum + (item.contractedQuantity - final) * (item.unitPriceUsd ?? 0);
   }, 0);
   return Math.round(Math.max(0, contractedTotal - (advancePaid ?? 0) - reductions) * 100) / 100;
 }

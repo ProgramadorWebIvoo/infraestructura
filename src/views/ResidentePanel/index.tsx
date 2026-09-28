@@ -2,8 +2,8 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Módulo del ingeniero residente ("Mis obras"): obras a su cargo pendientes de
- * verificación en campo. Sin datos financieros (los endpoints los omiten).
+ * Módulo del ingeniero residente ("Mis obras"): carga su propio informe de campo,
+ * independiente del contratista (Auditoría compara). Sin datos financieros (los endpoints los omiten).
  */
 
 import { useMemo, useState } from "react";
@@ -22,7 +22,7 @@ interface ResidentePanelProps {
 }
 
 export default function ResidentePanel({ authToken }: ResidentePanelProps) {
-  const { projects, isLoading, approve, reject, uploadPhoto, loadDocuments } = useResidentProjects(authToken);
+  const { projects, isLoading, approve, uploadPhoto, deletePhoto, loadDocuments } = useResidentProjects(authToken);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const sorted = useMemo(() => sortPendingFirst(projects), [projects]);
@@ -34,7 +34,7 @@ export default function ResidentePanel({ authToken }: ResidentePanelProps) {
       <SectionHeader
         icon={<HardHat className="h-5 w-5" />}
         title="Mis obras"
-        description={pending > 0 ? `${pending} obra(s) pendiente(s) de su verificación en campo` : "Obras a su cargo pendientes de verificación en campo"}
+        description={pending > 0 ? `${pending} obra(s) pendiente(s) de su informe de campo` : "Obras a su cargo: cargue su informe de verificación en campo"}
         color="sky"
       />
 
@@ -51,7 +51,7 @@ export default function ResidentePanel({ authToken }: ResidentePanelProps) {
                 </div>
                 <StatusBadge code={project.status} />
                 <Button size="sm" colorScheme="sky" variant={project.pendingAction ? "primary" : "secondary"} onClick={() => setOpenId(project.id)}>
-                  {project.pendingAction ? "Verificar obra" : "Ver informe"}
+                  {project.pendingAction ? "Cargar mi informe" : "Ver mi informe"}
                 </Button>
               </li>
             ))}
@@ -59,7 +59,7 @@ export default function ResidentePanel({ authToken }: ResidentePanelProps) {
         </Card>
       )}
 
-      <ResidentProjectModal project={selected} authToken={authToken} actions={{ approve, reject, uploadPhoto, loadDocuments }} onClose={() => setOpenId(null)} />
+      <ResidentProjectModal project={selected} authToken={authToken} actions={{ approve, uploadPhoto, deletePhoto, loadDocuments }} onClose={() => setOpenId(null)} />
     </div>
   );
 }

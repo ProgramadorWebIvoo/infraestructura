@@ -11,7 +11,7 @@ interface ClosureMeasurementSummaryProps {
 
 /** Resumen en vivo sobre la tabla de partidas: cuántas difieren y, para Auditoría, el finiquito estimado. */
 export default function ClosureMeasurementSummary({ stage, differences, totalItems, finiquitoPreview }: ClosureMeasurementSummaryProps) {
-  const base = "lo declarado por el contratista";
+  const base = "lo contratado";
 
   return (
     <div className="flex flex-wrap items-center gap-3" data-testid="closure-measurement-summary">

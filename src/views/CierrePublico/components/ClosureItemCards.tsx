@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, TrendingDown } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp } from "lucide-react";
 import NumericInput from "@/components/UI/NumericInput";
-import { isDecrease, type ClosureReportItem } from "@/components/ClosureReport/types";
+import { isDecrease, isIncrease, type ClosureReportItem } from "@/components/ClosureReport/types";
 
 interface ClosureItemCardsProps {
   items: ClosureReportItem[];
@@ -16,6 +16,7 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
     <ul className="space-y-3">
       {items.map((item, index) => {
         const decrease = isDecrease(item);
+        const increase = isIncrease(item);
         const error = editable ? errors[index] : null;
         const percent = item.contractedQuantity > 0 ? Math.round((item.executedQuantity / item.contractedQuantity) * 100) : 100;
 
@@ -24,7 +25,7 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
             key={item.id}
             layout
             className={`rounded-2xl border p-4 transition-colors ${
-              error ? "border-amber-400/40 bg-amber-400/5" : decrease ? "border-amber-400/25 bg-white/[0.03]" : "border-white/10 bg-white/[0.03]"
+              error ? "border-amber-400/40 bg-amber-400/5" : decrease || increase ? "border-amber-400/25 bg-white/[0.03]" : "border-white/10 bg-white/[0.03]"
             }`}
           >
             <div className="grid gap-3 md:grid-cols-[1.4fr_0.8fr_1fr_1.6fr] md:items-start">
@@ -35,6 +36,12 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
                   <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
                     <TrendingDown className="h-3 w-3" />
                     Disminución · {percent}% ejecutado
+                  </span>
+                )}
+                {increase && (
+                  <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                    <TrendingUp className="h-3 w-3" />
+                    Aumento · +{item.executedQuantity - item.contractedQuantity} {item.unit}
                   </span>
                 )}
               </div>
@@ -53,8 +60,9 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
                 <NumericInput
                   id={`executed-${item.id}`}
                   value={item.executedQuantity}
-                  max={item.contractedQuantity}
-                  accent={decrease ? "warning" : undefined}
+                  integer
+                  placeholder="0"
+                  accent={decrease || increase ? "warning" : undefined}
                   onChange={(v) => onChange(item.id, { executedQuantity: v === "" ? 0 : v })}
                   className={`bg-white/5! text-slate-200! border-white/10! ${editable ? "" : "pointer-events-none opacity-60"}`}
                 />
@@ -71,7 +79,7 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
                   disabled={!editable}
                   maxLength={500}
                   aria-invalid={Boolean(error)}
-                  placeholder={decrease ? "Obligatoria: motivo de la disminución" : "Opcional"}
+                  placeholder={increase ? "Obligatoria: motivo del aumento" : decrease ? "Obligatoria: motivo de la disminución" : "Opcional"}
                   onChange={(e) => onChange(item.id, { note: e.target.value })}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-medium text-slate-200 outline-hidden transition focus:border-emerald-400/60 focus:ring-1 focus:ring-emerald-400/60 disabled:opacity-60"
                 />

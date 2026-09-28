@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import ClosureItemsTable, { type ClosureTableMode } from "./ClosureItemsTable";
 import ClosurePhotoGrid from "./ClosurePhotoGrid";
+import ClosureFilePreview, { type ClosurePreviewTarget } from "./ClosureFilePreview";
 import type { MeasurementDraft, MeasurementDrafts } from "./closureMeasurements";
 import type { ClosureReport } from "./types";
 
@@ -19,6 +20,8 @@ interface ClosureReportDetailProps {
   disabled?: boolean;
   /** Resumen en vivo (diferencias, vista previa del finiquito) que se ubica sobre la tabla. */
   summary?: ReactNode;
+  /** Si se pasa, las fotos se abren en el previsualizador estándar. */
+  authToken?: string;
 }
 
 function Notes({ label, value }: { label: string; value?: string | null }) {
@@ -42,7 +45,9 @@ export default function ClosureReportDetail({
   onDraftChange,
   disabled,
   summary,
+  authToken,
 }: ClosureReportDetailProps) {
+  const [preview, setPreview] = useState<ClosurePreviewTarget | null>(null);
   if (isLoading) {
     return (
       <div className="flex justify-center py-8 text-text-secondary">
@@ -75,13 +80,14 @@ export default function ClosureReportDetail({
       <div className="space-y-3">
         <div>
           <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Evidencia del contratista</p>
-          <ClosurePhotoGrid photos={contractorPhotos} />
+          <ClosurePhotoGrid photos={contractorPhotos} onPreview={authToken ? (p) => setPreview(p) : undefined} />
         </div>
         <div>
           <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Verificación en obra del residente</p>
-          <ClosurePhotoGrid photos={residentPhotos} />
+          <ClosurePhotoGrid photos={residentPhotos} onPreview={authToken ? (p) => setPreview(p) : undefined} />
         </div>
       </div>
+      {authToken && <ClosureFilePreview target={preview} authToken={authToken} onClose={() => setPreview(null)} />}
     </div>
   );
 }

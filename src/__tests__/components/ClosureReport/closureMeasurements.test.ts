@@ -14,28 +14,29 @@ const item = (over: Partial<ClosureReportItem> = {}): ClosureReportItem => ({
 });
 
 describe("closureMeasurements", () => {
-  it("prellena al residente con lo declarado por el contratista", () => {
-    expect(initialDrafts([item()])[1]).toEqual({ quantity: "90", note: "" });
+  it("arranca vacío: el informe del residente es independiente del contratista", () => {
+    expect(initialDrafts([item()])[1]).toEqual({ quantity: "", note: "" });
   });
 
   it("conserva la medición previa del residente", () => {
     expect(initialDrafts([item({ residentQuantity: 80, residentNote: "Medido" })])[1]).toEqual({ quantity: "80", note: "Medido" });
   });
 
-  it("no permite cantidad vacía, negativa ni mayor a lo contratado", () => {
+  it("no permite cantidad vacía ni negativa", () => {
     expect(validateMeasurement(item(), { quantity: "", note: "" })).toMatch(/Registre/);
     expect(validateMeasurement(item(), { quantity: "-1", note: "x" })).toMatch(/negativa/);
-    expect(validateMeasurement(item(), { quantity: "101", note: "x" })).toMatch(/contratado/);
+    expect(validateMeasurement(item(), { quantity: "101", note: "x" })).toBeNull();
   });
 
-  it("exige nota solo cuando difiere de la cantidad declarada por el contratista", () => {
-    expect(validateMeasurement(item(), { quantity: "90", note: "" })).toBeNull();
-    expect(validateMeasurement(item(), { quantity: "80", note: "" })).toMatch(/contratista/);
+  it("exige nota solo cuando difiere de lo contratado (aumento o disminución)", () => {
+    expect(validateMeasurement(item(), { quantity: "100", note: "" })).toBeNull();
+    expect(validateMeasurement(item(), { quantity: "80", note: "" })).toMatch(/contratado/);
+    expect(validateMeasurement(item(), { quantity: "120", note: "" })).toMatch(/contratado/);
     expect(validateMeasurement(item(), { quantity: "80", note: "Faltan 10" })).toBeNull();
   });
 
   it("acepta coma decimal", () => {
-    expect(validateMeasurement(item({ executedQuantity: 90.5 }), { quantity: "90,5", note: "" })).toBeNull();
+    expect(validateMeasurement(item({ contractedQuantity: 90.5 }), { quantity: "90,5", note: "" })).toBeNull();
   });
 
   it("agrega errores por partida y cuenta diferencias", () => {

@@ -17,18 +17,23 @@ import { apiDownload } from "@/services/api";
 import { useToast } from "./Toast";
 import type { ProjectDocument } from "@/types";
 
-interface DocumentPreviewModalProps {
+interface DocumentPreviewModalProps<T extends PreviewableDocument> {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
-  document: ProjectDocument | null;
+  document: T | null;
   authToken: string;
-  onDownload: (doc: ProjectDocument) => void;
+  onDownload: (doc: T) => void;
+  /** Ruta API de la vista previa; por defecto la del documento del proyecto (fotos del cierre y otros archivos la sobrescriben). */
+  previewPath?: string;
 }
+
+/** Lo mínimo que necesita el previsualizador de un archivo. */
+export type PreviewableDocument = Pick<ProjectDocument, "id" | "originalName" | "mimeType"> & { versionNumber?: number };
 
 type PreviewKind = "pdf" | "image" | "csv" | "unsupported";
 
-function kindFor(doc: ProjectDocument): PreviewKind {
+function kindFor(doc: PreviewableDocument): PreviewKind {
   const mime = doc.mimeType ?? "";
   if (mime === "application/pdf") return "pdf";
   if (mime.startsWith("image/")) return "image";
@@ -240,14 +245,15 @@ function PdfViewer({ blobUrl }: { blobUrl: string }) {
   );
 }
 
-export default function DocumentPreviewModal({
+export default function DocumentPreviewModal<T extends PreviewableDocument>({
   isOpen,
   onClose,
   projectId,
   document: doc,
   authToken,
   onDownload,
-}: DocumentPreviewModalProps) {
+  previewPath,
+}: DocumentPreviewModalProps<T>) {
   const { showToast } = useToast();
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -263,7 +269,7 @@ export default function DocumentPreviewModal({
 
     (async () => {
       try {
-        const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/preview`, { token: authToken });
+        const blob = await apiDownload(previewPath ?? `/projects/${projectId}/documents/${doc.id}/preview`, { token: authToken });
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setBlobUrl(objectUrl);
@@ -283,7 +289,7 @@ export default function DocumentPreviewModal({
       setBlobUrl(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, doc?.id, projectId, authToken]);
+  }, [isOpen, doc?.id, projectId, authToken, previewPath]);
 
   if (!doc) return null;
   const kind = kindFor(doc);
@@ -293,7 +299,7 @@ export default function DocumentPreviewModal({
       isOpen={isOpen}
       onClose={onClose}
       title={doc.originalName}
-      infoLine={doc.versionNumber > 1 ? `Versión ${doc.versionNumber}` : undefined}
+      infoLine={(doc.versionNumber ?? 1) > 1 ? `Versión ${doc.versionNumber}` : undefined}
       icon={<Eye className="h-5 w-5" />}
       iconColor="sky"
       maxWidth="max-w-3xl"

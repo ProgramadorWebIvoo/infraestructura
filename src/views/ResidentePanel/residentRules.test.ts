@@ -4,7 +4,7 @@ import { hasResidentPhoto, sortPendingFirst, toClosureReport, validateResidentPh
 
 const project = (id: string, pendingAction: boolean, photos: ResidentProject["closure"] extends infer C ? any : never = []): ResidentProject => ({
   id, title: id, location: "L", description: null, status: "INFORME_ENVIADO", pendingAction,
-  closure: { status: "ENVIADO", revision: 1, contractorNotes: null, submittedAt: null, rejectionReason: null, rejectionTarget: null, residentNotes: null, residentVerifiedAt: null, items: [], photos },
+  closure: { status: "ENVIADO", revision: 1, submittedAt: null, rejectionReason: null, rejectionTarget: null, residentNotes: null, residentVerifiedAt: null, items: [], photos },
 });
 
 describe("residentRules", () => {

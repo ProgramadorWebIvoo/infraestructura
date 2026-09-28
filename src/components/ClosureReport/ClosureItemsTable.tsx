@@ -45,12 +45,13 @@ function StageNote({ label, value }: { label: string; value?: string | null }) {
 
 /**
  * Comparación por partida de las cifras del cierre — contratado, declarado por el
- * contratista y verificado por el residente (que rige el finiquito). Tarjetas apiladas
+ * contratista y verificado por el residente (que rige el finiquito). El residente solo ve lo contratado. Tarjetas apiladas
  * en móvil y tabla en escritorio (misma estructura, solo cambia la rejilla).
  */
 export default function ClosureItemsTable({ items, mode = "readonly", drafts = {}, errors = {}, onDraftChange, disabled = false }: ClosureItemsTableProps) {
   const showResident = mode === "readonly" && items.some((i) => i.residentQuantity != null);
-  const columns = 3 + (mode === "resident" ? 1 : 0) + (showResident ? 1 : 0);
+  const showContractor = mode !== "resident";
+  const columns = 2 + (showContractor ? 1 : 0) + (mode === "resident" ? 1 : 0) + (showResident ? 1 : 0);
   const gridClass = GRID_BY_COLUMNS[columns] ?? GRID_BY_COLUMNS[5];
   const editable = mode !== "readonly";
   const editLabel = "Verificado en obra";
@@ -60,7 +61,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
       <div role="row" className={`hidden gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary md:grid ${gridClass}`}>
         <span role="columnheader">Partida</span>
         <span role="columnheader" className="text-right">Contratado</span>
-        <span role="columnheader" className="text-right">Contratista</span>
+        {showContractor && <span role="columnheader" className="text-right">Contratista</span>}
         {showResident && <span role="columnheader" className="text-right">Residente</span>}
         {mode === "resident" && <span role="columnheader" className="text-right">{editLabel}</span>}
       </div>
@@ -88,11 +89,20 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
                 <p className="text-[11px] text-text-secondary">{item.unit}</p>
               </div>
               <div role="cell">
-                <Cell label="Contratado">{item.contractedQuantity}</Cell>
+                <Cell label="Contratado">
+                  {item.contractedQuantity}
+                  {!!item.modificationQuantity && (
+                    <span className="block text-[10px] font-medium text-text-secondary" data-testid={`closure-modification-${item.id}`}>
+                      {item.originalQuantity} {item.modificationQuantity > 0 ? "+" : "−"} {Math.abs(item.modificationQuantity)} modif.
+                    </span>
+                  )}
+                </Cell>
               </div>
-              <div role="cell">
-                <Cell label="Contratista" tone={contractorDecrease ? "warn" : undefined}>{item.executedQuantity}</Cell>
-              </div>
+              {showContractor && (
+                <div role="cell">
+                  <Cell label="Contratista" tone={contractorDecrease ? "warn" : undefined}>{item.executedQuantity}</Cell>
+                </div>
+              )}
               {showResident && (
                 <div role="cell">
                   <Cell label="Residente" tone={residentDiffers ? "warn" : undefined}>{item.residentQuantity ?? "—"}</Cell>
@@ -106,7 +116,8 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
                   <NumericInput
                     id={`closure-qty-${item.id}`}
                     value={parseQuantity(draft.quantity) ?? ""}
-                    max={item.contractedQuantity}
+                    integer
+                    placeholder="0"
                     disabled={disabled}
                     accent={error ? "danger" : "brand"}
                     className="w-full text-right font-mono"
@@ -117,7 +128,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
             </div>
 
             <div className="mt-2 space-y-1">
-              <StageNote label="Contratista" value={item.note} />
+              {showContractor && <StageNote label="Contratista" value={item.note} />}
               {mode !== "resident" && <StageNote label="Residente" value={item.residentNote} />}
             </div>
 
@@ -132,7 +143,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = {
                 >
                   <label htmlFor={`closure-note-${item.id}`} className="mt-2 flex items-center gap-1 text-[11px] font-bold text-amber-700">
                     <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
-                    Justifique la diferencia con lo declarado por el contratista
+                    Justifique el aumento o la disminución respecto a lo contratado
                   </label>
                   <textarea
                     id={`closure-note-${item.id}`}

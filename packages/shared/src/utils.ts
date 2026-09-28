@@ -73,7 +73,7 @@ export const STATUS_LABELS: Record<string, string> = {
   APROBADO_PRESIDENCIA: "Aprobado por Presidencia",
   CONTRATADO: "Contratado",
   EN_EJECUCION: "En Ejecución",
-  INFORME_ENVIADO: "Informe del contratista enviado",
+  INFORME_ENVIADO: "Informe recibido (falta el otro)",
   VERIFICANDO_FINALIZACION: "Pendiente de Auditoría",
   PENDIENTE_SOLICITUD_FINIQUITO: "Pendiente de solicitud de finiquito",
   LISTO_PAGO_FINAL: "Listo para Pago Final",

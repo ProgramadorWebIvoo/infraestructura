@@ -6,9 +6,9 @@ describe("toResidentProject", () => {
     const project = toResidentProject({
       id: "1", title: "Obra", location: "Caracas", description: null, status: "INFORME_ENVIADO", pendingAction: true,
       closure: {
-        status: "ENVIADO", revision: 1, contractorNotes: null, submittedAt: null, rejectionReason: null, rejectionTarget: null,
+        status: "ENVIADO", revision: 1, submittedAt: null, rejectionReason: null, rejectionTarget: null,
         residentNotes: null, residentVerifiedAt: null, photos: [],
-        items: [{ id: 1, name: "Pintura", unit: "m2", contractedQuantity: 10, executedQuantity: 8, note: "x" }],
+        items: [{ id: 1, name: "Pintura", unit: "m2", contractedQuantity: 10 }],
       },
     });
     expect(project.closure?.items[0].unitPriceUsd).toBeNull();

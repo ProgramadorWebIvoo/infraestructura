@@ -27,7 +27,7 @@ describe("rol RESIDENTE", () => {
   it("lista primero las obras pendientes de verificación", async () => {
     vi.mocked(apiFetch).mockResolvedValue([dto("1", false), dto("2", true)]);
     renderPanel();
-    await waitFor(() => expect(screen.getAllByRole("button", { name: /Verificar obra|Ver informe/ })).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /Cargar mi informe|Ver mi informe/ })).toHaveLength(2));
     const titles = screen.getAllByText(/^Obra \d$/).map((n) => n.textContent);
     expect(titles).toEqual(["Obra 2", "Obra 1"]);
   });

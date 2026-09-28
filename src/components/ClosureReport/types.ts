@@ -2,7 +2,11 @@ export interface ClosureReportItem {
   id: number;
   name: string;
   unit: string;
+  /** Cantidad vigente (original + modificaciones aprobadas). */
   contractedQuantity: number;
+  /** F3: cantidad original y variación por modificaciones aprobadas (0 si no hubo). */
+  originalQuantity?: number;
+  modificationQuantity?: number;
   executedQuantity: number;
   unitPriceUsd: number | null;
   /** Nota del contratista (obligatoria si declaró menos de lo contratado). */
@@ -68,13 +72,13 @@ export function isDecrease(item: Pick<ClosureReportItem, "contractedQuantity" | 
   return item.executedQuantity < item.contractedQuantity;
 }
 
+/** Partida ejecutada por encima de lo contratado (aumento). */
+export function isIncrease(item: Pick<ClosureReportItem, "contractedQuantity" | "executedQuantity">): boolean {
+  return item.executedQuantity > item.contractedQuantity;
+}
+
 /** Devuelve el mensaje de error de una partida, o null si es válida. */
 export function validateClosureItem(item: ClosureReportItem): string | null {
-  if (item.executedQuantity > item.contractedQuantity) {
-    return "No puede superar lo contratado.";
-  }
-  if (isDecrease(item) && !(item.note ?? "").trim()) {
-    return "Justifique la disminución.";
-  }
-  return null;
+  if (item.executedQuantity === item.contractedQuantity || (item.note ?? "").trim()) return null;
+  return isIncrease(item) ? "Justifique el aumento." : "Justifique la disminución.";
 }

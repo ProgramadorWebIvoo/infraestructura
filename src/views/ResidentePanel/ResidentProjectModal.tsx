@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Download, Eye, FileText, XCircle } from "lucide-react";
+import { CheckCircle2, Eye, FileText } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
 import { useToast } from "@/components/UI/Toast";
 import ClosureReportDetail from "@/components/ClosureReport/ClosureReportDetail";
+import ClosureFilePreview, { type ClosurePreviewTarget } from "@/components/ClosureReport/ClosureFilePreview";
 import ClosureMeasurementSummary from "@/components/ClosureReport/ClosureMeasurementSummary";
 import PhotoDropzone from "@/views/CierrePublico/components/PhotoDropzone";
 import {
@@ -14,7 +15,6 @@ import {
   type MeasurementDraft,
   type MeasurementDrafts,
 } from "@/components/ClosureReport/closureMeasurements";
-import { apiDownload } from "@/services/api";
 import { getErrorMessage } from "@/services/logger";
 import type { ResidentDocument, ResidentProject, useResidentProjects } from "@/hooks/useResidentProjects";
 import { hasResidentPhoto, toClosureReport, validateResidentPhoto } from "./residentRules";
@@ -24,7 +24,7 @@ type ResidentActions = ReturnType<typeof useResidentProjects>;
 interface ResidentProjectModalProps {
   project: ResidentProject | null;
   authToken: string;
-  actions: Pick<ResidentActions, "approve" | "reject" | "uploadPhoto" | "loadDocuments">;
+  actions: Pick<ResidentActions, "approve" | "uploadPhoto" | "deletePhoto" | "loadDocuments">;
   onClose: () => void;
 }
 
@@ -32,11 +32,10 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
   const { showToast } = useToast();
   const [drafts, setDrafts] = useState<MeasurementDrafts>({});
   const [notes, setNotes] = useState("");
-  const [reason, setReason] = useState("");
-  const [rejecting, setRejecting] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [documents, setDocuments] = useState<ResidentDocument[]>([]);
+  const [preview, setPreview] = useState<ClosurePreviewTarget | null>(null);
 
   const report = useMemo(() => (project ? toClosureReport(project) : null), [project]);
   const projectId = project?.id ?? null;
@@ -46,8 +45,7 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
   useEffect(() => {
     setDrafts(project?.closure ? initialDrafts(project.closure.items) : {});
     setNotes("");
-    setReason("");
-    setRejecting(false);
+    setPreview(null);
     // Solo al abrir otra obra o al cambiar de revisión (p. ej. devolución de Auditoría); subir fotos no debe borrar lo digitado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, revision]);
@@ -102,24 +100,15 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
     setIsUploading(false);
   };
 
-  const openDocument = async (doc: ResidentDocument, mode: "preview" | "download") => {
-    if (!project) return;
-    try {
-      const blob = await apiDownload(`/resident/projects/${project.id}/documents/${doc.id}/${mode}`, { token: authToken });
-      const url = URL.createObjectURL(blob);
-      if (mode === "preview") {
-        window.open(url, "_blank", "noopener");
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = doc.originalName;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      showToast(getErrorMessage(error, "No se pudo abrir el documento."), "error");
-    }
-  };
+  const previewDocument = (doc: ResidentDocument) =>
+    project &&
+    setPreview({
+      id: doc.id,
+      originalName: doc.originalName,
+      mimeType: doc.mimeType,
+      path: `resident/projects/${project.id}/documents/${doc.id}/preview`,
+      downloadPath: `resident/projects/${project.id}/documents/${doc.id}/download`,
+    });
 
   return (
     <Modal
@@ -127,7 +116,7 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
       onClose={onClose}
       closeDisabled={isBusy}
       maxWidth="max-w-4xl"
-      title="Verificación en obra"
+      title="Informe del residente"
       infoLine={project?.title}
       icon={<CheckCircle2 className="h-5 w-5" />}
       footer={
@@ -137,39 +126,21 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
           </div>
         ) : (
           <div className="flex flex-wrap justify-end gap-2">
-            {rejecting ? (
-              <>
-                <Button variant="secondary" onClick={() => setRejecting(false)} disabled={isBusy}>Volver</Button>
-                <Button
-                  variant="danger"
-                  isLoading={isBusy}
-                  disabled={!reason.trim()}
-                  icon={<XCircle className="h-4 w-4" />}
-                  onClick={() => project && run(() => actions.reject(project.id, reason.trim()), "No se pudo registrar el rechazo.")}
-                >
-                  Rechazar y devolver al contratista
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="secondary" onClick={() => setRejecting(true)} disabled={isBusy || !report}>Rechazar y devolver al contratista</Button>
-                <Button
-                  colorScheme="emerald"
-                  isLoading={isBusy}
-                  disabled={!canApprove}
-                  onClick={() => project && report && run(() => actions.approve(project.id, notes.trim() || undefined, toMeasurementPayload(report.items, drafts)), "No se pudo registrar el visto bueno.")}
-                >
-                  Dar visto bueno y pasar a Auditoría
-                </Button>
-              </>
-            )}
+            <Button
+              colorScheme="emerald"
+              isLoading={isBusy}
+              disabled={!canApprove}
+              onClick={() => project && report && run(() => actions.approve(project.id, notes.trim() || undefined, toMeasurementPayload(report.items, drafts)), "No se pudo enviar su informe.")}
+            >
+              Enviar mi informe a Auditoría
+            </Button>
           </div>
         )
       }
     >
       <div className="space-y-5">
         {project?.closure?.rejectionTarget === "RESIDENTE" && project.closure.rejectionReason && (
-          <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">Auditoría devolvió su medición: {project.closure.rejectionReason}</p>
+          <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">Auditoría le devolvió su informe: {project.closure.rejectionReason}</p>
         )}
         <ClosureReportDetail
           report={report}
@@ -177,22 +148,24 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
           drafts={drafts}
           errors={errors}
           onDraftChange={handleDraftChange}
+          authToken={authToken}
           disabled={isBusy}
           summary={report && editable ? <ClosureMeasurementSummary stage="resident" differences={countDifferences(report.items, drafts)} totalItems={report.items.length} finiquitoPreview={null} /> : undefined}
         />
 
         {editable && project && (
-          <div className="space-y-2 rounded-2xl bg-slate-900 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fotos de verificación en obra</p>
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Fotos de verificación en obra</p>
             <PhotoDropzone
               photos={project.closure?.photos.filter((p) => p.uploadedByType === "RESIDENTE") ?? []}
               editable
-              canDelete={false}
+              theme="light"
+              onPreview={(photo) => setPreview(photo)}
               isUploading={isUploading}
               onFiles={handleFiles}
-              onDelete={() => undefined}
+              onDelete={(photo) => project && actions.deletePhoto(project.id, photo.id).catch((error) => showToast(getErrorMessage(error, "No se pudo eliminar la foto."), "error"))}
             />
-            {needsPhoto && <p className="text-[11px] text-amber-300">Adjunte al menos una foto de verificación para dar el visto bueno.</p>}
+            {needsPhoto && <p className="text-[11px] text-amber-700">Adjunte al menos una foto de verificación para enviar su informe.</p>}
           </div>
         )}
 
@@ -204,8 +177,7 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
                 <li key={doc.id} className="flex items-center gap-3 px-3 py-2">
                   <FileText className="h-4 w-4 shrink-0 text-slate-400" />
                   <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">{doc.originalName}</span>
-                  <Button size="sm" variant="secondary" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => openDocument(doc, "preview")}>Ver</Button>
-                  <Button size="sm" variant="secondary" icon={<Download className="h-3.5 w-3.5" />} onClick={() => openDocument(doc, "download")}>Descargar</Button>
+                  <Button size="sm" variant="secondary" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => previewDocument(doc)}>Ver</Button>
                 </li>
               ))}
             </ul>
@@ -215,20 +187,20 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
         {editable && (
           <div>
             <label htmlFor="resident-review-text" className="mb-1 block text-xs font-bold text-slate-600">
-              {rejecting ? "Motivo del rechazo (obligatorio)" : "Notas (opcional)"}
+              Observaciones (opcional)
             </label>
             <textarea
               id="resident-review-text"
-              value={rejecting ? reason : notes}
+              value={notes}
               maxLength={1000}
               rows={3}
-              onChange={(e) => (rejecting ? setReason(e.target.value) : setNotes(e.target.value))}
+              onChange={(e) => setNotes(e.target.value)}
               className="w-full rounded-xl border border-slate-200 p-3 text-sm"
             />
-            {rejecting && <p className="mt-1 text-[11px] text-slate-500">El contratista recibirá el motivo por correo y podrá corregir y reenviar el informe.</p>}
           </div>
         )}
       </div>
+      <ClosureFilePreview target={preview} authToken={authToken} onClose={() => setPreview(null)} />
     </Modal>
   );
 }

@@ -7,6 +7,8 @@ interface ClosurePhotoGridProps {
   /** Si se define, muestra el botón de borrar en las fotos que devuelva true. */
   canDelete?: (photo: ClosureReportPhoto) => boolean;
   onDelete?: (photo: ClosureReportPhoto) => void;
+  /** Si se define, la miniatura abre el previsualizador en lugar de una pestaña nueva. */
+  onPreview?: (photo: ClosureReportPhoto) => void;
 }
 
 const AUTHOR_LABEL: Record<ClosureReportPhoto["uploadedByType"], string> = {
@@ -14,7 +16,7 @@ const AUTHOR_LABEL: Record<ClosureReportPhoto["uploadedByType"], string> = {
   RESIDENTE: "Residente",
 };
 
-export default function ClosurePhotoGrid({ photos, canDelete, onDelete }: ClosurePhotoGridProps) {
+export default function ClosurePhotoGrid({ photos, canDelete, onDelete, onPreview }: ClosurePhotoGridProps) {
   if (photos.length === 0) {
     return <p className="text-xs text-text-secondary">Sin fotos adjuntas.</p>;
   }
@@ -25,9 +27,15 @@ export default function ClosurePhotoGrid({ photos, canDelete, onDelete }: Closur
         const src = `${getApiBaseUrl()}/${photo.path}`;
         return (
           <figure key={photo.id} className="relative overflow-hidden rounded-lg border border-border-default bg-surface-raised">
-            <a href={src} target="_blank" rel="noreferrer">
-              <img src={src} alt={photo.originalName} loading="lazy" className="h-28 w-full object-cover" />
-            </a>
+            {onPreview ? (
+              <button type="button" onClick={() => onPreview(photo)} aria-label={`Ver ${photo.originalName}`} className="block w-full cursor-pointer">
+                <img src={src} alt={photo.originalName} loading="lazy" className="h-28 w-full object-cover" />
+              </button>
+            ) : (
+              <a href={src} target="_blank" rel="noreferrer">
+                <img src={src} alt={photo.originalName} loading="lazy" className="h-28 w-full object-cover" />
+              </a>
+            )}
             <figcaption className="truncate px-2 py-1 text-[10px] font-semibold text-text-secondary">
               {AUTHOR_LABEL[photo.uploadedByType]} · {photo.originalName}
             </figcaption>

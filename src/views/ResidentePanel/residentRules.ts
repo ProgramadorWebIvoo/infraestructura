@@ -1,7 +1,7 @@
 import { CLOSURE_PHOTO_MAX_BYTES, CLOSURE_PHOTO_MIMES, type ClosureReport } from "@/components/ClosureReport/types";
 import type { ResidentProject } from "@/hooks/useResidentProjects";
 
-/** Obras pendientes de su visto bueno primero; el resto conserva el orden del backend. */
+/** Obras pendientes de su informe primero; el resto conserva el orden del backend. */
 export function sortPendingFirst(projects: ResidentProject[]): ResidentProject[] {
   return [...projects].sort((a, b) => Number(b.pendingAction) - Number(a.pendingAction));
 }
@@ -26,7 +26,7 @@ export function toClosureReport(project: ResidentProject): ClosureReport | null 
     projectId: project.id,
     status: closure.status as ClosureReport["status"],
     revision: closure.revision,
-    contractorNotes: closure.contractorNotes,
+    contractorNotes: null,
     submittedAt: closure.submittedAt,
     rejectionReason: closure.rejectionReason,
     rejectedByRole: null,

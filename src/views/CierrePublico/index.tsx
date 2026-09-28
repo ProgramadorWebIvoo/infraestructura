@@ -20,6 +20,7 @@ import { BackgroundDecor, TopBar } from "./components/PublicChrome";
 import ClosureStepper from "./components/ClosureStepper";
 import ClosureItemCards from "./components/ClosureItemCards";
 import PhotoDropzone from "./components/PhotoDropzone";
+import ClosureFilePreview, { type ClosurePreviewTarget } from "@/components/ClosureReport/ClosureFilePreview";
 import {
   CLOSURE_PHOTO_MAX_BYTES,
   CLOSURE_PHOTO_MIMES,
@@ -39,6 +40,7 @@ export default function CierrePublico() {
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [preview, setPreview] = useState<ClosurePreviewTarget | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -270,7 +272,7 @@ export default function CierrePublico() {
                 <h3 id="closure-photos-title" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
                   Fotos de evidencia (mínimo 1)
                 </h3>
-                <PhotoDropzone photos={photos} editable={editable} isUploading={isUploading} onFiles={(files) => void handleFiles(files)} onDelete={(p) => void handleDelete(p.id)} />
+                <PhotoDropzone photos={photos} editable={editable} isUploading={isUploading} onFiles={(files) => void handleFiles(files)} onDelete={(p) => void handleDelete(p.id)} onPreview={setPreview} />
               </motion.section>
 
               {editable && (
@@ -297,6 +299,7 @@ export default function CierrePublico() {
           IVOO Gestión de Infraestructura &copy; {new Date().getFullYear()} — Portal de Cierre de Obra
         </footer>
       </div>
+      <ClosureFilePreview target={preview} authToken="" onClose={() => setPreview(null)} />
     </div>
   );
 }

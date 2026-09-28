@@ -13,14 +13,11 @@ import { logError } from "@/services/logger";
 import type { ClosureReportItem, ClosureReportPhoto } from "@/components/ClosureReport/types";
 import type { ResidentMeasurement } from "@/components/ClosureReport/closureMeasurements";
 
-interface ResidentItemDto extends Omit<ClosureReportItem, "unitPriceUsd" | "finalQuantity"> {
-  unitPriceUsd?: never;
-}
+type ResidentItemDto = Omit<ClosureReportItem, "unitPriceUsd" | "finalQuantity" | "executedQuantity" | "note">;
 
 interface ResidentClosureDto {
   status: string;
   revision: number;
-  contractorNotes: string | null;
   submittedAt: string | null;
   rejectionReason: string | null;
   rejectionTarget: "CONTRATISTA" | "RESIDENTE" | null;
@@ -51,11 +48,11 @@ export interface ResidentDocument {
   mimeType: string | null;
 }
 
-/** Los ítems del residente no traen precios; se completan a `null` para reutilizar los componentes del cierre. */
+/** Los ítems del residente no traen precios ni lo declarado por el contratista (informe independiente); se rellenan para reutilizar los componentes del cierre. */
 export function toResidentProject(dto: ResidentProjectDto): ResidentProject {
   return {
     ...dto,
-    closure: dto.closure ? { ...dto.closure, items: dto.closure.items.map((item) => ({ ...item, unitPriceUsd: null })) } : null,
+    closure: dto.closure ? { ...dto.closure, items: dto.closure.items.map((item) => ({ ...item, unitPriceUsd: null, executedQuantity: 0, note: null })) } : null,
   };
 }
 
@@ -85,7 +82,7 @@ export function useResidentProjects(authToken: string) {
   }, [reload]);
 
   const send = useCallback(
-    async (projectId: string, action: "approval" | "rejection", body: Record<string, unknown>, label: string) => {
+    async (projectId: string, action: "approval", body: Record<string, unknown>, label: string) => {
       try {
         return replace(await apiFetch<ResidentProjectDto>(`/resident/projects/${projectId}/${action}`, { method: "POST", token: authToken, body: JSON.stringify(body) }));
       } catch (error) {
@@ -97,7 +94,6 @@ export function useResidentProjects(authToken: string) {
   );
 
   const approve = useCallback((projectId: string, notes: string | undefined, items: ResidentMeasurement[]) => send(projectId, "approval", { notes, items }, "resident.approve"), [send]);
-  const reject = useCallback((projectId: string, reason: string) => send(projectId, "rejection", { reason }, "resident.reject"), [send]);
 
   const uploadPhoto = useCallback(
     async (projectId: string, file: File, itemId?: number) => {
@@ -115,7 +111,20 @@ export function useResidentProjects(authToken: string) {
     [authToken, replace],
   );
 
+  const deletePhoto = useCallback(
+    async (projectId: string, photoId: number) => {
+      try {
+        await apiFetch(`/resident/projects/${projectId}/photos/${photoId}`, { method: "DELETE", token: authToken });
+        replace(await apiFetch<ResidentProjectDto>(`/resident/projects/${projectId}`, { token: authToken }));
+      } catch (error) {
+        logError("resident.deletePhoto", error);
+        throw error;
+      }
+    },
+    [authToken, replace],
+  );
+
   const loadDocuments = useCallback((projectId: string) => apiFetch<ResidentDocument[]>(`/resident/projects/${projectId}/documents`, { token: authToken }), [authToken]);
 
-  return { projects, isLoading, reload, approve, reject, uploadPhoto, loadDocuments };
+  return { projects, isLoading, reload, approve, uploadPhoto, deletePhoto, loadDocuments };
 }
