@@ -21,12 +21,14 @@ interface ContractorDocumentDropZonesProps {
   files: Record<number, File | undefined>;
   onChange: (typeId: number, file: File | undefined) => void;
   idPrefix: string;
+  /** Columnas en pantallas >= sm (1 = lista vertical). */
+  columns?: 1 | 2;
   onFileRejected?: (fileName: string, reason: string) => void;
 }
 
-export default function ContractorDocumentDropZones({ types, files, onChange, idPrefix, onFileRejected }: ContractorDocumentDropZonesProps) {
+export default function ContractorDocumentDropZones({ types, files, onChange, idPrefix, columns = 1, onFileRejected }: ContractorDocumentDropZonesProps) {
   return (
-    <div className="space-y-3">
+    <div className={columns === 2 ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "space-y-3"}>
       {types.map((type) => {
         const file = files[type.id];
         return (

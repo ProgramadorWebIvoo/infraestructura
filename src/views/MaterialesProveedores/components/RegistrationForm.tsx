@@ -320,6 +320,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
           )}
           <ContractorDocumentDropZones
             idPrefix="public-provider"
+            columns={2}
             types={documentTypes}
             files={documentFiles}
             onChange={(typeId, file) => setDocumentFiles((prev) => ({ ...prev, [typeId]: file }))}
