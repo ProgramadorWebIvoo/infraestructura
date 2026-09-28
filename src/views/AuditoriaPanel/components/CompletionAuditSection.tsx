@@ -39,6 +39,7 @@ interface CompletionAuditSectionProps {
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
+const info = SEMANTIC_COLOR_MAP.info;
 
 export default function CompletionAuditSection({ projects, authToken, closureActions, defaultViewMode = "grid" }: CompletionAuditSectionProps) {
   const { containerRef, rows: pageSize } = useContainerRows();
@@ -78,7 +79,12 @@ export default function CompletionAuditSection({ projects, authToken, closureAct
       sortable: true,
       render: (p) => (
         <div className="min-w-0">
-          <div className="font-bold text-slate-800 truncate">{p.title}</div>
+          <div className="font-bold text-slate-800 truncate">
+            {p.title}
+            {p.hasApprovedModifications && (
+              <span className={`ml-1.5 rounded-full border px-1.5 py-0.5 align-middle text-[9px] font-bold ${info.bg50} ${info.border200} ${info.text700}`}>Modificada</span>
+            )}
+          </div>
           <div className="text-[10px] text-slate-400 font-medium truncate flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0" />
             {p.location}

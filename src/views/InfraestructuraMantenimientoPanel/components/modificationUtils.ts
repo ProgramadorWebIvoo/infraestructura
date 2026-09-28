@@ -12,6 +12,11 @@ export const MODIFICATION_TYPE_LABEL: Record<ModificationType, string> = {
   DISMINUCION: "Disminución",
 };
 
+/** Variación firmada de una línea: aumento suma, disminución resta. */
+export function signedQuantity(type: ModificationType, quantity: number): number {
+  return type === "AUMENTO" ? quantity : -quantity;
+}
+
 export interface DraftLine {
   materialId: string;
   type: ModificationType;

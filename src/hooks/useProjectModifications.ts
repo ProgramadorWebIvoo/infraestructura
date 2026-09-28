@@ -84,5 +84,19 @@ export function useProjectModifications(projectId: string, authToken: string) {
     [projectId, authToken, reload],
   );
 
-  return { state, isLoading, reload, save };
+  /** Auditoría: aprueba (notas opcionales) o rechaza (motivo obligatorio) una solicitud. */
+  const review = useCallback(
+    async (modificationId: number, decision: { approve: true; notes?: string } | { approve: false; reason: string }) => {
+      const body = decision.approve ? { notes: decision.notes || null } : { reason: decision.reason };
+      await apiFetch(`/projects/${projectId}/modifications/${modificationId}/${decision.approve ? "approval" : "rejection"}`, {
+        method: "POST",
+        token: authToken,
+        body: JSON.stringify(body),
+      });
+      await reload();
+    },
+    [projectId, authToken, reload],
+  );
+
+  return { state, isLoading, reload, save, review };
 }
