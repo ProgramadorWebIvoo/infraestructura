@@ -9,9 +9,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Eye, FileText, RefreshCw, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, CircleDashed, Download, Eye, FileText, RefreshCw, Trash2, Upload } from "lucide-react";
 import Card from "@/components/UI/Card";
 import Button from "@/components/UI/Button";
+import IconActionButton from "@/components/UI/IconActionButton";
 import Spinner from "@/components/UI/Spinner";
 import ConfirmDialog from "@/components/UI/ConfirmDialog";
 import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
@@ -148,23 +149,49 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
     }
   };
 
+  const requiredRows = rows.filter((r) => r.isRequired);
+  const requiredLoaded = requiredRows.filter((r) => r.document).length;
+  const progress = requiredRows.length > 0 ? Math.round((requiredLoaded / requiredRows.length) * 100) : 100;
+
   return (
     <Card hoverable={false} className="p-4 bg-surface-raised">
-      <div className="mb-3 flex items-center justify-between gap-2 border-b border-border-200 pb-2">
-        <div className="flex items-center gap-2 text-brand-600">
-          <FileText className="h-4 w-4" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">Documentos</h3>
+      <div className="mb-3 space-y-2 border-b border-border-default pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-brand-600">
+            <FileText className="h-4 w-4" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">Documentos</h3>
+          </div>
+          {completeness && (
+            <span
+              className={`rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${
+                completeness.complete
+                  ? `${success.border100} ${success.bg50} ${success.text700}`
+                  : `${warning.border100} ${warning.bg50} ${warning.text700}`
+              }`}
+            >
+              {completeness.complete ? "Documentación completa" : "Documentación incompleta"}
+            </span>
+          )}
         </div>
-        {completeness && (
-          <span
-            className={`rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${
-              completeness.complete
-                ? `${success.border100} ${success.bg50} ${success.text700}`
-                : `${warning.border100} ${warning.bg50} ${warning.text700}`
-            }`}
-          >
-            {completeness.complete ? "Documentación completa" : "Documentación incompleta"}
-          </span>
+        {!isLoading && requiredRows.length > 0 && (
+          <div className="space-y-1">
+            <div
+              className="h-1.5 w-full overflow-hidden rounded-pill bg-slate-200"
+              role="progressbar"
+              aria-label="Documentos obligatorios cargados"
+              aria-valuemin={0}
+              aria-valuemax={requiredRows.length}
+              aria-valuenow={requiredLoaded}
+            >
+              <div
+                className={`h-full rounded-pill transition-all duration-300 ${progress === 100 ? "bg-emerald-500" : "bg-amber-400"}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-[11px] font-medium text-text-tertiary">
+              {requiredLoaded} de {requiredRows.length} obligatorios cargados
+            </p>
+          </div>
         )}
       </div>
 
@@ -174,51 +201,76 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
         </div>
       ) : (
         <ul className="space-y-2">
-          {rows.map((row) => (
-            <li key={row.key} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-200 px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-text-primary">
-                  {row.label}
-                  {row.isRequired && <span className="ml-1 text-danger-500">*</span>}
-                </p>
-                {row.document ? (
-                  <p className="truncate text-[11px] font-medium text-text-tertiary">
-                    {row.document.originalName} · v{row.document.versionNumber} · {formatFileSize(row.document.sizeBytes)}
+          {rows.map((row) => {
+            const missingRequired = !row.document && row.isRequired;
+            const rowStyle = row.document
+              ? "border-border-default bg-white"
+              : missingRequired
+                ? `border-dashed ${warning.border200} ${warning.bg50}`
+                : "border-dashed border-border-default bg-white/60";
+            return (
+              <li key={row.key} className={`flex flex-wrap items-center gap-3 rounded-control border px-3 py-2.5 transition-colors ${rowStyle}`}>
+                <span className="shrink-0" aria-hidden="true">
+                  {row.document ? (
+                    <CheckCircle2 className={`h-5 w-5 ${success.text600}`} />
+                  ) : (
+                    <CircleDashed className={`h-5 w-5 ${missingRequired ? warning.text600 : "text-text-muted"}`} />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-text-primary">
+                    {row.label}
+                    {row.isRequired && <span className="ml-1 text-danger-500" title="Obligatorio">*</span>}
                   </p>
-                ) : (
-                  <p className={`text-[11px] font-bold ${row.isRequired ? warning.text700 : "text-text-muted"}`}>
-                    {row.isRequired ? "Faltante" : "Sin cargar"}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {row.document && (
-                  <>
-                    <Button variant="secondary" size="sm" aria-label={`Ver ${row.label}`} onClick={() => setPreviewDoc(row.document!)} icon={<Eye className="h-3 w-3" />} />
-                    <Button variant="secondary" size="sm" aria-label={`Descargar ${row.label}`} onClick={() => void handleDownload(row.document!)} icon={<Download className="h-3 w-3" />} />
-                  </>
-                )}
-                {canManage && (
-                  <>
+                  {row.document ? (
+                    <p className="truncate text-[11px] font-medium text-text-tertiary">
+                      {row.document.originalName} · v{row.document.versionNumber} · {formatFileSize(row.document.sizeBytes)}
+                    </p>
+                  ) : (
+                    <p className={`text-[11px] font-bold ${missingRequired ? warning.text700 : "text-text-muted"}`}>
+                      {missingRequired ? "Faltante" : "Sin cargar"}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {row.document && (
+                    <>
+                      <IconActionButton label={`Ver ${row.label}`} tooltip="Ver" tone="sky" onClick={() => setPreviewDoc(row.document!)} icon={<Eye className="h-3.5 w-3.5" />} />
+                      <IconActionButton label={`Descargar ${row.label}`} tooltip="Descargar" tone="indigo" onClick={() => void handleDownload(row.document!)} icon={<Download className="h-3.5 w-3.5" />} />
+                    </>
+                  )}
+                  {canManage && !row.document && (
                     <Button
-                      variant="secondary"
+                      variant="primary"
+                      colorScheme="indigo"
                       size="sm"
-                      aria-label={`${row.document ? "Reemplazar" : "Cargar"} ${row.label}`}
+                      aria-label={`Cargar ${row.label}`}
                       isLoading={busyTypeId === row.typeId}
                       disabled={busyTypeId !== null}
                       onClick={() => openFilePicker(row.typeId)}
-                      icon={row.document ? <RefreshCw className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+                      icon={<Upload className="h-3 w-3" />}
                     >
-                      {row.document ? "Reemplazar" : "Cargar"}
+                      Cargar
                     </Button>
-                    {row.document && (
-                      <Button variant="secondary" size="sm" aria-label={`Eliminar ${row.label}`} onClick={() => setDeleteTarget(row.document!)} icon={<Trash2 className="h-3 w-3" />} />
-                    )}
-                  </>
-                )}
-              </div>
-            </li>
-          ))}
+                  )}
+                  {canManage && row.document && (
+                    <>
+                      <IconActionButton
+                        label={`Reemplazar ${row.label}`}
+                        tooltip="Reemplazar (nueva versión)"
+                        tone="amber"
+                        isBusy={busyTypeId === row.typeId}
+                        disabled={busyTypeId !== null}
+                        onClick={() => openFilePicker(row.typeId)}
+                        icon={<RefreshCw className="h-3.5 w-3.5" />}
+                      />
+                      <IconActionButton label={`Eliminar ${row.label}`} tooltip="Eliminar" tone="rose" onClick={() => setDeleteTarget(row.document!)} icon={<Trash2 className="h-3.5 w-3.5" />} />
+                    </>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

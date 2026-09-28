@@ -35,7 +35,7 @@ function DetailField({ label, children, icon }: { label: string; children: React
 
 function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-200">
+    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-default">
       {icon && <div className="text-brand-600">{icon}</div>}
       <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{children}</h3>
     </div>

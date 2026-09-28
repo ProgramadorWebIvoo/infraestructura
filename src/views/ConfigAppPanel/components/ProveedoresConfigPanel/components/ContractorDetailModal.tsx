@@ -56,7 +56,7 @@ function AiRatingSuggestion({ contractorCode, authToken }: { contractorCode: str
 
   return (
     <Card hoverable={false} className={`p-4 ${warning.borderL500} ${warning.border100} ${warning.bg50}`}>
-      <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-border-200">
+      <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-border-default">
         <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${warning.text700}`}>
           <BrainCircuit className="h-4 w-4" />
           Análisis IA
@@ -120,7 +120,7 @@ function DetailField({ label, children, icon }: { label: string; children: React
 
 function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-200">
+    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-default">
       {icon && <div className="text-brand-600">{icon}</div>}
       <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{children}</h3>
     </div>
