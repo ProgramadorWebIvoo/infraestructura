@@ -48,6 +48,7 @@ export default function ContractorDocumentDropZones({ types, files, onChange, id
             required={false}
             requiredIndicator={type.isRequired ? <RequiredMark filled={!!file} /> : <span className="text-[10px] font-medium normal-case text-slate-400">(opcional)</span>}
             compact
+            fullWidth
             onFileRejected={onFileRejected}
           />
         );

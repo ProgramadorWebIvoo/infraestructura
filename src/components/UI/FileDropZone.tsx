@@ -73,6 +73,8 @@ interface FileDropZoneProps {
    * (ej. gestión de adjuntos ya existentes en Infraestructura) donde el
    * recuadro grande compite de más por atención. */
   compact?: boolean;
+  /** Solo con `compact`: el botón ocupa todo el ancho disponible (borde punteado, acepta arrastrar y soltar). */
+  fullWidth?: boolean;
 }
 
 /**
@@ -167,6 +169,7 @@ export default function FileDropZone({
   maxFileCount,
   onFileRejected,
   compact = false,
+  fullWidth = false,
 }: FileDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -262,10 +265,21 @@ export default function FileDropZone({
         <motion.button
           type="button"
           onClick={() => inputRef.current?.click()}
+          onDragOver={fullWidth ? (e) => { e.preventDefault(); setIsDragging(true); } : undefined}
+          onDragLeave={fullWidth ? () => setIsDragging(false) : undefined}
+          onDrop={fullWidth ? (e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+          } : undefined}
           animate={hasError ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
           transition={hasError ? { duration: 0.4, ease: "easeInOut" } : springs.gentle}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
-            hasError ? "border-danger-300 bg-danger-50 text-danger-600" : `border-slate-200 bg-slate-50 text-slate-600 ${t.hover}`
+          className={`items-center gap-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
+            fullWidth ? "flex w-full justify-center border-dashed px-3 py-3" : "inline-flex px-3 py-1.5"
+          } ${
+            hasError
+              ? "border-danger-300 bg-danger-50 text-danger-600"
+              : `border-slate-200 ${isDragging && fullWidth ? "bg-slate-100" : "bg-slate-50"} text-slate-600 ${t.hover}`
           }`}
         >
           <Upload className="h-3.5 w-3.5" />
