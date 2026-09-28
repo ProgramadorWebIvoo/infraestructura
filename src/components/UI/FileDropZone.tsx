@@ -288,7 +288,7 @@ export default function FileDropZone({
             ref={inputRef}
             id={id}
             type="file"
-            multiple
+            multiple={maxFileCount !== 1}
             accept={accept}
             data-testid="file-input"
             className="hidden"
@@ -353,7 +353,7 @@ export default function FileDropZone({
             ref={inputRef}
             id={id}
             type="file"
-            multiple
+            multiple={maxFileCount !== 1}
             accept={accept}
             data-testid="file-input"
             className="hidden"
