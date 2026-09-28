@@ -16,7 +16,7 @@ const TYPES = [
 describe("ContractorDocumentTypesPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApiFetch.mockResolvedValue({ data: TYPES });
+    mockApiFetch.mockResolvedValue(TYPES);
   });
 
   it("lista los tipos y bloquea eliminar los que tienen documentos", async () => {

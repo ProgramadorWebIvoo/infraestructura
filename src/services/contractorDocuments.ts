@@ -55,14 +55,15 @@ export function canManageContractorDocuments(role?: string): boolean {
 
 /** Tipos activos que el formulario de registro debe pedir (endpoint público, cacheado en backend). */
 export async function fetchPublicDocumentTypes(): Promise<ContractorDocumentType[]> {
-  const res = await apiFetch<{ data: ContractorDocumentType[] }>("/public/contractor-document-types");
-  return res.data ?? [];
+  // apiFetch ya desenvuelve `data` (convención Laravel).
+  const types = await apiFetch<ContractorDocumentType[]>("/public/contractor-document-types");
+  return types ?? [];
 }
 
 export async function fetchContractorDocuments(
   code: string,
   token: string,
-): Promise<{ data: ContractorDocument[]; completeness: ContractorDocumentCompleteness }> {
+): Promise<{ documents: ContractorDocument[]; completeness: ContractorDocumentCompleteness }> {
   return apiFetch(`/contractors/${encodeURIComponent(code)}/documents`, { token });
 }
 
@@ -70,12 +71,11 @@ export async function uploadContractorDocument(code: string, documentTypeId: num
   const form = new FormData();
   form.append("document_type_id", String(documentTypeId));
   form.append("file", file);
-  const res = await apiFetch<{ data: ContractorDocument }>(`/contractors/${encodeURIComponent(code)}/documents`, {
+  return apiFetch<ContractorDocument>(`/contractors/${encodeURIComponent(code)}/documents`, {
     method: "POST",
     token,
     body: form,
   });
-  return res.data;
 }
 
 export async function deleteContractorDocument(code: string, documentId: number, token: string): Promise<void> {

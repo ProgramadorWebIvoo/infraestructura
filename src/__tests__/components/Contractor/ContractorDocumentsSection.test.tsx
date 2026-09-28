@@ -29,7 +29,7 @@ const DOC = {
 
 describe("ContractorDocumentsSection", () => {
   beforeEach(() => {
-    mockFetch.mockResolvedValue({ data: [DOC], completeness: { complete: false, missing: [{ id: 2, key: "acta", label: "Acta" }] } });
+    mockFetch.mockResolvedValue({ documents: [DOC], completeness: { complete: false, missing: [{ id: 2, key: "acta", label: "Acta" }] } });
   });
 
   it("muestra el documento cargado, el faltante y la marca de documentación incompleta", async () => {

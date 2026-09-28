@@ -23,6 +23,7 @@ import { containerVariants, itemVariants } from "@/animations";
 import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
+import SegmentedControl from "@/components/UI/SegmentedControl";
 import ContractorDocumentTypesPanel from "./components/ContractorDocumentTypesPanel";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
 import { providerConfigSchema } from "@/schemas/providerConfig.schema";
@@ -65,6 +66,8 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<ContractorForm>(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const [view, setView] = useState<"providers" | "documentTypes">("providers");
+  const canManageDocumentTypes = activeRole === "ADMIN" || isSuperadmin;
   const { types: documentTypes } = useContractorDocumentTypes();
   const [documentFiles, setDocumentFiles] = useState<Record<number, File | undefined>>({});
 
@@ -246,9 +249,9 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <div className={isSuperadmin ? "grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 item-start" : ""}>
+      <div className="min-w-0">
         <div
-          className={`space-y-6 ${isSuperadmin ? "flex min-h-0 flex-col lg:sticky lg:top-6" : ""}`}
+          className={`min-w-0 space-y-6 ${isSuperadmin ? "flex min-h-0 flex-col lg:sticky lg:top-6" : ""}`}
           style={isSuperadmin ? { height: "calc(100vh - 3rem)" } : undefined}
         >
           {/* ── Header ── */}
@@ -260,6 +263,19 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
                 description="Catálogo maestro de proveedores. Crea, edita y administra el estado de cada registro."
                 color="indigo"
                 actions={
+                  <div className="flex flex-wrap items-center gap-3">
+                    {canManageDocumentTypes && (
+                      <SegmentedControl
+                        id="proveedores-view"
+                        value={view}
+                        onChange={setView}
+                        options={[
+                          { value: "providers", label: "Proveedores" },
+                          { value: "documentTypes", label: "Tipos de documento" },
+                        ]}
+                      />
+                    )}
+                    {view === "providers" && (
                   <Button
                     onClick={handleOpenCreate}
                     variant="primary"
@@ -269,12 +285,19 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
                   >
                     Nuevo proveedor
                   </Button>
+                    )}
+                  </div>
                 }
               />
             </Card>
           </motion.div>
 
           {/* ── Table card ── */}
+          {view === "documentTypes" && canManageDocumentTypes ? (
+            <motion.div variants={itemVariants} className={isSuperadmin ? "flex-1 min-h-0 flex flex-col" : ""}>
+              <ContractorDocumentTypesPanel authToken={authToken} onAuditLog={isSuperadmin ? prependAuditLog : undefined} fillHeight={isSuperadmin} />
+            </motion.div>
+          ) : (
           <motion.div variants={itemVariants} className={isSuperadmin ? "flex-1 min-h-0 flex flex-col" : ""}>
             <Card hoverable={false} fillHeight={isSuperadmin} className={`p-0 overflow-hidden border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400}`}>
               <TableToolbar
@@ -302,12 +325,6 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
               />
             </Card>
           </motion.div>
-
-          {/* ── Catálogo de tipos de documento (solo administración) ── */}
-          {(activeRole === "ADMIN" || isSuperadmin) && (
-            <motion.div variants={itemVariants} className="shrink-0">
-              <ContractorDocumentTypesPanel authToken={authToken} onAuditLog={isSuperadmin ? prependAuditLog : undefined} />
-            </motion.div>
           )}
 
           <ContractorFormModal

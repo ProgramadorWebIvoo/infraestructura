@@ -66,7 +66,7 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
     setIsLoading(true);
     try {
       const res = await fetchContractorDocuments(contractorCode, authToken);
-      setDocuments(res.data ?? []);
+      setDocuments(res.documents ?? []);
       setCompleteness(res.completeness);
       setIsForbidden(false);
     } catch (error) {

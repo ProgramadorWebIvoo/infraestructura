@@ -29,6 +29,8 @@ import type { ConfigAuditLogRecord } from "@/hooks/useConfigAuditLogs";
 interface ContractorDocumentTypesPanelProps {
   authToken: string;
   onAuditLog?: (log: ConfigAuditLogRecord) => void;
+  /** Ocupa el alto disponible del contenedor (vista de viewport fijo). */
+  fillHeight?: boolean;
 }
 
 type WithAudit<T> = T & { auditLog?: ConfigAuditLogRecord };
@@ -42,7 +44,7 @@ interface TypeForm {
 const EMPTY_FORM: TypeForm = { label: "", isRequired: true, sortOrder: "" };
 const BASE_PATH = "/contractor-document-types/config";
 
-export default function ContractorDocumentTypesPanel({ authToken, onAuditLog }: ContractorDocumentTypesPanelProps) {
+export default function ContractorDocumentTypesPanel({ authToken, onAuditLog, fillHeight = false }: ContractorDocumentTypesPanelProps) {
   const { showToast } = useToast();
   const [types, setTypes] = useState<ContractorDocumentType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,8 +58,8 @@ export default function ContractorDocumentTypesPanel({ authToken, onAuditLog }: 
   const load = useCallback(async () => {
     if (!authToken) return;
     try {
-      const res = await apiFetch<{ data: ContractorDocumentType[] }>(BASE_PATH, { token: authToken });
-      setTypes(res.data ?? []);
+      const list = await apiFetch<ContractorDocumentType[]>(BASE_PATH, { token: authToken });
+      setTypes(list ?? []);
     } catch (error) {
       logError("ContractorDocumentTypesPanel.load", error);
       showToast("No se pudieron cargar los tipos de documento.", "error");
@@ -168,7 +170,6 @@ export default function ContractorDocumentTypesPanel({ authToken, onAuditLog }: 
         );
       },
     },
-    { key: "sortOrder", label: "Orden", align: "center", sortable: true, render: (t) => <span className="font-mono text-xs">{t.sortOrder}</span> },
     { key: "documentsCount", label: "Cargados", align: "center", render: (t) => <span className="font-mono text-xs">{t.documentsCount ?? 0}</span> },
     { key: "isActive", label: "Estado", align: "center", render: (t) => <ActiveBadge isActive={t.isActive} /> },
     {
@@ -200,7 +201,7 @@ export default function ContractorDocumentTypesPanel({ authToken, onAuditLog }: 
   ], [busyId, handleToggle, openEdit]);
 
   return (
-    <Card hoverable={false} className={`space-y-4 border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400}`}>
+    <Card hoverable={false} fillHeight={fillHeight} className={`space-y-4 border-l-4 ${SEMANTIC_COLOR_MAP.info.borderL400}`}>
       <SectionHeader
         icon={<FileText className="h-5 w-5" />}
         title="Documentos del proveedor"
@@ -219,7 +220,8 @@ export default function ContractorDocumentTypesPanel({ authToken, onAuditLog }: 
         rowKey={(t) => String(t.id)}
         isLoading={isLoading}
         emptyMessage="No hay tipos de documento configurados."
-        pageSize={10}
+        pageSize={fillHeight ? 20 : 10}
+        fillViewport={fillHeight}
         onRefresh={load}
       />
 

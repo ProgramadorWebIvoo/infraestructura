@@ -106,7 +106,7 @@ describe("ProveedoresConfigPanel (integración)", () => {
     vi.clearAllMocks();
     mockDocumentTypes = [];
     mockApiFetch.mockImplementation((path: string) =>
-      Promise.resolve(path.startsWith("/contractor-document-types") ? { data: [] } : [CONTRACTOR]),
+      Promise.resolve(path.startsWith("/contractor-document-types") ? [] : [CONTRACTOR]),
     );
   });
 
