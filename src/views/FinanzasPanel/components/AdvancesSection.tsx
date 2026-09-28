@@ -241,7 +241,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
 
-      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} />
+      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} onOrderSigned={onRefresh} />
     </Card>
   );
 }

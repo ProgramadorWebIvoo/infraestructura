@@ -238,7 +238,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
 
-      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} />
+      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} onOrderSigned={onRefresh} />
     </Card>
   );
 }

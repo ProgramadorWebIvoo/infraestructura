@@ -277,6 +277,49 @@ export interface PaymentOrder {
   elaboratedByName: string | null;
   snapshot: PaymentOrderSnapshot;
   createdAt: string;
+  signatures?: PaymentOrderSignature[];
+}
+
+// ---------------------------------------------------------------------------
+// Firmas de la orden de pago (F4 Bloque C)
+// ---------------------------------------------------------------------------
+
+export interface PaymentSignatureStep {
+  id: number;
+  paymentType: "ADVANCE" | "FINAL";
+  stepOrder: number;
+  role: string | null;
+  userId: number | null;
+  userName: string | null;
+  label: string;
+  isActive: boolean;
+}
+
+export interface PaymentOrderSignature {
+  id: number;
+  stepId: number | null;
+  stepLabel: string | null;
+  userId: number;
+  userName: string | null;
+  role: string;
+  signedAt: string;
+  revokedAt: string | null;
+}
+
+export type SignatureLineStatus = "FIRMADO" | "PROXIMO" | "PENDIENTE";
+
+export interface SignatureLineEntry {
+  step: PaymentSignatureStep;
+  status: SignatureLineStatus;
+  signedByName: string | null;
+  signedAt: string | null;
+}
+
+/** Respuesta de GET /payment-orders/{id}: la orden + su línea de firmas y verificación de integridad. */
+export interface PaymentOrderDetail extends PaymentOrder {
+  integrityValid: boolean;
+  signatureLine: SignatureLineEntry[];
+  canSign: boolean;
 }
 
 // ---------------------------------------------------------------------------

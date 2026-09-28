@@ -22,9 +22,10 @@ interface SendToFinanceSectionProps {
   onSendToFinance: (projectId: string) => Promise<void>;
   authToken: string;
   activeRole?: string;
+  onRefresh?: () => Promise<void> | void;
 }
 
-export default function SendToFinanceSection({ projects, onSendToFinance, authToken, activeRole }: SendToFinanceSectionProps) {
+export default function SendToFinanceSection({ projects, onSendToFinance, authToken, activeRole, onRefresh }: SendToFinanceSectionProps) {
   const approved = useMemo(() => projects.filter((p) => p.status === ProjectStatus.APROBADO_PRESIDENCIA), [projects]);
   const waitingCount = useMemo(() => projects.filter((p) => p.status === ProjectStatus.PENDIENTE_PRESIDENCIA).length, [projects]);
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export default function SendToFinanceSection({ projects, onSendToFinance, authTo
         </ul>
       )}
 
-      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} />
+      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} onOrderSigned={onRefresh} />
     </Card>
   );
 }

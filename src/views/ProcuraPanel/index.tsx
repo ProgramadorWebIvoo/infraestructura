@@ -135,7 +135,7 @@ export default function ProcuraPanel({
             />
           )}
           {activeTab === "finanzas" && (
-            <SendToFinanceSection projects={projects} onSendToFinance={onSendToFinance} authToken={authToken} activeRole={activeRole} />
+            <SendToFinanceSection projects={projects} onSendToFinance={onSendToFinance} authToken={authToken} activeRole={activeRole} onRefresh={onRefreshData} />
           )}
           {activeTab === "finiquito" && (
             <FiniquitoRequestSection projects={projects} authToken={authToken} actions={closureActions} />

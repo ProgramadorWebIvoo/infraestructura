@@ -13,6 +13,7 @@ import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTokens";
 import ContractorDocumentsSection from "@/components/Contractor/ContractorDocumentsSection";
+import PaymentOrderSignatureLine from "./PaymentOrderSignatureLine";
 import BsAmount from "@/components/UI/BsAmount";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { formatNumber } from "@/utils";
@@ -24,6 +25,8 @@ interface PaymentOrderDetailModalProps {
   onClose: () => void;
   authToken: string;
   activeRole?: string;
+  /** Refresca la lista de obras del panel tras firmar (el estado de la orden pudo cambiar a FIRMADA/PAGADA). */
+  onOrderSigned?: () => void;
 }
 
 const STATUS_LABELS: Record<PaymentOrderStatus, string> = {
@@ -40,7 +43,7 @@ const STATUS_ACCENT: Record<PaymentOrderStatus, SemanticColor> = {
   ANULADA: "neutral",
 };
 
-export default function PaymentOrderDetailModal({ order, onClose, authToken, activeRole }: PaymentOrderDetailModalProps) {
+export default function PaymentOrderDetailModal({ order, onClose, authToken, activeRole, onOrderSigned }: PaymentOrderDetailModalProps) {
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
 
   if (!order) return null;
@@ -101,6 +104,8 @@ export default function PaymentOrderDetailModal({ order, onClose, authToken, act
             </div>
           </div>
         </div>
+
+        <PaymentOrderSignatureLine orderId={order.id} authToken={authToken} onSigned={onOrderSigned} />
 
         <ContractorDocumentsSection contractorCode={order.contractorCode} authToken={authToken} activeRole={activeRole} />
       </div>

@@ -39,6 +39,7 @@ import {
   MapPin,
   Shield,
   KeyRound,
+  FileSignature,
 } from "lucide-react";
 import { itemVariants, springs } from "@/animations";
 import { SkeletonBlock, SkeletonCard, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
@@ -74,6 +75,7 @@ import RolesConfigPanel from "./components/RolesConfigPanel";
 import NotificationActionsConfigPanel from "./components/NotificationActionsConfigPanel";
 import AIConfigPanel from "./components/AIConfigPanel";
 import KeysConfigPanel from "./components/KeysConfigPanel";
+import PaymentSignatureStepsPanel from "./components/PaymentSignatureStepsPanel";
 import DebugModeCard from "./components/DebugModeCard";
 
 const GROUP_META: Record<string, SettingGroupMeta> = {
@@ -122,6 +124,7 @@ const EXTRA_TABS: { key: string; title: string; route: string }[] = [
   { key: "ubicaciones", title: "Ubicaciones", route: "/config-localizations" },
   { key: "modelos-ia", title: "Modelos de IA", route: "/config-ia" },
   { key: "config-keys", title: "Configuración de Keys", route: "/config-keys" },
+  { key: "firmas-pago", title: "Firmas de Pago", route: "/config-firmas-pago" },
 ];
 
 /**
@@ -146,6 +149,7 @@ const SECTION_META: Record<string, { group: string; icon: ReactNode }> = {
   proveedores: { group: "Administración", icon: <Truck className="h-4 w-4" /> },
   "modelos-ia": { group: "Administración", icon: <BrainCircuit className="h-4 w-4" /> },
   "config-keys": { group: "Administración", icon: <KeyRound className="h-4 w-4" /> },
+  "firmas-pago": { group: "Administración", icon: <FileSignature className="h-4 w-4" /> },
 };
 
 interface ConfigAppPanelProps {
@@ -334,7 +338,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   // — se filtran también aquí para no depender solo de role_view_access
   // (editable por ADMIN antes del endurecimiento) y evitar mostrar un panel
   // cuyas acciones el backend rechazará con 403.
-  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles"]);
+  const SUPERADMIN_ONLY_TABS = new Set(["usuarios", "config-keys", "roles", "firmas-pago"]);
   const visibleExtraTabs = EXTRA_TABS.filter(tab =>
     SUPERADMIN_ONLY_TABS.has(tab.key) ? isSuperadmin : canAccess(tab.route),
   );
@@ -472,6 +476,8 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                 <LocalizationConfigPanel authToken={authToken} activeRole={activeRole} />
               ) : activeExtraTab.key === "config-keys" ? (
                 <KeysConfigPanel authToken={authToken} activeRole={activeRole} />
+              ) : activeExtraTab.key === "firmas-pago" ? (
+                <PaymentSignatureStepsPanel authToken={authToken} />
               ) : (
                 <AIConfigPanel authToken={authToken} activeRole={activeRole} />
               )
