@@ -56,7 +56,7 @@ export function canManageContractorDocuments(role?: string): boolean {
 /** Tipos activos que el formulario de registro debe pedir (endpoint público, cacheado en backend). */
 export async function fetchPublicDocumentTypes(): Promise<ContractorDocumentType[]> {
   const res = await apiFetch<{ data: ContractorDocumentType[] }>("/public/contractor-document-types");
-  return res.data;
+  return res.data ?? [];
 }
 
 export async function fetchContractorDocuments(

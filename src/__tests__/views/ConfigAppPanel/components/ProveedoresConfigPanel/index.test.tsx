@@ -105,7 +105,9 @@ describe("ProveedoresConfigPanel (integración)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDocumentTypes = [];
-    mockApiFetch.mockResolvedValue([CONTRACTOR]);
+    mockApiFetch.mockImplementation((path: string) =>
+      Promise.resolve(path.startsWith("/contractor-document-types") ? { data: [] } : [CONTRACTOR]),
+    );
   });
 
   it("carga y renderiza el catálogo de proveedores", async () => {

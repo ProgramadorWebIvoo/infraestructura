@@ -23,6 +23,7 @@ import { containerVariants, itemVariants } from "@/animations";
 import { getContractorColumns } from "./columns";
 import ContractorFormModal from "./components/ContractorFormModal";
 import ContractorDetailModal from "./components/ContractorDetailModal";
+import ContractorDocumentTypesPanel from "./components/ContractorDocumentTypesPanel";
 import { EMPTY_FORM, type ConfigContractor, type ContractorForm } from "./types";
 import { providerConfigSchema } from "@/schemas/providerConfig.schema";
 import { useContractorDocumentTypes } from "@/hooks/useContractorDocumentTypes";
@@ -301,6 +302,13 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
               />
             </Card>
           </motion.div>
+
+          {/* ── Catálogo de tipos de documento (solo administración) ── */}
+          {(activeRole === "ADMIN" || isSuperadmin) && (
+            <motion.div variants={itemVariants} className="shrink-0">
+              <ContractorDocumentTypesPanel authToken={authToken} onAuditLog={isSuperadmin ? prependAuditLog : undefined} />
+            </motion.div>
+          )}
 
           <ContractorFormModal
             isOpen={isModalOpen}
