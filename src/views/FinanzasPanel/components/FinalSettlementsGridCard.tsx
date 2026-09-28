@@ -9,7 +9,7 @@
  */
 
 import { memo } from "react";
-import { CreditCard } from "lucide-react";
+import { CreditCard, FileSignature } from "lucide-react";
 import Button from "@/components/UI/Button";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
@@ -21,12 +21,13 @@ interface FinalSettlementsGridCardProps {
   balanceDue: number;
   paidAdvance: number;
   onOpenConfirm: () => void;
+  onOpenOrder?: () => void;
   convert: (amount: number, fromCode: string) => number;
   hasRates: boolean;
   isLoadingRates: boolean;
 }
 
-function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, onOpenConfirm, convert, hasRates, isLoadingRates }: FinalSettlementsGridCardProps) {
+function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, onOpenConfirm, onOpenOrder, convert, hasRates, isLoadingRates }: FinalSettlementsGridCardProps) {
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -62,17 +63,30 @@ function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, on
         </div>
       </div>
 
-      <Button
-        id={`btn-pay-final-${project.id}`}
-        onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
-        variant="primary"
-        colorScheme="sky"
-        size="md"
-        className="w-full"
-        icon={<CreditCard className="h-4 w-4" />}
-      >
-        Aprobar y Transferir
-      </Button>
+      <div className="flex gap-2">
+        {onOpenOrder && (
+          <Button
+            id={`btn-view-order-final-${project.id}`}
+            onClick={(e) => { e.stopPropagation(); onOpenOrder(); }}
+            variant="secondary"
+            size="md"
+            icon={<FileSignature className="h-4 w-4" />}
+          >
+            Orden
+          </Button>
+        )}
+        <Button
+          id={`btn-pay-final-${project.id}`}
+          onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
+          variant="primary"
+          colorScheme="sky"
+          size="md"
+          className="flex-1"
+          icon={<CreditCard className="h-4 w-4" />}
+        >
+          Aprobar y Transferir
+        </Button>
+      </div>
     </div>
   );
 }

@@ -115,7 +115,7 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
           path={ROUTES.FINANZAS}
           element={
             <ProtectedRoute canAccess={canAccess(ROUTES.FINANZAS)} redirectTo={fallbackRoute}>
-              <FinanzasPanel projects={projects} authToken={authToken} onPayAdvance={onPayAdvance} onPayFinal={onPayFinal} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
+              <FinanzasPanel projects={projects} authToken={authToken} activeRole={activeRole} onPayAdvance={onPayAdvance} onPayFinal={onPayFinal} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
         />

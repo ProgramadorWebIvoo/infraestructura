@@ -231,12 +231,52 @@ export interface Project {
   /** Residente efectivo: el de la ubicación registrada o, si es personalizada, el que eligió Auditoría. */
   residentUserId?: number | null;
   residentName?: string | null;
+  /** F3: la obra tiene modificaciones aprobadas (badge "Modificada") o pendientes de Auditoría. */
+  hasApprovedModifications?: boolean;
+  hasPendingModifications?: boolean;
   closureReportStatus?: string | null;
   closureReportRevision?: number | null;
   /** Finiquito propuesto por Auditoría (solo con el informe de cierre cargado). */
   finiquitoAmount?: number | null;
   /** Congelaciones de tasa de cambio — ver RateFreeze. Solo viene poblado cuando el backend carga la relación (detailRelations()). */
   rateFreezes?: RateFreeze[];
+  /** Orden de pago vigente por tipo (F4 Bloque B) — null si aún no se generó o fue anulada sin regenerar. */
+  paymentOrders?: {
+    advance: PaymentOrder | null;
+    final: PaymentOrder | null;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// PaymentOrder (F4 Bloque B — orden de pago digital de anticipo/finiquito)
+// ---------------------------------------------------------------------------
+
+export type PaymentOrderStatus = "EN_FIRMA" | "FIRMADA" | "PAGADA" | "ANULADA";
+
+export interface PaymentOrderSnapshot {
+  project: { id: string; title: string; location: string };
+  contractor: { code: string; name: string; rif: string };
+  proposal: { id: string; total_cost: string; negotiated_advance_percent: string; currency: string };
+  payment_type: "ADVANCE" | "FINAL";
+  amount: string;
+}
+
+export interface PaymentOrder {
+  id: number;
+  number: number;
+  projectId: string;
+  proposalId: string;
+  contractorCode: string;
+  paymentType: "ADVANCE" | "FINAL";
+  amount: number;
+  currency: string;
+  exchangeRate: number | null;
+  status: PaymentOrderStatus;
+  contentHash: string;
+  voidReason: string | null;
+  elaboratedByName: string | null;
+  snapshot: PaymentOrderSnapshot;
+  createdAt: string;
 }
 
 // ---------------------------------------------------------------------------

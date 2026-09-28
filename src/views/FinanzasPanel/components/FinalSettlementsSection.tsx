@@ -12,13 +12,15 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle, CreditCard, DollarSign, SearchX, Wallet } from "lucide-react";
+import { CheckCircle, CreditCard, DollarSign, FileSignature, SearchX, Wallet } from "lucide-react";
 import Button from "@/components/UI/Button";
-import type { Project, Proposal } from "@/types";
+import IconActionButton from "@/components/UI/IconActionButton";
+import type { PaymentOrder, Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
 import PayWithProofModal from "./PayWithProofModal";
+import PaymentOrderDetailModal from "./PaymentOrderDetailModal";
 import ClosureFinalQuantities from "@/components/ClosureReport/ClosureFinalQuantities";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
@@ -38,6 +40,7 @@ interface FinalSettlementsSectionProps {
   onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   onRefresh?: () => Promise<void> | void;
   authToken?: string;
+  activeRole?: string;
 }
 
 interface SettlementRow {
@@ -47,9 +50,10 @@ interface SettlementRow {
   balanceDue: number;
 }
 
-export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal, onRefresh, authToken = "" }: FinalSettlementsSectionProps) {
+export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal, onRefresh, authToken = "", activeRole }: FinalSettlementsSectionProps) {
   const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
   const [proofFiles, setProofFiles] = useState<File[]>([]);
+  const [viewOrder, setViewOrder] = useState<PaymentOrder | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [query, setQuery] = useState("");
   const { showToast } = useToast();
@@ -97,18 +101,28 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         <BsAmount amount={balanceDue} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
       </div>
     ) },
-    { key: "action", label: "", width: "11rem", render: ({ project, balanceDue }) => (
-      <Button
-        id={`btn-pay-final-${project.id}`}
-        onClick={() => setConfirmPayFinal({ projectId: project.id, amount: balanceDue, title: project.title })}
-        variant="primary"
-        colorScheme="sky"
-        size="sm"
-        className="w-full"
-        icon={<CreditCard className="h-3.5 w-3.5" />}
-      >
-        Aprobar
-      </Button>
+    { key: "action", label: "", width: "13rem", render: ({ project, balanceDue }) => (
+      <div className="flex items-center justify-end gap-1.5">
+        {project.paymentOrders?.final && (
+          <IconActionButton
+            label={`Ver orden de pago de ${project.title}`}
+            tooltip="Ver orden de pago"
+            tone="indigo"
+            onClick={() => setViewOrder(project.paymentOrders!.final)}
+            icon={<FileSignature className="h-3.5 w-3.5" />}
+          />
+        )}
+        <Button
+          id={`btn-pay-final-${project.id}`}
+          onClick={() => setConfirmPayFinal({ projectId: project.id, amount: balanceDue, title: project.title })}
+          variant="primary"
+          colorScheme="sky"
+          size="sm"
+          icon={<CreditCard className="h-3.5 w-3.5" />}
+        >
+          Aprobar
+        </Button>
+      </div>
     ) },
   ], [convert, hasRates, isLoadingRates]);
 
@@ -186,6 +200,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
                   balanceDue={balanceDue}
                   paidAdvance={paidAdvance}
                   onOpenConfirm={() => handleOpenConfirm(project.id, balanceDue, project.title)}
+                  onOpenOrder={project.paymentOrders?.final ? () => setViewOrder(project.paymentOrders!.final) : undefined}
                   convert={convert}
                   hasRates={hasRates}
                   isLoadingRates={isLoadingRates}
@@ -222,6 +237,8 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         onProofFilesChange={setProofFiles}
         onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
+
+      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} />
     </Card>
   );
 }

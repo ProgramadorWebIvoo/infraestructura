@@ -16,6 +16,8 @@ export type {
   ProjectDocument,
   Project,
   RateFreeze,
+  PaymentOrder,
+  PaymentOrderStatus,
   Contractor,
   AuditLog,
   SupplierMaterialProposalItem,

@@ -11,7 +11,7 @@
  */
 
 import { memo } from "react";
-import { CreditCard } from "lucide-react";
+import { CreditCard, FileSignature } from "lucide-react";
 import Button from "@/components/UI/Button";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
@@ -22,12 +22,13 @@ interface AdvancesGridCardProps {
   winner: Proposal;
   advAmount: number;
   onOpenConfirm: () => void;
+  onOpenOrder?: () => void;
   convert: (amount: number, fromCode: string) => number;
   hasRates: boolean;
   isLoadingRates: boolean;
 }
 
-function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm, convert, hasRates, isLoadingRates }: AdvancesGridCardProps) {
+function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm, onOpenOrder, convert, hasRates, isLoadingRates }: AdvancesGridCardProps) {
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -64,17 +65,30 @@ function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm, convert, 
         </div>
       </div>
 
-      <Button
-        id={`btn-pay-advance-${project.id}`}
-        onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
-        variant="primary"
-        colorScheme="rose"
-        size="md"
-        className="w-full"
-        icon={<CreditCard className="h-4 w-4" />}
-      >
-        Liberar Desembolso
-      </Button>
+      <div className="flex gap-2">
+        {onOpenOrder && (
+          <Button
+            id={`btn-view-order-advance-${project.id}`}
+            onClick={(e) => { e.stopPropagation(); onOpenOrder(); }}
+            variant="secondary"
+            size="md"
+            icon={<FileSignature className="h-4 w-4" />}
+          >
+            Orden
+          </Button>
+        )}
+        <Button
+          id={`btn-pay-advance-${project.id}`}
+          onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
+          variant="primary"
+          colorScheme="rose"
+          size="md"
+          className="flex-1"
+          icon={<CreditCard className="h-4 w-4" />}
+        >
+          Liberar Desembolso
+        </Button>
+      </div>
     </div>
   );
 }

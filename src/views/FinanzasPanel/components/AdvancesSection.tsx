@@ -13,13 +13,15 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle, Coins, CreditCard, SearchX, Wallet } from "lucide-react";
+import { CheckCircle, Coins, CreditCard, FileSignature, SearchX, Wallet } from "lucide-react";
 import Button from "@/components/UI/Button";
-import type { Project, Proposal } from "@/types";
+import IconActionButton from "@/components/UI/IconActionButton";
+import type { PaymentOrder, Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
 import PayWithProofModal from "./PayWithProofModal";
+import PaymentOrderDetailModal from "./PaymentOrderDetailModal";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
 import GridView from "@/components/UI/GridView/GridView";
@@ -37,6 +39,8 @@ interface AdvancesSectionProps {
   /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liberación. */
   onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   onRefresh?: () => Promise<void> | void;
+  authToken?: string;
+  activeRole?: string;
 }
 
 interface AdvanceRow {
@@ -45,9 +49,10 @@ interface AdvanceRow {
   advAmount: number;
 }
 
-export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefresh }: AdvancesSectionProps) {
+export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefresh, authToken = "", activeRole }: AdvancesSectionProps) {
   const [confirmPayAdvance, setConfirmPayAdvance] = useState<{ projectId: string; amount: number; title: string } | null>(null);
   const [proofFiles, setProofFiles] = useState<File[]>([]);
+  const [viewOrder, setViewOrder] = useState<PaymentOrder | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [query, setQuery] = useState("");
   const { showToast } = useToast();
@@ -101,18 +106,28 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         <BsAmount amount={advAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
       </div>
     ) },
-    { key: "action", label: "", width: "11rem", render: ({ project, advAmount }) => (
-      <Button
-        id={`btn-pay-advance-${project.id}`}
-        onClick={() => setConfirmPayAdvance({ projectId: project.id, amount: advAmount, title: project.title })}
-        variant="primary"
-        colorScheme="rose"
-        size="sm"
-        className="w-full"
-        icon={<CreditCard className="h-3.5 w-3.5" />}
-      >
-        Liberar
-      </Button>
+    { key: "action", label: "", width: "13rem", render: ({ project, advAmount }) => (
+      <div className="flex items-center justify-end gap-1.5">
+        {project.paymentOrders?.advance && (
+          <IconActionButton
+            label={`Ver orden de pago de ${project.title}`}
+            tooltip="Ver orden de pago"
+            tone="indigo"
+            onClick={() => setViewOrder(project.paymentOrders!.advance)}
+            icon={<FileSignature className="h-3.5 w-3.5" />}
+          />
+        )}
+        <Button
+          id={`btn-pay-advance-${project.id}`}
+          onClick={() => setConfirmPayAdvance({ projectId: project.id, amount: advAmount, title: project.title })}
+          variant="primary"
+          colorScheme="rose"
+          size="sm"
+          icon={<CreditCard className="h-3.5 w-3.5" />}
+        >
+          Liberar
+        </Button>
+      </div>
     ) },
   ], [convert, hasRates, isLoadingRates]);
 
@@ -189,6 +204,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
                   winner={winner}
                   advAmount={advAmount}
                   onOpenConfirm={() => handleOpenConfirm(project.id, advAmount, project.title)}
+                  onOpenOrder={project.paymentOrders?.advance ? () => setViewOrder(project.paymentOrders!.advance) : undefined}
                   convert={convert}
                   hasRates={hasRates}
                   isLoadingRates={isLoadingRates}
@@ -224,6 +240,8 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         onProofFilesChange={setProofFiles}
         onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
+
+      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} />
     </Card>
   );
 }

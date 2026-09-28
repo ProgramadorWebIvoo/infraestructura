@@ -30,13 +30,14 @@ interface FinanzasPanelProps {
   projects: Project[];
   /** Opcional con default "" — solo se usa para resolver tabs dinámicas (GET /auth/tabs); sin token, todas las tabs quedan visibles. */
   authToken?: string;
+  activeRole?: string;
   onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
 }
 
-export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, onPayFinal, isLoading = false, onRefreshData }: FinanzasPanelProps) {
+export default function FinanzasPanel({ projects, authToken = "", activeRole, onPayAdvance, onPayFinal, isLoading = false, onRefreshData }: FinanzasPanelProps) {
   const { filterTabs, isLoadingTabs } = useTabAccess(authToken);
   const [activeTab, setActiveTab] = useState<TabKey>("stats");
 
@@ -143,8 +144,8 @@ export default function FinanzasPanel({ projects, authToken = "", onPayAdvance, 
         <TabPanel activeKey={activeTab}>
           {activeTab === "book" && <LedgerSection paidLedger={paidLedger} />}
           {activeTab === "stats" && <FinancialSummarySection projects={projects} paidLedger={paidLedger} />}
-          {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} onRefresh={onRefreshData} />}
-          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} onRefresh={onRefreshData} authToken={authToken} />}
+          {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} onRefresh={onRefreshData} authToken={authToken} activeRole={activeRole} />}
+          {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} onRefresh={onRefreshData} authToken={authToken} activeRole={activeRole} />}
         </TabPanel>
       </motion.div>
     </motion.div>
