@@ -46,6 +46,7 @@ interface ProcuraPanelProps {
   onSendToFinance: (projectId: string) => Promise<void>;
   closureActions: ClosureActions;
   authToken: string;
+  activeRole?: string;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
 }
@@ -59,6 +60,7 @@ export default function ProcuraPanel({
   onSendToFinance,
   closureActions,
   authToken,
+  activeRole,
   isLoading = false,
   onRefreshData,
 }: ProcuraPanelProps) {
@@ -133,7 +135,7 @@ export default function ProcuraPanel({
             />
           )}
           {activeTab === "finanzas" && (
-            <SendToFinanceSection projects={projects} onSendToFinance={onSendToFinance} />
+            <SendToFinanceSection projects={projects} onSendToFinance={onSendToFinance} authToken={authToken} activeRole={activeRole} />
           )}
           {activeTab === "finiquito" && (
             <FiniquitoRequestSection projects={projects} authToken={authToken} actions={closureActions} />

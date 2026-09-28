@@ -20,7 +20,7 @@ import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
 import PayWithProofModal from "./PayWithProofModal";
-import PaymentOrderDetailModal from "./PaymentOrderDetailModal";
+import PaymentOrderDetailModal from "@/components/PaymentOrder/PaymentOrderDetailModal";
 import ClosureFinalQuantities from "@/components/ClosureReport/ClosureFinalQuantities";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";

@@ -7,24 +7,28 @@
  */
 
 import { useMemo, useState } from "react";
-import { Landmark, Send } from "lucide-react";
+import { FileSignature, Landmark, Send } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import Button from "@/components/UI/Button";
 import Card from "@/components/UI/Card";
 import EmptyState from "@/components/UI/EmptyState";
 import SectionHeader from "@/components/UI/SectionHeader";
+import PaymentOrderDetailModal from "@/components/PaymentOrder/PaymentOrderDetailModal";
 import { ProjectStatus } from "@/types";
-import type { Project } from "@/types";
+import type { PaymentOrder, Project } from "@/types";
 
 interface SendToFinanceSectionProps {
   projects: Project[];
   onSendToFinance: (projectId: string) => Promise<void>;
+  authToken: string;
+  activeRole?: string;
 }
 
-export default function SendToFinanceSection({ projects, onSendToFinance }: SendToFinanceSectionProps) {
+export default function SendToFinanceSection({ projects, onSendToFinance, authToken, activeRole }: SendToFinanceSectionProps) {
   const approved = useMemo(() => projects.filter((p) => p.status === ProjectStatus.APROBADO_PRESIDENCIA), [projects]);
   const waitingCount = useMemo(() => projects.filter((p) => p.status === ProjectStatus.PENDIENTE_PRESIDENCIA).length, [projects]);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [viewOrder, setViewOrder] = useState<PaymentOrder | null>(null);
 
   const send = async (projectId: string) => {
     setSendingId(projectId);
@@ -68,6 +72,16 @@ export default function SendToFinanceSection({ projects, onSendToFinance }: Send
                 <div className="font-mono font-black text-slate-800 whitespace-nowrap">
                   {proposal ? formatCurrency(proposal.totalCost) : "—"}
                 </div>
+                {project.paymentOrders?.advance && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={<FileSignature className="h-3.5 w-3.5" />}
+                    onClick={() => setViewOrder(project.paymentOrders!.advance)}
+                  >
+                    Ver orden
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   colorScheme="emerald"
@@ -83,6 +97,8 @@ export default function SendToFinanceSection({ projects, onSendToFinance }: Send
           })}
         </ul>
       )}
+
+      <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} />
     </Card>
   );
 }

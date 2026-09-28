@@ -82,6 +82,7 @@ describe("SendToFinanceSection", () => {
       <SendToFinanceSection
         projects={[makeProject("A", ProjectStatus.APROBADO_PRESIDENCIA), makeProject("B", ProjectStatus.PENDIENTE_PRESIDENCIA)]}
         onSendToFinance={onSend}
+        authToken="t"
       />,
     );
 
