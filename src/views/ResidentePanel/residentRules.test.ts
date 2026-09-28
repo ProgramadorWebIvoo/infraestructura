@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ResidentProject } from "@/hooks/useResidentProjects";
-import { hasResidentPhoto, sortPendingFirst, toClosureReport, validateResidentPhoto } from "./residentRules";
+import { filterResidentProjects, hasResidentPhoto, reportState, sortPendingFirst, toClosureReport, validateResidentPhoto } from "./residentRules";
 
 const project = (id: string, pendingAction: boolean, photos: ResidentProject["closure"] extends infer C ? any : never = []): ResidentProject => ({
   id, title: id, location: "L", description: null, status: "INFORME_ENVIADO", pendingAction,
@@ -10,6 +10,26 @@ const project = (id: string, pendingAction: boolean, photos: ResidentProject["cl
 describe("residentRules", () => {
   it("ordena primero las obras pendientes sin perder el orden relativo", () => {
     expect(sortPendingFirst([project("a", false), project("b", true), project("c", false), project("d", true)]).map((p) => p.id)).toEqual(["b", "d", "a", "c"]);
+  });
+
+  it("distingue informe por cargar, devuelto por Auditoría y enviado", () => {
+    const returned = { ...project("r", true), closure: { ...project("r", true).closure!, rejectionTarget: "RESIDENTE" as const } };
+    expect(reportState(project("a", true))).toBe("PENDIENTE");
+    expect(reportState(returned)).toBe("DEVUELTO");
+    expect(reportState(project("b", false))).toBe("ENVIADO");
+  });
+
+  it("filtra por texto (título, ID, ubicación) y por estado sin alterar el orden", () => {
+    const list = [
+      { ...project("PRJ-001", true), title: "Tienda Norte", location: "Caracas" },
+      { ...project("PRJ-002", false), title: "Planta Sur", location: "Valencia" },
+      { ...project("PRJ-003", true), title: "Oficina Este", location: "Caracas" },
+    ];
+    expect(filterResidentProjects(list, "caracas", "ALL").map((p) => p.id)).toEqual(["PRJ-001", "PRJ-003"]);
+    expect(filterResidentProjects(list, "prj-002", "ALL").map((p) => p.id)).toEqual(["PRJ-002"]);
+    expect(filterResidentProjects(list, "", "ENVIADO").map((p) => p.id)).toEqual(["PRJ-002"]);
+    expect(filterResidentProjects(list, "planta", "PENDIENTE")).toEqual([]);
+    expect(filterResidentProjects(list, "  ", "ALL")).toHaveLength(3);
   });
 
   it("valida tipo y tamaño de la foto", () => {

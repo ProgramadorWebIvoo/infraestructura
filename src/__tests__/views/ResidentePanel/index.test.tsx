@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ToastProvider } from "@/components/UI/Toast";
 import { apiFetch } from "@/services/api";
 import ResidentePanel from "@/views/ResidentePanel";
@@ -15,7 +15,13 @@ const dto = (id: string, pendingAction: boolean) => ({
 const renderPanel = () => render(<ToastProvider><ResidentePanel authToken="t" /></ToastProvider>);
 
 describe("rol RESIDENTE", () => {
-  beforeEach(() => vi.mocked(apiFetch).mockReset());
+  beforeEach(() => {
+    vi.mocked(apiFetch).mockReset();
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  // El Select del filtro mide en requestAnimationFrame; se espera un frame antes de desmontar.
+  afterEach(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
 
   it("muestra el estado vacío de 'Mis obras' sin obras", async () => {
     vi.mocked(apiFetch).mockResolvedValue([]);
@@ -27,9 +33,19 @@ describe("rol RESIDENTE", () => {
   it("lista primero las obras pendientes de verificación", async () => {
     vi.mocked(apiFetch).mockResolvedValue([dto("1", false), dto("2", true)]);
     renderPanel();
-    await waitFor(() => expect(screen.getAllByRole("button", { name: /Cargar mi informe|Ver mi informe/ })).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /Cargar mi informe|Ver mi informe/ })).toHaveLength(2), { timeout: 5000 });
     const titles = screen.getAllByText(/^Obra \d$/).map((n) => n.textContent);
     expect(titles).toEqual(["Obra 2", "Obra 1"]);
+  });
+
+  it("con muchas obras pagina la tabla y la búsqueda filtra", async () => {
+    vi.mocked(apiFetch).mockResolvedValue(Array.from({ length: 25 }, (_, i) => dto(`PRJ-${String(i + 1).padStart(3, "0")}`, i % 2 === 0)));
+    renderPanel();
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /Cargar mi informe|Ver mi informe/ }).length).toBeGreaterThan(0), { timeout: 5000 });
+    expect(screen.getAllByRole("button", { name: /Cargar mi informe|Ver mi informe/ })).toHaveLength(10);
+
+    fireEvent.change(screen.getByLabelText("Buscar en mis obras"), { target: { value: "PRJ-025" } });
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /Cargar mi informe|Ver mi informe/ })).toHaveLength(1), { timeout: 5000 });
   });
 
   it("su home solo enlaza a /residente y no muestra KPIs financieros", () => {
