@@ -170,7 +170,7 @@ export default function WorkflowTimeline({ project }: { project: Project }) {
         <div className="flex gap-3 relative">
           <StepBadge index={1} state={stepProps(1).state} />
           <div className="flex-1 min-w-0">
-            <StepHeader icon={Building2} role="PRESIDENCIA" title="Infraestructura / Mantenimiento" subtitle="Registro técnico de requerimientos de insumos." state={stepProps(1).state} />
+            <StepHeader icon={Building2} role="INFRAESTRUCTURA" title="Infraestructura / Mantenimiento" subtitle="Registro técnico de requerimientos de insumos." state={stepProps(1).state} />
             <div className="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-100 text-[11px] text-slate-600">
               <strong>Descripción:</strong> {project.description}
               <div className="mt-1.5 pt-1.5 border-t border-slate-200/60 font-mono font-medium text-slate-500">

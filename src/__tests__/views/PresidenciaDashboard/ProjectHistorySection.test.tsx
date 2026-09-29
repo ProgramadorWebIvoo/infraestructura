@@ -51,7 +51,7 @@ const detail: ProjectHistoryDetail = {
     { key: "cierre", label: "Cierre", state: "done" },
   ],
   budget: { lines: [{ id: "m1", name: "Cemento", quantity: 100, unit: "saco", estimatedUnitPrice: 8, estimatedSubtotal: 800, condition: null, brand: null, catalogProduct: { id: 1, name: "Cemento Portland" } }], linesTotal: 800 },
-  request: { createdDate: "2026-09-24", createdBy: "Infra", reviewNotes: null, procuraNotes: null, dossierAiScore: null },
+  request: { createdDate: "2026-09-24", createdBy: "Infra", reviewNotes: null, procuraNotes: null, dossierAiScore: null, documents: [], history: [] },
   suppliers: [
     { id: "P1", contractorCode: "CON-301", contractorName: "TestRif", origen: "MANUAL", fechaOferta: "2026-09-10", createdBy: null, quoteCurrency: "USD", materialCost: 1, laborCost: 1, totalCost: 2050, negotiatedAdvancePercent: 30, deliveryWeeks: 4, precioAnterior: null, precioNuevo: null, diferencia: null, motivo: null, isAwarded: false, replacedById: "P2", isRemoved: false, items: [] },
     { id: "P2", contractorCode: "CON-301", contractorName: "TestRif", origen: "RENEGOCIACION", fechaOferta: "2026-09-15", createdBy: null, quoteCurrency: "USD", materialCost: 1, laborCost: 1, totalCost: 1940, negotiatedAdvancePercent: 30, deliveryWeeks: 4, precioAnterior: 2050, precioNuevo: 1940, diferencia: -110, motivo: "Volumen", isAwarded: true, replacedById: null, isRemoved: false, items: [] },

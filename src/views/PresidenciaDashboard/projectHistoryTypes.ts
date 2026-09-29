@@ -183,6 +183,10 @@ export interface ProjectHistoryDetail {
     reviewNotes: string | null;
     procuraNotes: string | null;
     dossierAiScore: number | null;
+    /** Fotos de sitio y evidencia de reevaluación — mismo esquema que `drawings`. */
+    documents: HistoryDrawing[];
+    /** Traza de AuditLog acotada a la etapa de creación/revisión/reevaluación de la solicitud. */
+    history: HistoryTimelineEvent[];
   };
   suppliers: HistorySupplier[];
   award: HistoryAward | null;

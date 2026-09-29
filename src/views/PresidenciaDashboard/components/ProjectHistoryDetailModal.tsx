@@ -21,8 +21,9 @@ import ProjectHistoryFiguresPanel from "./ProjectHistoryFigures";
 import { BudgetPanel, SuppliersPanel } from "./HistoryProcurementPanels";
 import { DrawingsClosurePanel, PaymentsPanel, TimelinePanel } from "./HistoryExecutionPanels";
 import HistoryFlowPanel from "./HistoryFlowPanel";
+import HistoryAuditTrail from "./HistoryAuditTrail";
 
-type DetailTab = "presupuesto" | "proveedores" | "pagos" | "planos" | "flujo" | "linea";
+type DetailTab = "presupuesto" | "proveedores" | "pagos" | "planos" | "auditoria" | "flujo" | "linea";
 
 function StageStepper({ stages }: { stages: HistoryStage[] }) {
   const done = SEMANTIC_COLOR_MAP.success;
@@ -87,14 +88,16 @@ export default function ProjectHistoryDetailModal({ authToken, projectId, projec
               { key: "proveedores", label: "Proveedores y adjudicación", count: detail.suppliers.length },
               { key: "pagos", label: "Pagos", count: detail.payments.items.length },
               { key: "planos", label: "Planos y cierre", count: detail.drawings.length },
+              { key: "auditoria", label: "Auditoría", count: detail.timeline.filter((e) => e.role === "AUDITORIA").length },
               { key: "flujo", label: "Flujo y organigrama" },
               { key: "linea", label: "Línea de tiempo", count: detail.timeline.length },
             ]}
           />
-          {tab === "presupuesto" && <BudgetPanel detail={detail} />}
+          {tab === "presupuesto" && <BudgetPanel detail={detail} projectId={detail.project.id} authToken={authToken} />}
           {tab === "proveedores" && <SuppliersPanel suppliers={detail.suppliers} award={detail.award} />}
-          {tab === "pagos" && <PaymentsPanel payments={detail.payments} />}
-          {tab === "planos" && <DrawingsClosurePanel drawings={detail.drawings} closure={detail.closure} />}
+          {tab === "pagos" && <PaymentsPanel payments={detail.payments} projectId={detail.project.id} authToken={authToken} />}
+          {tab === "planos" && <DrawingsClosurePanel drawings={detail.drawings} closure={detail.closure} projectId={detail.project.id} authToken={authToken} />}
+          {tab === "auditoria" && <HistoryAuditTrail events={detail.timeline.filter((e) => e.role === "AUDITORIA")} />}
           {tab === "flujo" && <HistoryFlowPanel project={projects.find((p) => p.id === detail.project.id)} />}
           {tab === "linea" && <TimelinePanel timeline={detail.timeline} />}
         </div>

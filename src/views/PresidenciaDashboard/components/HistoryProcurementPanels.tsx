@@ -11,6 +11,7 @@ import { Table, type Column } from "@/components/UI/Table";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { HistoryAward, HistoryBudgetLine, HistorySupplier, ProjectHistoryDetail } from "../projectHistoryTypes";
 import { fmtMoney } from "./ProjectHistoryFigures";
+import { HistoryDocumentsList } from "./HistoryDocumentsList";
 
 const mono = (n: number | null) => <span className="font-mono">{fmtMoney(n)}</span>;
 
@@ -26,7 +27,7 @@ const budgetColumns: Column<HistoryBudgetLine>[] = [
   { key: "subtotal", label: "Subtotal", align: "right", render: (l) => mono(l.estimatedSubtotal) },
 ];
 
-export function BudgetPanel({ detail }: { detail: ProjectHistoryDetail }) {
+export function BudgetPanel({ detail, projectId, authToken }: { detail: ProjectHistoryDetail; projectId: string; authToken: string }) {
   const { budget, request, figures } = detail;
   const mismatch = figures.estimated !== null && Math.abs(figures.estimated - budget.linesTotal) > 0.01;
 
@@ -49,6 +50,11 @@ export function BudgetPanel({ detail }: { detail: ProjectHistoryDetail }) {
           </span>
         )}
       </p>
+
+      <div>
+        <p className="mb-2 text-xs font-bold uppercase text-text-secondary">Fotos y evidencia de reevaluación</p>
+        <HistoryDocumentsList documents={request.documents ?? []} emptyMessage="Sin fotos de sitio ni evidencia de reevaluación adjuntas." projectId={projectId} authToken={authToken} />
+      </div>
     </div>
   );
 }

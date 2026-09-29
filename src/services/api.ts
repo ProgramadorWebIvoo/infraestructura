@@ -181,7 +181,7 @@ export async function apiDownload(
 /** Descarga un documento de proyecto y dispara el guardado en el navegador. Lanza si la descarga falla — el caller decide cómo mostrarlo (toast, etc). */
 export async function downloadProjectDocument(
   projectId: string,
-  doc: ProjectDocument,
+  doc: Pick<ProjectDocument, "id" | "originalName">,
   authToken: string,
 ): Promise<void> {
   const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken });
