@@ -26,8 +26,16 @@ export function reviewResidentPayload(project: Pick<Project, "localizationId">, 
   return reviewNeedsResidentChoice(project) && residentUserId !== null ? residentUserId : undefined;
 }
 
-/** Statuses up to INFORME_ENVIADO in which Auditoría may still change a custom work's resident (S3). */
-const RESIDENT_CHANGE_STATUSES = new Set<string>([
+/**
+ * Estados en los que Auditoría todavía puede tocar el expediente de cierre
+ * de una obra personalizada: cambiar el residente o reenviar el enlace del
+ * informe al contratista. El corte es VERIFICANDO_FINALIZACION — una vez
+ * Auditoría aprueba el cierre (pasa a PENDIENTE_SOLICITUD_FINIQUITO), el
+ * expediente queda certificado con ese residente y ese informe, y ninguna
+ * de las dos acciones vuelve a estar disponible (backend lo valida igual en
+ * ResidentAssignmentService::changeProjectResident).
+ */
+const CLOSURE_AUDIT_PENDING_STATUSES = new Set<string>([
   "REVISADO_AUDITORIA",
   "EN_REEVALUACION_AUDITORIA",
   "CONFIRMADO_PROCURA",
@@ -37,8 +45,16 @@ const RESIDENT_CHANGE_STATUSES = new Set<string>([
   "CONTRATADO",
   "EN_EJECUCION",
   "INFORME_ENVIADO",
+  "VERIFICANDO_FINALIZACION",
 ]);
 
 export function canChangeProjectResident(project: Pick<Project, "localizationId" | "status">): boolean {
-  return !project.localizationId && RESIDENT_CHANGE_STATUSES.has(project.status);
+  return !project.localizationId && CLOSURE_AUDIT_PENDING_STATUSES.has(project.status);
+}
+
+/** El enlace del informe de cierre existe recién desde EN_EJECUCION (ver ProjectClosureService); se puede reenviar mientras el cierre no haya pasado la verificación de Auditoría. */
+const CLOSURE_LINK_STATUSES = new Set<string>(["EN_EJECUCION", "INFORME_ENVIADO", "VERIFICANDO_FINALIZACION"]);
+
+export function canResendClosureLink(project: Pick<Project, "status">): boolean {
+  return CLOSURE_LINK_STATUSES.has(project.status);
 }

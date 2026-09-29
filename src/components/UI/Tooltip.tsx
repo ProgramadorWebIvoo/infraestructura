@@ -121,8 +121,22 @@ export default function Tooltip({
     [isVisible, hide],
   );
 
-  const trigger = cloneElement(Children.only(children) as ReactElement<TipTargetProps>, {
-    ref: anchorRef,
+  const child = Children.only(children) as ReactElement<TipTargetProps>;
+  // El hijo puede traer su propio `ref` (p.ej. <Tabs> mide la posición real
+  // de cada botón para el indicador deslizante) — `cloneElement` con un
+  // `ref` nuevo REEMPLAZA cualquier ref existente en vez de acumularlo, así
+  // que sin fusionar ambos, el ref del consumidor se pierde en silencio (sin
+  // error, simplemente nunca se invoca) y cualquier medición que dependa de
+  // él queda siempre vacía.
+  const childRef = (child as unknown as { ref?: Ref<HTMLElement> }).ref;
+  const mergedRef: Ref<HTMLElement> = (node) => {
+    anchorRef.current = node;
+    if (typeof childRef === "function") childRef(node);
+    else if (childRef && "current" in childRef) (childRef as { current: HTMLElement | null }).current = node;
+  };
+
+  const trigger = cloneElement(child, {
+    ref: mergedRef,
     onMouseEnter: show,
     onMouseLeave: hide,
     onFocus: show,

@@ -241,7 +241,6 @@ export default function RegisterProposalModal({
             ariaLabel="Método de carga de la oferta"
             activeKey={modalTab}
             onChange={(key) => setModalTab(key as typeof modalTab)}
-            layoutId="analistas-modal-tabs"
             fullWidth
             tabs={[
               { key: "portal", label: "Traer del portal" },

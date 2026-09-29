@@ -4,8 +4,27 @@
  *
  * Selector de pestañas con panel controlado por el consumidor — distinto de
  * SegmentedControl (selector visual sin indicador deslizante ni semántica
- * de tablist/tabpanel). El indicador de tab activa usa layoutId de Motion
- * para animarse fluidamente entre posiciones al cambiar de pestaña.
+ * de tablist/tabpanel).
+ *
+ * El indicador de tab activa NO usa `layoutId` de Motion (aunque sea la
+ * forma "obvia" de resolver este patrón): `layoutId` hace FLIP en base al
+ * bounding rect real en viewport, y ese rect se ve afectado por cosas que no
+ * son "la tab se movió" — el ejemplo real que forzó este cambio es un
+ * <Tabs> dentro del body scrolleable de <Modal>: al cambiar de tab a un
+ * panel de otro alto, Motion computaba una traslación vertical grande y
+ * espuria (cientos de px) sin que el botón activo se hubiera movido un solo
+ * píxel en pantalla — el indicador se despegaba de su fila y "viajaba"
+ * verticalmente antes de asentarse. Ni `layoutScroll` en el ancestro
+ * scrolleable ni forzar `translateY(0)` vía `transformTemplate` lo evitan:
+ * la proyección de layout de Motion escribe el transform del FLIP
+ * directamente, por fuera de ese pipeline declarativo.
+ *
+ * La alternativa robusta: medir nosotros mismos la caja del botón activo
+ * relativa al contenedor (no al viewport, así el scroll nunca entra en la
+ * cuenta) y animar un único indicador con `x`/`width` explícitos. `top` y
+ * `height` se fijan sin animar — todas las tabs de una fila comparten
+ * alto, así que no hace falta interpolarlos, y evita que cualquier eje Y
+ * se anime jamás, sea cual sea la causa.
  *
  * ── Cómo usar un sistema de tabs completo en una vista ──
  * Tabs (este componente) es solo el selector — nunca decide qué contenido
@@ -35,7 +54,7 @@
  * de las 3 piezas juntas (tabs Crear/Tabla/Rechazadas).
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { springs } from "@/animations";
 import Tooltip from "./Tooltip";
@@ -52,8 +71,6 @@ interface TabsProps {
   tabs: TabDefinition[];
   activeKey: string;
   onChange: (key: string) => void;
-  /** Namespace del layoutId compartido — evita colisión si hay múltiples <Tabs> en la misma página. */
-  layoutId?: string;
   ariaLabel: string;
   /** Ocupa todo el ancho disponible con tabs más grandes — barra de navegación
    * principal en vez de selector secundario. Por defecto compacto (w-fit). */
@@ -64,8 +81,8 @@ interface TabButtonProps {
   tab: TabDefinition;
   isActive: boolean;
   onClick: () => void;
-  layoutId: string;
   fullWidth: boolean;
+  buttonRef: (el: HTMLButtonElement | null) => void;
 }
 
 /**
@@ -75,7 +92,7 @@ interface TabButtonProps {
  * nunca cambia entre renders, y acá `tabs` sí puede cambiar (tabs que
  * aparecen/desaparecen según rol/permisos).
  */
-function TabButton({ tab, isActive, onClick, layoutId, fullWidth }: TabButtonProps) {
+function TabButton({ tab, isActive, onClick, fullWidth, buttonRef }: TabButtonProps) {
   const labelRef = useRef<HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
@@ -99,6 +116,7 @@ function TabButton({ tab, isActive, onClick, layoutId, fullWidth }: TabButtonPro
   return (
     <Tooltip content={tab.label} placement="bottom" delay={300} disabled={!isTruncated}>
       <button
+        ref={buttonRef}
         type="button"
         role="tab"
         aria-selected={isActive}
@@ -107,13 +125,6 @@ function TabButton({ tab, isActive, onClick, layoutId, fullWidth }: TabButtonPro
           fullWidth ? "flex-1 px-5 py-3 text-sm" : "px-4 py-2 text-xs"
         } ${isActive ? "text-sky-700" : "text-slate-500 hover:text-slate-700"}`}
       >
-        {isActive && (
-          <motion.div
-            layoutId={layoutId}
-            className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/80"
-            transition={springs.gentle}
-          />
-        )}
         <span className="relative flex items-center justify-center gap-2 min-w-0">
           <span ref={labelRef} className="truncate">{tab.label}</span>
           {tab.count !== undefined && (
@@ -137,21 +148,73 @@ function TabButton({ tab, isActive, onClick, layoutId, fullWidth }: TabButtonPro
   );
 }
 
-export default function Tabs({ tabs, activeKey, onChange, layoutId = "tabs-indicator", ariaLabel, fullWidth = false }: TabsProps) {
+interface IndicatorRect {
+  x: number;
+  width: number;
+  top: number;
+  height: number;
+}
+
+export default function Tabs({ tabs, activeKey, onChange, ariaLabel, fullWidth = false }: TabsProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const [rect, setRect] = useState<IndicatorRect | null>(null);
+
+  // Mide la caja del botón activo relativa al contenedor (offsetLeft/Top,
+  // no getBoundingClientRect) — offsetLeft/Top ya son relativos al
+  // offsetParent, así que un scroll ancestro (p.ej. el body de un Modal)
+  // nunca se cuela en la cuenta, a diferencia de coordenadas de viewport.
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const activeButton = buttonRefs.current.get(activeKey);
+    if (!container || !activeButton) return;
+
+    const measure = () => {
+      setRect({
+        x: activeButton.offsetLeft,
+        width: activeButton.offsetWidth,
+        top: activeButton.offsetTop,
+        height: activeButton.offsetHeight,
+      });
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    tabs.forEach((tab) => {
+      const el = buttonRefs.current.get(tab.key);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [activeKey, tabs, fullWidth]);
+
   return (
     <div
+      ref={containerRef}
       role="tablist"
       aria-label={ariaLabel}
-      className={`flex gap-1.5 p-1.5 bg-slate-100/60 rounded-2xl ${fullWidth ? "w-full" : "w-fit"}`}
+      className={`relative flex gap-1.5 p-1.5 bg-slate-100/60 rounded-2xl ${fullWidth ? "w-full" : "w-fit"}`}
     >
+      {rect && (
+        <motion.div
+          className="absolute bg-white rounded-xl shadow-sm border border-slate-200/80 pointer-events-none"
+          style={{ top: rect.top, height: rect.height }}
+          animate={{ x: rect.x, width: rect.width }}
+          initial={false}
+          transition={springs.gentle}
+        />
+      )}
       {tabs.map((tab) => (
         <TabButton
           key={tab.key}
           tab={tab}
           isActive={tab.key === activeKey}
           onClick={() => onChange(tab.key)}
-          layoutId={layoutId}
           fullWidth={fullWidth}
+          buttonRef={(el) => {
+            if (el) buttonRefs.current.set(tab.key, el);
+            else buttonRefs.current.delete(tab.key);
+          }}
         />
       ))}
     </div>

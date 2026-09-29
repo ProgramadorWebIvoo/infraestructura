@@ -12,15 +12,14 @@ import { AlertTriangle, Calendar, HardHat, MapPin, Package } from "lucide-react"
 import type { Project } from "@/types";
 import StatusBadge from "@/components/UI/StatusBadge";
 import Button from "@/components/UI/Button";
-import { ProjectStatus } from "@/types";
-import { canChangeProjectResident } from "@/utils/projectLocation";
+import { canChangeProjectResident, canResendClosureLink } from "@/utils/projectLocation";
 
 interface ExpedienteDetailTabProps {
   project: Project;
   rejectionCount: number;
   /** Opens the "Cambiar residente" flow (custom-location works only, D14). */
   onChangeResident?: (project: Project) => void;
-  /** Resends the contractor closure link (D16); shown only while the work is in execution. */
+  /** Resends the contractor closure link (D16); shown while Auditoría hasn't verified the closure yet. */
   onResendLink?: (project: Project) => void;
   isResendingLink?: boolean;
 }
@@ -85,7 +84,7 @@ export default function ExpedienteDetailTab({ project, rejectionCount, onChangeR
                 Cambiar residente
               </Button>
             )}
-            {onResendLink && project.status === ProjectStatus.EN_EJECUCION && (
+            {onResendLink && canResendClosureLink(project) && (
               <Button size="sm" variant="secondary" className="mt-1.5 ml-1.5" isLoading={isResendingLink} onClick={() => onResendLink(project)}>
                 Reenviar enlace al contratista
               </Button>

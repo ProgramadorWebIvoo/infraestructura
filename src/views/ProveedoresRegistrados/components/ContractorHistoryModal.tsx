@@ -259,7 +259,6 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                 ariaLabel="Secciones del histórico del proveedor"
                 activeKey={activeTab}
                 onChange={(key) => setActiveTab(key as HistoryTab)}
-                layoutId="contractor-history-tabs"
                 tabs={[
                   { key: "precios", label: "Precios" },
                   { key: "productos", label: "Productos", count: history ? history.topProducts.length + history.customProducts.length : undefined },

@@ -317,7 +317,6 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
               ariaLabel="Secciones del expediente"
               activeKey={modalTab}
               onChange={(key) => setModalTab(key as ModalTabKey)}
-              layoutId="modal-expediente-tabs-indicator"
               fullWidth
               tabs={[
                 { key: "detalle", label: "Detalle Expediente" },

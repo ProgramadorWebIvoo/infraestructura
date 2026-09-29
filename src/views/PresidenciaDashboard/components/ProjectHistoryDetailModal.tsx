@@ -80,7 +80,6 @@ export default function ProjectHistoryDetailModal({ authToken, projectId, projec
           <StageStepper stages={detail.stages} />
           <Tabs
             ariaLabel="Etapas del histórico de la obra"
-            layoutId="history-detail-tabs"
             activeKey={tab}
             onChange={(k) => setTab(k as DetailTab)}
             tabs={[

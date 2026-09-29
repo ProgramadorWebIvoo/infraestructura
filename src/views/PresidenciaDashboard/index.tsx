@@ -161,7 +161,7 @@ export default function PresidenciaDashboard({
     <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
       <h1 className="sr-only">Presidencia</h1>
 
-      <Tabs tabs={tabs} activeKey={activeTab} onChange={(key) => setActiveTab(key as PresidenciaTabKey)} ariaLabel="Secciones de Presidencia" layoutId="presidencia-tabs" fullWidth />
+      <Tabs tabs={tabs} activeKey={activeTab} onChange={(key) => setActiveTab(key as PresidenciaTabKey)} ariaLabel="Secciones de Presidencia" fullWidth />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2">

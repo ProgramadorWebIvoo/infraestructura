@@ -27,10 +27,11 @@ describe("resident rules on review / change", () => {
     expect(reviewResidentPayload(custom, null)).toBeUndefined();
   });
 
-  it("allows changing the resident only of custom works up to INFORME_ENVIADO", () => {
+  it("allows changing the resident only of custom works up to VERIFICANDO_FINALIZACION (Auditoría aún no verificó el cierre)", () => {
     expect(canChangeProjectResident(custom)).toBe(true);
     expect(canChangeProjectResident({ ...custom, status: "INFORME_ENVIADO" } as Project)).toBe(true);
-    expect(canChangeProjectResident({ ...custom, status: "VERIFICANDO_FINALIZACION" } as Project)).toBe(false);
+    expect(canChangeProjectResident({ ...custom, status: "VERIFICANDO_FINALIZACION" } as Project)).toBe(true);
+    expect(canChangeProjectResident({ ...custom, status: "PENDIENTE_SOLICITUD_FINIQUITO" } as Project)).toBe(false);
     expect(canChangeProjectResident({ ...custom, status: "RECHAZADO_AUDITORIA" } as Project)).toBe(false);
     expect(canChangeProjectResident(registered)).toBe(false);
   });
