@@ -21,6 +21,7 @@ export interface AiFeatureMatrixEntry {
 export type AiFeatureMatrix = Record<string, AiFeatureMatrixEntry>;
 
 interface AiFeatureGateState {
+  global: boolean;
   matrix: AiFeatureMatrix;
   isLoading: boolean;
   hasLoaded: boolean;
@@ -28,6 +29,7 @@ interface AiFeatureGateState {
 }
 
 export const useAiFeatureGateStore = create<AiFeatureGateState>((set, get) => ({
+  global: true,
   matrix: {},
   isLoading: true,
   hasLoaded: false,
@@ -35,8 +37,10 @@ export const useAiFeatureGateStore = create<AiFeatureGateState>((set, get) => ({
   load: async (authToken) => {
     if (!authToken || get().hasLoaded) return;
     try {
-      const data = await apiFetch<{ matrix: AiFeatureMatrix }>("/ai/feature-toggles", { token: "authenticated" });
-      set({ matrix: data?.matrix ?? {}, isLoading: false, hasLoaded: true });
+      const data = await apiFetch<{ global: boolean; matrix: AiFeatureMatrix }>("/ai/feature-toggles", {
+        token: "authenticated",
+      });
+      set({ global: data?.global ?? true, matrix: data?.matrix ?? {}, isLoading: false, hasLoaded: true });
     } catch (err) {
       logError("aiFeatureGateStore", err);
       set({ isLoading: false, hasLoaded: true });

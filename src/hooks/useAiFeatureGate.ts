@@ -14,15 +14,17 @@
 import { useAiFeatureGateStore } from "@/stores/aiFeatureGateStore";
 
 export function useAiFeatureGate() {
+  const global = useAiFeatureGateStore(s => s.global);
   const matrix = useAiFeatureGateStore(s => s.matrix);
   const isLoading = useAiFeatureGateStore(s => s.isLoading);
 
   const isAiFeatureEnabled = (department: string, action: string): boolean => {
+    if (!global) return false; // interruptor global apagado = nada de IA, sin importar el resto
     const entry = matrix[department];
     if (!entry) return true; // sin fila configurada = habilitado (fail-open)
     if (entry.master === false) return false;
     return entry.actions[action] ?? true;
   };
 
-  return { isAiFeatureEnabled, isLoading };
+  return { isAiFeatureEnabled, isAiGloballyEnabled: global, isLoading };
 }

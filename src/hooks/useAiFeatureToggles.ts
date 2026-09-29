@@ -23,12 +23,17 @@ export interface AiFeatureActionOption {
 }
 
 interface AiFeatureTogglesResponse {
+  global: boolean;
   departments: string[];
   actions: AiFeatureActionOption[];
   matrix: AiFeatureMatrix;
 }
 
+/** Departamento reservado para el interruptor global — igual valor que App\Services\AiFeatureGate::GLOBAL_DEPARTMENT. */
+export const AI_GLOBAL_DEPARTMENT = "__GLOBAL__";
+
 export function useAiFeatureToggles(authToken: string, enabled: boolean) {
+  const [global, setGlobal] = useState(true);
   const [departments, setDepartments] = useState<string[]>([]);
   const [actions, setActions] = useState<AiFeatureActionOption[]>([]);
   const [matrix, setMatrix] = useState<AiFeatureMatrix>({});
@@ -41,6 +46,7 @@ export function useAiFeatureToggles(authToken: string, enabled: boolean) {
     setIsLoading(true);
     try {
       const data = await apiFetch<AiFeatureTogglesResponse>("/ai/feature-toggles", { token: authToken });
+      setGlobal(data.global ?? true);
       setDepartments(data.departments ?? []);
       setActions(data.actions ?? []);
       setMatrix(data.matrix ?? {});
@@ -61,15 +67,16 @@ export function useAiFeatureToggles(authToken: string, enabled: boolean) {
       const key = `${department}:${action ?? "__master__"}`;
       setPendingKey(key);
       try {
-        const updated = await apiFetch<{ matrix: AiFeatureMatrix }>("/ai/feature-toggles", {
+        const updated = await apiFetch<{ global: boolean; matrix: AiFeatureMatrix }>("/ai/feature-toggles", {
           method: "PUT",
           body: JSON.stringify({ department, action, enabled: isEnabled }),
           token: authToken,
         });
+        setGlobal(updated.global ?? true);
         setMatrix(updated.matrix ?? {});
         // Refleja el cambio de inmediato en el store compartido (session-wide
         // gate) sin esperar a que otra pestaña/vista vuelva a fetchear.
-        useAiFeatureGateStore.setState({ matrix: updated.matrix ?? {} });
+        useAiFeatureGateStore.setState({ global: updated.global ?? true, matrix: updated.matrix ?? {} });
       } finally {
         setPendingKey(null);
       }
@@ -77,5 +84,10 @@ export function useAiFeatureToggles(authToken: string, enabled: boolean) {
     [authToken],
   );
 
-  return { departments, actions, matrix, isLoading, pendingKey, setToggle, reload: load };
+  const setGlobalToggle = useCallback(
+    (isEnabled: boolean) => setToggle(AI_GLOBAL_DEPARTMENT, null, isEnabled),
+    [setToggle],
+  );
+
+  return { global, departments, actions, matrix, isLoading, pendingKey, setToggle, setGlobalToggle, reload: load };
 }
