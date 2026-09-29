@@ -222,7 +222,7 @@ export default function PresidenciaDashboard({
       <TabPanel activeKey={activeTab}>
         {activeTab === "aprobaciones" && (
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-            <AwardApprovalsSection projects={projects} onApproveAward={onApproveAward} onRejectAward={onRejectAward} />
+            <AwardApprovalsSection projects={projects} onApproveAward={onApproveAward} onRejectAward={onRejectAward} authToken={authToken} />
           </motion.div>
         )}
 

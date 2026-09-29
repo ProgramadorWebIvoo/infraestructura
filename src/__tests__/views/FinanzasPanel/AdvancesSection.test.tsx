@@ -87,6 +87,7 @@ const ORDER: PaymentOrder = {
     amount: "3000.00",
   },
   createdAt: "2026-09-30T00:00:00Z",
+  pendingRequiredSignature: null,
 };
 
 function buildProject(overrides: Partial<Project> = {}): Project {

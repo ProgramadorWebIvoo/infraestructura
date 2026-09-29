@@ -37,34 +37,44 @@ interface StepForm {
   stepOrder: number | "";
   role: string;
   label: string;
+  isRequired: boolean;
 }
 
-const EMPTY_FORM: StepForm = { paymentType: "ADVANCE", stepOrder: "", role: "", label: "" };
+const EMPTY_FORM: StepForm = { paymentType: "ADVANCE", stepOrder: "", role: "", label: "", isRequired: true };
 const BASE_PATH = "/payment-signature-steps/config";
 const TYPE_LABEL: Record<StepForm["paymentType"], string> = { ADVANCE: "Anticipo", FINAL: "Finiquito" };
 
 /**
  * Dónde firma "solo" cada paso (F4 Bloque C, integración real): las
- * acciones existentes del circuito intentan firmar en silencio el próximo
- * paso pendiente si le corresponde al rol que ejecuta la acción. Si el rol
- * configurado no coincide con ninguna de estas acciones (o ya no es su
- * turno), el paso queda pendiente y se firma a mano desde la orden.
+ * acciones del circuito intentan firmar en silencio el próximo paso
+ * pendiente si le corresponde al rol que las ejecuta. Si el rol configurado
+ * no coincide con ninguna (o no le toca su turno), el paso queda pendiente
+ * y se firma a mano desde la orden.
+ *
+ * `blocks: true` = si el paso es obligatorio y falta, ESA acción se
+ * rechaza (nadie la salta, ni ADMIN/SUPERADMIN). `blocks: false` = la
+ * acción firma si puede pero nunca espera por ese paso — bloquearla
+ * generaría un candado cruzado (ej. Finanzas solo puede firmar al pagar,
+ * y eso ocurre después de estos trámites).
  */
-const AUTO_SIGN_HINT: Record<StepForm["paymentType"], Record<string, string>> = {
+const AUTO_SIGN_HINT: Record<StepForm["paymentType"], Record<string, { where: string; blocks: boolean }>> = {
   ADVANCE: {
-    PROCURA: "Selección de contratista o envío a Finanzas",
-    PRESIDENCIA: "Aprobación de la adjudicación",
-    FINANZAS: "Liberación del anticipo (pago)",
+    PROCURA: { where: "Selección de contratista", blocks: false },
+    PRESIDENCIA: { where: "Aprobación de la adjudicación", blocks: true },
+    FINANZAS: { where: "Liberación del anticipo (pago)", blocks: true },
   },
   FINAL: {
-    PROCURA: "Solicitud de pago del finiquito",
-    FINANZAS: "Liberación del finiquito (pago)",
+    PROCURA: { where: "Solicitud de pago del finiquito", blocks: false },
+    FINANZAS: { where: "Liberación del finiquito (pago)", blocks: true },
   },
 };
 
-function autoSignHint(paymentType: StepForm["paymentType"], role: string | null): string {
-  if (!role) return "Firma manual desde la orden";
-  return AUTO_SIGN_HINT[paymentType][role] ?? "Firma manual desde la orden (ningún trámite coincide con este rol)";
+function autoSignHint(paymentType: StepForm["paymentType"], role: string | null, isRequired: boolean): string {
+  if (!role) return "Firma manual desde la orden — nunca bloquea";
+  const hit = AUTO_SIGN_HINT[paymentType][role];
+  if (!hit) return "Firma manual desde la orden — ningún trámite coincide con este rol, nunca bloquea";
+  if (!hit.blocks) return `${hit.where} — nunca bloquea esa acción (se firma si aplica, sin esperar)`;
+  return isRequired ? `${hit.where} — bloquea la acción si falta` : `${hit.where} — no bloquea (paso opcional)`;
 }
 
 export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatureStepsPanelProps) {
@@ -115,7 +125,7 @@ export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatu
 
   const openEdit = useCallback((step: PaymentSignatureStep) => {
     setEditingId(step.id);
-    setForm({ paymentType: step.paymentType, stepOrder: step.stepOrder, role: step.role ?? "", label: step.label });
+    setForm({ paymentType: step.paymentType, stepOrder: step.stepOrder, role: step.role ?? "", label: step.label, isRequired: step.isRequired });
     setIsModalOpen(true);
   }, []);
 
@@ -132,7 +142,7 @@ export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatu
     }
     setIsSaving(true);
     try {
-      const body = JSON.stringify({ paymentType: form.paymentType, stepOrder: form.stepOrder, role, label });
+      const body = JSON.stringify({ paymentType: form.paymentType, stepOrder: form.stepOrder, role, label, isRequired: form.isRequired });
       if (editingId === null) {
         await apiFetch(BASE_PATH, { method: "POST", token: authToken, body });
         showToast("Paso de firma creado correctamente.", "success");
@@ -178,9 +188,22 @@ export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatu
       ),
     },
     {
+      key: "isRequired",
+      label: "Obligatorio",
+      align: "center",
+      render: (s) => {
+        const c = s.isRequired ? SEMANTIC_COLOR_MAP.warning : SEMANTIC_COLOR_MAP.neutral;
+        return (
+          <span className={`rounded-pill border px-2.5 py-0.5 text-[10px] font-bold ${c.border100} ${c.bg50} ${c.text700}`}>
+            {s.isRequired ? "Obligatorio" : "Opcional"}
+          </span>
+        );
+      },
+    },
+    {
       key: "trigger",
       label: "Cuándo se firma",
-      render: (s) => <span className="text-xs text-text-secondary">{autoSignHint(s.paymentType, s.role)}</span>,
+      render: (s) => <span className="text-xs text-text-secondary">{autoSignHint(s.paymentType, s.role, s.isRequired)}</span>,
     },
     {
       key: "actions",
@@ -215,7 +238,8 @@ export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatu
           <li><strong>En qué orden:</strong> estricto según el número de paso. Nadie puede firmar antes de que firme el paso anterior.</li>
           <li><strong>Cuándo:</strong> cada paso se firma solo al ejecutar el trámite del rol en su pantalla habitual (columna «Cuándo se firma»). Si el rol no coincide con ningún trámite, el usuario abre la orden y pulsa «Firmar».</li>
           <li><strong>Dónde:</strong> en la orden de pago, accesible desde Procura (Envío a Finanzas) y Finanzas (Anticipos y Finiquitos), con la línea de firmas y quién firmó cada paso.</li>
-          <li><strong>Bloqueo:</strong> Finanzas no puede pagar si falta alguna firma previa; su propio paso, si es el último, se firma al pagar.</li>
+          <li><strong>Qué bloquea de verdad:</strong> si un paso es <em>obligatorio</em> y le falta la firma, <strong>solo</strong> se rechazan la aprobación de Presidencia y el pago de Finanzas (nadie los salta, ni ADMIN/SUPERADMIN). Seleccionar contratista y solicitar el finiquito firman su paso si aplica, pero nunca esperan por él, para no trabar el circuito.</li>
+          <li><strong>Opcional vs. obligatorio:</strong> un paso opcional se puede firmar igual, pero nunca bloquea nada — útil para dejar constancia sin frenar el proceso. Colócalo al final de la cadena: uno opcional sin firmar puede tapar el turno de los pasos siguientes.</li>
           <li>Un tipo de pago sin pasos configurados no exige firmas.</li>
         </ul>
       </InfoBanner>
@@ -270,10 +294,19 @@ export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatu
             />
             {form.role && (
               <p className="mt-1.5 text-[11px] text-text-tertiary">
-                Se firma en: <span className="font-semibold text-text-secondary">{autoSignHint(form.paymentType, form.role)}</span>
+                Se firma en: <span className="font-semibold text-text-secondary">{autoSignHint(form.paymentType, form.role, form.isRequired)}</span>
               </p>
             )}
           </div>
+          <label className="flex items-center gap-2 text-xs font-bold text-text-secondary">
+            <input
+              id="signature-step-required"
+              type="checkbox"
+              checked={form.isRequired}
+              onChange={(e) => setForm((prev) => ({ ...prev, isRequired: e.target.checked }))}
+            />
+            Obligatorio (bloquea la acción correspondiente si falta esta firma)
+          </label>
           <TextField
             id="signature-step-label"
             label="Etiqueta del paso"

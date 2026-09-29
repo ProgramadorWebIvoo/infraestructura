@@ -13,9 +13,10 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle, Coins, CreditCard, FileSignature, SearchX, Wallet } from "lucide-react";
+import { CheckCircle, Coins, CreditCard, FileSignature, FileWarning, SearchX, Wallet } from "lucide-react";
 import Button from "@/components/UI/Button";
 import IconActionButton from "@/components/UI/IconActionButton";
+import Tooltip from "@/components/UI/Tooltip";
 import type { PaymentOrder, Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
@@ -106,29 +107,47 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         <BsAmount amount={advAmount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
       </div>
     ) },
-    { key: "action", label: "", width: "13rem", render: ({ project, advAmount }) => (
-      <div className="flex items-center justify-end gap-1.5">
-        {project.paymentOrders?.advance && (
-          <IconActionButton
-            label={`Ver orden de pago de ${project.title}`}
-            tooltip="Ver orden de pago"
-            tone="indigo"
-            onClick={() => setViewOrder(project.paymentOrders!.advance)}
-            icon={<FileSignature className="h-3.5 w-3.5" />}
-          />
-        )}
-        <Button
-          id={`btn-pay-advance-${project.id}`}
-          onClick={() => setConfirmPayAdvance({ projectId: project.id, amount: advAmount, title: project.title })}
-          variant="primary"
-          colorScheme="rose"
-          size="sm"
-          icon={<CreditCard className="h-3.5 w-3.5" />}
-        >
-          Liberar
-        </Button>
-      </div>
-    ) },
+    { key: "action", label: "", width: "13rem", render: ({ project, advAmount }) => {
+      const pendingSignature = project.paymentOrders?.advance?.pendingRequiredSignature ?? null;
+      return (
+        <div className="flex items-center justify-end gap-1.5">
+          {project.paymentOrders?.advance && (
+            <IconActionButton
+              label={`Ver orden de pago de ${project.title}`}
+              tooltip="Ver orden de pago"
+              tone="indigo"
+              onClick={() => setViewOrder(project.paymentOrders!.advance)}
+              icon={<FileSignature className="h-3.5 w-3.5" />}
+            />
+          )}
+          {pendingSignature ? (
+            <Tooltip content={`Falta una firma en la orden: "${pendingSignature.label}" (${pendingSignature.userName ?? pendingSignature.role}). Haz clic para ir a firmar.`}>
+              <Button
+                id={`btn-pay-advance-${project.id}`}
+                onClick={() => setViewOrder(project.paymentOrders!.advance)}
+                variant="primary"
+                colorScheme="amber"
+                size="sm"
+                icon={<FileWarning className="h-3.5 w-3.5" />}
+              >
+                Falta firma
+              </Button>
+            </Tooltip>
+          ) : (
+            <Button
+              id={`btn-pay-advance-${project.id}`}
+              onClick={() => setConfirmPayAdvance({ projectId: project.id, amount: advAmount, title: project.title })}
+              variant="primary"
+              colorScheme="rose"
+              size="sm"
+              icon={<CreditCard className="h-3.5 w-3.5" />}
+            >
+              Liberar
+            </Button>
+          )}
+        </div>
+      );
+    } },
   ], [convert, hasRates, isLoadingRates]);
 
   const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {

@@ -19,12 +19,13 @@ function detail(overrides: Partial<PaymentOrderDetail> = {}): PaymentOrderDetail
     status: "EN_FIRMA", contentHash: "abc", voidReason: null, elaboratedByName: null,
     snapshot: { project: { id: "PRJ-1", title: "Obra", location: "Caracas" }, contractor: { code: "CON-1", name: "X", rif: "J-1" }, proposal: { id: "PROP-1", total_cost: "10000", negotiated_advance_percent: "30", currency: "USD" }, payment_type: "ADVANCE", amount: "3000" },
     createdAt: "2026-09-30T00:00:00Z",
+    pendingRequiredSignature: null,
     integrityValid: true,
     canSign: true,
     signatureLine: [
-      { step: { id: 1, paymentType: "ADVANCE", stepOrder: 1, role: "PROCURA", userId: null, userName: null, label: "Elaboración", isActive: true }, status: "FIRMADO", signedByName: "Ana Procura", signedAt: "2026-09-30T01:00:00Z" },
-      { step: { id: 2, paymentType: "ADVANCE", stepOrder: 2, role: "PRESIDENCIA", userId: null, userName: null, label: "Aprobación", isActive: true }, status: "PROXIMO", signedByName: null, signedAt: null },
-      { step: { id: 3, paymentType: "ADVANCE", stepOrder: 3, role: "FINANZAS", userId: null, userName: null, label: "Pago", isActive: true }, status: "PENDIENTE", signedByName: null, signedAt: null },
+      { step: { id: 1, paymentType: "ADVANCE", stepOrder: 1, role: "PROCURA", userId: null, userName: null, label: "Elaboración", isActive: true, isRequired: true }, status: "FIRMADO", signedByName: "Ana Procura", signedAt: "2026-09-30T01:00:00Z" },
+      { step: { id: 2, paymentType: "ADVANCE", stepOrder: 2, role: "PRESIDENCIA", userId: null, userName: null, label: "Aprobación", isActive: true, isRequired: true }, status: "PROXIMO", signedByName: null, signedAt: null },
+      { step: { id: 3, paymentType: "ADVANCE", stepOrder: 3, role: "FINANZAS", userId: null, userName: null, label: "Pago", isActive: true, isRequired: true }, status: "PENDIENTE", signedByName: null, signedAt: null },
     ],
     ...overrides,
   };
@@ -66,9 +67,9 @@ describe("PaymentOrderSignatureLine", () => {
     mockSign.mockResolvedValue(undefined);
     const signedDetail = detail({
       signatureLine: [
-        { step: { id: 1, paymentType: "ADVANCE", stepOrder: 1, role: "PROCURA", userId: null, userName: null, label: "Elaboración", isActive: true }, status: "FIRMADO", signedByName: "Ana Procura", signedAt: "2026-09-30T01:00:00Z" },
-        { step: { id: 2, paymentType: "ADVANCE", stepOrder: 2, role: "PRESIDENCIA", userId: null, userName: null, label: "Aprobación", isActive: true }, status: "FIRMADO", signedByName: "Pedro Presidente", signedAt: "2026-09-30T02:00:00Z" },
-        { step: { id: 3, paymentType: "ADVANCE", stepOrder: 3, role: "FINANZAS", userId: null, userName: null, label: "Pago", isActive: true }, status: "PROXIMO", signedByName: null, signedAt: null },
+        { step: { id: 1, paymentType: "ADVANCE", stepOrder: 1, role: "PROCURA", userId: null, userName: null, label: "Elaboración", isActive: true, isRequired: true }, status: "FIRMADO", signedByName: "Ana Procura", signedAt: "2026-09-30T01:00:00Z" },
+        { step: { id: 2, paymentType: "ADVANCE", stepOrder: 2, role: "PRESIDENCIA", userId: null, userName: null, label: "Aprobación", isActive: true, isRequired: true }, status: "FIRMADO", signedByName: "Pedro Presidente", signedAt: "2026-09-30T02:00:00Z" },
+        { step: { id: 3, paymentType: "ADVANCE", stepOrder: 3, role: "FINANZAS", userId: null, userName: null, label: "Pago", isActive: true, isRequired: true }, status: "PROXIMO", signedByName: null, signedAt: null },
       ],
     });
     mockFetch.mockResolvedValueOnce(signedDetail);

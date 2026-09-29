@@ -278,6 +278,8 @@ export interface PaymentOrder {
   snapshot: PaymentOrderSnapshot;
   createdAt: string;
   signatures?: PaymentOrderSignature[];
+  /** Firma obligatoria que le falta a esta orden para avanzar (aprobación/pago), o null si no hay ninguna pendiente. */
+  pendingRequiredSignature: { label: string; role: string | null; userName: string | null } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -293,6 +295,7 @@ export interface PaymentSignatureStep {
   userName: string | null;
   label: string;
   isActive: boolean;
+  isRequired: boolean;
 }
 
 export interface PaymentOrderSignature {
