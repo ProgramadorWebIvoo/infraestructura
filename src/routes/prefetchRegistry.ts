@@ -55,6 +55,7 @@ export const ROUTE_PREFETCH: Partial<Record<string, RoutePrefetchEntry>> = {
   [ROUTES.PROCURA]: { loadChunk: () => import("@/views/ProcuraPanel") },
   [ROUTES.ANALISTAS]: { loadChunk: () => import("@/views/AnalistasPanel") },
   [ROUTES.FINANZAS]: { loadChunk: () => import("@/views/FinanzasPanel") },
+  [ROUTES.MIS_FIRMAS]: { loadChunk: () => import("@/views/MisFirmasPanel") },
 
   [ROUTES.CATALOGOS]: {
     loadChunk: () => import("@/views/ProveedoresRegistrados"),

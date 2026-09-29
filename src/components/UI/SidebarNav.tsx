@@ -29,6 +29,7 @@ import {
   ChevronRight,
   House,
   BanknoteArrowDown,
+  FileSignature,
 } from "lucide-react";
 import SidebarTip from "./SidebarTip";
 import SidebarCollapseHint from "./SidebarCollapseHint";
@@ -43,6 +44,7 @@ import {
 } from "./sidebarNavClasses";
 import { getUserInitials } from "@/utils";
 import { usePrefetchOnIntent } from "@/hooks/usePrefetchOnIntent";
+import { useMyPendingSignatures } from "@/hooks/useMyPendingSignatures";
 import { ROUTES } from "@/routes";
 
 interface SidebarNavProps {
@@ -92,6 +94,12 @@ function SidebarNav({
   const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
   const prefetchCatalogos = usePrefetchOnIntent(ROUTES.CATALOGOS, authToken);
   const prefetchConfigApp = usePrefetchOnIntent(ROUTES.CONFIG_APP, authToken);
+  const prefetchMisFirmas = usePrefetchOnIntent(ROUTES.MIS_FIRMAS, authToken);
+
+  // Sin gate de canAccess a propósito: la cadena de firmas es configurable
+  // con cualquier rol, así que la visibilidad depende de si el usuario tiene
+  // al menos un paso a su nombre/rol, no de permisos de vista tradicionales.
+  const { hasConfiguredSteps, orders: pendingSignatureOrders } = useMyPendingSignatures(authToken);
 
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
   const collapseLabel = isCollapsed
@@ -467,6 +475,37 @@ function SidebarNav({
                     <UserCog className={sidebarIconClass(isActive)} />
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Proveedores
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            </SidebarTip>
+          )}
+
+          {hasConfiguredSteps && (
+            <SidebarTip label="Firmas Pendientes" disabled={!effectiveCollapsed}>
+              <NavLink
+                to={ROUTES.MIS_FIRMAS}
+                id="sidebar-mis-firmas"
+                onClick={onClose}
+                onMouseEnter={prefetchMisFirmas.onMouseEnter}
+                onFocus={prefetchMisFirmas.onFocus}
+                onMouseLeave={prefetchMisFirmas.onMouseLeave}
+                onBlur={prefetchMisFirmas.onBlur}
+                className={navLinkClass("warning", effectiveCollapsed)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className="relative inline-flex">
+                      <FileSignature className={sidebarIconClass(isActive)} />
+                      {pendingSignatureOrders.length > 0 && (
+                        <span className="absolute -top-1 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+                          {pendingSignatureOrders.length}
+                        </span>
+                      )}
+                    </span>
+                    <span className={sidebarTextClass(effectiveCollapsed)}>
+                      Firmas Pendientes
                     </span>
                   </>
                 )}

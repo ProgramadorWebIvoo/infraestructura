@@ -9,8 +9,9 @@
  */
 
 import { memo } from "react";
-import { CreditCard, FileSignature } from "lucide-react";
+import { CreditCard, FileSignature, FileWarning } from "lucide-react";
 import Button from "@/components/UI/Button";
+import Tooltip from "@/components/UI/Tooltip";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
 import BsAmount from "@/components/UI/BsAmount";
@@ -28,6 +29,7 @@ interface FinalSettlementsGridCardProps {
 }
 
 function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, onOpenConfirm, onOpenOrder, convert, hasRates, isLoadingRates }: FinalSettlementsGridCardProps) {
+  const pendingSignature = project.paymentOrders?.final?.pendingRequiredSignature ?? null;
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -75,17 +77,33 @@ function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, on
             Orden
           </Button>
         )}
-        <Button
-          id={`btn-pay-final-${project.id}`}
-          onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
-          variant="primary"
-          colorScheme="sky"
-          size="md"
-          className="flex-1"
-          icon={<CreditCard className="h-4 w-4" />}
-        >
-          Aprobar y Transferir
-        </Button>
+        {pendingSignature ? (
+          <Tooltip content={`Falta una firma en la orden: "${pendingSignature.label}" (${pendingSignature.userName ?? pendingSignature.role}). Haz clic para ir a firmar.`}>
+            <Button
+              id={`btn-pay-final-${project.id}`}
+              onClick={(e) => { e.stopPropagation(); onOpenOrder?.(); }}
+              variant="primary"
+              colorScheme="amber"
+              size="md"
+              className="flex-1"
+              icon={<FileWarning className="h-4 w-4" />}
+            >
+              Falta firma
+            </Button>
+          </Tooltip>
+        ) : (
+          <Button
+            id={`btn-pay-final-${project.id}`}
+            onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
+            variant="primary"
+            colorScheme="sky"
+            size="md"
+            className="flex-1"
+            icon={<CreditCard className="h-4 w-4" />}
+          >
+            Aprobar y Transferir
+          </Button>
+        )}
       </div>
     </div>
   );

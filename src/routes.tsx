@@ -29,6 +29,7 @@ export const ROUTES = {
   ANALISTAS: "/analistas",
   FINANZAS: "/finanzas",
   CATALOGOS: "/catalogos",
+  MIS_FIRMAS: "/mis-firmas",
   CONFIG_APP: "/config-app",
   REGISTRO_PROVEEDORES: "/registro-proveedores",
   PROPUESTA_MATERIALES: "/propuesta-materiales/:token",

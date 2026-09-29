@@ -11,8 +11,9 @@
  */
 
 import { memo } from "react";
-import { CreditCard, FileSignature } from "lucide-react";
+import { CreditCard, FileSignature, FileWarning } from "lucide-react";
 import Button from "@/components/UI/Button";
+import Tooltip from "@/components/UI/Tooltip";
 import { formatNumber } from "@/utils";
 import type { Project, Proposal } from "@/types";
 import BsAmount from "@/components/UI/BsAmount";
@@ -29,6 +30,7 @@ interface AdvancesGridCardProps {
 }
 
 function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm, onOpenOrder, convert, hasRates, isLoadingRates }: AdvancesGridCardProps) {
+  const pendingSignature = project.paymentOrders?.advance?.pendingRequiredSignature ?? null;
   return (
     <div className="p-3.5 space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -77,17 +79,33 @@ function AdvancesGridCard({ project, winner, advAmount, onOpenConfirm, onOpenOrd
             Orden
           </Button>
         )}
-        <Button
-          id={`btn-pay-advance-${project.id}`}
-          onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
-          variant="primary"
-          colorScheme="rose"
-          size="md"
-          className="flex-1"
-          icon={<CreditCard className="h-4 w-4" />}
-        >
-          Liberar Desembolso
-        </Button>
+        {pendingSignature ? (
+          <Tooltip content={`Falta una firma en la orden: "${pendingSignature.label}" (${pendingSignature.userName ?? pendingSignature.role}). Haz clic para ir a firmar.`}>
+            <Button
+              id={`btn-pay-advance-${project.id}`}
+              onClick={(e) => { e.stopPropagation(); onOpenOrder?.(); }}
+              variant="primary"
+              colorScheme="amber"
+              size="md"
+              className="flex-1"
+              icon={<FileWarning className="h-4 w-4" />}
+            >
+              Falta firma
+            </Button>
+          </Tooltip>
+        ) : (
+          <Button
+            id={`btn-pay-advance-${project.id}`}
+            onClick={(e) => { e.stopPropagation(); onOpenConfirm(); }}
+            variant="primary"
+            colorScheme="rose"
+            size="md"
+            className="flex-1"
+            icon={<CreditCard className="h-4 w-4" />}
+          >
+            Liberar Desembolso
+          </Button>
+        )}
       </div>
     </div>
   );

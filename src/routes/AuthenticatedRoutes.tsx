@@ -20,6 +20,7 @@ const ProcuraPanel = lazy(ROUTE_PREFETCH[ROUTES.PROCURA]!.loadChunk);
 const AnalistasPanel = lazy(ROUTE_PREFETCH[ROUTES.ANALISTAS]!.loadChunk);
 const FinanzasPanel = lazy(ROUTE_PREFETCH[ROUTES.FINANZAS]!.loadChunk);
 const ProveedoresRegistrados = lazy(ROUTE_PREFETCH[ROUTES.CATALOGOS]!.loadChunk);
+const MisFirmasPanel = lazy(ROUTE_PREFETCH[ROUTES.MIS_FIRMAS]!.loadChunk);
 const ConfigAppPanel = lazy(ROUTE_PREFETCH[ROUTES.CONFIG_APP]!.loadChunk);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,6 +119,14 @@ export default function AuthenticatedRoutes(props: AuthenticatedRoutesProps) {
               <FinanzasPanel projects={projects} authToken={authToken} activeRole={activeRole} onPayAdvance={onPayAdvance} onPayFinal={onPayFinal} isLoading={isLoadingApi} onRefreshData={onRefreshData} />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path={ROUTES.MIS_FIRMAS}
+          // Sin ProtectedRoute/canAccess a propósito: la cadena de firmas es
+          // configurable con cualquier rol del sistema, así que esta bandeja
+          // debe verse para cualquier usuario autenticado — el propio panel
+          // decide si mostrar contenido según si tiene pasos a su nombre.
+          element={<MisFirmasPanel authToken={authToken} activeRole={activeRole} />}
         />
         <Route
           path={ROUTES.CATALOGOS}
