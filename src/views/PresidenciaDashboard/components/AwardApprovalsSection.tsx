@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, FileSignature, FileWarning, Landmark, XCircle } from "lucide-react";
+import { CheckCircle2, FileSignature, Landmark, XCircle } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import Button from "@/components/UI/Button";
 import Card from "@/components/UI/Card";
@@ -16,7 +16,6 @@ import EmptyState from "@/components/UI/EmptyState";
 import IconActionButton from "@/components/UI/IconActionButton";
 import Modal from "@/components/UI/Modal";
 import SectionHeader from "@/components/UI/SectionHeader";
-import Tooltip from "@/components/UI/Tooltip";
 import PaymentOrderDetailModal from "@/components/PaymentOrder/PaymentOrderDetailModal";
 import { ProjectStatus } from "@/types";
 import type { PaymentOrder, Project } from "@/types";
@@ -36,8 +35,11 @@ export default function AwardApprovalsSection({ projects, onApproveAward, onReje
   const [reason, setReason] = useState("");
   const [viewOrder, setViewOrder] = useState<PaymentOrder | null>(null);
 
+  // La aprobación de Presidencia NUNCA exige firma (decisión del usuario
+  // 2026-09-29): solo Finanzas bloquea al pagar. `pendingRequiredSignature`
+  // no gatea nada acá — mostrarlo como bloqueo sería engañoso, porque
+  // backend igual dejaría aprobar.
   const selectedIds = pending.filter((p) => selected.has(p.id)).map((p) => p.id);
-  const someSelectedBlocked = pending.some((p) => selected.has(p.id) && p.paymentOrders?.advance?.pendingRequiredSignature);
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -78,16 +80,14 @@ export default function AwardApprovalsSection({ projects, onApproveAward, onReje
         description="Procura seleccionó al contratista. Apruebe para que Procura envíe la obra a Finanzas, o rechace con un motivo para que Procura la revise."
         color="amber"
         actions={
-          <Tooltip content='Alguna obra seleccionada tiene una firma obligatoria pendiente en su orden. Deselecciónala o firma primero desde "Falta firma".' disabled={!someSelectedBlocked}>
-            <Button
-              colorScheme="emerald"
-              icon={<CheckCircle2 className="h-3.5 w-3.5" />}
-              disabled={selectedIds.length === 0 || isBusy || someSelectedBlocked}
-              onClick={() => approve(selectedIds)}
-            >
-              Aprobar seleccionadas ({selectedIds.length})
-            </Button>
-          </Tooltip>
+          <Button
+            colorScheme="emerald"
+            icon={<CheckCircle2 className="h-3.5 w-3.5" />}
+            disabled={selectedIds.length === 0 || isBusy}
+            onClick={() => approve(selectedIds)}
+          >
+            Aprobar seleccionadas ({selectedIds.length})
+          </Button>
         }
       />
 
@@ -97,7 +97,6 @@ export default function AwardApprovalsSection({ projects, onApproveAward, onReje
         <ul className="divide-y divide-slate-100">
           {pending.map((project) => {
             const proposal = project.proposals?.find((p) => p.id === project.selectedProposalId);
-            const pendingSignature = project.paymentOrders?.advance?.pendingRequiredSignature ?? null;
             return (
               <li key={project.id} className="flex flex-wrap items-center gap-4 py-3">
                 <input
@@ -133,22 +132,9 @@ export default function AwardApprovalsSection({ projects, onApproveAward, onReje
                       icon={<FileSignature className="h-3.5 w-3.5" />}
                     />
                   )}
-                  {pendingSignature ? (
-                    <Tooltip content={`Falta una firma en la orden: "${pendingSignature.label}" (${pendingSignature.userName ?? pendingSignature.role}). Haz clic para ir a firmar.`}>
-                      <Button
-                        size="sm"
-                        colorScheme="amber"
-                        icon={<FileWarning className="h-3.5 w-3.5" />}
-                        onClick={() => setViewOrder(project.paymentOrders!.advance)}
-                      >
-                        Falta firma
-                      </Button>
-                    </Tooltip>
-                  ) : (
-                    <Button size="sm" colorScheme="emerald" disabled={isBusy} onClick={() => approve([project.id])}>
-                      Aprobar
-                    </Button>
-                  )}
+                  <Button size="sm" colorScheme="emerald" disabled={isBusy} onClick={() => approve([project.id])}>
+                    Aprobar
+                  </Button>
                   <Button
                     size="sm"
                     variant="danger"
