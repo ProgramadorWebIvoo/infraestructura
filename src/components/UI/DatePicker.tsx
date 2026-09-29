@@ -360,7 +360,7 @@ export default function DatePicker({
                   type="button"
                   onClick={() => (viewLevel === "days" ? goToMonth(-1) : viewLevel === "months" ? goToYear(-1) : goToDecade(-1))}
                   disabled={viewLevel === "days" ? !canGoToPrevMonth : viewLevel === "months" ? !canGoToPrevYear : !canGoToPrevDecade}
-                  className={`flex h-7 w-7 items-center justify-center rounded-control text-text-muted transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${ACCENT_HOVER_BG_CLASSES[accent]} ${ACCENT_TEXT_CLASSES[accent].replace("text-", "hover:text-")}`}
+                  className={`flex cursor-pointer h-7 w-7 items-center justify-center rounded-control text-text-muted transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${ACCENT_HOVER_BG_CLASSES[accent]} ${ACCENT_TEXT_CLASSES[accent].replace("text-", "hover:text-")}`}
                   aria-label={viewLevel === "days" ? "Mes anterior" : viewLevel === "months" ? "Año anterior" : "Década anterior"}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -369,7 +369,7 @@ export default function DatePicker({
                   type="button"
                   onClick={() => setViewLevel(viewLevel === "days" ? "months" : "years")}
                   disabled={viewLevel === "years"}
-                  className={`rounded-control px-2 py-1 text-xs font-bold text-text-secondary transition-colors disabled:cursor-default ${
+                  className={`rounded-control cursor-pointer px-2 py-1 text-xs font-bold text-text-secondary transition-colors disabled:cursor-default ${
                     viewLevel === "years" ? "" : `cursor-pointer ${ACCENT_HOVER_BG_CLASSES[accent]}`
                   }`}
                 >
@@ -381,7 +381,7 @@ export default function DatePicker({
                   type="button"
                   onClick={() => (viewLevel === "days" ? goToMonth(1) : viewLevel === "months" ? goToYear(1) : goToDecade(1))}
                   disabled={viewLevel === "days" ? !canGoToNextMonth : viewLevel === "months" ? !canGoToNextYear : !canGoToNextDecade}
-                  className={`flex h-7 w-7 items-center justify-center rounded-control text-text-muted transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${ACCENT_HOVER_BG_CLASSES[accent]} ${ACCENT_TEXT_CLASSES[accent].replace("text-", "hover:text-")}`}
+                  className={`flex cursor-pointer h-7 w-7 items-center justify-center rounded-control text-text-muted transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${ACCENT_HOVER_BG_CLASSES[accent]} ${ACCENT_TEXT_CLASSES[accent].replace("text-", "hover:text-")}`}
                   aria-label={viewLevel === "days" ? "Mes siguiente" : viewLevel === "months" ? "Año siguiente" : "Década siguiente"}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -412,7 +412,7 @@ export default function DatePicker({
                           whileTap={isDisabled ? undefined : { scale: 0.9 }}
                           aria-pressed={isSelected}
                           aria-label={`${date.getDate()} de ${MONTH_LABELS[date.getMonth()]} de ${date.getFullYear()}`}
-                          className={`relative flex h-8 items-center justify-center rounded-control text-[11px] font-bold transition-colors ${
+                          className={`relative flex cursor-pointer h-8 items-center justify-center rounded-control text-[11px] font-bold transition-colors ${
                             isDisabled
                               ? "cursor-not-allowed text-text-muted/40"
                               : isSelected
@@ -445,7 +445,7 @@ export default function DatePicker({
                         disabled={isDisabled}
                         onClick={() => selectMonth(month)}
                         whileTap={isDisabled ? undefined : { scale: 0.95 }}
-                        className={`flex h-10 items-center justify-center rounded-control text-[11px] font-bold transition-colors ${
+                        className={`flex h-10 cursor-pointer items-center justify-center rounded-control text-[11px] font-bold transition-colors ${
                           isDisabled
                             ? "cursor-not-allowed text-text-muted/40"
                             : isSelected
@@ -473,7 +473,7 @@ export default function DatePicker({
                         disabled={isDisabled}
                         onClick={() => selectYear(year)}
                         whileTap={isDisabled ? undefined : { scale: 0.95 }}
-                        className={`flex h-10 items-center justify-center rounded-control text-[11px] font-bold transition-colors ${
+                        className={`flex cursor-pointer h-10 items-center justify-center rounded-control text-[11px] font-bold transition-colors ${
                           isDisabled
                             ? "cursor-not-allowed text-text-muted/40"
                             : isSelected

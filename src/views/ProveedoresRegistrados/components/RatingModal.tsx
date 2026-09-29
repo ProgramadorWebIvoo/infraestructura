@@ -56,6 +56,7 @@ export default function RatingModal({ contractor, onClose, onSave }: RatingModal
   const originalRating = contractor?.rating ?? 0;
   const hasChanged = Math.abs(editRating - originalRating) >= 0.05;
   const delta = clampRating(editRating - originalRating);
+  const deltaMinus = clampRating(originalRating - editRating);
 
   const handleSave = async () => {
     if (!contractor) return;
@@ -108,7 +109,7 @@ export default function RatingModal({ contractor, onClose, onSave }: RatingModal
                 <ArrowRight className="h-3 w-3 text-slate-300" />
                 <span className={`font-mono ${delta > 0 ? "text-success-600" : "text-danger-600"}`}>{editRating.toFixed(1)}</span>
                 <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${delta > 0 ? "bg-success-50 text-success-600" : "bg-danger-50 text-danger-600"}`}>
-                  {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+                  {delta > 0 ? `+${delta.toFixed(1)}` : `-${deltaMinus.toFixed(1)}`}
                 </span>
               </motion.div>
             ) : (

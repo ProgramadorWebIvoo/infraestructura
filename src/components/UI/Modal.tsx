@@ -167,10 +167,19 @@ export default function Modal({
         >
           <motion.div
             ref={modalRef}
-            initial={reduceMotion ? undefined : { opacity: 0, scale: 0.94, y: 18 }}
+            layout={!reduceMotion}
+            initial={reduceMotion ? undefined : { opacity: 0, scale: 0.985, y: 8 }}
             animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96, y: 10 }}
-            transition={reduceMotion ? undefined : { duration: 0.28, ease: "easeOut" }}
+            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.99, y: 4 }}
+            transition={
+              reduceMotion
+                ? undefined
+                : {
+                    layout: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                    duration: 0.32,
+                    ease: [0.16, 1, 0.3, 1],
+                  }
+            }
             className={`bg-surface rounded-container w-full ${maxWidth} border border-border-default overflow-hidden max-h-[90vh] flex flex-col [box-shadow:0_2px_4px_rgba(0,0,0,0.06),0_12px_24px_-6px_rgba(0,0,0,0.14),0_40px_80px_-20px_rgba(2,6,23,0.45)]`}
           >
             {/* ── Header ── */}

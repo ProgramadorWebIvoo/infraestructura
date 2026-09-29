@@ -64,6 +64,7 @@ import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGro
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
 import ExchangeRateSyncLogsPanel from "./components/ExchangeRateSyncLogsPanel";
+import ExchangeRateHistoryPanel from "./components/ExchangeRateHistoryPanel";
 import ExchangeRateEditModal from "./components/ExchangeRateEditModal";
 import RatingIaPanel from "./components/RatingIaPanel";
 import UsuariosPanel from "./components/UsuariosPanel";
@@ -511,6 +512,11 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                       isLoading={isLoadingCurrencies}
                       onUpdate={handleUpdateCurrency}
                       onDelete={handleDeleteCurrency}
+                    />
+                    <ExchangeRateHistoryPanel
+                      authToken={authToken}
+                      currencies={currencies}
+                      enabled={isSuperadmin}
                     />
                     <ExchangeRateSyncLogsPanel
                       logs={syncLogs}
