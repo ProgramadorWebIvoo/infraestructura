@@ -10,17 +10,24 @@ import { CheckCircle2, Download, FileText, XCircle } from "lucide-react";
 import { Table, type Column } from "@/components/UI/Table";
 import StatusBadge from "@/components/UI/StatusBadge";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import { useCurrencyConversion, type UseCurrencyConversionReturn } from "@/hooks/useCurrencyConversion";
+import BsAmount from "@/components/UI/BsAmount";
 import type { HistoryPayment, HistoryTimelineEvent, ProjectHistoryDetail } from "../projectHistoryTypes";
 import { fmtMoney } from "./ProjectHistoryFigures";
 import { HistoryDocumentsList, useHistoryDocumentDownload } from "./HistoryDocumentsList";
 
 const PAYMENT_LABELS: Record<string, string> = { ADVANCE: "Anticipo", FINAL: "Finiquito" };
 
-function makePaymentColumns(onDownload: (doc: { id: number; name: string }) => void): Column<HistoryPayment>[] {
+function makePaymentColumns(onDownload: (doc: { id: number; name: string }) => void, rates: UseCurrencyConversionReturn): Column<HistoryPayment>[] {
   return [
     { key: "type", label: "Tipo", render: (p) => <span className="text-xs font-semibold">{PAYMENT_LABELS[p.type] ?? p.type}</span> },
     { key: "paidDate", label: "Fecha", render: (p) => <span className="text-xs font-mono">{p.paidDate ?? "—"}</span> },
-    { key: "amount", label: "Monto", align: "right", render: (p) => <span className="font-mono text-xs">{fmtMoney(p.amount)} {p.currency !== "USD" ? p.currency : ""}</span> },
+    { key: "amount", label: "Monto", align: "right", render: (p) => (
+      <span className="font-mono text-xs">
+        {fmtMoney(p.amount)} {p.currency !== "USD" ? p.currency : ""}
+        <BsAmount amount={p.amount} convert={rates.convert} hasRates={rates.hasRates} isLoading={rates.isLoading} fromCode={p.currency} variant="inline" />
+      </span>
+    ) },
     { key: "bank", label: "Banco / referencia", render: (p) => <span className="text-xs">{[p.bank, p.reference].filter(Boolean).join(" · ") || "—"}</span> },
     { key: "proof", label: "Comprobante", render: (p) => p.proof
       ? (
@@ -40,13 +47,15 @@ function makePaymentColumns(onDownload: (doc: { id: number; name: string }) => v
 
 export function PaymentsPanel({ payments, projectId, authToken }: { payments: ProjectHistoryDetail["payments"]; projectId: string; authToken: string }) {
   const onDownload = useHistoryDocumentDownload(projectId, authToken);
-  const paymentColumns = makePaymentColumns(onDownload);
+  const rates = useCurrencyConversion();
+  const paymentColumns = makePaymentColumns(onDownload, rates);
 
   return (
     <div className="space-y-3">
       <Table columns={paymentColumns} data={payments.items} rowKey={(p) => p.id} emptyMessage="Aún no hay pagos registrados." />
       <p className="text-xs text-text-secondary text-right">
         Total pagado: <span className="font-mono font-bold">{fmtMoney(payments.total)}</span>
+        <BsAmount amount={payments.total} convert={rates.convert} hasRates={rates.hasRates} isLoading={rates.isLoading} variant="inline" />
         {payments.percentOfAwarded !== null && ` · ${payments.percentOfAwarded}% de lo adjudicado`}
       </p>
     </div>
