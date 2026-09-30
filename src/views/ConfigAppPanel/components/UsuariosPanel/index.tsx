@@ -194,7 +194,8 @@ export default function UsuariosPanel({ authToken, activeRole }: UsuariosPanelPr
   const handleSaveAccess = async (payload: Parameters<typeof saveAccess>[1]) => {
     if (!accessUser) return;
     try {
-      await saveAccess(accessUser.id, payload);
+      const saved = await saveAccess(accessUser.id, payload);
+      if (saved.auditLog && isSuperadmin) prependAuditLog(saved.auditLog);
       handleCloseAccess();
     } catch {
       // Toast already shown by hook

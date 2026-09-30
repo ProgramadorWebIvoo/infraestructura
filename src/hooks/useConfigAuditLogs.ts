@@ -21,7 +21,7 @@
  * nuevo).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/services/api";
 import { logError } from "@/services/logger";
 import { useDebounce } from "./useDebounce";
@@ -69,6 +69,7 @@ interface ConfigAuditLogPage {
 }
 
 const PER_PAGE = 20;
+const AUDIT_LOG_PREPEND_EVENT = "config-audit-log:prepend";
 
 export function useConfigAuditLogs(authToken: string, enabled: boolean) {
   const [logs, setLogs] = useState<ConfigAuditLogRecord[]>([]);
@@ -153,14 +154,30 @@ export function useConfigAuditLogs(authToken: string, enabled: boolean) {
   // aplica en la página 1 sin filtros activos: con filtros activos no hay
   // garantía de que la entrada nueva cumpla el criterio, y con paginación en
   // otra página no correspondería mostrarla.
-  const prependLocal = useCallback(
-    (entry: ConfigAuditLogRecord) => {
+  //
+  // Se difunde por evento en vez de tocar solo el estado local: el historial
+  // lo dibuja ConfigAppPanel con SU instancia del hook, pero cada subpanel
+  // (Usuarios, Roles, Proveedores…) crea la suya solo para llamar a esto —
+  // insertar únicamente en la instancia propia dejaba la entrada invisible
+  // hasta recargar. Todas las instancias escuchan; el id evita duplicar.
+  const prependLocal = useCallback((entry: ConfigAuditLogRecord) => {
+    window.dispatchEvent(new CustomEvent<ConfigAuditLogRecord>(AUDIT_LOG_PREPEND_EVENT, { detail: entry }));
+  }, []);
+
+  const logsRef = useRef(logs);
+  logsRef.current = logs;
+
+  useEffect(() => {
+    const onPrepend = (event: Event) => {
+      const entry = (event as CustomEvent<ConfigAuditLogRecord>).detail;
       if (page !== 1 || activeFilterCount > 0) return;
+      if (logsRef.current.some(log => log.id === entry.id)) return;
       setLogs(prev => [entry, ...prev].slice(0, PER_PAGE));
       setTotal(prev => prev + 1);
-    },
-    [page, activeFilterCount],
-  );
+    };
+    window.addEventListener(AUDIT_LOG_PREPEND_EVENT, onPrepend);
+    return () => window.removeEventListener(AUDIT_LOG_PREPEND_EVENT, onPrepend);
+  }, [page, activeFilterCount]);
 
   return {
     logs, isLoading, hasLoaded, page, lastPage, total, goToPage, prependLocal,

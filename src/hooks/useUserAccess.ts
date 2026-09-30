@@ -11,6 +11,7 @@ import { useCallback, useState } from "react";
 import { apiFetch } from "@/services/api";
 import { getErrorMessage } from "@/services/logger";
 import type { ShowToast } from "./useProjects";
+import type { ConfigAuditLogRecord } from "./useConfigAuditLogs";
 
 export interface ViewAccessEntry {
   key: string;
@@ -58,11 +59,11 @@ export function useUserAccess(showToast: ShowToast) {
   const saveAccess = useCallback(async (userId: number | string, payload: AccessOverridesPayload) => {
     setIsSaving(true);
     try {
-      const data = await apiFetch<AccessCatalog>(`/users/${userId}/access`, {
+      const data = await apiFetch<AccessCatalog & { auditLog?: ConfigAuditLogRecord | null }>(`/users/${userId}/access`, {
         method: "PUT",
         body: JSON.stringify(payload),
       });
-      setCatalog(data);
+      setCatalog({ views: data.views, tabs: data.tabs });
       showToast("Accesos del usuario actualizados correctamente.", "success");
       return data;
     } catch (err) {
