@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
-import { formatCurrency } from "@ivoo/shared";
+import ConvertedAmount, { awardedProposalOf } from "@/components/UI/ConvertedAmount";
 import ClosureItemsTable, { type ClosureTableMode } from "./ClosureItemsTable";
 import ClosurePhotoGrid from "./ClosurePhotoGrid";
 import ClosureFilePreview, { type ClosurePreviewTarget } from "./ClosureFilePreview";
 import type { MeasurementDraft, MeasurementDrafts } from "./closureMeasurements";
 import type { ClosureReport } from "./types";
+import type { Project } from "@/types";
 
 interface ClosureReportDetailProps {
   report: ClosureReport | null;
@@ -22,6 +23,8 @@ interface ClosureReportDetailProps {
   summary?: ReactNode;
   /** Si se pasa, las fotos se abren en el previsualizador estándar. */
   authToken?: string;
+  /** Obra del informe: permite mostrar el finiquito con su moneda de cotización y el dólar activo. */
+  project?: Project | null;
 }
 
 function Notes({ label, value }: { label: string; value?: string | null }) {
@@ -46,6 +49,7 @@ export default function ClosureReportDetail({
   disabled,
   summary,
   authToken,
+  project,
 }: ClosureReportDetailProps) {
   const [preview, setPreview] = useState<ClosurePreviewTarget | null>(null);
   if (isLoading) {
@@ -74,7 +78,13 @@ export default function ClosureReportDetail({
       <Notes label="Notas de Auditoría" value={report.auditNotes} />
       {showFiniquito && report.finiquitoAmount != null && (
         <p className="rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
-          Finiquito propuesto: {formatCurrency(report.finiquitoAmount)}
+          Finiquito propuesto:{" "}
+          <ConvertedAmount
+            variant="inline"
+            amountBase={report.finiquitoAmount}
+            quoteCurrency={awardedProposalOf(project)?.quoteCurrency}
+            fxRateToBase={awardedProposalOf(project)?.fxRateToBase}
+          />
         </p>
       )}
       <div className="space-y-3">

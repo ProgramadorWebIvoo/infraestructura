@@ -149,6 +149,7 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
           report={report}
           isLoading={isLoading}
           showFiniquito
+          project={project}
           authToken={authToken}
           disabled={isBusy}
           summary={report && mode === "audit" && !readOnly ? <ClosureMeasurementSummary stage="audit" differences={0} totalItems={report.items.length} finiquitoPreview={finiquitoPreview} /> : undefined}

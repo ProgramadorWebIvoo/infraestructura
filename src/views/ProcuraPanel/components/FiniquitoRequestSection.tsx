@@ -9,10 +9,10 @@
 
 import { useMemo, useState } from "react";
 import { Banknote } from "lucide-react";
-import { formatCurrency } from "@ivoo/shared";
 import Button from "@/components/UI/Button";
 import Card from "@/components/UI/Card";
 import EmptyState from "@/components/UI/EmptyState";
+import ConvertedAmount, { awardedProposalOf } from "@/components/UI/ConvertedAmount";
 import SectionHeader from "@/components/UI/SectionHeader";
 import ClosureReviewModal from "@/components/ClosureReport/ClosureReviewModal";
 import ClosureFinalQuantities from "@/components/ClosureReport/ClosureFinalQuantities";
@@ -53,9 +53,15 @@ export default function FiniquitoRequestSection({ projects, authToken, actions }
               </div>
               <div className="text-right whitespace-nowrap">
                 <div className="text-[10px] text-slate-400 uppercase font-bold">Finiquito propuesto</div>
-                <div className="font-mono font-black text-slate-800">
-                  {project.finiquitoAmount != null ? formatCurrency(project.finiquitoAmount) : "—"}
-                </div>
+                {project.finiquitoAmount != null ? (
+                  <ConvertedAmount
+                    amountBase={project.finiquitoAmount}
+                    quoteCurrency={awardedProposalOf(project)?.quoteCurrency}
+                    fxRateToBase={awardedProposalOf(project)?.fxRateToBase}
+                  />
+                ) : (
+                  <div className="font-mono font-black text-slate-800">—</div>
+                )}
               </div>
               <Button size="sm" colorScheme="emerald" onClick={() => setReviewing(project)}>
                 Revisar y solicitar pago
