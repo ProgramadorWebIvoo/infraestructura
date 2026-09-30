@@ -102,7 +102,7 @@ export default function AddedMaterialsTable({ materials, onRemove, onEditRequest
               </div>
             ),
           },
-  ], [reviewedIndexes, onEditRequest, onRemove]);
+  ], [reviewedIndexes, onEditRequest, onRemove, convert, hasRates, ratesLoading]);
 
   return (
     <div className="mt-5 border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">

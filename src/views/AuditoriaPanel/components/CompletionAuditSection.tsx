@@ -121,7 +121,7 @@ export default function CompletionAuditSection({ projects, authToken, closureAct
         </div>
       ),
     },
-  ], []);
+  ], [convert, hasRates, isLoadingRates]);
 
   return (
     <>

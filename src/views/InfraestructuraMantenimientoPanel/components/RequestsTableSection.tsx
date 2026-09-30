@@ -143,7 +143,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
         </button>
       ),
     },
-  ], []);
+  ], [convert, hasRates, isLoadingRates]);
 
   return (
     <Card hoverable={false} accent="neutral" fillHeight className="p-0 overflow-hidden">
