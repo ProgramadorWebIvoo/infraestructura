@@ -169,7 +169,7 @@ describe("SettingRow", () => {
       const radios = screen.getAllByRole("radio");
       expect(radios).toHaveLength(4);
       expect(screen.getByRole("radiogroup", { name: "Momento en que se congela la tasa" })).toBeInTheDocument();
-      expect(screen.getByRole("radio", { name: /Al adjudicar/ })).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("radio", { name: /Al solicitar el anticipo/ })).toHaveAttribute("aria-checked", "true");
       expect(screen.getByRole("radio", { name: /Al pagar el anticipo/ })).toHaveAttribute("aria-checked", "false");
       expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     });
@@ -180,7 +180,7 @@ describe("SettingRow", () => {
       fireEvent.click(screen.getByRole("radio", { name: /Al pagar el finiquito/ }));
 
       expect(screen.getByRole("radio", { name: /Al pagar el finiquito/ })).toHaveAttribute("aria-checked", "true");
-      expect(screen.getByRole("radio", { name: /Al adjudicar/ })).toHaveAttribute("aria-checked", "false");
+      expect(screen.getByRole("radio", { name: /Al solicitar el anticipo/ })).toHaveAttribute("aria-checked", "false");
     });
 
     it("permite elegir 'No congelar'", () => {

@@ -15,7 +15,7 @@ export const FREEZE_MOMENT_SETTING_KEY = "congelar_tasa_momento";
 
 export const ENUM_SETTING_OPTIONS: Record<string, SegmentedOption<string>[]> = {
   [FREEZE_MOMENT_SETTING_KEY]: [
-    { value: "CONTRATADO", label: "Al adjudicar", description: "Monto adjudicado" },
+    { value: "CONTRATADO", label: "Al solicitar el anticipo", description: "Procura envía a Finanzas" },
     { value: "PAGO_ANTICIPO", label: "Al pagar el anticipo", description: "Monto del anticipo" },
     { value: "PAGO_FINIQUITO", label: "Al pagar el finiquito", description: "Monto del finiquito" },
     { value: "NINGUNO", label: "No congelar", description: "Siempre tasa del día" },

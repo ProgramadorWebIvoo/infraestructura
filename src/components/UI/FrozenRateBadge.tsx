@@ -17,7 +17,7 @@ import { BS_CURRENCY, formatPaidAmount } from "@/utils/paymentSettlement";
 import { SEMANTIC_COLOR_MAP } from "./colorTokens";
 
 const TRIGGER_LABEL: Record<RateFreeze["trigger"], string> = {
-  CONTRATADO: "adjudicación",
+  CONTRATADO: "solicitud de anticipo a Finanzas",
   PAGO_ANTICIPO: "pago de anticipo",
   PAGO_FINIQUITO: "pago de finiquito",
 };
