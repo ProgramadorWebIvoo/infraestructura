@@ -135,6 +135,7 @@ export class ApiError extends Error {
 export const IDEMPOTENCY_IN_PROGRESS = "IDEMPOTENCY_IN_PROGRESS";
 export const IDEMPOTENCY_KEY_REUSED = "IDEMPOTENCY_KEY_REUSED";
 export const IDEMPOTENCY_KEY_REQUIRED = "IDEMPOTENCY_KEY_REQUIRED";
+export const IDEMPOTENCY_RESPONSE_OMITTED = "IDEMPOTENCY_RESPONSE_OMITTED";
 
 const ERROR_MESSAGES: Record<number, string> = {
   401: "Sesión expirada. Inicia sesión nuevamente.",
@@ -484,6 +485,13 @@ async function apiFetchUncached<T = unknown>(
   }
 
   const json = JSON.parse(text);
+
+  // Replay de una respuesta que el backend no guardó por su tamaño: la operación YA se aplicó,
+  // pero no hay recurso que devolver. Se lanza en vez de entregar `{replayed:true}` a un caller
+  // que espera un Project (corrompería el estado local); el siguiente refresco trae el dato real.
+  if (json?.replayed === true && json?.code === IDEMPOTENCY_RESPONSE_OMITTED) {
+    throw new ApiError(json.message ?? "La operación ya se había aplicado; actualiza la información.", response.status, undefined, json.code);
+  }
 
   _onApiDebugEvent?.({
     method, path, fullUrl, status: response.status,
