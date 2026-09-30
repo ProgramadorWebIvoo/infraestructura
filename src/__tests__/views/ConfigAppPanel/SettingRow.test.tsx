@@ -163,11 +163,12 @@ describe("SettingRow", () => {
       label: "Momento en que se congela la tasa",
     });
 
-    it("muestra las cuatro opciones como radiogroup con la actual marcada", () => {
+    it("muestra los tres momentos como radiogroup con el actual marcado (no hay opción de no congelar)", () => {
       render(<SettingRow setting={freezeSetting()} value="CONTRATADO" onChange={onChange as unknown as OnChange} />);
 
       const radios = screen.getAllByRole("radio");
-      expect(radios).toHaveLength(4);
+      expect(radios).toHaveLength(3);
+      expect(screen.queryByRole("radio", { name: /No congelar/ })).not.toBeInTheDocument();
       expect(screen.getByRole("radiogroup", { name: "Momento en que se congela la tasa" })).toBeInTheDocument();
       expect(screen.getByRole("radio", { name: /Al solicitar el anticipo/ })).toHaveAttribute("aria-checked", "true");
       expect(screen.getByRole("radio", { name: /Al pagar el anticipo/ })).toHaveAttribute("aria-checked", "false");
@@ -183,12 +184,12 @@ describe("SettingRow", () => {
       expect(screen.getByRole("radio", { name: /Al solicitar el anticipo/ })).toHaveAttribute("aria-checked", "false");
     });
 
-    it("permite elegir 'No congelar'", () => {
+    it("elegir un momento notifica su valor", () => {
       render(<SettingRow setting={freezeSetting()} value="CONTRATADO" onChange={onChange as unknown as OnChange} />);
 
-      fireEvent.click(screen.getByRole("radio", { name: /No congelar/ }));
+      fireEvent.click(screen.getByRole("radio", { name: /Al pagar el anticipo/ }));
 
-      expect(onChange).toHaveBeenCalledWith(9, "NINGUNO");
+      expect(onChange).toHaveBeenCalledWith(9, "PAGO_ANTICIPO");
     });
   });
 });

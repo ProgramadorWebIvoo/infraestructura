@@ -18,6 +18,5 @@ export const ENUM_SETTING_OPTIONS: Record<string, SegmentedOption<string>[]> = {
     { value: "CONTRATADO", label: "Al solicitar el anticipo", description: "Procura envía a Finanzas" },
     { value: "PAGO_ANTICIPO", label: "Al pagar el anticipo", description: "Monto del anticipo" },
     { value: "PAGO_FINIQUITO", label: "Al pagar el finiquito", description: "Monto del finiquito" },
-    { value: "NINGUNO", label: "No congelar", description: "Siempre tasa del día" },
   ],
 };
