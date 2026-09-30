@@ -13,6 +13,7 @@ import { formatCurrency } from "@ivoo/shared";
 import type { Project, SupplierMaterialProposal } from "@/types";
 import { calculatePendingPortalProposals } from "@/views/AnalistasPanel/utils/portalProposalUtils";
 import BsAmount from "@/components/UI/BsAmount";
+import OriginalAmount from "@/components/UI/OriginalAmount";
 
 interface AnalistasGridCardProps {
   project: Project;
@@ -77,11 +78,7 @@ function AnalistasGridCard({
           </span>
           <div className="text-right">
             <div className="font-mono font-black text-emerald-700 text-[11px] whitespace-nowrap">{formatCurrency(best.totalCost)}</div>
-            {best.totalCostOriginal != null && best.quoteCurrency && (
-              <div className="text-[9px] text-slate-500 font-medium">
-                orig: {formatCurrency(best.totalCostOriginal, best.quoteCurrency)}
-              </div>
-            )}
+            <OriginalAmount amount={best.totalCostOriginal} currency={best.quoteCurrency} label="Cotizado: " />
             {convert && (
               <BsAmount amount={best.totalCost} convert={convert} hasRates={!!hasRates} isLoading={!!isLoadingRates} />
             )}

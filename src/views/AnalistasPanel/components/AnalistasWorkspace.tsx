@@ -61,6 +61,8 @@ import { useToast } from "@/components/UI/Toast";
 import { viewSwitchVariants } from "@/animations";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
+import OriginalAmount from "@/components/UI/OriginalAmount";
+import UsdBcvNotice from "@/components/UI/UsdBcvNotice";
 
 const ORIGIN_BADGE: Record<ProposalOrigin, { label: string; className: string }> = {
   MANUAL: { label: "Manual", className: "bg-slate-100 text-slate-600 border-slate-200" },
@@ -188,15 +190,10 @@ export default function AnalistasWorkspace({
         const proposals = p.proposals ?? [];
         const best = proposals.length > 0 ? proposals.reduce((a, b) => (b.totalCost < a.totalCost ? b : a), proposals[0]) : null;
         if (!best) return <span className="font-mono font-black text-emerald-700 whitespace-nowrap">—</span>;
-        const hasOriginal = best.totalCostOriginal != null && best.quoteCurrency;
         return (
           <div className="text-right whitespace-nowrap">
             <div className="font-mono font-black text-emerald-700">{formatCurrency(best.totalCost)}</div>
-            {hasOriginal && (
-              <div className="text-[9px] text-slate-500 font-medium">
-                orig: {formatCurrency(best.totalCostOriginal!, best.quoteCurrency!)}
-              </div>
-            )}
+            <OriginalAmount amount={best.totalCostOriginal} currency={best.quoteCurrency} label="Cotizado: " />
             <BsAmount amount={best.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
           </div>
         );
@@ -214,6 +211,10 @@ export default function AnalistasWorkspace({
             description="Seleccione un expediente en licitación para registrar ofertas de contratistas y consolidar su cuadro comparativo."
             color="emerald"
           />
+        </div>
+
+        <div className="px-6 pt-4 shrink-0">
+          <UsdBcvNotice scope="'Mejor Oferta'" defaultOpen={false} />
         </div>
 
         <TableToolbar
@@ -410,6 +411,7 @@ function ExpedienteWorkspaceModal({
       render: (prop) => (
         <div>
           <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
+          <OriginalAmount amount={prop.materialCostOriginal} currency={prop.quoteCurrency} label="" />
           <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -422,6 +424,7 @@ function ExpedienteWorkspaceModal({
       render: (prop) => (
         <div>
           <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
+          <OriginalAmount amount={prop.laborCostOriginal} currency={prop.quoteCurrency} label="" />
           <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -436,6 +439,7 @@ function ExpedienteWorkspaceModal({
           <span className={`font-mono font-black text-sm block ${prop.id === best?.id ? "text-emerald-700" : "text-slate-700"}`}>
             {formatCurrency(prop.totalCost)}
           </span>
+          <OriginalAmount amount={prop.totalCostOriginal} currency={prop.quoteCurrency} label="" />
           <BsAmount amount={prop.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
       ),
@@ -568,6 +572,8 @@ function ExpedienteWorkspaceModal({
               </span>
             )}
           </div>
+
+          <UsdBcvNotice scope="'Mejor Oferta' y en el cuadro comparativo" />
 
           {/* Resumen comparativo — solo aparece con al menos 1 propuesta cargada */}
           <ProposalSummary project={project} />
