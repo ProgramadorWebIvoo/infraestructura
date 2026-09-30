@@ -708,6 +708,7 @@ describe("useProjectsWorkflows", () => {
 
   // ── Finanzas ───────────────────────────────────────────────────────────────
   const fakeProofFile = () => new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
+  const settlement = { paymentMode: "QUOTE_CURRENCY" as const, paidAmount: 5000 };
 
   describe("handlePayAdvance", () => {
     it("uploads the payment proof and then POSTs to /projects/{id}/payments with ADVANCE type", async () => {
@@ -716,7 +717,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayAdvance("PRJ-001", 5000, fakeProofFile());
+      await result.current.handlePayAdvance("PRJ-001", 5000, fakeProofFile(), settlement);
 
       expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
         method: "POST",
@@ -731,12 +732,36 @@ describe("useProjectsWorkflows", () => {
       expect(syncProject).toHaveBeenCalledWith(project);
     });
 
+    it("envia en el pago cómo se pagó realmente (modo, monto y tasa aplicada)", async () => {
+      mockApiFetch.mockResolvedValue(createMockProject({ status: ProjectStatus.EN_EJECUCION }));
+      const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
+
+      await result.current.handlePayAdvance("PRJ-001", 450, fakeProofFile(), {
+        paymentMode: "BS",
+        paidAmount: 345600,
+        appliedRate: 960,
+        appliedRateSource: "MANUAL",
+        bank: "Banesco",
+      });
+
+      const paymentCall = mockApiFetch.mock.calls.find(([url]) => url === "/projects/PRJ-001/payments");
+      expect(JSON.parse(paymentCall![1].body)).toEqual({
+        paymentType: "ADVANCE",
+        amount: 450,
+        paymentMode: "BS",
+        paidAmount: 345600,
+        appliedRate: 960,
+        appliedRateSource: "MANUAL",
+        bank: "Banesco",
+      });
+    });
+
     it("does not register the payment when the proof upload fails", async () => {
       mockApiFetch.mockRejectedValueOnce(new Error("upload failed"));
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile());
+      await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile(), settlement);
 
       expect(mockApiFetch).toHaveBeenCalledTimes(1);
       // Muestra el mensaje real del backend (getErrorMessage), no uno genérico.
@@ -748,7 +773,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile());
+      await result.current.handlePayAdvance("PRJ-001", 1000, fakeProofFile(), settlement);
 
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo registrar el anticipo"),
@@ -764,7 +789,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayFinal("PRJ-001", 10000, fakeProofFile());
+      await result.current.handlePayFinal("PRJ-001", 10000, fakeProofFile(), settlement);
 
       expect(mockApiFetch).toHaveBeenCalledWith("/projects/PRJ-001/documents", expect.objectContaining({
         method: "POST",
@@ -784,7 +809,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile());
+      await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile(), settlement);
 
       expect(mockApiFetch).toHaveBeenCalledTimes(1);
       expect(showToast).toHaveBeenCalledWith("upload failed", "error");
@@ -795,7 +820,7 @@ describe("useProjectsWorkflows", () => {
 
       const { result } = renderHook(() => useProjectsWorkflows(defaultOptions));
 
-      await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile());
+      await result.current.handlePayFinal("PRJ-001", 1000, fakeProofFile(), settlement);
 
       expect(showToast).toHaveBeenCalledWith(
         expect.stringContaining("No se pudo registrar el pago final"),

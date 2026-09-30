@@ -73,6 +73,7 @@ const ORDER: PaymentOrder = {
   contractorCode: "CON-1",
   paymentType: "ADVANCE",
   amount: 3000,
+  amountBase: 3000,
   currency: "USD",
   exchangeRate: null,
   status: "EN_FIRMA",

@@ -256,9 +256,59 @@ export type PaymentOrderStatus = "EN_FIRMA" | "FIRMADA" | "PAGADA" | "ANULADA";
 export interface PaymentOrderSnapshot {
   project: { id: string; title: string; location: string };
   contractor: { code: string; name: string; rif: string };
-  proposal: { id: string; total_cost: string; negotiated_advance_percent: string; currency: string };
+  proposal: {
+    id: string;
+    total_cost: string;
+    negotiated_advance_percent: string;
+    currency: string;
+    /** Solo en órdenes generadas con la obligación en moneda de cotización. */
+    total_cost_original?: string | null;
+    fx_rate_to_base?: string | null;
+  };
   payment_type: "ADVANCE" | "FINAL";
   amount: string;
+  currency?: string;
+  amount_base?: string;
+}
+
+/** Cómo se pagó realmente: obligación en la moneda de cotización, en bolívares o en otra moneda. */
+export type PaymentMode = "QUOTE_CURRENCY" | "BS" | "OTHER_CURRENCY";
+
+/** Origen de la tasa con la que Finanzas convirtió lo pagado. */
+export type AppliedRateSource = "BCV" | "USDT" | "MANUAL";
+
+/**
+ * Pago liquidado tal como lo registró Finanzas (PaymentSettlementResource).
+ * `paymentMode` es null en los pagos anteriores al registro de liquidación.
+ */
+export interface PaymentSettlement {
+  id: number;
+  type: "ADVANCE" | "FINAL";
+  paidDate: string | null;
+  bank: string | null;
+  reference: string | null;
+  notes: string | null;
+  /** Importe en moneda base (lo que suman los agregados). */
+  amountBase: number;
+  baseCurrency: string;
+  paymentMode: PaymentMode | null;
+  obligationAmount: number | null;
+  obligationCurrency: string | null;
+  /** Moneda realmente pagada (bolívares = "VES"). */
+  paidCurrency: string | null;
+  paidAmount: number | null;
+  /** Unidades de paidCurrency por 1 unidad de obligationCurrency. */
+  appliedRate: number | null;
+  appliedRateSource: AppliedRateSource | null;
+  /** Tasa que el sistema habría sugerido en ese momento (para comparar con la aplicada). */
+  suggestedRate: number | null;
+  coveredAmount: number | null;
+  differenceAmount: number | null;
+  differenceReason: string | null;
+  /** Tasa congelada al adjudicar (la de la cotización), si la configuración la aplicó. */
+  contractRateFreeze?: RateFreeze | null;
+  /** Tasa congelada en este pago, si la configuración la aplicó. */
+  paymentRateFreeze?: RateFreeze | null;
 }
 
 export interface PaymentOrder {
@@ -268,7 +318,10 @@ export interface PaymentOrder {
   proposalId: string;
   contractorCode: string;
   paymentType: "ADVANCE" | "FINAL";
+  /** Obligación en la moneda de cotización (`currency`). */
   amount: number;
+  /** Mismo compromiso en moneda base (USD): es el importe que envía el flujo de pago. */
+  amountBase: number;
   currency: string;
   exchangeRate: number | null;
   status: PaymentOrderStatus;
@@ -277,6 +330,8 @@ export interface PaymentOrder {
   elaboratedByName: string | null;
   snapshot: PaymentOrderSnapshot;
   createdAt: string;
+  /** Cómo se pagó realmente; solo en el detalle de una orden ya pagada. */
+  payment?: PaymentSettlement | null;
   signatures?: PaymentOrderSignature[];
   /** Firma obligatoria que le falta a esta orden para avanzar (aprobación/pago), o null si no hay ninguna pendiente. */
   pendingRequiredSignature: { label: string; role: string | null; userName: string | null } | null;

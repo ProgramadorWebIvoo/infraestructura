@@ -21,7 +21,8 @@ import type { PaymentOrder, Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
-import PayWithProofModal from "./PayWithProofModal";
+import PaymentSettlementModal, { buildPaymentTarget, type PaymentTarget } from "./PaymentSettlementModal";
+import type { SettlementPayload } from "@/hooks/usePaymentSettlement";
 import PaymentOrderDetailModal from "@/components/PaymentOrder/PaymentOrderDetailModal";
 import TableToolbar from "@/components/UI/TableToolbar";
 import { Table, type Column } from "@/components/UI/Table";
@@ -37,8 +38,8 @@ import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 
 interface AdvancesSectionProps {
   pendingAdvances: Project[];
-  /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liberación. */
-  onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
+  /** El comprobante de pago y cómo se pagó (moneda, monto, tasa) son obligatorios para confirmar la liberación. */
+  onPayAdvance: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
   onRefresh?: () => Promise<void> | void;
   authToken?: string;
   activeRole?: string;
@@ -51,10 +52,8 @@ interface AdvanceRow {
 }
 
 export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefresh, authToken = "", activeRole }: AdvancesSectionProps) {
-  const [confirmPayAdvance, setConfirmPayAdvance] = useState<{ projectId: string; amount: number; title: string } | null>(null);
-  const [proofFiles, setProofFiles] = useState<File[]>([]);
+  const [confirmPayAdvance, setConfirmPayAdvance] = useState<PaymentTarget | null>(null);
   const [viewOrder, setViewOrder] = useState<PaymentOrder | null>(null);
-  const [isPaying, setIsPaying] = useState(false);
   const [query, setQuery] = useState("");
   const { showToast } = useToast();
   const { viewMode, viewToggle } = useTableViewMode("grid");
@@ -136,7 +135,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
           ) : (
             <Button
               id={`btn-pay-advance-${project.id}`}
-              onClick={() => setConfirmPayAdvance({ projectId: project.id, amount: advAmount, title: project.title })}
+              onClick={() => setConfirmPayAdvance(buildPaymentTarget(project, advAmount, project.paymentOrders?.advance))}
               variant="primary"
               colorScheme="rose"
               size="sm"
@@ -150,8 +149,8 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
     } },
   ], [convert, hasRates, isLoadingRates]);
 
-  const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {
-    setConfirmPayAdvance({ projectId, amount, title });
+  const handleOpenConfirm = useCallback((project: Project, amount: number) => {
+    setConfirmPayAdvance(buildPaymentTarget(project, amount, project.paymentOrders?.advance));
   }, []);
 
   const emptyMessage = rows.length === 0
@@ -222,7 +221,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
                   project={project}
                   winner={winner}
                   advAmount={advAmount}
-                  onOpenConfirm={() => handleOpenConfirm(project.id, advAmount, project.title)}
+                  onOpenConfirm={() => handleOpenConfirm(project, advAmount)}
                   onOpenOrder={project.paymentOrders?.advance ? () => setViewOrder(project.paymentOrders!.advance) : undefined}
                   convert={convert}
                   hasRates={hasRates}
@@ -236,28 +235,14 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         )}
       </AnimatePresence>
 
-      <PayWithProofModal
-        isOpen={!!confirmPayAdvance}
-        onClose={() => { setConfirmPayAdvance(null); setProofFiles([]); }}
-        onConfirm={async () => {
-          if (!confirmPayAdvance || proofFiles.length === 0) return;
-          setIsPaying(true);
-          try {
-            await onPayAdvance(confirmPayAdvance.projectId, confirmPayAdvance.amount, proofFiles[0]);
-            setConfirmPayAdvance(null);
-            setProofFiles([]);
-          } finally {
-            setIsPaying(false);
-          }
-        }}
+      <PaymentSettlementModal
+        target={confirmPayAdvance}
+        onClose={() => setConfirmPayAdvance(null)}
+        onConfirm={onPayAdvance}
         title="Liberar Anticipo"
-        message={`¿Estás seguro de liberar el anticipo de $${formatNumber(confirmPayAdvance?.amount ?? 0)}${hasRates ? ` (Bs. ${formatBs(convert(confirmPayAdvance?.amount ?? 0, "USD"))})` : ""} para la obra "${confirmPayAdvance?.title ?? ""}"? Esta acción registrará el pago en el diario de egresos y cambiará el estado del proyecto a "En ejecución".`}
-        variant="warning"
+        action="liberar el anticipo"
+        consequence='Esta acción registrará el pago en el diario de egresos y cambiará el estado del proyecto a "En ejecución".'
         confirmLabel="Liberar anticipo"
-        isLoading={isPaying}
-        proofFiles={proofFiles}
-        onProofFilesChange={setProofFiles}
-        onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
       />
 
       <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} onOrderSigned={onRefresh} />

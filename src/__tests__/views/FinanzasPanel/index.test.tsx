@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import FinanzasPanel from "@/views/FinanzasPanel";
-import { ProjectStatus, type Project, type Proposal } from "@/types";
+import { ProjectStatus, type PaymentOrder, type Project, type Proposal } from "@/types";
 
 // Mantiene motion.* real (KpiPill pasa un MotionValue como children de
 // <motion.span>, que solo el componente real sabe suscribir/renderizar) —
@@ -101,6 +101,35 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 }
 
 const noop = async () => {};
+
+/** Orden de pago vigente en USD (obligación = importe base) — el pago exige una orden. */
+function makeOrder(paymentType: "ADVANCE" | "FINAL", amount: number): PaymentOrder {
+  return {
+    id: 1,
+    number: 1,
+    projectId: "PRJ-1",
+    proposalId: "PROP-1",
+    contractorCode: "CON-100",
+    paymentType,
+    amount,
+    amountBase: amount,
+    currency: "USD",
+    exchangeRate: null,
+    status: "FIRMADA",
+    contentHash: "hash",
+    voidReason: null,
+    elaboratedByName: null,
+    snapshot: {
+      project: { id: "PRJ-1", title: "Obra", location: "Sede" },
+      contractor: { code: "CON-100", name: "Constructora Ejemplo", rif: "J-1" },
+      proposal: { id: "PROP-1", total_cost: "10000.00", negotiated_advance_percent: "30.00", currency: "USD" },
+      payment_type: paymentType,
+      amount: amount.toFixed(2),
+    },
+    createdAt: "2026-01-01T00:00:00Z",
+    pendingRequiredSignature: null,
+  };
+}
 
 describe("FinanzasPanel", () => {
   it("muestra los KPIs correctos según el status de cada proyecto", () => {
@@ -195,6 +224,7 @@ describe("FinanzasPanel", () => {
           status: ProjectStatus.CONTRATADO,
           selectedContractorCode: "CON-100",
           proposals: [makeProposal({ contractorCode: "CON-100", totalCost: 10000, negotiatedAdvancePercent: 30 })],
+          paymentOrders: { advance: makeOrder("ADVANCE", 3000), final: null },
         }),
       ];
 
@@ -212,10 +242,16 @@ describe("FinanzasPanel", () => {
 
       const proofFile = new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
       fireEvent.change(within(dialog).getByTestId("file-input"), { target: { files: [proofFile] } });
+      // También hay que indicar en qué moneda se pagó: con comprobante pero sin modo, sigue deshabilitado.
+      expect(within(dialog).getByRole("button", { name: /Liberar anticipo/ })).toBeDisabled();
+
+      fireEvent.click(within(dialog).getByRole("radio", { name: /moneda cotizada/i }));
       expect(within(dialog).getByRole("button", { name: /Liberar anticipo/ })).toBeEnabled();
       fireEvent.click(within(dialog).getByRole("button", { name: /Liberar anticipo/ }));
 
-      await waitFor(() => expect(onPayAdvance).toHaveBeenCalledWith("PRJ-1", 3000, proofFile));
+      await waitFor(() =>
+        expect(onPayAdvance).toHaveBeenCalledWith("PRJ-1", 3000, proofFile, { paymentMode: "QUOTE_CURRENCY", paidAmount: 3000 }),
+      );
     } finally {
       restoreSize();
       restoreRO();
@@ -235,6 +271,7 @@ describe("FinanzasPanel", () => {
           selectedContractorCode: "CON-100",
           advancePaidAmount: 3000,
           proposals: [makeProposal({ contractorCode: "CON-100", totalCost: 10000 })],
+          paymentOrders: { advance: null, final: makeOrder("FINAL", 7000) },
         }),
       ];
 
@@ -247,9 +284,12 @@ describe("FinanzasPanel", () => {
       const dialog = await screen.findByRole("dialog");
       const proofFile = new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
       fireEvent.change(within(dialog).getByTestId("file-input"), { target: { files: [proofFile] } });
+      fireEvent.click(within(dialog).getByRole("radio", { name: /moneda cotizada/i }));
       fireEvent.click(within(dialog).getByRole("button", { name: /Aprobar finiquito/ }));
 
-      await waitFor(() => expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 7000, proofFile));
+      await waitFor(() =>
+        expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 7000, proofFile, { paymentMode: "QUOTE_CURRENCY", paidAmount: 7000 }),
+      );
     } finally {
       restoreSize();
       restoreRO();
@@ -270,6 +310,7 @@ describe("FinanzasPanel", () => {
           advancePaidAmount: 3000,
           finiquitoAmount: 6800,
           proposals: [makeProposal({ contractorCode: "CON-100", totalCost: 10000 })],
+          paymentOrders: { advance: null, final: makeOrder("FINAL", 6800) },
         }),
       ];
 
@@ -282,9 +323,12 @@ describe("FinanzasPanel", () => {
       const dialog = await screen.findByRole("dialog");
       const proofFile = new File(["dummy"], "voucher.pdf", { type: "application/pdf" });
       fireEvent.change(within(dialog).getByTestId("file-input"), { target: { files: [proofFile] } });
+      fireEvent.click(within(dialog).getByRole("radio", { name: /moneda cotizada/i }));
       fireEvent.click(within(dialog).getByRole("button", { name: /Aprobar finiquito/ }));
 
-      await waitFor(() => expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 6800, proofFile));
+      await waitFor(() =>
+        expect(onPayFinal).toHaveBeenCalledWith("PRJ-1", 6800, proofFile, { paymentMode: "QUOTE_CURRENCY", paidAmount: 6800 }),
+      );
     } finally {
       restoreSize();
       restoreRO();

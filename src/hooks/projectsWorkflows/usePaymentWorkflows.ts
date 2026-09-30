@@ -8,6 +8,7 @@
  * archivo — ver graphify toxic hotspot).
  */
 
+import type { SettlementPayload } from "@/hooks/usePaymentSettlement";
 import { useCallback } from "react";
 import type { Project } from "@/types";
 import { ProjectStatus } from "@/types";
@@ -38,7 +39,7 @@ export function usePaymentWorkflows({
   optimisticUpdate,
 }: WorkflowContext) {
   const handlePayAdvance = useCallback(
-    async (projectId: string, amount: number, proofFile: File) => {
+    async (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
@@ -56,7 +57,7 @@ export function usePaymentWorkflows({
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
           method: "POST",
           token,
-          body: JSON.stringify({ paymentType: "ADVANCE", amount }),
+          body: JSON.stringify({ paymentType: "ADVANCE", amount, ...settlement }),
         });
         sync(project);
       } catch (error) {
@@ -69,7 +70,7 @@ export function usePaymentWorkflows({
   );
 
   const handlePayFinal = useCallback(
-    async (projectId: string, amount: number, proofFile: File) => {
+    async (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
@@ -87,7 +88,7 @@ export function usePaymentWorkflows({
         const project = await apiFetch<Project>(`/projects/${projectId}/payments`, {
           method: "POST",
           token,
-          body: JSON.stringify({ paymentType: "FINAL", amount }),
+          body: JSON.stringify({ paymentType: "FINAL", amount, ...settlement }),
         });
         sync(project);
       } catch (error) {

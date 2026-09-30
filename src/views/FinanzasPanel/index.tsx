@@ -9,6 +9,7 @@
  * por sección), en vez de apilar las 4 secciones en un solo scroll largo.
  */
 
+import type { SettlementPayload } from "@/hooks/usePaymentSettlement";
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { BookText, CheckCircle2, Hourglass, Wallet } from "lucide-react";
@@ -32,8 +33,8 @@ interface FinanzasPanelProps {
   /** Opcional con default "" — solo se usa para resolver tabs dinámicas (GET /auth/tabs); sin token, todas las tabs quedan visibles. */
   authToken?: string;
   activeRole?: string;
-  onPayAdvance: (projectId: string, amount: number, proofFile: File) => Promise<void>;
-  onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
+  onPayAdvance: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
+  onPayFinal: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
 }

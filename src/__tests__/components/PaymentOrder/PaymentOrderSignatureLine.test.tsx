@@ -15,7 +15,7 @@ vi.mock("@/services/paymentOrders", () => ({
 function detail(overrides: Partial<PaymentOrderDetail> = {}): PaymentOrderDetail {
   return {
     id: 1, number: 3, projectId: "PRJ-1", proposalId: "PROP-1", contractorCode: "CON-1",
-    paymentType: "ADVANCE", amount: 3000, currency: "USD", exchangeRate: null,
+    paymentType: "ADVANCE", amount: 3000, amountBase: 3000, currency: "USD", exchangeRate: null,
     status: "EN_FIRMA", contentHash: "abc", voidReason: null, elaboratedByName: null,
     snapshot: { project: { id: "PRJ-1", title: "Obra", location: "Caracas" }, contractor: { code: "CON-1", name: "X", rif: "J-1" }, proposal: { id: "PROP-1", total_cost: "10000", negotiated_advance_percent: "30", currency: "USD" }, payment_type: "ADVANCE", amount: "3000" },
     createdAt: "2026-09-30T00:00:00Z",

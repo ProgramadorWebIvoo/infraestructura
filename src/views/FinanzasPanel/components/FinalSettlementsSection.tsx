@@ -20,7 +20,8 @@ import type { PaymentOrder, Project, Proposal } from "@/types";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
-import PayWithProofModal from "./PayWithProofModal";
+import PaymentSettlementModal, { buildPaymentTarget, type PaymentTarget } from "./PaymentSettlementModal";
+import type { SettlementPayload } from "@/hooks/usePaymentSettlement";
 import PaymentOrderDetailModal from "@/components/PaymentOrder/PaymentOrderDetailModal";
 import ClosureFinalQuantities from "@/components/ClosureReport/ClosureFinalQuantities";
 import TableToolbar from "@/components/UI/TableToolbar";
@@ -38,7 +39,7 @@ import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 interface FinalSettlementsSectionProps {
   pendingFinalPayments: Project[];
   /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liquidación. */
-  onPayFinal: (projectId: string, amount: number, proofFile: File) => Promise<void>;
+  onPayFinal: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
   onRefresh?: () => Promise<void> | void;
   authToken?: string;
   activeRole?: string;
@@ -52,10 +53,8 @@ interface SettlementRow {
 }
 
 export default function FinalSettlementsSection({ pendingFinalPayments, onPayFinal, onRefresh, authToken = "", activeRole }: FinalSettlementsSectionProps) {
-  const [confirmPayFinal, setConfirmPayFinal] = useState<{ projectId: string; amount: number; title: string } | null>(null);
-  const [proofFiles, setProofFiles] = useState<File[]>([]);
+  const [confirmPayFinal, setConfirmPayFinal] = useState<PaymentTarget | null>(null);
   const [viewOrder, setViewOrder] = useState<PaymentOrder | null>(null);
-  const [isPaying, setIsPaying] = useState(false);
   const [query, setQuery] = useState("");
   const { showToast } = useToast();
   const { viewMode, viewToggle } = useTableViewMode("grid");
@@ -131,7 +130,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
           ) : (
             <Button
               id={`btn-pay-final-${project.id}`}
-              onClick={() => setConfirmPayFinal({ projectId: project.id, amount: balanceDue, title: project.title })}
+              onClick={() => setConfirmPayFinal(buildPaymentTarget(project, balanceDue, project.paymentOrders?.final))}
               variant="primary"
               colorScheme="sky"
               size="sm"
@@ -145,8 +144,8 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
     } },
   ], [convert, hasRates, isLoadingRates]);
 
-  const handleOpenConfirm = useCallback((projectId: string, amount: number, title: string) => {
-    setConfirmPayFinal({ projectId, amount, title });
+  const handleOpenConfirm = useCallback((project: Project, amount: number) => {
+    setConfirmPayFinal(buildPaymentTarget(project, amount, project.paymentOrders?.final));
   }, []);
 
   const emptyMessage = rows.length === 0
@@ -218,7 +217,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
                   winner={winner}
                   balanceDue={balanceDue}
                   paidAdvance={paidAdvance}
-                  onOpenConfirm={() => handleOpenConfirm(project.id, balanceDue, project.title)}
+                  onOpenConfirm={() => handleOpenConfirm(project, balanceDue)}
                   onOpenOrder={project.paymentOrders?.final ? () => setViewOrder(project.paymentOrders!.final) : undefined}
                   convert={convert}
                   hasRates={hasRates}
@@ -232,29 +231,15 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         )}
       </AnimatePresence>
 
-      <PayWithProofModal
-        isOpen={!!confirmPayFinal}
-        onClose={() => { setConfirmPayFinal(null); setProofFiles([]); }}
-        onConfirm={async () => {
-          if (!confirmPayFinal || proofFiles.length === 0) return;
-          setIsPaying(true);
-          try {
-            await onPayFinal(confirmPayFinal.projectId, confirmPayFinal.amount, proofFiles[0]);
-            setConfirmPayFinal(null);
-            setProofFiles([]);
-          } finally {
-            setIsPaying(false);
-          }
-        }}
+      <PaymentSettlementModal
+        target={confirmPayFinal}
+        onClose={() => setConfirmPayFinal(null)}
+        onConfirm={onPayFinal}
         title="Aprobar Pago Final"
-        message={`¿Estás seguro de aprobar el finiquito de $${formatNumber(confirmPayFinal?.amount ?? 0)}${hasRates ? ` (Bs. ${formatBs(convert(confirmPayFinal?.amount ?? 0, "USD"))})` : ""} para la obra "${confirmPayFinal?.title ?? ""}"? Esta acción cerrará el ciclo financiero del proyecto.`}
-        details={confirmPayFinal && <ClosureFinalQuantities projectId={confirmPayFinal.projectId} authToken={authToken} />}
-        variant="warning"
+        action="aprobar el finiquito"
+        consequence="Esta acción cerrará el ciclo financiero del proyecto."
         confirmLabel="Aprobar finiquito"
-        isLoading={isPaying}
-        proofFiles={proofFiles}
-        onProofFilesChange={setProofFiles}
-        onFileRejected={(name, reason) => showToast(`${name}: ${reason}`, "warning")}
+        details={confirmPayFinal && <ClosureFinalQuantities projectId={confirmPayFinal.projectId} authToken={authToken} />}
       />
 
       <PaymentOrderDetailModal order={viewOrder} onClose={() => setViewOrder(null)} authToken={authToken} activeRole={activeRole} onOrderSigned={onRefresh} />

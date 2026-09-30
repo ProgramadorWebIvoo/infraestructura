@@ -9,7 +9,7 @@
  * (el FileDropZone), solo el mensaje de texto.
  */
 
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { AlertTriangle, CheckCircle, Paperclip } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Spinner from "@/components/UI/Spinner";
@@ -27,6 +27,10 @@ interface PayWithProofModalProps {
   confirmLabel: string;
   variant?: "danger" | "warning" | "info";
   isLoading?: boolean;
+  /** Deshabilita la confirmación aunque haya comprobante (ej. formulario de pago incompleto). */
+  confirmDisabled?: boolean;
+  /** Ancho del modal (default "max-w-md"). */
+  maxWidth?: ComponentProps<typeof Modal>["maxWidth"];
   proofFiles: File[];
   onProofFilesChange: (files: File[]) => void;
   onFileRejected?: (fileName: string, reason: string) => void;
@@ -51,19 +55,21 @@ export default function PayWithProofModal({
   confirmLabel,
   variant = "warning",
   isLoading = false,
+  confirmDisabled = false,
+  maxWidth = "max-w-md",
   proofFiles,
   onProofFilesChange,
   onFileRejected,
 }: PayWithProofModalProps) {
   const styles = VARIANT_STYLES[variant];
   const Icon = styles.icon;
-  const canConfirm = proofFiles.length > 0 && !isLoading;
+  const canConfirm = proofFiles.length > 0 && !isLoading && !confirmDisabled;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      maxWidth="max-w-md"
+      maxWidth={maxWidth}
       icon={<Icon className="h-5 w-5" />}
       iconColor={styles.iconColor}
       title={title}
