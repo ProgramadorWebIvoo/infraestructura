@@ -26,13 +26,25 @@ export function truncateToDecimals(amount: number, decimals = 2): number {
   return Math.trunc(amount * factor) / factor;
 }
 
+/** Símbolo de monedas que no son ISO 4217 (Intl solo acepta códigos de 3 letras y lanza RangeError con otros, ej. "USDT"). */
+const NON_ISO_CURRENCY_SYMBOLS: Record<string, string> = { USDT: "₮" };
+
+const ISO_CURRENCY_CODE = /^[A-Za-z]{3}$/;
+
 export function formatCurrency(amount: number, currency = "USD"): string {
-  return truncateToDecimals(amount, 2).toLocaleString("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const truncated = truncateToDecimals(amount, 2);
+
+  if (ISO_CURRENCY_CODE.test(currency)) {
+    return truncated.toLocaleString("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  const symbol = NON_ISO_CURRENCY_SYMBOLS[currency.toUpperCase()] ?? `${currency} `;
+  return `${truncated < 0 ? "-" : ""}${symbol}${formatNumber(Math.abs(truncated))}`;
 }
 
 /** Versión sin símbolo de moneda (solo número formateado). */
