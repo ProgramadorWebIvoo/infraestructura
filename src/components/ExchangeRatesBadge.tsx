@@ -18,7 +18,7 @@ interface ExchangeRatesBadgeProps {
   userRole?: string;
 }
 
-const VISIBLE_ROLES = ["PROCURA", "ANALISTAS", "FINANZAS", "ADMIN", "SUPERADMIN"];
+const VISIBLE_ROLES = ["PROCURA", "ANALISTA", "FINANZAS", "ADMIN", "SUPERADMIN"];
 
 export default function ExchangeRatesBadge({ userRole }: ExchangeRatesBadgeProps) {
   const context = useExchangeRatesContext();

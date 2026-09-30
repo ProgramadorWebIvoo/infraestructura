@@ -25,7 +25,7 @@ interface ExchangeRatesSidebarSectionProps {
   isCollapsed: boolean;
 }
 
-const VISIBLE_ROLES = ["PROCURA", "ANALISTAS", "FINANZAS", "ADMIN", "SUPERADMIN"];
+const VISIBLE_ROLES = ["PROCURA", "ANALISTA", "FINANZAS", "ADMIN", "SUPERADMIN"];
 
 const SIDEBAR_RATES = [
   { code: "USD", symbol: "$" },
