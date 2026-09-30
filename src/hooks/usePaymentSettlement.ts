@@ -3,29 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Estado y cálculo del formulario "¿cómo se pagó?" de Finanzas (anticipo y
- * finiquito): modo (moneda cotizada / bolívares / otra moneda), moneda, monto
- * pagado, tasa aplicada y su origen, motivo de la diferencia, banco y
- * referencia. Deriva la tasa sugerida, el equivalente cubierto en la moneda de
- * la obligación y la diferencia; expone `payload` listo para el backend y
- * `isValid` para habilitar la confirmación. La lógica autoritativa vive en el
- * backend (PaymentSettlementService): esto es la vista previa.
+ * finiquito). Finanzas solo ELIGE cómo se pagó — en la moneda cotizada, en
+ * bolívares o en otra moneda (y cuál); la tasa y el monto pagado NO se digitan:
+ * se derivan de la obligación y de la tasa del sistema para esa moneda, y el
+ * formulario los muestra de solo lectura. Por eso no hay diferencia contra la
+ * orden que justificar. `payload` queda listo para el backend, que valida y
+ * recalcula (PaymentSettlementService).
  *
- * Al cambiar modo, moneda u origen de la tasa, precarga la tasa sugerida y el
- * monto que resulta de ella; Finanzas edita después la tasa y el monto reales.
+ * Origen de la tasa: el de la propia moneda — USDT usa su tasa, el resto la
+ * BCV; una obligación en USD pagada en bolívares sigue al switch BCV/USDT.
  */
 
 import { useCallback, useMemo, useState } from "react";
 import type { AppliedRateSource, PaymentMode } from "@/types";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
-import {
-  BS_CURRENCY,
-  coveredAmount,
-  differenceAmount,
-  exceedsTolerance,
-  round2,
-  roundTo,
-  suggestedRate,
-} from "@/utils/paymentSettlement";
+import { BS_CURRENCY, round2, roundTo, suggestedRate } from "@/utils/paymentSettlement";
 
 export interface PaymentObligation {
   /** Monto en la moneda de la obligación (la de cotización). */
@@ -35,11 +27,8 @@ export interface PaymentObligation {
 
 export interface SettlementFormState {
   mode: PaymentMode | null;
+  /** Solo en "otra moneda": la moneda elegida. */
   paidCurrency: string;
-  paidAmount: number | "";
-  appliedRate: number | "";
-  rateSource: AppliedRateSource;
-  differenceReason: string;
   bank: string;
   reference: string;
 }
@@ -51,92 +40,55 @@ export interface SettlementPayload {
   paidCurrency?: string;
   appliedRate?: number;
   appliedRateSource?: AppliedRateSource;
-  differenceReason?: string;
   bank?: string;
   reference?: string;
 }
 
-const EMPTY: SettlementFormState = {
-  mode: null,
-  paidCurrency: "",
-  paidAmount: "",
-  appliedRate: "",
-  rateSource: "BCV",
-  differenceReason: "",
-  bank: "",
-  reference: "",
-};
+const EMPTY: SettlementFormState = { mode: null, paidCurrency: "", bank: "", reference: "" };
 
 export function usePaymentSettlement(obligation: PaymentObligation | null) {
-  const { rates } = useCurrencyConversion();
+  const { rates, usdRateMode } = useCurrencyConversion();
   const [state, setState] = useState<SettlementFormState>(EMPTY);
 
   const currency = obligation?.currency ?? "";
   const amount = obligation?.amount ?? 0;
 
-  /** Recalcula tasa y monto sugeridos para una combinación modo/moneda/origen. */
-  const withSuggestion = useCallback(
-    (next: SettlementFormState): SettlementFormState => {
-      if (!next.mode || next.mode === "QUOTE_CURRENCY") {
-        return { ...next, paidCurrency: currency, appliedRate: 1, paidAmount: amount };
-      }
-      const paidCurrency = next.mode === "BS" ? BS_CURRENCY : next.paidCurrency;
-      const rate = suggestedRate(rates, currency, paidCurrency, next.rateSource);
-      return {
-        ...next,
-        paidCurrency,
-        appliedRate: rate ?? "",
-        paidAmount: rate ? round2(amount * rate) : "",
-      };
-    },
-    [amount, currency, rates],
-  );
-
   const reset = useCallback(() => setState(EMPTY), []);
-
-  const setMode = useCallback(
-    (mode: PaymentMode) => setState(prev => withSuggestion({ ...prev, mode, paidCurrency: mode === "OTHER_CURRENCY" ? "" : prev.paidCurrency })),
-    [withSuggestion],
-  );
-  const setPaidCurrency = useCallback((paidCurrency: string) => setState(prev => withSuggestion({ ...prev, paidCurrency })), [withSuggestion]);
-  const setRateSource = useCallback((rateSource: AppliedRateSource) => setState(prev => withSuggestion({ ...prev, rateSource })), [withSuggestion]);
+  const setMode = useCallback((mode: PaymentMode) => setState(prev => ({ ...prev, mode, paidCurrency: mode === "OTHER_CURRENCY" ? prev.paidCurrency : "" })), []);
+  const setPaidCurrency = useCallback((paidCurrency: string) => setState(prev => ({ ...prev, paidCurrency })), []);
   const setField = useCallback(
-    <K extends keyof SettlementFormState>(key: K, value: SettlementFormState[K]) => setState(prev => ({ ...prev, [key]: value })),
+    <K extends "bank" | "reference">(key: K, value: SettlementFormState[K]) => setState(prev => ({ ...prev, [key]: value })),
     [],
   );
 
   const derived = useMemo(() => {
     const mode = state.mode;
-    const paidCurrency = mode === "QUOTE_CURRENCY" ? currency : mode === "BS" ? BS_CURRENCY : state.paidCurrency;
-    const rate = mode === "QUOTE_CURRENCY" ? 1 : state.appliedRate === "" ? 0 : state.appliedRate;
-    const paid = state.paidAmount === "" ? 0 : state.paidAmount;
-    const suggested = mode ? suggestedRate(rates, currency, paidCurrency, mode === "QUOTE_CURRENCY" ? null : state.rateSource) : null;
-    const covered = rate > 0 ? coveredAmount(paid, rate) : 0;
-    const difference = differenceAmount(covered, amount);
-    const needsReason = !!mode && paid > 0 && exceedsTolerance(difference);
-    const reasonOk = !needsReason || state.differenceReason.trim().length >= 5;
-    const conversionOk = mode === "QUOTE_CURRENCY" || (rate > 0 && (mode !== "OTHER_CURRENCY" || !!state.paidCurrency));
-    const isValid = !!obligation && !!mode && paid > 0 && conversionOk && reasonOk;
+    const paidCurrency = mode === "QUOTE_CURRENCY" ? currency : mode === "BS" ? BS_CURRENCY : mode === "OTHER_CURRENCY" ? state.paidCurrency : "";
 
-    return { paidCurrency, rate, suggested, covered, difference, needsReason, isValid };
-  }, [state, currency, amount, rates, obligation]);
+    // Origen de la tasa: el de la propia moneda; una obligación en USD pagada en Bs. sigue al switch.
+    const rateSource: AppliedRateSource =
+      currency === "USDT" || paidCurrency === "USDT" || (currency === "USD" && paidCurrency === BS_CURRENCY && usdRateMode === "USDT") ? "USDT" : "BCV";
+
+    const isConversion = mode === "BS" || mode === "OTHER_CURRENCY";
+    const appliedRate = mode === "QUOTE_CURRENCY" ? 1 : isConversion && paidCurrency ? suggestedRate(rates, currency, paidCurrency, rateSource) : null;
+    const paidAmount = mode === "QUOTE_CURRENCY" ? amount : appliedRate ? round2(amount * appliedRate) : null;
+    const isValid = !!obligation && !!mode && paidAmount !== null && paidAmount > 0 && (mode !== "OTHER_CURRENCY" || !!state.paidCurrency);
+
+    return { paidCurrency, rateSource, isConversion, appliedRate, paidAmount, isValid };
+  }, [state, currency, amount, rates, usdRateMode, obligation]);
 
   const payload = useMemo<SettlementPayload | null>(() => {
-    if (!state.mode || !derived.isValid) return null;
-    // A la precisión con la que el backend valida y guarda (montos 2 decimales, tasa 8).
-    const base: SettlementPayload = { paymentMode: state.mode, paidAmount: round2(Number(state.paidAmount)) };
-    if (state.mode !== "QUOTE_CURRENCY") {
-      base.appliedRate = roundTo(Number(state.appliedRate), 8);
-      base.appliedRateSource = state.rateSource;
+    if (!state.mode || !derived.isValid || derived.paidAmount === null) return null;
+    const base: SettlementPayload = { paymentMode: state.mode, paidAmount: round2(derived.paidAmount) };
+    if (state.mode !== "QUOTE_CURRENCY" && derived.appliedRate !== null) {
+      base.appliedRate = roundTo(derived.appliedRate, 8);
+      base.appliedRateSource = derived.rateSource;
       if (state.mode === "OTHER_CURRENCY") base.paidCurrency = state.paidCurrency;
     }
-    // El motivo viaja siempre que haya diferencia y esté escrito: si la vista previa cree que
-    // está dentro de la tolerancia y el backend no, el pago no se rechaza por falta de motivo.
-    if (derived.difference !== 0 && state.differenceReason.trim()) base.differenceReason = state.differenceReason.trim();
     if (state.bank.trim()) base.bank = state.bank.trim();
     if (state.reference.trim()) base.reference = state.reference.trim();
     return base;
   }, [state, derived]);
 
-  return { state, mode: state.mode, setMode, setPaidCurrency, setRateSource, setField, reset, ...derived, payload };
+  return { state, mode: state.mode, setMode, setPaidCurrency, setField, reset, ...derived, payload };
 }

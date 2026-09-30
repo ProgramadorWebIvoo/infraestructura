@@ -63,8 +63,9 @@ export default function PaymentSettlementSummary({ settlement: s, variant = "ful
 
       <p className="text-text-secondary">
         Obligación {s.obligationAmount !== null ? formatPaidAmount(s.obligationAmount, s.obligationCurrency) : "—"}
-        {s.coveredAmount !== null && <> · cubierto {formatPaidAmount(s.coveredAmount, s.obligationCurrency)}</>}
-        {s.differenceAmount !== null && (
+        {/* Los pagos nuevos cubren la obligación exacta: cobertura y diferencia solo aparecen en pagos históricos que difirieron. */}
+        {hasDifference && s.coveredAmount !== null && <> · cubierto {formatPaidAmount(s.coveredAmount, s.obligationCurrency)}</>}
+        {hasDifference && s.differenceAmount !== null && (
           <span className="font-semibold" style={{ color: differenceColor.text700 }}>
             {" "}· diferencia {difference > 0 ? "+" : ""}
             {formatPaidAmount(difference, s.obligationCurrency)}
