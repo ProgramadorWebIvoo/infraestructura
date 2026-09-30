@@ -30,10 +30,11 @@ const GROUP_LABELS: Record<string, string> = {
   usuarios: "Usuarios",
   catalogos: "Catálogos (proveedores y materiales)",
   proveedores: "Proveedores (portal público)",
+  configuracion: "Configuración administrativa",
   sistema: "Sistema",
 };
 
-const GROUP_ORDER = ["proyectos", "documentos", "usuarios", "catalogos", "proveedores", "sistema"];
+const GROUP_ORDER = ["proyectos", "documentos", "usuarios", "catalogos", "proveedores", "configuracion", "sistema"];
 
 interface NotificationMatrixProps {
   actions: NotificationActionOption[];
@@ -44,11 +45,9 @@ interface NotificationMatrixProps {
   isDirty: (action: string) => boolean;
   unconfigured: string[];
   errors: Record<string, string>;
-  /** Canales silenciados por el interruptor maestro (`acciones_con_notificacion_app`/`acciones_con_correo`) para esta acción. */
-  silencedChannelsFor: (action: string) => ("app" | "mail")[];
 }
 
-export default function NotificationMatrix({ actions, roles, isLoading, valueOf, onChange, isDirty, unconfigured, errors, silencedChannelsFor }: NotificationMatrixProps) {
+export default function NotificationMatrix({ actions, roles, isLoading, valueOf, onChange, isDirty, unconfigured, errors }: NotificationMatrixProps) {
   const [search, setSearch] = useState("");
 
   const filteredActions = useMemo(() => {
@@ -90,12 +89,13 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
       <InfoBanner title="¿Cómo funciona la matriz de notificaciones?" defaultOpen={false} color="indigo">
         <p>
           Cada acción auditada por la app puede notificar a distintos roles por dos canales: <strong>app</strong> (push +
-          bandeja interna) y <strong>correo</strong>. Desplegá una fila para elegir los roles — los cambios se guardan
-          junto con el resto de CONFIG APP desde "Guardar todo".
+          bandeja interna) y <strong>correo</strong>. Desplegá una fila para encender o apagar cada canal y elegir los roles
+          — los cambios se guardan junto con el resto de CONFIG APP desde "Guardar todo". Los correos a proveedores y al
+          usuario (destinatario externo) solo se encienden o apagan, sin roles.
         </p>
         <p className="mt-1.5">
-          Las acciones marcadas <strong>Crítica</strong> no pueden quedar sin ningún rol en el canal app (siempre al
-          menos SUPERADMIN).
+          Las acciones marcadas <strong>Crítica</strong> no pueden apagar el canal app ni quedar sin ningún rol en él
+          (siempre al menos SUPERADMIN).
         </p>
       </InfoBanner>
 
@@ -147,7 +147,7 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
                     isUnconfigured={unconfigured.includes(action.value)}
                     isDirty={isDirty(action.value)}
                     error={errors[action.value]}
-                    silencedChannels={silencedChannelsFor(action.value)}
+                    recipientType={action.recipientType}
                   />
                 ))}
               </Card>

@@ -18,6 +18,8 @@ import { logError } from "@/services/logger";
 export interface NotificationRuleChannels {
   app: string[];
   mail: string[];
+  appEnabled: boolean;
+  mailEnabled: boolean;
 }
 
 export type NotificationRulesByAction = Record<string, NotificationRuleChannels>;
@@ -27,13 +29,27 @@ export interface NotificationActionOption {
   label: string;
   group: string | null;
   critical: boolean;
+  appEnabled: boolean;
+  mailEnabled: boolean;
+  /** 'external': correo a un destinatario que no es un rol (proveedor / usuario) — sin matriz de roles. */
+  recipientType: "roles" | "external";
 }
 
 interface NotificationRulesResponse {
   actions: NotificationActionOption[];
   roles: string[];
-  rules: NotificationRulesByAction;
+  rules: Record<string, { app: string[]; mail: string[] }>;
   unconfigured: string[];
+}
+
+/** Fusiona la matriz de roles con los toggles de canal de cada acción (las externas no traen roles). */
+function mergeRules(actions: NotificationActionOption[], rules: NotificationRulesResponse["rules"]): NotificationRulesByAction {
+  const merged: NotificationRulesByAction = {};
+  for (const a of actions) {
+    const roles = a.recipientType === "external" ? { app: [], mail: [] } : (rules[a.value] ?? { app: [], mail: [] });
+    merged[a.value] = { ...roles, appEnabled: a.appEnabled, mailEnabled: a.mailEnabled };
+  }
+  return merged;
 }
 
 export function useNotificationRules(authToken: string, enabled: boolean) {
@@ -51,7 +67,7 @@ export function useNotificationRules(authToken: string, enabled: boolean) {
       const data = await apiFetch<NotificationRulesResponse>("/notification-rules", { token: authToken });
       setActions(data.actions ?? []);
       setRoles(data.roles ?? []);
-      setRules(data.rules ?? {});
+      setRules(mergeRules(data.actions ?? [], data.rules ?? {}));
       setUnconfigured(data.unconfigured ?? []);
     } catch (err) {
       logError("useNotificationRules.load", err);
@@ -67,13 +83,19 @@ export function useNotificationRules(authToken: string, enabled: boolean) {
 
   const updateRule = useCallback(
     async (action: string, channels: NotificationRuleChannels): Promise<void> => {
-      const updated = await apiFetch<{ action: string; app: string[]; mail: string[] }>("/notification-rules", {
+      const updated = await apiFetch<{ action: string; app: string[]; mail: string[]; appEnabled: boolean; mailEnabled: boolean }>("/notification-rules", {
         method: "PUT",
-        body: JSON.stringify({ action, app: channels.app, mail: channels.mail }),
+        body: JSON.stringify({ action, app: channels.app, mail: channels.mail, appEnabled: channels.appEnabled, mailEnabled: channels.mailEnabled }),
         token: authToken,
       });
 
-      setRules(prev => ({ ...prev, [updated.action]: { app: updated.app, mail: updated.mail } }));
+      setRules(prev => ({
+        ...prev,
+        [updated.action]: { app: updated.app, mail: updated.mail, appEnabled: updated.appEnabled, mailEnabled: updated.mailEnabled },
+      }));
+      setActions(prev =>
+        prev.map(a => (a.value === updated.action ? { ...a, appEnabled: updated.appEnabled, mailEnabled: updated.mailEnabled } : a)),
+      );
       setUnconfigured(prev => prev.filter(a => a !== updated.action));
     },
     [authToken],

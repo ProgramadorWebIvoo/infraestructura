@@ -12,41 +12,22 @@ import { motion } from "motion/react";
 import NumericInput from "@/components/UI/NumericInput";
 import TimeInput from "@/components/UI/TimeInput";
 import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
-import TagMultiSelect, { type TagOption } from "@/components/UI/TagMultiSelect";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { AppSettingRecord } from "@/hooks/useAppSettings";
 import { formatRangeBound } from "@/views/ConfigAppPanel/utils";
-
-/** Settings `json` que son en realidad listas de acciones auditadas — se
- *  editan con el selector de tags (catálogo real) en vez del textarea JSON
- *  crudo genérico. */
-const ACTION_LIST_KEYS = new Set(["acciones_con_correo", "acciones_con_notificacion_app"]);
-
-function parseActionList(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
-  } catch {
-    return [];
-  }
-}
 
 interface SettingRowProps {
   setting: AppSettingRecord;
   value: string;
   onChange: (id: number, value: string) => void;
   error?: string;
-  /** Catálogo real de acciones auditadas — requerido para renderizar el selector de tags de los settings de ACTION_LIST_KEYS. */
-  notificationActionsCatalog?: TagOption[];
   /** PATCH /settings/{setting} es SUPERADMIN exclusivo — deshabilita los
    *  inputs para cualquier otro rol en vez de dejarlos editar y fallar con 403. */
   readOnly?: boolean;
 }
 
-export default function SettingRow({ setting, value, onChange, error, notificationActionsCatalog, readOnly }: SettingRowProps) {
+export default function SettingRow({ setting, value, onChange, error, readOnly }: SettingRowProps) {
   const isNumeric = setting.type === "integer" || setting.type === "float";
-  const isActionList = setting.type === "json" && ACTION_LIST_KEYS.has(setting.key) && !!notificationActionsCatalog;
   const isCronHour = setting.key === "tasa_cambio_cron_hora" || setting.key === "rating_ia_cron_hora";
 
   const rangeHint =
@@ -55,31 +36,6 @@ export default function SettingRow({ setting, value, onChange, error, notificati
       : null;
 
   const errorClasses = fieldErrorClasses(!!error);
-
-  if (isActionList) {
-    // Layout apilado a ancho completo: la nube de ~35 chips necesita todo el
-    // ancho disponible para respirar y para el buscador — la fila inline
-    // label(sm:w-64) + valor(flex-1) de las demás settings la deja apretada
-    // contra la barra lateral del label.
-    return (
-      <div
-        id={`setting-row-${setting.id}`}
-        className="py-3.5 rounded-control border-b border-border-subtle last:border-0"
-      >
-        <div className="mb-2">
-          <p className="text-sm font-bold text-text-secondary">{setting.label}</p>
-          {setting.description && <p className="text-xs text-text-muted mt-0.5">{setting.description}</p>}
-        </div>
-        <TagMultiSelect
-          options={notificationActionsCatalog!}
-          value={parseActionList(value)}
-          onChange={next => onChange(setting.id, JSON.stringify(next))}
-          disabled={readOnly}
-        />
-        <FieldError message={error} />
-      </div>
-    );
-  }
 
   return (
     <div

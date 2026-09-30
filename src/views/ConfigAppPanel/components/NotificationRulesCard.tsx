@@ -24,7 +24,6 @@ interface NotificationRulesCardProps {
   isDirty: (action: string) => boolean;
   unconfigured: string[];
   errors: Partial<Record<string, string>>;
-  silencedChannelsFor: (action: string) => ("app" | "mail")[];
 }
 
 export default function NotificationRulesCard({
@@ -36,7 +35,6 @@ export default function NotificationRulesCard({
   isDirty,
   unconfigured,
   errors,
-  silencedChannelsFor,
 }: NotificationRulesCardProps) {
   return (
     <motion.div variants={itemVariants}>
@@ -44,7 +42,7 @@ export default function NotificationRulesCard({
         <SectionHeader
           icon={<Users className="h-5 w-5" />}
           title="Notificaciones por rol"
-          description="Qué roles reciben cada tipo de notificación (app y correo) — reemplaza la lógica fija anterior."
+          description="Qué acciones notifican, a qué roles y por qué canal (app / correo)."
           color="indigo"
         />
         <NotificationMatrix
@@ -56,7 +54,6 @@ export default function NotificationRulesCard({
           isDirty={isDirty}
           unconfigured={unconfigured}
           errors={errors as Record<string, string>}
-          silencedChannelsFor={silencedChannelsFor}
         />
       </Card>
     </motion.div>

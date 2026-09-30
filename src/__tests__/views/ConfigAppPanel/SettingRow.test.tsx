@@ -150,40 +150,4 @@ describe("SettingRow", () => {
 
     expect(screen.getByText("Rango permitido: 0 a 0.5")).toBeInTheDocument();
   });
-
-  it("renderiza un selector de tags (no textarea) para acciones_con_correo cuando hay catálogo", () => {
-    render(
-      <SettingRow
-        setting={makeSetting({ type: "json", value: '["Rechazo de cuadro comparativo"]', key: "acciones_con_correo" })}
-        value='["Rechazo de cuadro comparativo"]'
-        onChange={onChange as unknown as OnChange}
-        notificationActionsCatalog={[
-          { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
-          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
-        ]}
-      />,
-    );
-
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.getByText("Rechazo de cuadro comparativo")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Confirmacion de contratacion")).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("al togglear un tag, propaga el nuevo array serializado vía onChange", () => {
-    render(
-      <SettingRow
-        setting={makeSetting({ type: "json", value: "[]", key: "acciones_con_notificacion_app" })}
-        value="[]"
-        onChange={onChange as unknown as OnChange}
-        notificationActionsCatalog={[
-          { value: "Carga de propuesta", label: "Carga de propuesta" },
-          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
-        ]}
-      />,
-    );
-
-    fireEvent.click(screen.getByText("Carga de propuesta"));
-
-    expect(onChange).toHaveBeenCalledWith(1, JSON.stringify(["Carga de propuesta"]));
-  });
 });

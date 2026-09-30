@@ -4,14 +4,14 @@ import NotificationMatrix from "@/views/ConfigAppPanel/components/NotificationMa
 import type { NotificationActionOption, NotificationRuleChannels } from "@/hooks/useNotificationRules";
 
 const actions: NotificationActionOption[] = [
-  { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: true },
-  { value: "Alta de material", label: "Alta de material", group: "catalogos", critical: false },
+  { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: true, appEnabled: true, mailEnabled: true, recipientType: "roles" },
+  { value: "Alta de material", label: "Alta de material", group: "catalogos", critical: false, appEnabled: true, mailEnabled: true, recipientType: "roles" },
 ];
 
 const roles = ["SUPERADMIN", "PROCURA", "CATALOGOS"];
 
 function makeValueOf(overrides: Record<string, NotificationRuleChannels> = {}) {
-  return (action: string): NotificationRuleChannels => overrides[action] ?? { app: [], mail: [] };
+  return (action: string): NotificationRuleChannels => overrides[action] ?? { app: [], mail: [], appEnabled: true, mailEnabled: true };
 }
 
 describe("NotificationMatrix", () => {
@@ -26,7 +26,6 @@ describe("NotificationMatrix", () => {
         isDirty={() => false}
         unconfigured={[]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 
@@ -39,12 +38,11 @@ describe("NotificationMatrix", () => {
         actions={actions}
         roles={roles}
         isLoading={false}
-        valueOf={makeValueOf({ "Rechazo de cuadro comparativo": { app: ["PROCURA"], mail: [] } })}
+        valueOf={makeValueOf({ "Rechazo de cuadro comparativo": { app: ["PROCURA"], mail: [], appEnabled: true, mailEnabled: true } })}
         onChange={vi.fn()}
         isDirty={() => false}
         unconfigured={["Alta de material"]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 
@@ -67,7 +65,6 @@ describe("NotificationMatrix", () => {
         isDirty={() => false}
         unconfigured={["Alta de material"]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 
@@ -85,7 +82,6 @@ describe("NotificationMatrix", () => {
         isDirty={() => false}
         unconfigured={[]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 
@@ -107,31 +103,35 @@ describe("NotificationMatrix", () => {
         isDirty={() => false}
         unconfigured={[]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 
     fireEvent.click(screen.getByText("Alta de material"));
     fireEvent.click(screen.getAllByText("Catálogos")[0]);
 
-    expect(onChange).toHaveBeenCalledWith("Alta de material", { app: ["CATALOGOS"], mail: [] });
+    expect(onChange).toHaveBeenCalledWith("Alta de material", { app: ["CATALOGOS"], mail: [], appEnabled: true, mailEnabled: true });
   });
 
-  it("propaga silencedChannelsFor a la fila correspondiente", () => {
+  it("muestra el grupo 'Configuración administrativa' y las acciones externas sin selector de roles", () => {
     render(
       <NotificationMatrix
-        actions={actions}
+        actions={[
+          { value: "Alta de rol", label: "Alta de rol", group: "configuracion", critical: false, appEnabled: true, mailEnabled: true, recipientType: "roles" },
+          { value: "Correo de adjudicacion a proveedor", label: "Correo de adjudicacion a proveedor", group: "proveedores", critical: false, appEnabled: false, mailEnabled: true, recipientType: "external" },
+        ]}
         roles={roles}
         isLoading={false}
-        valueOf={makeValueOf({ "Rechazo de cuadro comparativo": { app: ["PROCURA"], mail: [] } })}
+        valueOf={makeValueOf()}
         onChange={vi.fn()}
         isDirty={() => false}
         unconfigured={[]}
         errors={{}}
-        silencedChannelsFor={action => (action === "Rechazo de cuadro comparativo" ? ["app", "mail"] : [])}
       />,
     );
 
-    expect(screen.getByText("Silenciada")).toBeInTheDocument();
+    expect(screen.getByText("Configuración administrativa")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Correo de adjudicacion a proveedor"));
+    expect(screen.getByText("Destinatario externo (proveedor / usuario)")).toBeInTheDocument();
   });
 });

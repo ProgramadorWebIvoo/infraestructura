@@ -22,9 +22,16 @@ describe("isDirtySettingValue", () => {
 
 describe("isDirtyRuleValue", () => {
   it("compara roles de app y mail como conjuntos, no como arrays ordenados", () => {
-    expect(isDirtyRuleValue({ app: ["A", "B"], mail: [] }, { app: ["B", "A"], mail: [] })).toBe(false);
-    expect(isDirtyRuleValue({ app: ["A"], mail: [] }, { app: ["B"], mail: [] })).toBe(true);
-    expect(isDirtyRuleValue({ app: [], mail: ["X"] }, { app: [], mail: [] })).toBe(true);
+    expect(isDirtyRuleValue({ app: ["A", "B"], mail: [], appEnabled: true, mailEnabled: true }, { app: ["B", "A"], mail: [], appEnabled: true, mailEnabled: true })).toBe(false);
+    expect(isDirtyRuleValue({ app: ["A"], mail: [], appEnabled: true, mailEnabled: true }, { app: ["B"], mail: [], appEnabled: true, mailEnabled: true })).toBe(true);
+    expect(isDirtyRuleValue({ app: [], mail: ["X"], appEnabled: true, mailEnabled: true }, { app: [], mail: [], appEnabled: true, mailEnabled: true })).toBe(true);
+  });
+
+  it("los toggles de canal también cuentan como cambio", () => {
+    const saved = { app: ["A"], mail: [], appEnabled: true, mailEnabled: true };
+    expect(isDirtyRuleValue({ ...saved, appEnabled: false }, saved)).toBe(true);
+    expect(isDirtyRuleValue({ ...saved, mailEnabled: false }, saved)).toBe(true);
+    expect(isDirtyRuleValue({ ...saved }, saved)).toBe(false);
   });
 });
 

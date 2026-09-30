@@ -46,15 +46,9 @@ describe("ConfigAppPanel", () => {
       if (path.startsWith("/config-audit-logs")) {
         return Promise.resolve({ items: [], currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
       }
-      if (path === "/settings/notification-actions") {
-        return Promise.resolve([
-          { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
-          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
-        ]);
-      }
       if (path === "/notification-rules") {
         return Promise.resolve({
-          actions: [{ value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: false }],
+          actions: [{ value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: false, appEnabled: true, mailEnabled: true, recipientType: "roles" }],
           roles: ["SUPERADMIN", "PROCURA"],
           rules: { "Rechazo de cuadro comparativo": { app: ["PROCURA"], mail: [] } },
           unconfigured: [],
@@ -174,61 +168,6 @@ describe("ConfigAppPanel", () => {
     fireEvent.click(screen.getByText("Descartar cambios"));
     await waitFor(() => expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument());
     expect(screen.getByDisplayValue("100")).toBeInTheDocument();
-  });
-
-  it("deseleccionar y volver a seleccionar el mismo tag no deja la barra de guardado activa (aunque cambie el orden serializado)", async () => {
-    mockUseAppSettings.mockReturnValue({
-      settings: {
-        notificaciones: [
-          makeSetting({
-            id: 3,
-            group: "notificaciones",
-            key: "acciones_con_correo",
-            type: "json",
-            value: '["Rechazo de cuadro comparativo","Confirmacion de contratacion"]',
-            label: "Acciones que envían correo",
-            min_value: null,
-            max_value: null,
-          }),
-        ],
-      },
-      isLoading: false,
-      updateSetting: mockUpdateSetting,
-    });
-    mockApiFetch.mockImplementation((path: string) => {
-      if (path.startsWith("/config-audit-logs")) return Promise.resolve({ items: [], currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
-      if (path === "/settings/notification-actions") {
-        return Promise.resolve([
-          { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo" },
-          { value: "Confirmacion de contratacion", label: "Confirmacion de contratacion" },
-        ]);
-      }
-      if (path === "/notification-actions/config") {
-        return Promise.resolve([]);
-      }
-      return Promise.resolve(undefined);
-    });
-
-    render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
-
-    // Con activeRole="SUPERADMIN" la tab "Monedas" (antes vacía sin
-    // permisos) ahora también tiene contenido propio y puede quedar antes
-    // que "Notificaciones" como default — navegar explícito, igual que el
-    // test de "SUPERADMIN: la fila de la matriz..." más abajo.
-    fireEvent.click(screen.getByRole("tab", { name: "Notificaciones" }));
-
-    await waitFor(() => expect(screen.getByText("Confirmacion de contratacion")).toHaveAttribute("aria-pressed"));
-
-    // Deseleccionar "Rechazo de cuadro comparativo"...
-    fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
-    expect(screen.getByText("Rechazo de cuadro comparativo")).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("Guardar todo")).toBeInTheDocument();
-
-    // ...y volver a seleccionarlo: el conjunto final es idéntico al original,
-    // aunque el orden del array cambió (queda al final en vez de al principio).
-    fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
-    expect(screen.getByText("Rechazo de cuadro comparativo")).toHaveAttribute("aria-pressed", "true");
-    await waitFor(() => expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument());
   });
 
   it("Guardar todo persiste todos los cambios pendientes de todas las secciones", async () => {
@@ -353,54 +292,31 @@ describe("ConfigAppPanel", () => {
     );
     expect(screen.getByText("Guardar todo")).toBeInTheDocument();
 
-    mockApiFetch.mockResolvedValueOnce({ action: "Rechazo de cuadro comparativo", app: ["PROCURA", "SUPERADMIN"], mail: [] });
+    mockApiFetch.mockResolvedValueOnce({ action: "Rechazo de cuadro comparativo", app: ["PROCURA", "SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: true });
 
     fireEvent.click(screen.getByText("Guardar todo"));
 
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith("/notification-rules", {
         method: "PUT",
-        body: JSON.stringify({ action: "Rechazo de cuadro comparativo", app: ["PROCURA", "SUPERADMIN"], mail: [] }),
+        body: JSON.stringify({ action: "Rechazo de cuadro comparativo", app: ["PROCURA", "SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: true }),
         token: "token",
       }),
     );
     await waitFor(() => expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument());
   });
 
-  it("SUPERADMIN: la fila de la matriz refleja cuando la acción está desmarcada en 'Acciones que envían notificación (app)'", async () => {
-    mockUseAppSettings.mockReturnValue({
-      settings: {
-        notificaciones: [
-          makeSetting({
-            id: 5,
-            group: "notificaciones",
-            key: "acciones_con_notificacion_app",
-            type: "json",
-            // "Rechazo de cuadro comparativo" quedó fuera de la lista.
-            value: '["Confirmacion de contratacion"]',
-            label: "Acciones que envían notificación (app)",
-            min_value: null,
-            max_value: null,
-          }),
-        ],
-      },
-      isLoading: false,
-      updateSetting: mockUpdateSetting,
-    });
-
+  it("SUPERADMIN: apagar el canal app de una acción en la matriz activa la barra de guardado", async () => {
     render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
-    // La matriz de reglas vive en la tab "Notificaciones" — no es la activa
-    // por default (esa es "Negocio").
     fireEvent.click(screen.getByRole("tab", { name: "Notificaciones" }));
 
     await waitFor(() => expect(screen.getByText("Notificaciones por rol")).toBeInTheDocument());
 
-    // Solo el canal app está silenciado (acciones_con_correo no está en este
-    // mock, así que ese canal queda sin filtrar) — se expande la fila de la
-    // matriz y se verifica el aviso específico del canal app.
     const matrixSection = screen.getByText("Notificaciones por rol").closest(".bg-surface") as HTMLElement;
     fireEvent.click(within(matrixSection).getByText("Rechazo de cuadro comparativo"));
-    expect(screen.getByText('Desactivada en "Acciones que envían notificación (app)"')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: "Canal app activo" }));
+
+    expect(screen.getByText("Guardar todo")).toBeInTheDocument();
   });
 });

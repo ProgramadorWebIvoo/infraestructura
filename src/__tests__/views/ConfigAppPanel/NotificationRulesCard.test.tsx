@@ -4,7 +4,7 @@ import NotificationRulesCard from "@/views/ConfigAppPanel/components/Notificatio
 import type { NotificationActionOption } from "@/hooks/useNotificationRules";
 
 const actions: NotificationActionOption[] = [
-  { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: false },
+  { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: false, appEnabled: true, mailEnabled: true, recipientType: "roles" },
 ];
 
 describe("NotificationRulesCard", () => {
@@ -14,12 +14,11 @@ describe("NotificationRulesCard", () => {
         actions={actions}
         roles={["SUPERADMIN"]}
         isLoading={false}
-        valueOf={() => ({ app: [], mail: [] })}
+        valueOf={() => ({ app: [], mail: [], appEnabled: true, mailEnabled: true })}
         onChange={vi.fn()}
         isDirty={() => false}
         unconfigured={[]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 
@@ -33,12 +32,11 @@ describe("NotificationRulesCard", () => {
         actions={[]}
         roles={[]}
         isLoading
-        valueOf={() => ({ app: [], mail: [] })}
+        valueOf={() => ({ app: [], mail: [], appEnabled: true, mailEnabled: true })}
         onChange={vi.fn()}
         isDirty={() => false}
         unconfigured={[]}
         errors={{}}
-        silencedChannelsFor={() => []}
       />,
     );
 

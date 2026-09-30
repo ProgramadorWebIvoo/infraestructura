@@ -39,7 +39,12 @@ function sameRoles(a: string[], b: string[]): boolean {
 }
 
 export function isDirtyRuleValue(draft: NotificationRuleChannels, saved: NotificationRuleChannels, _action?: string): boolean {
-  return !sameRoles(draft.app, saved.app) || !sameRoles(draft.mail, saved.mail);
+  return (
+    !sameRoles(draft.app, saved.app) ||
+    !sameRoles(draft.mail, saved.mail) ||
+    draft.appEnabled !== saved.appEnabled ||
+    draft.mailEnabled !== saved.mailEnabled
+  );
 }
 
 /**

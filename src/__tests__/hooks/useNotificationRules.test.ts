@@ -16,8 +16,8 @@ async function flush() {
 
 const sampleResponse = {
   actions: [
-    { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: true },
-    { value: "Alta de material", label: "Alta de material", group: "catalogos", critical: false },
+    { value: "Rechazo de cuadro comparativo", label: "Rechazo de cuadro comparativo", group: "proyectos", critical: true, appEnabled: true, mailEnabled: true, recipientType: "roles" },
+    { value: "Alta de material", label: "Alta de material", group: "catalogos", critical: false, appEnabled: true, mailEnabled: true, recipientType: "roles" },
   ],
   roles: ["SUPERADMIN", "ADMIN", "PROCURA"],
   rules: {
@@ -47,7 +47,10 @@ describe("useNotificationRules", () => {
     expect(mockApiFetch).toHaveBeenCalledWith("/notification-rules", { token: "token" });
     expect(result.current.actions).toEqual(sampleResponse.actions);
     expect(result.current.roles).toEqual(sampleResponse.roles);
-    expect(result.current.rules).toEqual(sampleResponse.rules);
+    expect(result.current.rules).toEqual({
+      "Rechazo de cuadro comparativo": { app: ["PROCURA", "SUPERADMIN"], mail: ["SUPERADMIN"], appEnabled: true, mailEnabled: true },
+      "Alta de material": { app: [], mail: [], appEnabled: true, mailEnabled: true },
+    });
     expect(result.current.unconfigured).toEqual(["Alta de material"]);
   });
 
@@ -69,18 +72,19 @@ describe("useNotificationRules", () => {
     const { result } = renderHook(() => useNotificationRules("token", true));
     await flush();
 
-    mockApiFetch.mockResolvedValueOnce({ action: "Alta de material", app: ["CATALOGOS"], mail: [] });
+    mockApiFetch.mockResolvedValueOnce({ action: "Alta de material", app: ["CATALOGOS"], mail: [], appEnabled: false, mailEnabled: true });
 
     await act(async () => {
-      await result.current.updateRule("Alta de material", { app: ["CATALOGOS"], mail: [] });
+      await result.current.updateRule("Alta de material", { app: ["CATALOGOS"], mail: [], appEnabled: false, mailEnabled: true });
     });
 
     expect(mockApiFetch).toHaveBeenCalledWith("/notification-rules", {
       method: "PUT",
-      body: JSON.stringify({ action: "Alta de material", app: ["CATALOGOS"], mail: [] }),
+      body: JSON.stringify({ action: "Alta de material", app: ["CATALOGOS"], mail: [], appEnabled: false, mailEnabled: true }),
       token: "token",
     });
-    expect(result.current.rules["Alta de material"]).toEqual({ app: ["CATALOGOS"], mail: [] });
+    expect(result.current.rules["Alta de material"]).toEqual({ app: ["CATALOGOS"], mail: [], appEnabled: false, mailEnabled: true });
+    expect(result.current.actions.find(a => a.value === "Alta de material")?.appEnabled).toBe(false);
     // Al guardarse, deja de estar "sin configurar".
     expect(result.current.unconfigured).not.toContain("Alta de material");
   });
@@ -94,7 +98,7 @@ describe("useNotificationRules", () => {
 
     await expect(
       act(async () => {
-        await result.current.updateRule("Rechazo de cuadro comparativo", { app: [], mail: [] });
+        await result.current.updateRule("Rechazo de cuadro comparativo", { app: [], mail: [], appEnabled: true, mailEnabled: true });
       }),
     ).rejects.toThrow("Acción crítica sin roles");
   });

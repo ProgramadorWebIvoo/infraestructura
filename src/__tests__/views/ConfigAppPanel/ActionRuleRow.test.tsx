@@ -11,7 +11,7 @@ describe("ActionRuleRow", () => {
         action="Rechazo de cuadro comparativo"
         label="Rechazo de cuadro comparativo"
         roles={roles}
-        value={{ app: ["PROCURA"], mail: [] }}
+        value={{ app: ["PROCURA"], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
@@ -29,7 +29,7 @@ describe("ActionRuleRow", () => {
         action="Rechazo de cuadro comparativo"
         label="Rechazo de cuadro comparativo"
         roles={roles}
-        value={{ app: ["PROCURA"], mail: [] }}
+        value={{ app: ["PROCURA"], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
@@ -49,7 +49,7 @@ describe("ActionRuleRow", () => {
         action="Cambio de rol de usuario"
         label="Cambio de rol de usuario"
         roles={roles}
-        value={{ app: ["SUPERADMIN"], mail: [] }}
+        value={{ app: ["SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical
         isUnconfigured={false}
@@ -66,7 +66,7 @@ describe("ActionRuleRow", () => {
         action="Alta de material"
         label="Alta de material"
         roles={roles}
-        value={{ app: [], mail: [] }}
+        value={{ app: [], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured
@@ -86,7 +86,7 @@ describe("ActionRuleRow", () => {
         action="Rechazo de cuadro comparativo"
         label="Rechazo de cuadro comparativo"
         roles={roles}
-        value={{ app: ["PROCURA"], mail: [] }}
+        value={{ app: ["PROCURA"], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={onChange}
         isCritical={false}
         isUnconfigured={false}
@@ -97,7 +97,7 @@ describe("ActionRuleRow", () => {
     fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
     fireEvent.click(screen.getAllByText("Finanzas")[0]);
 
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ app: ["PROCURA", "FINANZAS"], mail: [] }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ app: ["PROCURA", "FINANZAS"], mail: [], appEnabled: true, mailEnabled: true }));
   });
 
   it("muestra un indicador visual cuando isDirty es true", async () => {
@@ -106,7 +106,7 @@ describe("ActionRuleRow", () => {
         action="X"
         label="X"
         roles={roles}
-        value={{ app: ["PROCURA"], mail: [] }}
+        value={{ app: ["PROCURA"], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
@@ -121,7 +121,7 @@ describe("ActionRuleRow", () => {
         action="X"
         label="X"
         roles={roles}
-        value={{ app: ["PROCURA", "FINANZAS"], mail: [] }}
+        value={{ app: ["PROCURA", "FINANZAS"], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
@@ -142,7 +142,7 @@ describe("ActionRuleRow", () => {
         action="X"
         label="X"
         roles={roles}
-        value={{ app: [], mail: [] }}
+        value={{ app: [], mail: [], appEnabled: true, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical
         isUnconfigured={false}
@@ -156,63 +156,148 @@ describe("ActionRuleRow", () => {
     expect(screen.getByText("Esta acción es crítica: debe tener al menos un rol.")).toBeInTheDocument();
   });
 
-  it("muestra el badge 'Silenciada' cuando ambos canales están apagados por el interruptor maestro", () => {
+  it("muestra el badge 'Apagado' cuando ambos canales están apagados", () => {
     render(
       <ActionRuleRow
         action="Creacion de peticion de obra"
         label="Creacion de peticion de obra"
         roles={roles}
-        value={{ app: ["SUPERADMIN"], mail: [] }}
+        value={{ app: ["SUPERADMIN"], mail: [], appEnabled: false, mailEnabled: false }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
         isDirty={false}
-        silencedChannels={["app", "mail"]}
       />,
     );
 
-    expect(screen.getByText("Silenciada")).toBeInTheDocument();
+    expect(screen.getByText("Apagado")).toBeInTheDocument();
   });
 
-  it("no muestra 'Silenciada' cuando solo un canal está apagado", () => {
+  it("no muestra 'Apagado' cuando solo un canal está apagado", () => {
     render(
       <ActionRuleRow
         action="X"
         label="X"
         roles={roles}
-        value={{ app: ["SUPERADMIN"], mail: [] }}
+        value={{ app: ["SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: false }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
         isDirty={false}
-        silencedChannels={["mail"]}
       />,
     );
 
-    expect(screen.queryByText("Silenciada")).not.toBeInTheDocument();
+    expect(screen.queryByText("Apagado")).not.toBeInTheDocument();
   });
 
-  it("deshabilita el selector del canal silenciado y muestra el aviso al expandir", () => {
+  it("el toggle de un canal propaga appEnabled/mailEnabled vía onChange", () => {
+    const onChange = vi.fn();
     render(
       <ActionRuleRow
         action="X"
         label="X"
         roles={roles}
-        value={{ app: ["SUPERADMIN"], mail: [] }}
+        value={{ app: ["SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: true }}
+        onChange={onChange}
+        isCritical={false}
+        isUnconfigured={false}
+        isDirty={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("X"));
+    fireEvent.click(screen.getByRole("switch", { name: "Canal app activo" }));
+    expect(onChange).toHaveBeenCalledWith({ app: ["SUPERADMIN"], mail: [], appEnabled: false, mailEnabled: true });
+
+    fireEvent.click(screen.getByRole("switch", { name: "Canal correo activo" }));
+    expect(onChange).toHaveBeenCalledWith({ app: ["SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: false });
+  });
+
+  it("deshabilita el selector de roles del canal apagado", () => {
+    render(
+      <ActionRuleRow
+        action="X"
+        label="X"
+        roles={roles}
+        value={{ app: ["SUPERADMIN"], mail: [], appEnabled: false, mailEnabled: true }}
         onChange={vi.fn()}
         isCritical={false}
         isUnconfigured={false}
         isDirty={false}
-        silencedChannels={["app"]}
       />,
     );
 
     fireEvent.click(screen.getByText("X"));
 
-    expect(screen.getByText('Desactivada en "Acciones que envían notificación (app)"')).toBeInTheDocument();
-    expect(screen.queryByText('Desactivada en "Acciones que envían correo"')).not.toBeInTheDocument();
+    expect(screen.getByText("Canal apagado")).toBeInTheDocument();
+    const appRole = screen.getAllByText("Super Administrador")[0].closest("button");
+    expect(appRole).toBeDisabled();
+  });
 
-    const appToggle = screen.getAllByText("Super Administrador")[0].closest("button");
-    expect(appToggle).toBeDisabled();
+  it("en una acción crítica el toggle app no se puede apagar", () => {
+    render(
+      <ActionRuleRow
+        action="Cambio de rol de usuario"
+        label="Cambio de rol de usuario"
+        roles={roles}
+        value={{ app: ["SUPERADMIN"], mail: [], appEnabled: true, mailEnabled: true }}
+        onChange={vi.fn()}
+        isCritical
+        isUnconfigured={false}
+        isDirty={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Cambio de rol de usuario"));
+
+    expect(screen.getByRole("switch", { name: "Canal app activo" })).toBeDisabled();
+  });
+
+  it("una acción externa muestra solo el toggle de correo y el texto de destinatario externo", () => {
+    const onChange = vi.fn();
+    render(
+      <ActionRuleRow
+        action="Correo de adjudicacion a proveedor"
+        label="Correo de adjudicacion a proveedor"
+        roles={roles}
+        value={{ app: [], mail: [], appEnabled: false, mailEnabled: true }}
+        onChange={onChange}
+        isCritical={false}
+        recipientType="external"
+        isUnconfigured={false}
+        isDirty={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Correo de adjudicacion a proveedor"));
+
+    expect(screen.getByText("Destinatario externo (proveedor / usuario)")).toBeInTheDocument();
+    expect(screen.queryByText("Notificación (app)")).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Canal app activo" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("switch", { name: "Canal correo activo" }));
+    expect(onChange).toHaveBeenCalledWith({ app: [], mail: [], appEnabled: false, mailEnabled: false });
+  });
+
+  it("el correo de restablecimiento de contraseña queda bloqueado en encendido", () => {
+    render(
+      <ActionRuleRow
+        action="Correo de restablecimiento de contrasena"
+        label="Correo de restablecimiento de contrasena"
+        roles={roles}
+        value={{ app: [], mail: [], appEnabled: false, mailEnabled: true }}
+        onChange={vi.fn()}
+        isCritical={false}
+        recipientType="external"
+        isUnconfigured={false}
+        isDirty={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Correo de restablecimiento de contrasena"));
+
+    const toggle = screen.getByRole("switch", { name: "Canal correo activo" });
+    expect(toggle).toBeDisabled();
+    expect(toggle).toHaveAttribute("aria-checked", "true");
   });
 });

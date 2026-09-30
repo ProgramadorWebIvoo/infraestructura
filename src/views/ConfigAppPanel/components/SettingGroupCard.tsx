@@ -14,7 +14,6 @@ import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import InfoBanner from "@/components/UI/InfoBanner";
 import type { AppSettingRecord } from "@/hooks/useAppSettings";
-import type { TagOption } from "@/components/UI/TagMultiSelect";
 import SettingRow from "./SettingRow";
 
 export interface SettingGroupMeta {
@@ -31,13 +30,12 @@ interface SettingGroupCardProps {
   valueOf: (setting: AppSettingRecord) => string;
   onChange: (id: number, value: string) => void;
   errors: Partial<Record<number, string>>;
-  notificationActionsCatalog?: TagOption[];
   /** PATCH /settings/{setting} es SUPERADMIN exclusivo — deshabilita los
    *  inputs para cualquier otro rol en vez de dejarlos editar y fallar con 403. */
   readOnly?: boolean;
 }
 
-export default function SettingGroupCard({ group, meta, settings, valueOf, onChange, errors, notificationActionsCatalog, readOnly }: SettingGroupCardProps) {
+export default function SettingGroupCard({ group, meta, settings, valueOf, onChange, errors, readOnly }: SettingGroupCardProps) {
   return (
     <motion.div variants={itemVariants}>
       <Card>
@@ -51,7 +49,6 @@ export default function SettingGroupCard({ group, meta, settings, valueOf, onCha
               value={valueOf(setting)}
               onChange={onChange}
               error={errors[setting.id]}
-              notificationActionsCatalog={notificationActionsCatalog}
               readOnly={readOnly}
             />
           ))}

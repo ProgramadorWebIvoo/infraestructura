@@ -11,13 +11,12 @@
  * estado de "dirty" local — el borrador y el guardado (global, vía la barra
  * "Guardar todo" de ConfigAppPanel) los maneja el padre.
  *
- * `silencedChannels` refleja el interruptor maestro (`acciones_con_notificacion_app`/
- * `acciones_con_correo`, editable en la sección "Notificaciones" de más
- * arriba): son dos capas independientes que se combinan con AND en el
- * backend — un canal silenciado acá no notifica a nadie sin importar qué
- * roles tenga marcados en esta fila. El selector de ese canal queda
- * deshabilitado (sigue siendo visible, para no ocultar la configuración ya
- * guardada) con un badge explicando por qué.
+ * Cada canal (App / Correo) tiene su propio toggle: apagado, la acción no
+ * notifica por ese canal sin importar los roles marcados (el selector queda
+ * deshabilitado pero visible). Las acciones de destinatario externo
+ * (`recipientType: "external"`: proveedores / usuario que pide un reset) solo
+ * tienen el toggle de correo, sin selector de roles. El correo de
+ * restablecimiento de contraseña es un flujo de cuenta y no se puede apagar.
  */
 
 import { useState } from "react";
@@ -30,7 +29,33 @@ import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
 import type { NotificationRuleChannels } from "@/hooks/useNotificationRules";
 
-type Channel = "app" | "mail";
+const ALWAYS_ON_MAIL = "Correo de restablecimiento de contrasena";
+
+interface ChannelToggleProps {
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+  disabledReason?: string;
+}
+
+function ChannelToggle({ label, checked, onChange, disabled, disabledReason }: ChannelToggleProps) {
+  const button = (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${checked ? "bg-success-500" : "bg-border-default"} ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+    >
+      <span className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${checked ? "translate-x-3.5" : "translate-x-0.5"}`} />
+    </button>
+  );
+
+  return disabledReason ? <Tooltip content={disabledReason}>{button}</Tooltip> : button;
+}
 
 interface ActionRuleRowProps {
   action: string;
@@ -39,10 +64,10 @@ interface ActionRuleRowProps {
   value: NotificationRuleChannels;
   onChange: (channels: NotificationRuleChannels) => void;
   isCritical: boolean;
+  recipientType?: "roles" | "external";
   isUnconfigured: boolean;
   isDirty: boolean;
   error?: string;
-  silencedChannels?: Channel[];
 }
 
 export default function ActionRuleRow({
@@ -52,16 +77,18 @@ export default function ActionRuleRow({
   value,
   onChange,
   isCritical,
+  recipientType = "roles",
   isUnconfigured,
   isDirty,
   error,
-  silencedChannels = [],
 }: ActionRuleRowProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const isAppSilenced = silencedChannels.includes("app");
-  const isMailSilenced = silencedChannels.includes("mail");
-  const isFullySilenced = isAppSilenced && isMailSilenced;
+  const isExternal = recipientType === "external";
+  const isMailLocked = action === ALWAYS_ON_MAIL;
+  const isAppOff = isExternal || !value.appEnabled;
+  const isMailOff = !value.mailEnabled && !isMailLocked;
+  const isFullyOff = isAppOff && isMailOff;
 
   const danger = SEMANTIC_COLOR_MAP.danger;
   const warning = SEMANTIC_COLOR_MAP.warning;
@@ -78,13 +105,13 @@ export default function ActionRuleRow({
           <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
         </motion.span>
 
-        <span className={`flex-1 min-w-0 text-sm font-bold truncate ${isFullySilenced ? "text-text-muted" : "text-text-secondary"}`}>{label}</span>
+        <span className={`flex-1 min-w-0 text-sm font-bold truncate ${isFullyOff ? "text-text-muted" : "text-text-secondary"}`}>{label}</span>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {isFullySilenced && (
+          {isFullyOff && (
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-text-tertiary bg-surface-raised border border-border-default rounded-pill px-1.5 py-0.5">
               <BellOff className="h-2.5 w-2.5" />
-              Silenciada
+              Apagado
             </span>
           )}
           {isDirty && (
@@ -124,27 +151,39 @@ export default function ActionRuleRow({
                   Sin configurar — usando SUPERADMIN/ADMIN por defecto
                 </p>
               )}
-              <div>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Notificación (app)</span>
-                  {isAppSilenced && (
-                    <span className="text-[10px] font-semibold text-text-tertiary bg-surface-raised rounded-pill px-1.5 py-0.5">
-                      Desactivada en "Acciones que envían notificación (app)"
-                    </span>
-                  )}
+              {!isExternal && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <ChannelToggle
+                      label="Canal app activo"
+                      checked={value.appEnabled}
+                      onChange={appEnabled => onChange({ ...value, appEnabled })}
+                      disabled={isCritical}
+                      disabledReason={isCritical ? "Acción crítica: el canal app no se puede apagar" : undefined}
+                    />
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Notificación (app)</span>
+                    {isAppOff && <span className="text-[10px] font-semibold text-text-tertiary bg-surface-raised rounded-pill px-1.5 py-0.5">Canal apagado</span>}
+                  </div>
+                  <RoleMultiSelect roles={roles} value={value.app} onChange={app => onChange({ ...value, app })} disabled={isAppOff} />
                 </div>
-                <RoleMultiSelect roles={roles} value={value.app} onChange={app => onChange({ ...value, app })} disabled={isAppSilenced} />
-              </div>
+              )}
               <div>
-                <div className="flex items-center gap-1.5 mb-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <ChannelToggle
+                    label="Canal correo activo"
+                    checked={isMailLocked ? true : value.mailEnabled}
+                    onChange={mailEnabled => onChange({ ...value, mailEnabled })}
+                    disabled={isMailLocked}
+                    disabledReason={isMailLocked ? "Flujo de cuenta: no se puede desactivar" : undefined}
+                  />
                   <span className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Correo</span>
-                  {isMailSilenced && (
-                    <span className="text-[10px] font-semibold text-text-tertiary bg-surface-raised rounded-pill px-1.5 py-0.5">
-                      Desactivada en "Acciones que envían correo"
-                    </span>
-                  )}
+                  {isMailOff && <span className="text-[10px] font-semibold text-text-tertiary bg-surface-raised rounded-pill px-1.5 py-0.5">Canal apagado</span>}
                 </div>
-                <RoleMultiSelect roles={roles} value={value.mail} onChange={mail => onChange({ ...value, mail })} disabled={isMailSilenced} />
+                {isExternal ? (
+                  <p className="text-xs text-text-muted">Destinatario externo (proveedor / usuario)</p>
+                ) : (
+                  <RoleMultiSelect roles={roles} value={value.mail} onChange={mail => onChange({ ...value, mail })} disabled={isMailOff} />
+                )}
               </div>
               <FieldError message={error} />
             </div>

@@ -52,7 +52,6 @@ import { useToast } from "@/components/UI/Toast";
 import { getErrorMessage } from "@/services/logger";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useConfigAuditLogs } from "@/hooks/useConfigAuditLogs";
-import { useNotificationActionsCatalog } from "@/hooks/useNotificationActionsCatalog";
 import { useNotificationRules, type NotificationRuleChannels } from "@/hooks/useNotificationRules";
 import { useCurrencies, type CurrencyRecord } from "@/hooks/useCurrencies";
 import { useExchangeRates } from "@/hooks/useExchangeRates";
@@ -82,7 +81,7 @@ import DebugModeCard from "./components/DebugModeCard";
 const GROUP_META: Record<string, SettingGroupMeta> = {
   presupuesto: { title: "Presupuesto y anticipos", description: "Anticipo máximo y umbrales del semáforo de ejecución presupuestaria.", icon: <Gauge className="h-5 w-5" />, color: "sky" },
   ratings: { title: "Ratings", description: "Escala mínima y máxima de calificación para proveedores.", icon: <Star className="h-5 w-5" />, color: "purple" },
-  notificaciones: { title: "Notificaciones", description: "Correos por departamento y acciones que disparan envío de correo.", icon: <Bell className="h-5 w-5" />, color: "indigo" },
+  notificaciones: { title: "Notificaciones", description: "Qué acciones notifican, a qué roles y por qué canal (app / correo).", icon: <Bell className="h-5 w-5" />, color: "indigo" },
   fiscal: { title: "Datos fiscales", description: "Datos de la empresa usados en comprobantes de pago a proveedores.", icon: <Landmark className="h-5 w-5" />, color: "emerald" },
   alertas: { title: "Alertas de precio", description: "Umbral de variación a partir del cual un precio se marca fuera de rango.", icon: <TrendingUp className="h-5 w-5" />, color: "rose" },
   inflacion: { title: "Inflación", description: "Tasa de inflación de referencia para el análisis de precios.", icon: <BarChart3 className="h-5 w-5" />, color: "slate" },
@@ -181,8 +180,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
     activeFilterCount: auditLogActiveFilterCount,
   } = useConfigAuditLogs(authToken, isSuperadmin);
 
-  const { actions: notificationActionsCatalog } = useNotificationActionsCatalog(authToken);
-
   const {
     actions: ruleActions,
     roles: ruleRoles,
@@ -250,36 +247,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   }, [allSettings]);
 
   /**
-   * El interruptor maestro (`acciones_con_notificacion_app`/`acciones_con_correo`)
-   * y la matriz por rol son dos capas independientes que se combinan con AND
-   * en el backend — una acción desmarcada acá no notifica a nadie sin
-   * importar qué roles tenga configurados en la matriz. Sin esto, la matriz
-   * mostraba filas con apariencia normal aunque estuvieran completamente
-   * silenciadas, generando confusión ("desactivé la acción pero sigo viendo
-   * roles marcados y no entiendo por qué no cambia nada").
-   */
-  const masterSwitchByChannel = useMemo(() => {
-    const parseList = (key: string): string[] | null => {
-      const raw = allSettings.find(s => s.key === key)?.value;
-      if (!raw) return null;
-      try {
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : null;
-      } catch {
-        return null;
-      }
-    };
-    return { app: parseList("acciones_con_notificacion_app"), mail: parseList("acciones_con_correo") };
-  }, [allSettings]);
-
-  const silencedChannelsFor = (action: string): ("app" | "mail")[] => {
-    const silenced: ("app" | "mail")[] = [];
-    if (masterSwitchByChannel.app !== null && !masterSwitchByChannel.app.includes(action)) silenced.push("app");
-    if (masterSwitchByChannel.mail !== null && !masterSwitchByChannel.mail.includes(action)) silenced.push("mail");
-    return silenced;
-  };
-
-  /**
    * `useDraftState` compara valores por clave sin conocer nada del dominio
    * — pero decidir si un AppSetting está dirty depende de su `type` (ver
    * `isDirtySettingValue`). Como la clave es el `id` numérico, se resuelve
@@ -300,7 +267,7 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   });
 
   const rulesDraft = useDraftState<string, NotificationRuleChannels>({
-    savedValueOf: action => rules[action] ?? { app: [], mail: [] },
+    savedValueOf: action => rules[action] ?? { app: [], mail: [], appEnabled: true, mailEnabled: true },
     isDirty: isDirtyRuleValue,
     save: async (action, channels) => {
       await updateRule(action, channels);
@@ -502,7 +469,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                       isDirty={rulesDraft.isDirty}
                       unconfigured={unconfigured}
                       errors={rulesDraft.errors}
-                      silencedChannelsFor={silencedChannelsFor}
                     />
                   </div>
                 ) : group === "__currencies__" ? (
@@ -558,7 +524,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                     valueOf={setting => settingsDraft.valueOf(setting.id)}
                     onChange={settingsDraft.onChange}
                     errors={settingsDraft.errors}
-                    notificationActionsCatalog={notificationActionsCatalog}
                     readOnly={!isSuperadmin}
                   />
                 ),
