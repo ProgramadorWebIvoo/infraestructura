@@ -368,3 +368,19 @@ describe("identidad de la operación (doble clic y reintento manual)", () => {
     expect(mockRequest).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("replay de respuesta omitida por tamaño", () => {
+  it("lanza un ApiError con code en vez de entregar { replayed: true } como si fuera el recurso", async () => {
+    mockRequest.mockResolvedValue({
+      status: 201,
+      data: JSON.stringify({ replayed: true, code: "IDEMPOTENCY_RESPONSE_OMITTED", message: "Ya se aplicó; actualiza." }),
+      headers: {},
+    });
+
+    await expect(apiFetch("/projects/P1/payments", { method: "POST", body: "{}" })).rejects.toMatchObject({
+      message: "Ya se aplicó; actualiza.",
+      status: 201,
+      code: "IDEMPOTENCY_RESPONSE_OMITTED",
+    });
+  });
+});
