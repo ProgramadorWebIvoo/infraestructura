@@ -12,7 +12,8 @@ import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTok
 import { SEMAPHORE_COLORS, useBudgetSemaphore } from "@/hooks/useBudgetSemaphore";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
-import type { ProjectHistoryFigures } from "../projectHistoryTypes";
+import ConvertedAmount from "@/components/UI/ConvertedAmount";
+import type { HistoryAward, ProjectHistoryFigures } from "../projectHistoryTypes";
 
 export const fmtMoney = (n: number | null | undefined) => (n === null || n === undefined ? "—" : formatCurrency(n));
 
@@ -26,18 +27,26 @@ interface FigureCardProps {
   hint?: string;
   variation?: number | null;
   emptyLabel?: string;
+  /** Oferta adjudicada: las cifras derivadas de ella (adjudicado, ejecutado) muestran su moneda de cotización. */
+  award?: HistoryAward | null;
 }
 
-function FigureCard({ label, amount, tone, hint, variation, emptyLabel = "Sin dato" }: FigureCardProps) {
+function FigureCard({ label, amount, tone, hint, variation, emptyLabel = "Sin dato", award }: FigureCardProps) {
   const color = SEMANTIC_COLOR_MAP[tone];
   const { convert, hasRates, isLoading } = useCurrencyConversion();
 
   return (
     <div className={`rounded-2xl border p-4 ${color.bg50} ${color.border200}`}>
       <p className={`text-[11px] font-bold uppercase tracking-wide ${color.text700}`}>{label}</p>
-      <p className="mt-1 text-xl font-bold text-text-primary font-mono">{amount === null ? emptyLabel : fmtMoney(amount)}</p>
-      {amount !== null && (
-        <BsAmount amount={amount} convert={convert} hasRates={hasRates} isLoading={isLoading} variant="block" className="text-text-tertiary" />
+      {amount === null ? (
+        <p className="mt-1 text-xl font-bold text-text-primary font-mono">{emptyLabel}</p>
+      ) : award ? (
+        <ConvertedAmount className="mt-1 text-xl font-bold text-text-primary" amountBase={amount} quoteCurrency={award.quoteCurrency} fxRateToBase={award.fxRateToBase} />
+      ) : (
+        <>
+          <p className="mt-1 text-xl font-bold text-text-primary font-mono">{fmtMoney(amount)}</p>
+          <BsAmount amount={amount} convert={convert} hasRates={hasRates} isLoading={isLoading} variant="block" className="text-text-tertiary" />
+        </>
       )}
       {hint && <p className="mt-1 text-[11px] text-text-secondary">{hint}</p>}
       {variation !== undefined && variation !== null && (
@@ -54,7 +63,7 @@ const ALERTS: { flag: keyof ProjectHistoryFigures["flags"]; text: string }[] = [
   { flag: "executedExceedsApproved", text: "Lo pagado supera lo aprobado (sobre-ejecución)." },
 ];
 
-export default function ProjectHistoryFiguresPanel({ figures }: { figures: ProjectHistoryFigures }) {
+export default function ProjectHistoryFiguresPanel({ figures, award = null }: { figures: ProjectHistoryFigures; award?: HistoryAward | null }) {
   const { levelOf } = useBudgetSemaphore();
   const pct = figures.executionPercent;
   const level = pct !== null ? levelOf(pct) : null;
@@ -67,8 +76,8 @@ export default function ProjectHistoryFiguresPanel({ figures }: { figures: Proje
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <FigureCard label="Estimado" amount={figures.estimated} tone="neutral" hint="Presupuesto de la petición" />
         <FigureCard label="Aprobado" amount={figures.approved} tone="brand" emptyLabel="Sin aprobar" variation={figures.variation.approvedVsEstimated} hint="vs. estimado" />
-        <FigureCard label="Adjudicado" amount={figures.awarded} tone="info" emptyLabel="Sin adjudicar" variation={figures.variation.awardedVsApproved} hint="vs. aprobado" />
-        <FigureCard label="Ejecutado" amount={figures.executed} tone="success" variation={figures.variation.executedVsAwarded} hint="pagado, vs. adjudicado" />
+        <FigureCard label="Adjudicado" award={award} amount={figures.awarded} tone="info" emptyLabel="Sin adjudicar" variation={figures.variation.awardedVsApproved} hint="vs. aprobado" />
+        <FigureCard label="Ejecutado" award={award} amount={figures.executed} tone="success" variation={figures.variation.executedVsAwarded} hint="pagado, vs. adjudicado" />
       </div>
 
       <div className="rounded-2xl border border-slate-200/80 bg-white p-4">

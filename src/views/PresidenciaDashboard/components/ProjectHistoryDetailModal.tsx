@@ -77,7 +77,7 @@ export default function ProjectHistoryDetailModal({ authToken, projectId, projec
       {isError && <EmptyState message="No se pudo cargar el detalle de la obra." />}
       {detail && (
         <div className="space-y-5">
-          <ProjectHistoryFiguresPanel figures={detail.figures} />
+          <ProjectHistoryFiguresPanel figures={detail.figures} award={detail.award} />
           <StageStepper stages={detail.stages} />
           <Tabs
             ariaLabel="Etapas del histórico de la obra"
@@ -95,7 +95,7 @@ export default function ProjectHistoryDetailModal({ authToken, projectId, projec
           />
           {tab === "presupuesto" && <BudgetPanel detail={detail} projectId={detail.project.id} authToken={authToken} />}
           {tab === "proveedores" && <SuppliersPanel suppliers={detail.suppliers} award={detail.award} />}
-          {tab === "pagos" && <PaymentsPanel payments={detail.payments} projectId={detail.project.id} authToken={authToken} />}
+          {tab === "pagos" && <PaymentsPanel payments={detail.payments} award={detail.award} projectId={detail.project.id} authToken={authToken} />}
           {tab === "planos" && <DrawingsClosurePanel drawings={detail.drawings} closure={detail.closure} projectId={detail.project.id} authToken={authToken} />}
           {tab === "auditoria" && <HistoryAuditTrail events={detail.timeline.filter((e) => e.role === "AUDITORIA")} />}
           {tab === "flujo" && <HistoryFlowPanel project={projects.find((p) => p.id === detail.project.id)} />}

@@ -95,6 +95,10 @@ export interface HistorySupplier {
   materialCost: number;
   laborCost: number;
   totalCost: number;
+  /** Total en la moneda de cotización (null si se cotizó en USD). */
+  totalCostOriginal: number | null;
+  /** Tasa a base fijada al cotizar: 1 unidad de quoteCurrency = fxRateToBase USD-BCV. */
+  fxRateToBase: number | null;
   negotiatedAdvancePercent: number | null;
   deliveryWeeks: number | null;
   precioAnterior: number | null;
@@ -125,6 +129,9 @@ export interface HistoryAward {
   contractorCode: string;
   contractorName: string | null;
   totalCost: number;
+  quoteCurrency: string;
+  totalCostOriginal: number | null;
+  fxRateToBase: number | null;
   negotiatedAdvancePercent: number | null;
   origen: string | null;
   rateFreezes: HistoryRateFreeze[];

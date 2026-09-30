@@ -12,9 +12,18 @@ import { Table, type Column } from "@/components/UI/Table";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useCurrencyConversion, type UseCurrencyConversionReturn } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
+import ConvertedAmount from "@/components/UI/ConvertedAmount";
+import FrozenRateBadge from "@/components/UI/FrozenRateBadge";
+import type { RateFreeze } from "@/types";
 import type { HistoryAward, HistoryBudgetLine, HistorySupplier, ProjectHistoryDetail } from "../projectHistoryTypes";
 import { fmtMoney } from "./ProjectHistoryFigures";
 import { HistoryDocumentsList } from "./HistoryDocumentsList";
+
+const FREEZE_TRIGGER_LABEL: Record<string, string> = {
+  CONTRATADO: "Solicitud de anticipo",
+  PAGO_ANTICIPO: "Pago de anticipo",
+  PAGO_FINIQUITO: "Pago de finiquito",
+};
 
 function mono(n: number | null, rates: UseCurrencyConversionReturn) {
   return (
@@ -85,7 +94,7 @@ function makeSupplierColumns(rates: UseCurrencyConversionReturn): Column<History
     { key: "origen", label: "Origen", render: (s) => <span className="text-xs">{s.origen ?? "—"}</span> },
     { key: "total", label: "Total", align: "right", render: (s) => (
       <div className="text-right">
-        {mono(s.totalCost, rates)}
+        <ConvertedAmount className="text-right" amountBase={s.totalCost} quoteCurrency={s.quoteCurrency} fxRateToBase={s.fxRateToBase} />
         {s.precioAnterior !== null && <p className="text-[10px] text-text-tertiary font-mono">antes {fmtMoney(s.precioAnterior)}</p>}
       </div>
     ) },
@@ -117,19 +126,25 @@ export function SuppliersPanel({ suppliers, award }: { suppliers: HistorySupplie
         <div className={`rounded-2xl border p-4 space-y-2 ${info.bg50} ${info.border200}`}>
           <p className={`text-xs font-bold uppercase ${info.text700}`}>Adjudicación</p>
           <p className="text-sm font-semibold text-text-primary">
-            {award.contractorName ?? award.contractorCode} · {fmtMoney(award.totalCost)}
-            <BsAmount amount={award.totalCost} convert={rates.convert} hasRates={rates.hasRates} isLoading={rates.isLoading} variant="inline" />
+            {award.contractorName ?? award.contractorCode} ·{" "}
+            <ConvertedAmount variant="inline" amountBase={award.totalCost} quoteCurrency={award.quoteCurrency} fxRateToBase={award.fxRateToBase} />
           </p>
+          {award.quoteCurrency !== "USD" && award.fxRateToBase != null && (
+            <p className="text-xs text-text-secondary">
+              Tasa de cotización: <span className="font-mono font-bold">1 {award.quoteCurrency} = {award.fxRateToBase} USD-BCV</span>
+            </p>
+          )}
           <p className="text-xs text-text-secondary">Anticipo negociado: {award.negotiatedAdvancePercent ?? "—"}% · Origen: {award.origen ?? "—"}</p>
           {award.rateFreezes.length > 0 && (
-            <ul className="text-[11px] text-text-secondary space-y-0.5">
+            <ul className="space-y-1 text-[11px] text-text-secondary" aria-label="Tasas congeladas">
               {award.rateFreezes.map((f) => (
-                <li key={f.trigger} className="font-mono">
-                  {f.trigger}: 1 {f.frozenCurrency} = {f.frozenRate ?? "—"} Bs.
+                <li key={f.trigger} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span className="font-bold uppercase tracking-wide text-text-tertiary">{FREEZE_TRIGGER_LABEL[f.trigger] ?? f.trigger}</span>
+                  <FrozenRateBadge freeze={{ ...f, frozenAt: f.frozenAt ?? "" } as RateFreeze} />
                   {f.frozenAmount != null && f.frozenAmountBs != null && (
-                    <> · {formatPaidAmount(f.frozenAmount, f.frozenCurrency)} → {formatPaidAmount(f.frozenAmountBs, BS_CURRENCY)}</>
-                  )}{" "}
-                  ({f.source})
+                    <span className="font-mono">{formatPaidAmount(f.frozenAmount, f.frozenCurrency)} → {formatPaidAmount(f.frozenAmountBs, BS_CURRENCY)}</span>
+                  )}
+                  {f.source === "MANUAL" && <span className="italic">(corrección manual)</span>}
                 </li>
               ))}
             </ul>

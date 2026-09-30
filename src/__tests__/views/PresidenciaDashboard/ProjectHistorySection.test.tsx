@@ -14,7 +14,7 @@ import type {
 const mockApiFetch = vi.fn();
 vi.mock("@/services/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
 vi.mock("@/hooks/useCurrencyConversion", () => ({
-  useCurrencyConversion: () => ({ convert: (n: number) => n * 10, hasRates: false, isLoading: false }),
+  useCurrencyConversion: () => ({ convert: (n: number) => n * 10, hasRates: false, isLoading: false, usdLabel: "USD-BCV", convertToModeUsd: (n: number) => n }),
   formatBs: (n: number) => String(n),
 }));
 
@@ -53,10 +53,10 @@ const detail: ProjectHistoryDetail = {
   budget: { lines: [{ id: "m1", name: "Cemento", quantity: 100, unit: "saco", estimatedUnitPrice: 8, estimatedSubtotal: 800, condition: null, brand: null, catalogProduct: { id: 1, name: "Cemento Portland" } }], linesTotal: 800 },
   request: { createdDate: "2026-09-24", createdBy: "Infra", reviewNotes: null, procuraNotes: null, dossierAiScore: null, documents: [], history: [] },
   suppliers: [
-    { id: "P1", contractorCode: "CON-301", contractorName: "TestRif", origen: "MANUAL", fechaOferta: "2026-09-10", createdBy: null, quoteCurrency: "USD", materialCost: 1, laborCost: 1, totalCost: 2050, negotiatedAdvancePercent: 30, deliveryWeeks: 4, precioAnterior: null, precioNuevo: null, diferencia: null, motivo: null, isAwarded: false, replacedById: "P2", isRemoved: false, items: [] },
-    { id: "P2", contractorCode: "CON-301", contractorName: "TestRif", origen: "RENEGOCIACION", fechaOferta: "2026-09-15", createdBy: null, quoteCurrency: "USD", materialCost: 1, laborCost: 1, totalCost: 1940, negotiatedAdvancePercent: 30, deliveryWeeks: 4, precioAnterior: 2050, precioNuevo: 1940, diferencia: -110, motivo: "Volumen", isAwarded: true, replacedById: null, isRemoved: false, items: [] },
+    { id: "P1", contractorCode: "CON-301", contractorName: "TestRif", origen: "MANUAL", fechaOferta: "2026-09-10", createdBy: null, quoteCurrency: "USD", materialCost: 1, laborCost: 1, totalCost: 2050, totalCostOriginal: null, fxRateToBase: null, negotiatedAdvancePercent: 30, deliveryWeeks: 4, precioAnterior: null, precioNuevo: null, diferencia: null, motivo: null, isAwarded: false, replacedById: "P2", isRemoved: false, items: [] },
+    { id: "P2", contractorCode: "CON-301", contractorName: "TestRif", origen: "RENEGOCIACION", fechaOferta: "2026-09-15", createdBy: null, quoteCurrency: "USD", materialCost: 1, laborCost: 1, totalCost: 1940, totalCostOriginal: null, fxRateToBase: null, negotiatedAdvancePercent: 30, deliveryWeeks: 4, precioAnterior: 2050, precioNuevo: 1940, diferencia: -110, motivo: "Volumen", isAwarded: true, replacedById: null, isRemoved: false, items: [] },
   ],
-  award: { proposalId: "P2", contractorCode: "CON-301", contractorName: "TestRif", totalCost: 1940, negotiatedAdvancePercent: 30, origen: "RENEGOCIACION", rateFreezes: [] },
+  award: { proposalId: "P2", contractorCode: "CON-301", contractorName: "TestRif", totalCost: 1940, quoteCurrency: "USD", totalCostOriginal: null, fxRateToBase: null, negotiatedAdvancePercent: 30, origen: "RENEGOCIACION", rateFreezes: [] },
   payments: {
     items: [
       { id: 1, type: "ADVANCE", amount: 600, currency: "USD", paidDate: "2026-09-24", bank: "Banesco", reference: "REF-1", notes: null, proposalId: "P2", proof: { id: 5, name: "comp_ant.pdf" }, settlement: null },
@@ -240,6 +240,38 @@ describe("ProjectHistorySection", () => {
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("Lo pagado supera lo adjudicado.")).toBeInTheDocument();
     expect(paths()).toContain("/project-history/PRJ-002");
+  });
+
+  it("adjudicación cotizada en USDT: muestra lo cotizado, la tasa de cotización y las tasas congeladas con su momento", async () => {
+    const usdtDetail: ProjectHistoryDetail = {
+      ...detail,
+      award: {
+        ...detail.award!,
+        totalCost: 1500,
+        quoteCurrency: "USDT",
+        totalCostOriginal: 1200,
+        fxRateToBase: 1.25,
+        rateFreezes: [{
+          trigger: "CONTRATADO", baseCurrency: "USD", frozenCurrency: "USDT", frozenRate: 1000, frozenAmount: 1200,
+          frozenAmountBs: 1200000, frozenAmountBase: 1500, frozenAt: "2026-09-25T10:00:00Z", source: "AUTO",
+        }],
+      },
+    };
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path.startsWith("/project-history/PRJ-002")) return Promise.resolve(usdtDetail);
+      return Promise.resolve(page());
+    });
+    const user = userEvent.setup();
+    renderSection({ initialSelected: "PRJ-002" });
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByText("Lo pagado supera lo adjudicado.");
+
+    await user.click(within(dialog).getByRole("tab", { name: /Proveedores y adjudicación/ }));
+
+    expect(within(dialog).getByText(/1 USDT = 1\.25 USD-BCV/)).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Tasas congeladas")).toBeInTheDocument();
+    expect(within(dialog).getByText("Solicitud de anticipo")).toBeInTheDocument();
+    expect(within(dialog).getByText(/1 USDT = .* Bs\./)).toBeInTheDocument();
   });
 
   it("recorre las pestañas del detalle: proveedores, pagos, planos", async () => {
