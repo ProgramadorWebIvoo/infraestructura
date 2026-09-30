@@ -12,6 +12,7 @@
 // Configuración global (por plataforma)
 // ---------------------------------------------------------------------------
 import axios, { AxiosInstance, AxiosError } from "axios";
+import { delay, generateIdempotencyKey } from "./utils";
 
 const http: AxiosInstance = axios.create();
 
@@ -70,6 +71,14 @@ function safeParseForDebug(text: string): unknown {
 
 export interface ApiFetchOptions extends RequestInit {
   token?: string;
+  /**
+   * Clave de idempotencia de la mutación (header `Idempotency-Key`). Sin ella,
+   * cada llamada mutante genera una propia: protege los reintentos de red de
+   * ESA llamada. Para que un segundo clic o reintento manual cuente como la
+   * misma operación, el caller debe reutilizar la misma clave (ver
+   * useIdempotentAction).
+   */
+  idempotencyKey?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -108,14 +117,24 @@ function normalizeHeaders(h: HeadersInit | undefined): Record<string, string> {
 export class ApiError extends Error {
   attemptLog?: string[];
   status: number;
+  /** Código estable del backend (p. ej. IDEMPOTENCY_IN_PROGRESS); `undefined` si el error no trae uno. */
+  code?: string;
+  /** Segundos que pide esperar el backend (header Retry-After), si los hay. */
+  retryAfterSeconds?: number;
 
-  constructor(message: string, status: number, attemptLog?: string[]) {
+  constructor(message: string, status: number, attemptLog?: string[], code?: string, retryAfterSeconds?: number) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.attemptLog = attemptLog;
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
+
+export const IDEMPOTENCY_IN_PROGRESS = "IDEMPOTENCY_IN_PROGRESS";
+export const IDEMPOTENCY_KEY_REUSED = "IDEMPOTENCY_KEY_REUSED";
+export const IDEMPOTENCY_KEY_REQUIRED = "IDEMPOTENCY_KEY_REQUIRED";
 
 const ERROR_MESSAGES: Record<number, string> = {
   401: "Sesión expirada. Inicia sesión nuevamente.",
@@ -132,12 +151,25 @@ function safeJsonParse(text: string): Record<string, any> | null {
   }
 }
 
-export function buildApiError(status: number, text: string): ApiError {
-  if (ERROR_MESSAGES[status]) {
-    return new ApiError(ERROR_MESSAGES[status], status);
+function parseRetryAfter(headers: unknown): number | undefined {
+  const raw = (headers as Record<string, unknown> | undefined)?.["retry-after"];
+  const seconds = Number(raw);
+  return raw !== undefined && Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined;
+}
+
+export function buildApiError(status: number, text: string, headers?: unknown): ApiError {
+  const body = safeJsonParse(text);
+  const code = typeof body?.code === "string" ? body.code : undefined;
+  const retryAfterSeconds = parseRetryAfter(headers);
+
+  // Los errores de idempotencia traen un mensaje ya redactado para el usuario.
+  if (code?.startsWith("IDEMPOTENCY_") && typeof body?.message === "string") {
+    return new ApiError(body.message, status, undefined, code, retryAfterSeconds);
   }
 
-  const body = safeJsonParse(text);
+  if (ERROR_MESSAGES[status]) {
+    return new ApiError(ERROR_MESSAGES[status], status, undefined, code, retryAfterSeconds);
+  }
 
   if (status === 422) {
     const firstKey = body?.errors ? Object.keys(body.errors)[0] : null;
@@ -145,19 +177,90 @@ export function buildApiError(status: number, text: string): ApiError {
       ? body?.errors[firstKey][0]
       : (body?.message ?? "Datos inválidos. Revisa la información ingresada.");
     
-    return new ApiError(message, status);
+    return new ApiError(message, status, undefined, code);
   }
 
   if (status === 503) {
     const message = body?.error ?? "Error en la evaluación de IA. Intenta más tarde.";
-    return new ApiError(message, status, body?.attemptLog);
+    return new ApiError(message, status, body?.attemptLog, code);
   }
 
   const fallbackMessage = status >= 500 
     ? "Error interno del servidor. Intenta más tarde." 
     : `Error del servidor (${status}).`;
 
-  return new ApiError(fallbackMessage, status);
+  return new ApiError(fallbackMessage, status, undefined, code, retryAfterSeconds);
+}
+
+// ---------------------------------------------------------------------------
+// Idempotencia: reintentos seguros de mutaciones
+// ---------------------------------------------------------------------------
+// Reintentar una mutación es seguro solo porque viaja con la misma
+// Idempotency-Key: si la primera petición sí llegó al servidor, el reintento
+// recibe su respuesta guardada en vez de ejecutarse de nuevo. Se reintentan
+// únicamente fallos donde el servidor no pudo haber dado una respuesta
+// definitiva: red/timeout, 502/504 (proxy) y 409 IDEMPOTENCY_IN_PROGRESS
+// (la original sigue corriendo). NUNCA 500/503: el 503 es el fallo de IA (gasta
+// cuota) y un 500 puede traer efectos parciales.
+const MAX_RETRIES = 2;
+const RETRY_BACKOFF_MS = [1000, 3000];
+const MAX_RETRY_AFTER_MS = 5000;
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * Rutas donde el backend NO aplica idempotencia (públicas, sin sesión, o
+ * exentas por ser acciones de prueba/sincronización): reintentar ahí
+ * re-ejecutaría la operación. Espejo de `config/idempotency.php` (exempt) más
+ * las rutas públicas por token.
+ */
+const RETRY_EXCLUDED_PATHS: RegExp[] = [
+  /^\/public\//,
+  /^\/(login|logout|reset-password)$/,
+  /^\/contractors$/,
+  /^\/(push-tokens|notifications)(\/|$)/,
+  /^\/ai\/config\//,
+  /^\/system-keys\//,
+  /^\/exchange-rates\/sync$/,
+  /^\/rating-ia\/run$/,
+  /^\/debug\//,
+];
+
+function isRetryableRequest(method: string, path: string): boolean {
+  if (!MUTATING_METHODS.has(method)) return false;
+  const pathname = path.split("?")[0];
+  return !RETRY_EXCLUDED_PATHS.some((pattern) => pattern.test(pathname));
+}
+
+/** Milisegundos a esperar antes de reintentar este error, o `null` si no debe reintentarse. */
+function retryDelayMs(err: AxiosError, attempt: number): number | null {
+  const backoff = RETRY_BACKOFF_MS[Math.min(attempt, RETRY_BACKOFF_MS.length - 1)];
+  const response = err.response;
+
+  if (!response) {
+    return err.code === "ERR_CANCELED" ? null : backoff;
+  }
+  if (response.status === 502 || response.status === 504) return backoff;
+
+  if (response.status === 409) {
+    const apiError = buildApiError(409, (response.data as string) ?? "", response.headers);
+    if (apiError.code !== IDEMPOTENCY_IN_PROGRESS) return null;
+    return Math.min((apiError.retryAfterSeconds ?? backoff / 1000) * 1000, MAX_RETRY_AFTER_MS);
+  }
+  return null;
+}
+
+async function requestWithRetry(config: Parameters<AxiosInstance["request"]>[0], canRetry: boolean) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await http.request<string>(config);
+    } catch (err) {
+      const wait = canRetry && attempt < MAX_RETRIES && !config.signal?.aborted
+        ? retryDelayMs(err as AxiosError, attempt)
+        : null;
+      if (wait === null) throw err;
+      await delay(wait);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +300,7 @@ async function apiFetchUncached<T = unknown>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { token, ...fetchOptions } = options;
+  const { token, idempotencyKey, ...fetchOptions } = options;
   const method = (fetchOptions.method ?? "GET").toUpperCase();
   const fullUrl = `${_baseUrl}${path}`;
   const startedAt = _onApiDebugEvent ? performance.now() : 0;
@@ -214,11 +317,15 @@ async function apiFetchUncached<T = unknown>(
     headers["Content-Type"] = "application/json";
   }
 
+  if (MUTATING_METHODS.has(method)) {
+    headers["Idempotency-Key"] = idempotencyKey ?? generateIdempotencyKey();
+  }
+
   const allHeaders = { ...headers, ...normalizeHeaders(fetchOptions.headers) };
 
   let response;
   try {
-    response = await http.request<string>({
+    response = await requestWithRetry({
       url: fullUrl,
       method: method as any,
       headers: allHeaders,
@@ -226,10 +333,10 @@ async function apiFetchUncached<T = unknown>(
       signal: fetchOptions.signal as any,
       withCredentials: fetchOptions.credentials === "include",
       responseType: "text",
-    });
+    }, isRetryableRequest(method, path));
   } catch (err) {
     const ex = err as AxiosError;
-    const apiError = ex.response ? buildApiError(ex.response.status, (ex.response.data as string) ?? "") : null;
+    const apiError = ex.response ? buildApiError(ex.response.status, (ex.response.data as string) ?? "", ex.response.headers) : null;
     _onApiDebugEvent?.({
       method,
       path,
