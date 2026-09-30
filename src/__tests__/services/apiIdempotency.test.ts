@@ -15,7 +15,7 @@ vi.mock("axios", () => ({
 }));
 
 import { apiFetch, setApiBaseUrl } from "@/services/api";
-import { buildApiError, generateIdempotencyKey, IDEMPOTENCY_IN_PROGRESS } from "@ivoo/shared";
+import { buildApiError, generateIdempotencyKey, IDEMPOTENCY_IN_PROGRESS, resetIdempotencyState } from "@ivoo/shared";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -31,6 +31,7 @@ const sentHeaders = (call = 0): Record<string, string> => mockRequest.mock.calls
 beforeEach(() => {
   setApiBaseUrl("http://localhost:8000/api");
   mockRequest.mockReset();
+  resetIdempotencyState();
   mockGet.mockReset().mockResolvedValue({ status: 204, data: "", headers: {} });
   document.cookie = "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 });
@@ -229,5 +230,141 @@ describe("generateIdempotencyKey", () => {
     vi.stubGlobal("crypto", undefined);
 
     expect(generateIdempotencyKey()).toMatch(UUID);
+  });
+});
+
+describe("identidad de la operación (doble clic y reintento manual)", () => {
+  const post = (body: unknown = { amount: 100 }) => apiFetch("/projects/P1/payments", { method: "POST", body: JSON.stringify(body) });
+
+  it("dos llamadas idénticas en vuelo (doble clic) comparten UNA petición", async () => {
+    let resolve!: (value: unknown) => void;
+    mockRequest.mockReturnValue(new Promise((r) => { resolve = r; }));
+
+    const first = post();
+    const second = post();
+    resolve(ok({ data: { id: 9 } }));
+
+    expect(await first).toEqual({ id: 9 });
+    expect(await second).toEqual({ id: 9 });
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("llamadas con body distinto en vuelo son operaciones distintas con claves distintas", async () => {
+    mockRequest.mockResolvedValue(ok());
+
+    await Promise.all([post({ amount: 100 }), post({ amount: 200 })]);
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(sentHeaders(0)["Idempotency-Key"]).not.toBe(sentHeaders(1)["Idempotency-Key"]);
+  });
+
+  it("tras un éxito, la misma operación otra vez es una operación nueva (clave nueva)", async () => {
+    mockRequest.mockResolvedValue(ok());
+
+    await post();
+    await post();
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(sentHeaders(0)["Idempotency-Key"]).not.toBe(sentHeaders(1)["Idempotency-Key"]);
+  });
+
+  it("tras un error con respuesta del servidor (422) la clave se descarta", async () => {
+    mockRequest.mockRejectedValueOnce(httpError(422, { message: "Falta comprobante" })).mockResolvedValueOnce(ok());
+
+    await expect(post()).rejects.toBeDefined();
+    await post();
+
+    expect(sentHeaders(0)["Idempotency-Key"]).not.toBe(sentHeaders(1)["Idempotency-Key"]);
+  });
+
+  it("tras un resultado desconocido (red) el reintento manual REUTILIZA la clave", async () => {
+    vi.useFakeTimers();
+    mockRequest.mockRejectedValue(networkError());
+    await expect(runWithTimers(post())).rejects.toBeDefined(); // 3 intentos, todos sin respuesta
+    const usedKey = sentHeaders(0)["Idempotency-Key"];
+
+    mockRequest.mockReset().mockResolvedValue(ok());
+    await post();
+
+    expect(sentHeaders(0)["Idempotency-Key"]).toBe(usedKey);
+  });
+
+  it("un 409 'en proceso' que no se resuelve conserva la clave", async () => {
+    vi.useFakeTimers();
+    mockRequest.mockRejectedValue(httpError(409, { code: IDEMPOTENCY_IN_PROGRESS, message: "En proceso" }, { "retry-after": "1" }));
+    await expect(runWithTimers(post())).rejects.toMatchObject({ code: IDEMPOTENCY_IN_PROGRESS });
+    const usedKey = sentHeaders(0)["Idempotency-Key"];
+
+    mockRequest.mockReset().mockResolvedValue(ok());
+    await post();
+
+    expect(sentHeaders(0)["Idempotency-Key"]).toBe(usedKey);
+  });
+
+  it("si el usuario cambia los datos tras un resultado desconocido, nace una clave nueva", async () => {
+    vi.useFakeTimers();
+    mockRequest.mockRejectedValue(networkError());
+    await expect(runWithTimers(post({ amount: 100 }))).rejects.toBeDefined();
+    const usedKey = sentHeaders(0)["Idempotency-Key"];
+
+    mockRequest.mockReset().mockResolvedValue(ok());
+    await post({ amount: 150 });
+
+    expect(sentHeaders(0)["Idempotency-Key"]).not.toBe(usedKey);
+  });
+
+  it("una clave pendiente vence a los 10 minutos", async () => {
+    vi.useFakeTimers();
+    mockRequest.mockRejectedValue(networkError());
+    await expect(runWithTimers(post())).rejects.toBeDefined();
+    const usedKey = sentHeaders(0)["Idempotency-Key"];
+
+    await vi.advanceTimersByTimeAsync(11 * 60 * 1000);
+    mockRequest.mockReset().mockResolvedValue(ok());
+    await post();
+
+    expect(sentHeaders(0)["Idempotency-Key"]).not.toBe(usedKey);
+  });
+
+  it("resetIdempotencyState (logout) descarta las claves pendientes", async () => {
+    vi.useFakeTimers();
+    mockRequest.mockRejectedValue(networkError());
+    await expect(runWithTimers(post())).rejects.toBeDefined();
+    const usedKey = sentHeaders(0)["Idempotency-Key"];
+
+    resetIdempotencyState();
+    mockRequest.mockReset().mockResolvedValue(ok());
+    await post();
+
+    expect(sentHeaders(0)["Idempotency-Key"]).not.toBe(usedKey);
+  });
+
+  it("FormData: los mismos archivos son la misma operación; otro archivo, otra", async () => {
+    const form = (content: string) => {
+      const data = new FormData();
+      data.append("files[]", new File([content], "comprobante.pdf", { type: "application/pdf", lastModified: 1 }));
+      return data;
+    };
+    let resolve!: (value: unknown) => void;
+    mockRequest.mockReturnValue(new Promise((r) => { resolve = r; }));
+
+    const a = apiFetch("/projects/P1/documents", { method: "POST", body: form("AAAA") });
+    const b = apiFetch("/projects/P1/documents", { method: "POST", body: form("AAAA") });
+    const c = apiFetch("/projects/P1/documents", { method: "POST", body: form("BBBBBB") });
+    resolve(ok());
+    await Promise.all([a, b, c]);
+
+    expect(mockRequest).toHaveBeenCalledTimes(2); // a y b se fusionan, c es distinta
+  });
+
+  it("con idempotencyKey explícita no se fusiona ni se recuerda", async () => {
+    mockRequest.mockResolvedValue(ok());
+
+    await Promise.all([
+      apiFetch("/things", { method: "POST", body: "{}", idempotencyKey: generateIdempotencyKey() }),
+      apiFetch("/things", { method: "POST", body: "{}", idempotencyKey: generateIdempotencyKey() }),
+    ]);
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
   });
 });
