@@ -6,9 +6,17 @@
  * bloques grandes con icono+descripción (radiogroup accesible). Extraído
  * tras 3 usos reales del mismo patrón (tipo de requerimiento, condición
  * nuevo/usado, tabs catálogo/personalizado) repitiendo clases a mano.
+ *
+ * En "pill" el fondo de la opción activa es un indicador aparte que se
+ * desliza entre opciones (layoutId, mismo patrón que SectionNav). Antes el
+ * borde vivía en el propio botón activo: los inactivos no tenían borde, y con
+ * transition-all el color del borde animaba desde currentColor (oscuro) hacia
+ * el gris, dejando un borde negro visible unos instantes al cambiar.
  */
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { springs } from "@/animations";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 
 export interface SegmentedOption<T extends string> {
@@ -43,6 +51,9 @@ export default function SegmentedControl<T extends string>({
   ariaLabel,
   id,
 }: SegmentedControlProps<T>) {
+  const indicatorId = useId();
+  const reduceMotion = useReducedMotion();
+
   if (variant === "pill") {
     const isSmall = size === "sm";
     return (
@@ -60,13 +71,18 @@ export default function SegmentedControl<T extends string>({
               type="button"
               aria-pressed={ariaLabel ? isActive : undefined}
               onClick={() => onChange(opt.value)}
-              className={`${isSmall ? "px-2.5 py-1" : "px-4 py-2"} rounded-lg transition-all duration-200 cursor-pointer ${
-                isActive
-                  ? `bg-white ${SEMANTIC_COLOR_MAP[opt.accent ?? accent].text700} shadow-xs border border-slate-200/80 font-black`
-                  : "text-slate-500 hover:text-slate-700"
+              className={`relative ${isSmall ? "px-2.5 py-1" : "px-4 py-2"} rounded-lg transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-slate-400 ${
+                isActive ? SEMANTIC_COLOR_MAP[opt.accent ?? accent].text700 : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              {opt.label}
+              {isActive && (
+                <motion.span
+                  layoutId={indicatorId}
+                  className="absolute inset-0 rounded-lg bg-white shadow-xs border border-slate-200/80"
+                  transition={reduceMotion ? { duration: 0 } : springs.snappy}
+                />
+              )}
+              <span className="relative">{opt.label}</span>
             </button>
           );
         })}
