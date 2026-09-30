@@ -282,8 +282,9 @@ describe("ConfigAppPanel", () => {
 
     // Expande la fila de la matriz y togglea un rol — no dispara ningún
     // guardado por sí solo, solo queda en el borrador local.
-    await waitFor(() => expect(screen.getByText("Rechazo de cuadro comparativo")).toBeInTheDocument());
-    fireEvent.click(screen.getByText("Rechazo de cuadro comparativo"));
+    await waitFor(() => expect(screen.getByText("Notificaciones por rol")).toBeInTheDocument());
+    const matrixSection = screen.getByText("Notificaciones por rol").closest(".bg-surface") as HTMLElement;
+    fireEvent.click(within(matrixSection).getByText("Rechazo de cuadro comparativo"));
     fireEvent.click(screen.getAllByText("Super Administrador")[0]);
 
     expect(mockApiFetch).not.toHaveBeenCalledWith(
@@ -306,16 +307,15 @@ describe("ConfigAppPanel", () => {
     await waitFor(() => expect(screen.queryByText("Guardar todo")).not.toBeInTheDocument());
   });
 
-  it("SUPERADMIN: apagar el canal app de una acción en la matriz activa la barra de guardado", async () => {
+  it("SUPERADMIN: quitar una acción de la lista de correo activa la barra de guardado", async () => {
     render(<ConfigAppPanel authToken="token" activeRole="SUPERADMIN" canAccess={() => false} onContractorMutated={() => {}} />);
 
     fireEvent.click(screen.getByRole("tab", { name: "Notificaciones" }));
 
-    await waitFor(() => expect(screen.getByText("Notificaciones por rol")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Acciones que envían correo")).toBeInTheDocument());
 
-    const matrixSection = screen.getByText("Notificaciones por rol").closest(".bg-surface") as HTMLElement;
-    fireEvent.click(within(matrixSection).getByText("Rechazo de cuadro comparativo"));
-    fireEvent.click(screen.getByRole("switch", { name: "Canal app activo" }));
+    const mailSection = screen.getByText("Acciones que envían correo").closest("section") as HTMLElement;
+    fireEvent.click(within(mailSection).getByText("Rechazo de cuadro comparativo"));
 
     expect(screen.getByText("Guardar todo")).toBeInTheDocument();
   });

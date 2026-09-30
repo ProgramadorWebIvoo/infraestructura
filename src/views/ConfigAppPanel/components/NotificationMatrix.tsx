@@ -50,10 +50,12 @@ interface NotificationMatrixProps {
 export default function NotificationMatrix({ actions, roles, isLoading, valueOf, onChange, isDirty, unconfigured, errors }: NotificationMatrixProps) {
   const [search, setSearch] = useState("");
 
+  // Las acciones de destinatario externo no tienen roles: solo viven en la lista de correo.
   const filteredActions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return actions;
-    return actions.filter(a => a.label.toLowerCase().includes(q));
+    const roleActions = actions.filter(a => a.recipientType === "roles");
+    if (!q) return roleActions;
+    return roleActions.filter(a => a.label.toLowerCase().includes(q));
   }, [actions, search]);
 
   const grouped = useMemo(() => {
@@ -88,10 +90,9 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
     <div className="space-y-4">
       <InfoBanner title="¿Cómo funciona la matriz de notificaciones?" defaultOpen={false} color="indigo">
         <p>
-          Cada acción auditada por la app puede notificar a distintos roles por dos canales: <strong>app</strong> (push +
-          bandeja interna) y <strong>correo</strong>. Desplegá una fila para encender o apagar cada canal y elegir los roles
-          — los cambios se guardan junto con el resto de CONFIG APP desde "Guardar todo". Los correos a proveedores y al
-          usuario (destinatario externo) solo se encienden o apagan, sin roles.
+          Aquí se elige <strong>a qué roles</strong> les llega cada acción, por <strong>app</strong> (push + bandeja
+          interna) y por <strong>correo</strong>. Encender o apagar un canal para una acción se hace en las dos listas de
+          arriba. Los cambios se guardan junto con el resto de CONFIG APP desde "Guardar todo".
         </p>
         <p className="mt-1.5">
           Las acciones marcadas <strong>Crítica</strong> no pueden apagar el canal app ni quedar sin ningún rol en él
@@ -147,7 +148,6 @@ export default function NotificationMatrix({ actions, roles, isLoading, valueOf,
                     isUnconfigured={unconfigured.includes(action.value)}
                     isDirty={isDirty(action.value)}
                     error={errors[action.value]}
-                    recipientType={action.recipientType}
                   />
                 ))}
               </Card>

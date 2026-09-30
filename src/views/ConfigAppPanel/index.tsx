@@ -60,6 +60,7 @@ import { useRatingIaBatch } from "@/hooks/useRatingIaBatch";
 import { useDraftState } from "@/hooks/useDraftState";
 import { isDirtySettingValue, isDirtyRuleValue } from "./utils";
 import SettingGroupCard, { type SettingGroupMeta } from "./components/SettingGroupCard";
+import NotificationChannelLists from "./components/NotificationChannelLists";
 import NotificationRulesCard from "./components/NotificationRulesCard";
 import CurrencyCard from "./components/CurrencyCard";
 import ExchangeRateSyncLogsPanel from "./components/ExchangeRateSyncLogsPanel";
@@ -460,6 +461,11 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                   // notificaciones en grupos distintos del menú no convergía.
                   <div key={group} className="space-y-6">
                     <NotificationActionsConfigPanel authToken={authToken} activeRole={activeRole} />
+                    <NotificationChannelLists
+                      actions={ruleActions}
+                      valueOf={rulesDraft.valueOf}
+                      onChange={rulesDraft.onChange}
+                    />
                     <NotificationRulesCard
                       actions={ruleActions}
                       roles={ruleRoles}

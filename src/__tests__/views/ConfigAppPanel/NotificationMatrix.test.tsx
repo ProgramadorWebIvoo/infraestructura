@@ -112,7 +112,7 @@ describe("NotificationMatrix", () => {
     expect(onChange).toHaveBeenCalledWith("Alta de material", { app: ["CATALOGOS"], mail: [], appEnabled: true, mailEnabled: true });
   });
 
-  it("muestra el grupo 'Configuración administrativa' y las acciones externas sin selector de roles", () => {
+  it("muestra el grupo 'Configuración administrativa' y oculta las acciones externas (solo van en la lista de correo)", () => {
     render(
       <NotificationMatrix
         actions={[
@@ -130,8 +130,27 @@ describe("NotificationMatrix", () => {
     );
 
     expect(screen.getByText("Configuración administrativa")).toBeInTheDocument();
+    expect(screen.getByText("Alta de rol")).toBeInTheDocument();
+    expect(screen.queryByText("Correo de adjudicacion a proveedor")).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByText("Correo de adjudicacion a proveedor"));
-    expect(screen.getByText("Destinatario externo (proveedor / usuario)")).toBeInTheDocument();
+  it("con el canal apagado, el selector de roles de esa fila queda deshabilitado", () => {
+    render(
+      <NotificationMatrix
+        actions={actions}
+        roles={roles}
+        isLoading={false}
+        valueOf={makeValueOf({ "Alta de material": { app: ["SUPERADMIN"], mail: [], appEnabled: false, mailEnabled: true } })}
+        onChange={vi.fn()}
+        isDirty={() => false}
+        unconfigured={[]}
+        errors={{}}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Alta de material"));
+
+    expect(screen.getByText(/Desactivado en "Acciones que envían notificación/)).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 });
