@@ -27,10 +27,24 @@ import { useExchangeRateHistory } from "@/hooks/useExchangeRateHistory";
 import type { ExchangeRateRecord } from "@/stores/exchangeRatesStore";
 import type { CurrencyRecord } from "@/hooks/useCurrencies";
 
+const USDT_SOURCE_PREFIX = "USDT_COM_VE:";
+
 function sourceLabel(source: string): string {
   if (source === "DOLARVZLA_API") return "DolarVZLA API";
   if (source === "BCV_SCRAPING") return "BCV Scraping";
+  if (source.startsWith(USDT_SOURCE_PREFIX)) {
+    const market = source.slice(USDT_SOURCE_PREFIX.length);
+    return `usdt.com.ve (${market.charAt(0).toUpperCase()}${market.slice(1)})`;
+  }
   return source;
+}
+
+/** La tasa BCV es diaria (basta la fecha); la USDT cambia varias veces al día, así que muestra también la hora. */
+function formatEffectiveAt(row: ExchangeRateRecord): string {
+  const date = new Date(row.effective_at);
+  const day = date.toLocaleDateString("es-VE", { year: "numeric", month: "short", day: "numeric" });
+  if (!row.source.startsWith(USDT_SOURCE_PREFIX)) return day;
+  return `${day}, ${date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 interface ExchangeRateHistoryPanelProps {
@@ -40,18 +54,17 @@ interface ExchangeRateHistoryPanelProps {
 }
 
 export default function ExchangeRateHistoryPanel({ authToken, currencies, enabled }: ExchangeRateHistoryPanelProps) {
-  // USD es la moneda de referencia (tasa siempre 1.0, ver ExchangeRateController::store)
-  // — no tiene histórico propio.
-  const selectableCodes = useMemo(() => currencies.filter(c => c.code !== "USD").map(c => c.code), [currencies]);
+  // USD también tiene histórico: su tasa es la BCV en bolívares (la que sincroniza el cronjob),
+  // igual que EUR — no es un valor fijo de 1.0.
+  const selectableCodes = useMemo(() => currencies.map(c => c.code), [currencies]);
   const { history, isLoading } = useExchangeRateHistory(authToken, selectableCodes, enabled && selectableCodes.length > 0);
 
   const columns: Column<ExchangeRateRecord>[] = [
     {
       key: "effective_at",
       label: "Fecha",
-      width: "20%",
-      render: row =>
-        new Date(row.effective_at).toLocaleDateString("es-VE", { year: "numeric", month: "short", day: "numeric" }),
+      width: "22%",
+      render: row => formatEffectiveAt(row),
     },
     {
       key: "currency_code",
@@ -68,7 +81,7 @@ export default function ExchangeRateHistoryPanel({ authToken, currencies, enable
     {
       key: "source",
       label: "Fuente",
-      width: "35%",
+      width: "33%",
       render: row => sourceLabel(row.source),
     },
   ];
@@ -83,7 +96,7 @@ export default function ExchangeRateHistoryPanel({ authToken, currencies, enable
       />
 
       {selectableCodes.length === 0 ? (
-        <EmptyState message="No hay monedas distintas a USD registradas todavía." />
+        <EmptyState message="No hay monedas registradas todavía." />
       ) : history.length === 0 && !isLoading ? (
         <EmptyState message="Todavía no hay tasas registradas." />
       ) : (
