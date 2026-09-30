@@ -146,7 +146,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const isRenegotiation = proposal.origen === "RENEGOCIACION";
   const currency = proposal.quoteCurrency;
   const [expandedImage, setExpandedImage] = useState<{ blobUrl: string; alt: string } | null>(null);
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, convertToModeUsd, usdLabel } = useCurrencyConversion();
+  /** Valor de la oferta en el dólar activo (USD-BCV o USD-USDT según el switch). */
+  const usdOf = (amountBase: number, amountOriginal?: number | null) => convertToModeUsd(amountBase, amountOriginal, proposal.quoteCurrency);
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, "USD"))}` : undefined);
 
   // Las líneas (precio unitario/total) están en la moneda en que se cotizó; los totales del resumen,
@@ -198,9 +200,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
       <div className="space-y-4">
         {/* Resumen de costos */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOrFrozen(proposal.materialCost, materialFrozen, proposal.materialCostOriginal)} />
-          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOrFrozen(proposal.laborCost, laborFrozen, proposal.laborCostOriginal)} />
-          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOrFrozen(proposal.totalCost, totalFrozen, proposal.totalCostOriginal)} emphasize />
+          <SummaryStat label="Materiales" value={formatCurrency(usdOf(proposal.materialCost, proposal.materialCostOriginal))} subValue={bsOrFrozen(proposal.materialCost, materialFrozen, proposal.materialCostOriginal)} />
+          <SummaryStat label="Mano de Obra" value={formatCurrency(usdOf(proposal.laborCost, proposal.laborCostOriginal))} subValue={bsOrFrozen(proposal.laborCost, laborFrozen, proposal.laborCostOriginal)} />
+          <SummaryStat label="Total" value={formatCurrency(usdOf(proposal.totalCost, proposal.totalCostOriginal))} subValue={bsOrFrozen(proposal.totalCost, totalFrozen, proposal.totalCostOriginal)} emphasize />
           <SummaryStat label="Plazo" value={formatProposalDuration(proposal)} />
         </div>
 
@@ -365,7 +367,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       <td className="px-3 py-2 text-slate-500 font-medium text-[11px] align-top">{item.unit}</td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600 align-top">
                         {fmtLine(item.unitPrice)}
-                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(item.unitPrice * fxToBase)} USD-BCV</span>}
+                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(item.unitPrice * fxToBase, item.unitPrice))} {usdLabel}</span>}
                         <BsAmount amount={item.unitPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-500 align-top">
@@ -390,7 +392,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       </td>
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px] align-top">
                         {fmtLine(item.totalPrice)}
-                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(item.totalPrice * fxToBase)} USD-BCV</span>}
+                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(item.totalPrice * fxToBase, item.totalPrice))} {usdLabel}</span>}
                         <BsAmount amount={item.totalPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
                       </td>
                     </tr>
@@ -403,7 +405,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
                       {fmtLine(proposal.materialCostOriginal ?? proposal.materialCost)}
-                      {proposal.materialCostOriginal != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(proposal.materialCost)} USD-BCV</span>}
+                      {proposal.materialCostOriginal != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(proposal.materialCost, proposal.materialCostOriginal))} {usdLabel}</span>}
                       <BsAmount
                         amount={proposal.materialCostOriginal ?? proposal.materialCost}
                         fromCode={proposal.materialCostOriginal != null ? lineCurrency : "USD"}

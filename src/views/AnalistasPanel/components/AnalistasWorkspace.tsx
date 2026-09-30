@@ -113,7 +113,7 @@ export default function AnalistasWorkspace({
   const { viewMode, viewToggle } = useTableViewMode("grid");
   const { containerRef, rows: pageSize } = useContainerRows();
   const { fetchAllGroupedByProject } = useSupplierProposalsForProject(authToken);
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, convertToModeUsd } = useCurrencyConversion();
   const [portalProposalsByProject, setPortalProposalsByProject] = useState<Record<string, SupplierMaterialProposal[]>>({});
 
   const selectedProject = pendingLicitacion.find(p => p.id === selectedId) ?? null;
@@ -192,14 +192,14 @@ export default function AnalistasWorkspace({
         if (!best) return <span className="font-mono font-black text-emerald-700 whitespace-nowrap">—</span>;
         return (
           <div className="text-right whitespace-nowrap">
-            <div className="font-mono font-black text-emerald-700">{formatCurrency(best.totalCost)}</div>
+            <div className="font-mono font-black text-emerald-700">{formatCurrency(convertToModeUsd(best.totalCost, best.totalCostOriginal, best.quoteCurrency))}</div>
             <OriginalAmount amount={best.totalCostOriginal} currency={best.quoteCurrency} label="Cotizado: " />
             <BsAmount amount={best.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
           </div>
         );
       },
     },
-  ], [convert, hasRates, isLoadingRates]);
+  ], [convert, hasRates, isLoadingRates, convertToModeUsd]);
 
   return (
     <>
@@ -331,7 +331,7 @@ function ExpedienteWorkspaceModal({
 }) {
   const maxAdvancePercent = useMaxAdvancePercent();
   const { showToast } = useToast();
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, hasRates, isLoading: isLoadingRates, convertToModeUsd } = useCurrencyConversion();
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [renegotiatingProposal, setRenegotiatingProposal] = useState<Proposal | null>(null);
@@ -410,7 +410,7 @@ function ExpedienteWorkspaceModal({
       align: "right",
       render: (prop) => (
         <div>
-          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.materialCost)}</span>
+          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(convertToModeUsd(prop.materialCost, prop.materialCostOriginal, prop.quoteCurrency))}</span>
           <OriginalAmount amount={prop.materialCostOriginal} currency={prop.quoteCurrency} label="" />
           <BsAmount amount={prop.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
@@ -423,7 +423,7 @@ function ExpedienteWorkspaceModal({
       align: "right",
       render: (prop) => (
         <div>
-          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(prop.laborCost)}</span>
+          <span className="font-mono font-medium text-slate-600 block">{formatCurrency(convertToModeUsd(prop.laborCost, prop.laborCostOriginal, prop.quoteCurrency))}</span>
           <OriginalAmount amount={prop.laborCostOriginal} currency={prop.quoteCurrency} label="" />
           <BsAmount amount={prop.laborCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
         </div>
@@ -437,7 +437,7 @@ function ExpedienteWorkspaceModal({
       render: (prop) => (
         <div>
           <span className={`font-mono font-black text-sm block ${prop.id === best?.id ? "text-emerald-700" : "text-slate-700"}`}>
-            {formatCurrency(prop.totalCost)}
+            {formatCurrency(convertToModeUsd(prop.totalCost, prop.totalCostOriginal, prop.quoteCurrency))}
           </span>
           <OriginalAmount amount={prop.totalCostOriginal} currency={prop.quoteCurrency} label="" />
           <BsAmount amount={prop.totalCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />

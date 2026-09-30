@@ -132,4 +132,47 @@ describe("useCurrencyConversion", () => {
     expect(result.current.getRate("USD")).toBeNull();
     expect(result.current.hasRates).toBe(false);
   });
+
+  describe("dólar activo (convertToModeUsd / usdLabel)", () => {
+    const seed = () => {
+      useExchangeRatesStore.setState({
+        rates: [
+          { id: 1, currency_code: "USD", rate_to_usd: 800, source: "DOLARVZLA_API", effective_at: "2026-01-01", created_at: "", updated_at: "" },
+          { id: 2, currency_code: "EUR", rate_to_usd: 900, source: "DOLARVZLA_API", effective_at: "2026-01-01", created_at: "", updated_at: "" },
+          { id: 3, currency_code: "USDT", rate_to_usd: 1000, source: "USDT_COM_VE:binance", effective_at: "2026-01-01", created_at: "", updated_at: "" },
+        ],
+        isLoading: false,
+        hasLoaded: true,
+      });
+      usePublicSettingsStore.setState({ settings: { sincronizacion_tasa: [{ key: "tasa_switch_roles", value: JSON.stringify(["FINANZAS"]) }] } });
+    };
+
+    it("en modo BCV devuelve el valor en USD-BCV tal cual (el fijado al cotizar)", () => {
+      seed();
+      useUsdRateModeStore.setState({ mode: "BCV", sessionRole: "FINANZAS" });
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.usdLabel).toBe("USD-BCV");
+      expect(result.current.convertToModeUsd(1500, 1200, "USDT")).toBe(1500);
+    });
+
+    it("en modo USDT re-expresa las ofertas en otra moneda con la tasa USDT", () => {
+      seed();
+      useUsdRateModeStore.setState({ mode: "USDT", sessionRole: "FINANZAS" });
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.usdLabel).toBe("USD-USDT");
+      expect(result.current.convertToModeUsd(1500, 1200, "USDT")).toBe(1200); // 1.200 USDT = 1.200 USD-USDT
+      expect(result.current.convertToModeUsd(1125, 1000, "EUR")).toBe(900); // 1.000 EUR × 900 / 1.000
+    });
+
+    it("un monto nativo en USD (sin original) no cambia con el switch", () => {
+      seed();
+      useUsdRateModeStore.setState({ mode: "USDT", sessionRole: "FINANZAS" });
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.convertToModeUsd(10000)).toBe(10000);
+      expect(result.current.convertToModeUsd(10000, 10000, "USD")).toBe(10000);
+    });
+  });
 });
