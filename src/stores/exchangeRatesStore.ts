@@ -17,7 +17,7 @@ export interface ExchangeRateRecord {
   id: number;
   currency_code: string;
   rate_to_usd: number;
-  source: "DOLARVZLA_API" | "BCV_SCRAPING";
+  source: "DOLARVZLA_API" | "BCV_SCRAPING" | `USDT_COM_VE:${string}`;
   effective_at: string; // YYYY-MM-DD
   created_at: string;
   updated_at: string;

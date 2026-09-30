@@ -11,6 +11,9 @@ import { useCallback, useMemo } from "react";
 import { truncateToDecimals } from "@ivoo/shared";
 import { useExchangeRatesContext } from "@/components/UI/ExchangeRatesProvider";
 import { logWarn } from "@/services/logger";
+import { useUsdRateModeStore, type UsdRateMode } from "@/stores/usdRateModeStore";
+
+const USDT_CODE = "USDT";
 
 /** Formatea un monto en Bs.: separador de miles ".", decimales ",", siempre 2 decimales, truncado (no redondeado). */
 export function formatBs(value: number): string {
@@ -20,8 +23,20 @@ export function formatBs(value: number): string {
 export interface UseCurrencyConversionReturn {
   /** Tasas BCV por moneda (bolívares por unidad): "USD" → 794.99, "EUR" → 862.15, etc. */
   rates: Record<string, number>;
-  /** Convierte amount de cualquier moneda a Bs. */
+  /**
+   * Convierte amount de cualquier moneda a Bs. Para "USD" usa la tasa del
+   * modo activo (BCV o USDT); el resto de monedas siempre usa su tasa BCV.
+   */
   convert: (amount: number, fromCode: string) => number;
+  /**
+   * Modo efectivo de la tasa USD→Bs.: el elegido por el usuario, o "BCV" si
+   * eligió USDT pero no hay tasa USDT disponible (evita mostrar 0).
+   */
+  usdRateMode: UsdRateMode;
+  /** Cambia el modo (persistente entre sesiones). */
+  setUsdRateMode: (mode: UsdRateMode) => void;
+  /** Si hay tasa USDT disponible (habilita el switch BCV/USDT). */
+  hasUsdtRate: boolean;
   /**
    * Convierte entre dos monedas cualquiera usando el bolívar como pivote —
    * equivalente en frontend de `ExchangeRate::rateBetween()` del backend.
@@ -66,17 +81,24 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
     return ratesByCode;
   }, [exchangeRates]);
 
-  // Convertir cualquier moneda a Bs.
+  const storedMode = useUsdRateModeStore(s => s.mode);
+  const setUsdRateMode = useUsdRateModeStore(s => s.setMode);
+  const hasUsdtRate = !!rates[USDT_CODE];
+  const usdRateMode: UsdRateMode = storedMode === "USDT" && hasUsdtRate ? "USDT" : "BCV";
+
+  // Convertir cualquier moneda a Bs. Solo "USD" obedece al modo: convertBetween
+  // y el resto de monedas quedan en BCV para que las comparaciones entre
+  // monedas cotizadas no cambien con el switch.
   const convert = useCallback(
     (amount: number, fromCode: string): number => {
-      const rate = rates[fromCode];
+      const rate = fromCode === "USD" && usdRateMode === "USDT" ? rates[USDT_CODE] : rates[fromCode];
       if (!rate) {
         logWarn("useCurrencyConversion", `No hay tasa para ${fromCode}, devolviendo 0`);
         return 0;
       }
       return amount * rate;
     },
-    [rates],
+    [rates, usdRateMode],
   );
 
   // Convertir entre dos monedas cualquiera (pivote: bolívar)
@@ -105,6 +127,9 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
   return {
     rates,
     convert,
+    usdRateMode,
+    setUsdRateMode,
+    hasUsdtRate,
     convertBetween,
     getRate,
     isLoading,

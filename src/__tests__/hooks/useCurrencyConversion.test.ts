@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useExchangeRatesStore } from "@/stores/exchangeRatesStore";
+import { useUsdRateModeStore } from "@/stores/usdRateModeStore";
 
 describe("useCurrencyConversion", () => {
   beforeEach(() => {
@@ -44,6 +45,66 @@ describe("useCurrencyConversion", () => {
 
     // 100 EUR * 108 Bs/EUR / 100 Bs/USD = 108 USD
     expect(result.current.convertBetween(100, "EUR", "USD")).toBeCloseTo(108, 6);
+  });
+
+  describe("modo de tasa USD (BCV / USDT)", () => {
+    const seedRates = () =>
+      useExchangeRatesStore.setState({
+        rates: [
+          { id: 1, currency_code: "USD", rate_to_usd: 100, source: "DOLARVZLA_API", effective_at: "2026-01-01", created_at: "", updated_at: "" },
+          { id: 2, currency_code: "EUR", rate_to_usd: 110, source: "DOLARVZLA_API", effective_at: "2026-01-01", created_at: "", updated_at: "" },
+          { id: 3, currency_code: "USDT", rate_to_usd: 120, source: "USDT_COM_VE:binance", effective_at: "2026-01-01", created_at: "", updated_at: "" },
+        ],
+        isLoading: false,
+        hasLoaded: true,
+      });
+
+    beforeEach(() => {
+      useUsdRateModeStore.setState({ mode: "BCV" });
+    });
+
+    it("por defecto convierte USD con la tasa BCV", () => {
+      seedRates();
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.usdRateMode).toBe("BCV");
+      expect(result.current.convert(10, "USD")).toBe(1000);
+    });
+
+    it("en modo USDT convierte USD con la tasa USDT y deja EUR y convertBetween en BCV", () => {
+      seedRates();
+      useUsdRateModeStore.setState({ mode: "USDT" });
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.usdRateMode).toBe("USDT");
+      expect(result.current.convert(10, "USD")).toBe(1200);
+      expect(result.current.convert(10, "EUR")).toBe(1100);
+      expect(result.current.convertBetween(100, "EUR", "USD")).toBeCloseTo(110, 6);
+    });
+
+    it("setUsdRateMode cambia el modo", () => {
+      seedRates();
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      act(() => result.current.setUsdRateMode("USDT"));
+
+      expect(result.current.usdRateMode).toBe("USDT");
+      expect(result.current.convert(1, "USD")).toBe(120);
+    });
+
+    it("cae a BCV si se eligió USDT pero no hay tasa USDT", () => {
+      useExchangeRatesStore.setState({
+        rates: [{ id: 1, currency_code: "USD", rate_to_usd: 100, source: "DOLARVZLA_API", effective_at: "2026-01-01", created_at: "", updated_at: "" }],
+        isLoading: false,
+        hasLoaded: true,
+      });
+      useUsdRateModeStore.setState({ mode: "USDT" });
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.hasUsdtRate).toBe(false);
+      expect(result.current.usdRateMode).toBe("BCV");
+      expect(result.current.convert(10, "USD")).toBe(1000);
+    });
   });
 
   it("devuelve 0 y no revienta si falta la tasa de alguna moneda", () => {
