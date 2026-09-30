@@ -33,9 +33,11 @@ interface SettingGroupCardProps {
   /** PATCH /settings/{setting} es SUPERADMIN exclusivo — deshabilita los
    *  inputs para cualquier otro rol en vez de dejarlos editar y fallar con 403. */
   readOnly?: boolean;
+  /** Roles disponibles para settings que son listas de roles (ver SettingRow). */
+  roles?: string[];
 }
 
-export default function SettingGroupCard({ group, meta, settings, valueOf, onChange, errors, readOnly }: SettingGroupCardProps) {
+export default function SettingGroupCard({ group, meta, settings, valueOf, onChange, errors, readOnly, roles }: SettingGroupCardProps) {
   return (
     <motion.div variants={itemVariants}>
       <Card>
@@ -50,6 +52,7 @@ export default function SettingGroupCard({ group, meta, settings, valueOf, onCha
               onChange={onChange}
               error={errors[setting.id]}
               readOnly={readOnly}
+              roles={roles}
             />
           ))}
         </div>

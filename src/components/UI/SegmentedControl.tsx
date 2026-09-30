@@ -25,6 +25,8 @@ interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   variant?: "pill" | "card";
+  /** Solo variant="pill": "sm" para barras compactas junto a KpiPills. */
+  size?: "sm" | "md";
   accent?: SemanticColor;
   /** Requerido en variant="card" — nombra el radiogroup para accesibilidad. */
   ariaLabel?: string;
@@ -36,21 +38,29 @@ export default function SegmentedControl<T extends string>({
   value,
   onChange,
   variant = "pill",
+  size = "md",
   accent = "brand",
   ariaLabel,
   id,
 }: SegmentedControlProps<T>) {
   if (variant === "pill") {
+    const isSmall = size === "sm";
     return (
-      <div id={id} className="flex gap-1 p-1 bg-slate-100/60 rounded-xl text-xs font-bold w-fit">
+      <div
+        id={id}
+        role={ariaLabel ? "group" : undefined}
+        aria-label={ariaLabel}
+        className={`flex gap-1 bg-slate-100/60 rounded-xl font-bold w-fit ${isSmall ? "p-0.5 text-[11px]" : "p-1 text-xs"}`}
+      >
         {options.map((opt) => {
           const isActive = opt.value === value;
           return (
             <button
               key={opt.value}
               type="button"
+              aria-pressed={ariaLabel ? isActive : undefined}
               onClick={() => onChange(opt.value)}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+              className={`${isSmall ? "px-2.5 py-1" : "px-4 py-2"} rounded-lg transition-all duration-200 cursor-pointer ${
                 isActive
                   ? `bg-white ${SEMANTIC_COLOR_MAP[opt.accent ?? accent].text700} shadow-xs border border-slate-200/80 font-black`
                   : "text-slate-500 hover:text-slate-700"

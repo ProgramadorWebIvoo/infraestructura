@@ -4,6 +4,7 @@ import { act, renderHook } from "@testing-library/react";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useExchangeRatesStore } from "@/stores/exchangeRatesStore";
 import { useUsdRateModeStore } from "@/stores/usdRateModeStore";
+import { usePublicSettingsStore } from "@/stores/publicSettingsStore";
 
 describe("useCurrencyConversion", () => {
   beforeEach(() => {
@@ -59,8 +60,24 @@ describe("useCurrencyConversion", () => {
         hasLoaded: true,
       });
 
+    const seedSwitchRoles = (roles: string[]) =>
+      usePublicSettingsStore.setState({
+        settings: { sincronizacion_tasa: [{ key: "tasa_switch_roles", value: JSON.stringify(roles) }] },
+      });
+
     beforeEach(() => {
-      useUsdRateModeStore.setState({ mode: "BCV" });
+      useUsdRateModeStore.setState({ mode: "BCV", sessionRole: "FINANZAS" });
+      seedSwitchRoles(["FINANZAS"]);
+    });
+
+    it("un rol fuera de tasa_switch_roles se queda en BCV aunque tenga USDT guardado", () => {
+      seedRates();
+      seedSwitchRoles(["PROCURA"]);
+      useUsdRateModeStore.setState({ mode: "USDT" });
+      const { result } = renderHook(() => useCurrencyConversion());
+
+      expect(result.current.usdRateMode).toBe("BCV");
+      expect(result.current.convert(10, "USD")).toBe(1000);
     });
 
     it("por defecto convierte USD con la tasa BCV", () => {

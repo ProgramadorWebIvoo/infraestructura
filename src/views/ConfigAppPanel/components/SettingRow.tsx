@@ -12,6 +12,8 @@ import { motion } from "motion/react";
 import NumericInput from "@/components/UI/NumericInput";
 import TimeInput from "@/components/UI/TimeInput";
 import FieldError, { fieldErrorClasses } from "@/components/UI/FieldError";
+import RoleMultiSelect from "@/components/UI/RoleMultiSelect";
+import { RATE_SWITCH_ROLES_KEY } from "@/hooks/useRateSwitchRoleAllowed";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { AppSettingRecord } from "@/hooks/useAppSettings";
 import { formatRangeBound } from "@/views/ConfigAppPanel/utils";
@@ -24,10 +26,26 @@ interface SettingRowProps {
   /** PATCH /settings/{setting} es SUPERADMIN exclusivo — deshabilita los
    *  inputs para cualquier otro rol en vez de dejarlos editar y fallar con 403. */
   readOnly?: boolean;
+  /** Roles disponibles para los settings JSON que son listas de roles
+   *  (ROLE_LIST_SETTING_KEYS); sin esto caen al textarea JSON crudo. */
+  roles?: string[];
 }
 
-export default function SettingRow({ setting, value, onChange, error, readOnly }: SettingRowProps) {
+/** Settings `json` que guardan una lista de roles — se editan con chips en vez de JSON crudo. */
+const ROLE_LIST_SETTING_KEYS = new Set<string>([RATE_SWITCH_ROLES_KEY]);
+
+function parseRoleList(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((r): r is string => typeof r === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export default function SettingRow({ setting, value, onChange, error, readOnly, roles }: SettingRowProps) {
   const isNumeric = setting.type === "integer" || setting.type === "float";
+  const isRoleList = setting.type === "json" && ROLE_LIST_SETTING_KEYS.has(setting.key) && !!roles?.length;
   const isCronHour = setting.key === "tasa_cambio_cron_hora" || setting.key === "rating_ia_cron_hora";
 
   const rangeHint =
@@ -62,6 +80,14 @@ export default function SettingRow({ setting, value, onChange, error, readOnly }
               />
               <span className="text-xs text-text-tertiary">{value === "true" ? "Activado" : "Desactivado"}</span>
             </label>
+          ) : isRoleList ? (
+            <RoleMultiSelect
+              roles={roles ?? []}
+              value={parseRoleList(value)}
+              onChange={next => onChange(setting.id, JSON.stringify(next))}
+              disabled={readOnly}
+              className="flex-1 min-w-0"
+            />
           ) : setting.type === "json" ? (
             <textarea
               value={value}

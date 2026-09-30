@@ -25,6 +25,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useExchangeRatesStore, type ExchangeRateRecord } from "@/stores/exchangeRatesStore";
+import { useUsdRateModeStore } from "@/stores/usdRateModeStore";
 import { createEchoClient } from "@/services/echo";
 
 export type { ExchangeRateRecord };
@@ -35,9 +36,15 @@ interface ExchangeRatesContextValue {
   hasLoaded: boolean;
 }
 
-export function ExchangeRatesProvider({ authToken, children }: { authToken: string; children: ReactNode }) {
+export function ExchangeRatesProvider({ authToken, userRole, children }: { authToken: string; userRole?: string; children: ReactNode }) {
   const load = useExchangeRatesStore(s => s.load);
   const refresh = useExchangeRatesStore(s => s.refresh);
+  const setSessionRole = useUsdRateModeStore(s => s.setSessionRole);
+
+  // Rol de sesión para decidir la visibilidad del switch BCV/USDT (ver RateModeSwitch).
+  useEffect(() => {
+    setSessionRole(userRole ?? null);
+  }, [userRole, setSessionRole]);
 
   useEffect(() => {
     if (authToken) load(authToken);

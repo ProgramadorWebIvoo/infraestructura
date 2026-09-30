@@ -18,6 +18,13 @@ export const DEFAULT_USD_RATE_MODE: UsdRateMode = "BCV";
 interface UsdRateModeState {
   mode: UsdRateMode;
   setMode: (mode: UsdRateMode) => void;
+  /**
+   * Rol del usuario en sesión (efímero, no persistido) — lo fija
+   * ExchangeRatesProvider para que el switch decida su visibilidad sin
+   * instanciar useAuth() (que dispara un GET /user por instancia).
+   */
+  sessionRole: string | null;
+  setSessionRole: (role: string | null) => void;
 }
 
 // localStorage puede lanzar (ventana privada, datos bloqueados): degrada a
@@ -35,6 +42,8 @@ export const useUsdRateModeStore = create<UsdRateModeState>()(
     (set) => ({
       mode: DEFAULT_USD_RATE_MODE,
       setMode: (mode) => set({ mode }),
+      sessionRole: null,
+      setSessionRole: (sessionRole) => set({ sessionRole }),
     }),
     {
       name: "ivoo.usdRateMode",

@@ -12,6 +12,7 @@ import { truncateToDecimals } from "@ivoo/shared";
 import { useExchangeRatesContext } from "@/components/UI/ExchangeRatesProvider";
 import { logWarn } from "@/services/logger";
 import { useUsdRateModeStore, type UsdRateMode } from "@/stores/usdRateModeStore";
+import { useRateSwitchRoleAllowed } from "./useRateSwitchRoleAllowed";
 
 const USDT_CODE = "USDT";
 
@@ -30,12 +31,13 @@ export interface UseCurrencyConversionReturn {
   convert: (amount: number, fromCode: string) => number;
   /**
    * Modo efectivo de la tasa USD→Bs.: el elegido por el usuario, o "BCV" si
-   * eligió USDT pero no hay tasa USDT disponible (evita mostrar 0).
+   * eligió USDT pero no hay tasa USDT disponible (evita mostrar 0) o su rol
+   * ya no tiene el switch habilitado.
    */
   usdRateMode: UsdRateMode;
   /** Cambia el modo (persistente entre sesiones). */
   setUsdRateMode: (mode: UsdRateMode) => void;
-  /** Si hay tasa USDT disponible (habilita el switch BCV/USDT). */
+  /** Si hay tasa USDT disponible (condición necesaria para el switch BCV/USDT). */
   hasUsdtRate: boolean;
   /**
    * Convierte entre dos monedas cualquiera usando el bolívar como pivote —
@@ -84,7 +86,10 @@ export function useCurrencyConversion(): UseCurrencyConversionReturn {
   const storedMode = useUsdRateModeStore(s => s.mode);
   const setUsdRateMode = useUsdRateModeStore(s => s.setMode);
   const hasUsdtRate = !!rates[USDT_CODE];
-  const usdRateMode: UsdRateMode = storedMode === "USDT" && hasUsdtRate ? "USDT" : "BCV";
+  // Si al rol le quitan el switch en CONFIG APP, vuelve a BCV aunque tenga
+  // USDT guardado — no debe quedar "atrapado" en un modo que no puede cambiar.
+  const roleAllowed = useRateSwitchRoleAllowed();
+  const usdRateMode: UsdRateMode = storedMode === "USDT" && hasUsdtRate && roleAllowed ? "USDT" : "BCV";
 
   // Convertir cualquier moneda a Bs. Solo "USD" obedece al modo: convertBetween
   // y el resto de monedas quedan en BCV para que las comparaciones entre

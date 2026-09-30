@@ -390,7 +390,7 @@ function AppRoutes() {
       {/* Un solo fetch de tasas para toda la sesión autenticada — las vistas
           consumen vía useCurrencyConversion(), sin instanciar su propio
           fetch/auth por componente (ver ExchangeRatesProvider). */}
-      <ExchangeRatesProvider authToken={authToken}>
+      <ExchangeRatesProvider authToken={authToken} userRole={authUser.role}>
       <AuthenticatedRoutes
         user={authUser}
         activeRole={activeRole ?? ""}
