@@ -11,6 +11,7 @@ import type { Project, Contractor, Proposal } from "@/types";
 import { containerVariants, itemVariants } from "@/animations";
 import { SkeletonBlock, SkeletonCard, SkeletonTable } from "@/components/SkeletonLoader";
 import KpiPill from "@/components/UI/KpiPill";
+import RateModeSwitch from "@/components/UI/RateModeSwitch";
 import AnalistasWorkspace from "./components/AnalistasWorkspace";
 
 interface ImportResult {
@@ -71,11 +72,12 @@ export default function AnalistasPanel({
 
       {/* KPIs operativos del departamento — contexto secundario compacto,
           mismo patrón que Procura/Infraestructura/Auditoría. */}
-      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
+      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap items-center gap-2">
         <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="brand" tooltip="Proyectos abiertos a recepción de ofertas de proveedores." />
         <KpiPill icon={<FileSearch className="h-3.5 w-3.5" />} label="Con Propuestas" value={kpis.withProposals} accent="info" tooltip="Proyectos que ya tienen al menos una propuesta de proveedor cargada." />
         <KpiPill icon={<Send className="h-3.5 w-3.5" />} label="Cuadros Enviados" value={kpis.comparativeSent} accent="success" tooltip="Proyectos cuyo cuadro comparativo ya fue enviado a Procura para adjudicación." />
         <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" tooltip="Proyectos ya adjudicados a un proveedor y en fase de contratación." />
+        <RateModeSwitch />
       </motion.div>
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">

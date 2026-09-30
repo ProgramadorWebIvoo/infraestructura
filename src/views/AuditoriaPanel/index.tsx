@@ -13,6 +13,7 @@ import { ProjectStatus } from "@/types";
 import { containerVariants, itemVariants } from "@/animations";
 import { SkeletonCard, SkeletonList, SkeletonBlock, SkeletonGroup, SkeletonGroupItem } from "@/components/SkeletonLoader";
 import KpiPill from "@/components/UI/KpiPill";
+import RateModeSwitch from "@/components/UI/RateModeSwitch";
 import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import InfoBanner from "@/components/UI/InfoBanner";
@@ -101,12 +102,13 @@ export default function AuditoriaPanel({
           />
         </motion.div>
 
-        <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
+        <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap items-center gap-2">
           <KpiPill icon={<Clock className="h-3.5 w-3.5" />} label="Por Revisar" value={kpis.pendingReview} accent="info" tooltip="Peticiones de obra recién creadas, pendientes de la primera revisión de expediente." />
           <KpiPill icon={<Undo2 className="h-3.5 w-3.5" />} label="Reevaluación" value={kpis.pendingReevaluation} accent="warning" tooltip="Expedientes devueltos por Procura con un motivo, antes de autorizar inversión." />
           <KpiPill icon={<HardHat className="h-3.5 w-3.5" />} label="En Ejecución" value={kpis.inExecution} accent="brand" tooltip="Proyectos contratados que ya están en obra." />
           <KpiPill icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Auditoría" value={kpis.underAudit} accent="warning" tooltip="Proyectos en verificación de finalización, previos al pago final." />
           <KpiPill icon={<FileStack className="h-3.5 w-3.5" />} label="Revisados" value={kpis.revised} accent="success" tooltip="Expedientes que ya pasaron la revisión de Auditoría." />
+          <RateModeSwitch />
         </motion.div>
 
         <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">

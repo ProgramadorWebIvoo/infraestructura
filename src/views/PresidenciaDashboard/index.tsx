@@ -14,6 +14,7 @@ import { containerVariants } from "@/animations";
 import Tabs, { type TabDefinition } from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import KpiPill from "@/components/UI/KpiPill";
+import RateModeSwitch from "@/components/UI/RateModeSwitch";
 import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { printExecutiveReport } from "@/utils/executiveReportPdf";
@@ -164,7 +165,7 @@ export default function PresidenciaDashboard({
       <Tabs tabs={tabs} activeKey={activeTab} onChange={(key) => setActiveTab(key as PresidenciaTabKey)} ariaLabel="Secciones de Presidencia" fullWidth />
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <KpiPill icon={<Layers className="h-3.5 w-3.5" />} label="Obras" value={totalProjectsCount} accent="brand" tooltip="Total de obras registradas en el sistema, en cualquier estado del flujo." />
           <KpiPill
             icon={<DollarSign className="h-3.5 w-3.5" />}
@@ -203,6 +204,7 @@ export default function PresidenciaDashboard({
             }
           />
           <KpiPill icon={<Activity className="h-3.5 w-3.5" />} label="Auditoría" value={auditLogs.length} accent="info" tooltip="Registros de trazabilidad disponibles en el historial." />
+          <RateModeSwitch />
         </div>
 
         <div className="flex items-center gap-2 ml-auto">

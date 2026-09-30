@@ -21,6 +21,7 @@ import { ProjectStatus } from "@/types";
 import { SkeletonCard, SkeletonTable, SkeletonBlock } from "@/components/SkeletonLoader";
 import { containerVariants, itemVariants } from "@/animations";
 import KpiPill from "@/components/UI/KpiPill";
+import RateModeSwitch from "@/components/UI/RateModeSwitch";
 import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import InvestmentApprovalSection from "./components/InvestmentApprovalSection";
@@ -107,11 +108,12 @@ export default function ProcuraPanel({
 
       {/* KPIs operativos del departamento — contexto secundario compacto
           debajo de las tabs (mismo patrón que Infraestructura/Auditoría), no cards grandes compitiendo por atención con las tabs. */}
-      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap gap-2">
+      <motion.div variants={itemVariants} className="shrink-0 flex flex-wrap items-center gap-2">
         <KpiPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Por Autorizar" value={kpis.pendingApproval} accent="brand" tooltip="Proyectos confirmados por Procura, pendientes de abrir a licitación." />
         <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="info" tooltip="Proyectos abiertos, recibiendo propuestas de proveedores." />
         <KpiPill icon={<Scale className="h-3.5 w-3.5" />} label="Comparativa" value={kpis.comparative} accent="success" tooltip="Proyectos con cuadro comparativo enviado, listos para adjudicar." />
         <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" tooltip="Proyectos ya adjudicados y contratados con un proveedor." />
+        <RateModeSwitch />
       </motion.div>
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
