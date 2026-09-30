@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Panel de tasas de cambio en el sidebar — versión colapsable que responde
- * al estado global de collapse del sidebar. Muestra USD y EUR con sus tasas
- * a Bs., siempre visible para PROCURA, ANALISTAS, FINANZAS, ADMIN, SUPERADMIN.
+ * al estado global de collapse del sidebar. Muestra USD y EUR (BCV) y USDT
+ * (paralelo) con sus tasas a Bs., siempre visible para PROCURA, ANALISTAS,
+ * FINANZAS, ADMIN, SUPERADMIN.
  */
 
 import { useMemo } from "react";
@@ -26,6 +27,12 @@ interface ExchangeRatesSidebarSectionProps {
 
 const VISIBLE_ROLES = ["PROCURA", "ANALISTAS", "FINANZAS", "ADMIN", "SUPERADMIN"];
 
+const SIDEBAR_RATES = [
+  { code: "USD", symbol: "$" },
+  { code: "EUR", symbol: "€" },
+  { code: "USDT", symbol: "₮" },
+] as const;
+
 export default function ExchangeRatesSidebarSection({ userRole, isCollapsed }: ExchangeRatesSidebarSectionProps) {
   const context = useExchangeRatesContext();
   const rates = context?.rates ?? [];
@@ -34,32 +41,33 @@ export default function ExchangeRatesSidebarSection({ userRole, isCollapsed }: E
   const shouldDisplay = userRole && VISIBLE_ROLES.includes(userRole);
 
   const latestRates = useMemo(() => {
-    const ratesByCode: Record<string, typeof rates[0]> = {};
+    const ratesByCode: Record<string, number> = {};
+    const latestAt: Record<string, string> = {};
     for (const rate of rates) {
-      if (!ratesByCode[rate.currency_code] || new Date(rate.effective_at) > new Date(ratesByCode[rate.currency_code].effective_at)) {
-        ratesByCode[rate.currency_code] = rate;
+      if (!latestAt[rate.currency_code] || new Date(rate.effective_at) > new Date(latestAt[rate.currency_code])) {
+        latestAt[rate.currency_code] = rate.effective_at;
+        ratesByCode[rate.currency_code] = rate.rate_to_usd;
       }
     }
-    return { usd: ratesByCode["USD"], eur: ratesByCode["EUR"] };
+    return ratesByCode;
   }, [rates]);
 
   if (!shouldDisplay) return null;
 
   const c = SEMANTIC_COLOR_MAP.brand;
-  const hasRates = latestRates.usd || latestRates.eur;
+  const visibleRates = SIDEBAR_RATES.filter(r => latestRates[r.code] != null);
+  const hasRates = visibleRates.length > 0;
+  const hasUsdt = latestRates["USDT"] != null;
 
-  // Las tasas del backend ya son finales (USD→Bs. y EUR→Bs.), no necesitan conversión
-  const usdToBs = latestRates.usd?.rate_to_usd ?? 1;
-  const eurToBs = latestRates.eur?.rate_to_usd ?? 1;
-
+  // Las tasas del backend ya son finales (moneda→Bs.), no necesitan conversión
   const ratesLabel = hasRates
-    ? `$ ${latestRates.usd ? formatRate(usdToBs) : "—"} / € ${latestRates.eur ? formatRate(eurToBs) : "—"}`
+    ? visibleRates.map(r => `${r.symbol} ${formatRate(latestRates[r.code])}`).join(" / ")
     : "—";
 
   return (
     <div className="border-t border-slate-800/60 px-2 py-3 shrink-0">
       {isCollapsed ? (
-        <SidebarTip label={`Tasas BCV\n${ratesLabel}`} disabled={false}>
+        <SidebarTip label={`Tasas\n${ratesLabel}`} disabled={false}>
           <div className="flex justify-center">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors cursor-help">
               <CircleDollarSign className="h-5 w-5" />
@@ -69,7 +77,7 @@ export default function ExchangeRatesSidebarSection({ userRole, isCollapsed }: E
       ) : (
         <div className="space-y-2">
           <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider px-1">
-            Tasas BCV
+            Tasas
           </div>
           <AnimatePresence mode="wait">
             {!hasLoaded ? (
@@ -95,30 +103,26 @@ export default function ExchangeRatesSidebarSection({ userRole, isCollapsed }: E
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className="space-y-2"
               >
-                {/* USD */}
-                {latestRates.usd && (
-                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/30 border border-slate-700/40">
+                {visibleRates.map(r => (
+                  <div key={r.code} className="px-2 py-1.5 rounded-lg bg-slate-800/30 border border-slate-700/40">
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-400">USD</span>
+                      <span className="text-[10px] font-bold text-slate-400">{r.code}</span>
                       <span className={`text-sm font-black font-mono ${c.text600}`}>
-                        {formatRate(latestRates.usd.rate_to_usd)}
+                        {formatRate(latestRates[r.code])}
                       </span>
                       <span className="text-[9px] text-slate-500">Bs.</span>
                     </div>
                   </div>
-                )}
-
-                {/* EUR */}
-                {latestRates.eur && (
-                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/30 border border-slate-700/40">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-400">EUR</span>
-                      <span className={`text-sm font-black font-mono ${c.text600}`}>
-                        {formatRate(eurToBs)}
-                      </span>
-                      <span className="text-[9px] text-slate-500">Bs.</span>
-                    </div>
-                  </div>
+                ))}
+                {hasUsdt && (
+                  <a
+                    href="https://www.usdt.com.ve"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-2 text-[9px] text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    USDT: fuente usdt.com.ve
+                  </a>
                 )}
               </motion.div>
             )}
