@@ -25,6 +25,7 @@ import AdvancesSection from "./components/AdvancesSection";
 import FinalSettlementsSection from "./components/FinalSettlementsSection";
 import LedgerSection, { type LedgerEntry } from "./components/LedgerSection";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
+import { awardedProposalOf } from "@/components/UI/ConvertedAmount";
 
 type TabKey = "book" | "stats" | "advances" | "settlements";
 
@@ -75,8 +76,9 @@ export default function FinanzasPanel({ projects, authToken = "", activeRole, on
     const entries: LedgerEntry[] = [];
 
     for (const p of projects) {
-      const winner = p.proposals?.find(pr => pr.contractorCode === p.selectedContractorCode);
+      const winner = awardedProposalOf(p) ?? p.proposals?.find(pr => pr.contractorCode === p.selectedContractorCode);
       const contractorCode = winner?.contractorCode ?? p.selectedContractorCode ?? "—";
+      const quote = { quoteCurrency: winner?.quoteCurrency ?? null, fxRateToBase: winner?.fxRateToBase ?? null };
 
       if (p.advancePaidAmount && p.advancePaidDate) {
         entries.push({
@@ -88,6 +90,7 @@ export default function FinanzasPanel({ projects, authToken = "", activeRole, on
           amount: p.advancePaidAmount,
           date: p.advancePaidDate,
           voucher: `VCH-${p.id}-A`,
+          ...quote,
         });
       }
       if (p.finalPaidAmount && p.finalPaidDate) {
@@ -100,6 +103,7 @@ export default function FinanzasPanel({ projects, authToken = "", activeRole, on
           amount: p.finalPaidAmount,
           date: p.finalPaidDate,
           voucher: `VCH-${p.id}-F`,
+          ...quote,
         });
       }
     }
@@ -145,7 +149,7 @@ export default function FinanzasPanel({ projects, authToken = "", activeRole, on
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
         <TabPanel activeKey={activeTab}>
-          {activeTab === "book" && <LedgerSection paidLedger={paidLedger} />}
+          {activeTab === "book" && <LedgerSection paidLedger={paidLedger} authToken={authToken} />}
           {activeTab === "stats" && <FinancialSummarySection projects={projects} paidLedger={paidLedger} />}
           {activeTab === "advances" && <AdvancesSection pendingAdvances={pendingAdvances} onPayAdvance={onPayAdvance} onRefresh={onRefreshData} authToken={authToken} activeRole={activeRole} />}
           {activeTab === "settlements" && <FinalSettlementsSection pendingFinalPayments={pendingFinalPayments} onPayFinal={onPayFinal} onRefresh={onRefreshData} authToken={authToken} activeRole={activeRole} />}

@@ -12,6 +12,8 @@ import SectionHeader from "@/components/UI/SectionHeader";
 import { Table, type Column } from "@/components/UI/Table";
 import ExportButton, { type ExportColumn, type ExportRow } from "@/components/UI/ExportButton";
 import BsAmount from "@/components/UI/BsAmount";
+import ConvertedAmount from "@/components/UI/ConvertedAmount";
+import DisbursementDetailModal from "./DisbursementDetailModal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -25,10 +27,15 @@ export interface LedgerEntry {
   amount: number;
   date: string;
   voucher: string;
+  /** Moneda en que se cotizó la oferta adjudicada y su tasa a base (USD/null si fue en USD). */
+  quoteCurrency?: string | null;
+  fxRateToBase?: number | null;
 }
 
 interface LedgerSectionProps {
   paidLedger: LedgerEntry[];
+  /** Token de sesión: el detalle del egreso (comprobante, banco, tasas) se consulta al inspeccionarlo. */
+  authToken?: string;
 }
 
 type TypeFilter = "TODOS" | "ANTICIPO" | "LIQUIDACIÓN_FINAL";
@@ -62,16 +69,12 @@ const buildLedgerColumns = (convert: ConvertFn, hasRates: boolean, isLoadingRate
     label: "Monto Desembolsado",
     align: "right",
     sortable: true,
-    render: (tx) => (
-      <div>
-        <span className="font-mono font-bold text-slate-900 text-sm">${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-        <BsAmount amount={tx.amount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-right" />
-      </div>
-    ),
+    render: (tx) => <ConvertedAmount className="text-right text-sm" amountBase={tx.amount} quoteCurrency={tx.quoteCurrency} fxRateToBase={tx.fxRateToBase} />,
   },
 ];
 
-export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
+export default function LedgerSection({ paidLedger, authToken = "" }: LedgerSectionProps) {
+  const [inspecting, setInspecting] = useState<LedgerEntry | null>(null);
   const [ledgerSearch, setLedgerSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("TODOS");
   const debouncedLedgerSearch = useDebounce(ledgerSearch, 300);
@@ -249,6 +252,7 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
           columns={ledgerColumns}
           data={filteredLedger}
           rowKey={(tx) => tx.id}
+          onRowClick={(tx) => setInspecting(tx)}
           emptyMessage="Ninguna transferencia financiera ha sido efectuada aún."
           isLoading={false}
           pageSize={pageSize}
@@ -270,10 +274,13 @@ export default function LedgerSection({ paidLedger }: LedgerSectionProps) {
                   className="text-right"
                 />
               </td>
+              <td />
             </tr>
           }
         />
       </div>
+
+      <DisbursementDetailModal entry={inspecting} authToken={authToken} onClose={() => setInspecting(null)} />
     </Card>
   );
 }
