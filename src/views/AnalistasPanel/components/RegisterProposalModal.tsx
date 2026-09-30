@@ -88,7 +88,7 @@ export default function RegisterProposalModal({
 }: RegisterProposalModalProps) {
   const { showToast } = useToast();
   const maxAdvancePercent = useMaxAdvancePercent();
-  const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, convertBetween, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const quoteCurrencyOptions = useQuoteCurrencyOptions();
 
   const [modalTab, setModalTab] = useState<"portal" | "manual">(onImportSupplierProposals ? "portal" : "manual");
@@ -132,8 +132,11 @@ export default function RegisterProposalModal({
   const materialCostTotal = materialRows.reduce((sum, r) => sum + r.totalPrice, 0);
   const newTotal = materialCostTotal + (Number(laborCost) || 0);
   const approvedBudget = project.approvedInvestmentAmount ?? 0;
-  const exceedsBudget = approvedBudget > 0 && newTotal > approvedBudget;
-  const budgetExcess = newTotal - approvedBudget;
+  // La inversión autorizada está en USD: comparar el equivalente en USD de la oferta,
+  // no el monto crudo en la moneda cotizada (EUR, USDT...).
+  const newTotalUSD = quoteCurrency !== "USD" ? convertBetween(newTotal, quoteCurrency, "USD") : newTotal;
+  const exceedsBudget = approvedBudget > 0 && newTotalUSD > approvedBudget;
+  const budgetExcess = newTotalUSD - approvedBudget;
   const exceedsAdvance = advancePercent !== "" && advancePercent > maxAdvancePercent;
 
   const updateMaterialRow = (index: number, field: keyof MaterialItemRow, value: string | number) => {
@@ -344,7 +347,7 @@ export default function RegisterProposalModal({
                           <th className="px-3 py-2">Material</th>
                           <th className="px-3 py-2 text-center">Cant.</th>
                           <th className="px-3 py-2">Unidad</th>
-                          <th className="px-3 py-2 text-right">Precio unit. ($)</th>
+                          <th className="px-3 py-2 text-right">Precio unit. ({quoteCurrency})</th>
                           <th className="px-3 py-2 text-right">Total</th>
                           <th className="px-3 py-2 w-8" />
                         </tr>
@@ -453,7 +456,7 @@ export default function RegisterProposalModal({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label htmlFor="analistas-labor-cost" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Costo Mano de Obra ($)
+                      Costo Mano de Obra ({quoteCurrency})
                       <HelpHint content="Puede dejarse en 0 cuando el proveedor no cobra mano de obra por separado (ya incluida en materiales o autoinstalación)." />
                     </label>
                     <NumericInput id="analistas-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
@@ -540,6 +543,7 @@ export default function RegisterProposalModal({
                     <span className={`font-mono text-sm font-black ${exceedsBudget ? "text-amber-700" : "text-emerald-700"}`}>
                       {formatCurrency(newTotal, quoteCurrency)}
                     </span>
+                    {quoteCurrency !== "USD" && <span className="ml-1 font-mono text-xs font-medium text-slate-400">= {formatCurrency(newTotalUSD)}</span>}
                     <BsAmount amount={newTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="inline" />
                   </div>
                   <Button
@@ -566,7 +570,7 @@ export default function RegisterProposalModal({
         title="¿Está seguro de cargar esta propuesta?"
         message={[
           exceedsBudget
-            ? `El costo total (${formatNumber(newTotal)}) supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}.`
+            ? `El costo total (${formatNumber(newTotalUSD)}) supera la inversión autorizada (${formatNumber(approvedBudget)}) en ${formatNumber(budgetExcess)}.`
             : null,
           exceedsAdvance
             ? `El anticipo negociado (${advancePercent}%) supera el máximo permitido en CONFIG APP (${maxAdvancePercent}%).`

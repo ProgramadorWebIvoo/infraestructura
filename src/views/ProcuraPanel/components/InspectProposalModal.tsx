@@ -261,7 +261,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
             </div>
 
             <p className="text-[10px] text-slate-600 font-medium leading-relaxed">
-              Tasa aplicada al importar:{" "}
+              Tasa aplicada al cargar la oferta:{" "}
               <strong className="font-mono text-amber-700">
                 1 {currency} = {proposal.fxRateToBase!.toFixed(4)} {proposal.baseCurrencyAtImport}
               </strong>

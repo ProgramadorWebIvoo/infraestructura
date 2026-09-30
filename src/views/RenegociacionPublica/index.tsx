@@ -361,7 +361,7 @@ export default function RenegociacionPublica() {
                         <th className="px-3 py-2">Material</th>
                         <th className="px-3 py-2 text-center">Cant.</th>
                         <th className="px-3 py-2">Unidad</th>
-                        <th className="px-3 py-2 text-right">Precio unit. ($)</th>
+                        <th className="px-3 py-2 text-right">Precio unit. ({quoteCurrency})</th>
                         <th className="px-3 py-2 text-right">Total</th>
                         <th className="px-3 py-2 w-8" />
                       </tr>
@@ -460,7 +460,7 @@ export default function RenegociacionPublica() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <div>
                   <label htmlFor="rn-labor-cost" className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Costo Mano de Obra ($)
+                    Costo Mano de Obra ({quoteCurrency})
                   </label>
                   <NumericInput id="rn-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" accent="warning" />
                 </div>
