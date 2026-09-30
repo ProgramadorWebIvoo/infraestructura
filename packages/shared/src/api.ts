@@ -279,6 +279,10 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
+  if (MUTATING_METHODS.has((options.method ?? "GET").toUpperCase())) {
+    return apiFetchMutation<T>(path, options);
+  }
+
   if (!isDedupableGet(options)) {
     return apiFetchUncached<T>(path, options);
   }
@@ -293,6 +297,97 @@ export async function apiFetch<T = unknown>(
     inFlightGets.delete(key);
   });
   inFlightGets.set(key, promise);
+  return promise;
+}
+
+// ---------------------------------------------------------------------------
+// Idempotencia por intención de la operación
+// ---------------------------------------------------------------------------
+// Una clave nueva por llamada no frena el doble clic (cada clic sería otra
+// operación para el servidor). Por eso la identidad de una mutación es
+// método + ruta + contenido del body: la MISMA operación comparte clave mientras
+//  - esté en vuelo: una segunda llamada idéntica (doble clic, doble submit)
+//    recibe la misma promesa y no dispara otra petición;
+//  - su resultado sea desconocido (sin respuesta del servidor, 502/504, o 409
+//    "en proceso"): el reintento manual reutiliza la clave y el servidor
+//    responde con lo ya guardado en vez de volver a ejecutar.
+// Con un resultado definitivo (éxito o error con respuesta) la clave se
+// descarta: la siguiente operación igual es una nueva. Si el usuario cambia los
+// datos, la identidad cambia y nace una clave nueva.
+const inFlightMutations = new Map<string, Promise<unknown>>();
+const pendingKeys = new Map<string, { key: string; at: number }>();
+/** Una intención abandonada no debe reutilizarse horas después. */
+const PENDING_KEY_TTL_MS = 10 * 60 * 1000;
+
+/** cyrb53: hash no criptográfico de 53 bits; basta para distinguir cuerpos, no para seguridad. */
+function hashString(text: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+/** Huella del body; `null` si el tipo no se puede comparar (Blob, stream…): esa llamada no se deduplica. */
+function bodySignature(body: unknown): string | null {
+  if (body === undefined || body === null) return "";
+  if (typeof body === "string") return hashString(body);
+  if (typeof FormData !== "undefined" && body instanceof FormData) {
+    const parts: string[] = [];
+    body.forEach((value, name) => {
+      parts.push(typeof value === "string" ? `${name}=${value}` : `${name}=${value.name}:${value.size}:${value.lastModified}:${value.type}`);
+    });
+    return hashString(parts.join("&"));
+  }
+  return null;
+}
+
+/** ¿No sabemos si el servidor aplicó la operación? Entonces la clave debe conservarse para el reintento. */
+function isOutcomeUnknown(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return true; // sin respuesta: red, timeout, cancelación
+  return err.status === 502 || err.status === 504 || (err.status === 409 && err.code === IDEMPOTENCY_IN_PROGRESS);
+}
+
+/** Descarta las claves pendientes (logout / cambio de usuario): no deben cruzar sesiones. */
+export function resetIdempotencyState(): void {
+  pendingKeys.clear();
+}
+
+async function apiFetchMutation<T>(path: string, options: ApiFetchOptions): Promise<T> {
+  const signature = options.idempotencyKey ? null : bodySignature(options.body);
+  if (signature === null) {
+    return apiFetchUncached<T>(path, options);
+  }
+
+  const identity = `${(options.method ?? "POST").toUpperCase()} ${path} ${signature}`;
+
+  const existing = inFlightMutations.get(identity);
+  if (existing) return existing as Promise<T>;
+
+  const pending = pendingKeys.get(identity);
+  const key = pending && Date.now() - pending.at < PENDING_KEY_TTL_MS ? pending.key : generateIdempotencyKey();
+  pendingKeys.set(identity, { key, at: Date.now() });
+
+  const promise = apiFetchUncached<T>(path, { ...options, idempotencyKey: key })
+    .then(
+      (result) => {
+        pendingKeys.delete(identity);
+        return result;
+      },
+      (err) => {
+        if (!isOutcomeUnknown(err)) pendingKeys.delete(identity);
+        throw err;
+      },
+    )
+    .finally(() => {
+      inFlightMutations.delete(identity);
+    });
+  inFlightMutations.set(identity, promise);
   return promise;
 }
 

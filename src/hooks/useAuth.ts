@@ -20,6 +20,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { apiFetch } from "@/services/api";
+import { resetIdempotencyState } from "@ivoo/shared";
 import { requestNotificationPermission } from "@/services/browserNotifications";
 import { useAppGroupSettings } from "./useAppGroupSettings";
 import { loginSchema } from "@/schemas/auth.schema";
@@ -56,6 +57,8 @@ export function useAuth() {
   // ── Limpieza de sesión (extraída para reuso) ──
   const clearSession = useCallback(() => {
     localStorage.removeItem(STORAGE_USER);
+    // Las claves de idempotencia pendientes pertenecen a la sesión que se cierra.
+    resetIdempotencyState();
     setAuthToken("");
     setAuthUser(null);
   }, []);
