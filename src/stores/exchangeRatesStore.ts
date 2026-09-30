@@ -36,6 +36,8 @@ interface ExchangeRatesState {
    * a propósito y hay que traer el nuevo.
    */
   refresh: (authToken: string) => Promise<void>;
+  /** Carga las tasas desde el endpoint público (sin sesión): páginas de proveedor. Ignora errores: sin tasas no hay equivalentes. */
+  loadPublic: () => Promise<void>;
 }
 
 async function fetchAndSet(authToken: string, set: (partial: Partial<ExchangeRatesState>) => void) {
@@ -62,5 +64,15 @@ export const useExchangeRatesStore = create<ExchangeRatesState>((set, get) => ({
 
   refresh: async (authToken) => {
     await fetchAndSet(authToken, set);
+  },
+
+  loadPublic: async () => {
+    if (get().hasLoaded) return;
+    try {
+      const data = await apiFetch<ExchangeRateRecord[]>("/public/exchange-rates");
+      set({ rates: data ?? [], hasLoaded: true });
+    } catch (err) {
+      logError("exchangeRatesStore.loadPublic", err);
+    }
   },
 }));

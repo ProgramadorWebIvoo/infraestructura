@@ -132,6 +132,22 @@
   --color-border-inverted: #1e293b;     /* border-slate-800 — borde sobre surface-inverted */
 }
 
+/* Superficie oscura (páginas públicas de proveedor sobre bg-slate-950): redefine los tokens
+ * neutrales tal como anticipa el comentario de arriba, para que los controles compartidos
+ * (Select, NumericInput, DatePicker…) se vean como el resto de la página en vez de cajas blancas.
+ * Los popovers se montan en <body> (createPortal) y conservan el tema claro. */
+[data-theme="dark"] {
+  --color-surface: rgb(255 255 255 / 0.05);
+  --color-surface-sunken: rgb(255 255 255 / 0.03);
+  --color-surface-raised: rgb(255 255 255 / 0.08);
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #e2e8f0;
+  --color-text-tertiary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-border-default: rgb(255 255 255 / 0.15);
+  --color-border-subtle: rgb(255 255 255 / 0.08);
+}
+
 @keyframes slide-up {
   from {
     opacity: 0;

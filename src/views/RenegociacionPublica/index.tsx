@@ -20,6 +20,9 @@ import { useToast } from "@/components/UI/Toast";
 import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, MessageSquareWarning, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import { useQuoteCurrencyOptions } from "@/hooks/useQuoteCurrencyOptions";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { useExchangeRatesStore } from "@/stores/exchangeRatesStore";
+import BsAmount from "@/components/UI/BsAmount";
 import { apiFetch } from "@/services/api";
 import { containerVariants, itemVariants, springs } from "@/animations";
 import NumericInput from "@/components/UI/NumericInput";
@@ -99,6 +102,14 @@ export default function RenegociacionPublica() {
   const { showToast } = useToast();
   const { token } = useParams<{ token: string }>();
 
+  // Equivalentes en el dólar activo y en Bs.: la página es pública, así que las tasas vienen del endpoint público.
+  const { convert, convertBetween, hasRates, isLoading: isLoadingRates, convertToModeUsd, usdLabel } = useCurrencyConversion();
+  const loadPublicRates = useExchangeRatesStore(s => s.loadPublic);
+  useEffect(() => {
+    void loadPublicRates();
+  }, [loadPublicRates]);
+  const usdOf = (amount: number, currency: string) => (currency === "USD" ? amount : convertToModeUsd(convertBetween(amount, currency, "USD"), amount, currency));
+
   const [invitation, setInvitation] = useState<RenegotiationInvitationPublicInfo | null>(null);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -163,6 +174,10 @@ export default function RenegociacionPublica() {
   const materialCostTotal = materialRows.reduce((sum, r) => sum + r.totalPrice, 0);
   const newTotal = materialCostTotal + (Number(laborCost) || 0);
   const diferencia = newTotal - (proposal?.totalCostOriginal ?? 0);
+  // Si el proveedor cambia de moneda, restar importes en monedas distintas no tiene sentido: con tasas, la
+  // diferencia se expresa en el dólar activo; sin ellas, en la moneda cotizada.
+  const diferenciaEnDolares = hasRates ? usdOf(newTotal, quoteCurrency) - usdOf(proposal?.totalCostOriginal ?? 0, proposal?.quoteCurrency ?? "USD") : diferencia;
+  const diferenciaUnit = hasRates ? "USD" : quoteCurrency;
 
   const minFechaOferta = proposal?.fechaOferta;
   const exceedsAdvance = advancePercent !== "" && advancePercent > maxAdvancePercent;
@@ -275,7 +290,7 @@ export default function RenegociacionPublica() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white antialiased">
+    <div data-theme="dark" className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white antialiased">
       <BackgroundDecor />
 
       <div className="relative z-10">
@@ -322,6 +337,10 @@ export default function RenegociacionPublica() {
                   </span>
                   <div className="rounded-lg border border-amber-400/20 bg-white/5 px-3.5 py-3 font-mono text-xs font-bold text-slate-200">
                     {formatCurrency(proposal.totalCostOriginal, proposal.quoteCurrency)}
+                    {hasRates && proposal.quoteCurrency !== "USD" && (
+                      <span className="block text-[9px] font-semibold text-amber-300">≈ {formatCurrency(usdOf(proposal.totalCostOriginal, proposal.quoteCurrency))} {usdLabel}</span>
+                    )}
+                    <BsAmount amount={proposal.totalCostOriginal} fromCode={proposal.quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-300/80" />
                   </div>
                 </div>
                 <div>
@@ -330,14 +349,18 @@ export default function RenegociacionPublica() {
                   </span>
                   <div className="rounded-lg border border-amber-400/20 bg-white/5 px-3.5 py-3 font-mono text-xs font-bold text-white">
                     {formatCurrency(newTotal, quoteCurrency)}
+                    {hasRates && quoteCurrency !== "USD" && (
+                      <span className="block text-[9px] font-semibold text-amber-300">≈ {formatCurrency(usdOf(newTotal, quoteCurrency))} {usdLabel}</span>
+                    )}
+                    <BsAmount amount={newTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-300/80" />
                   </div>
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Diferencia</span>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Diferencia {hasRates ? <span className="text-slate-500 font-normal">({usdLabel})</span> : null}</span>
                   <div className="flex items-center gap-1.5 rounded-lg border border-amber-400/20 bg-white/5 px-3.5 py-3 font-mono text-xs font-bold">
-                    <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-emerald-400 -rotate-45" : "text-rose-400 rotate-45"}`} />
-                    <span className={diferencia <= 0 ? "text-emerald-300" : "text-rose-300"}>{formatCurrency(Math.abs(diferencia), "USD")}</span>
-                    <span className="text-[9px] font-medium normal-case text-slate-500">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
+                    <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferenciaEnDolares <= 0 ? "text-emerald-400 -rotate-45" : "text-rose-400 rotate-45"}`} />
+                    <span className={diferenciaEnDolares <= 0 ? "text-emerald-300" : "text-rose-300"}>{formatCurrency(Math.abs(diferenciaEnDolares), diferenciaUnit)}</span>
+                    <span className="text-[9px] font-medium normal-case text-slate-500">{diferenciaEnDolares <= 0 ? "ahorro" : "aumento"}</span>
                   </div>
                 </div>
               </div>
