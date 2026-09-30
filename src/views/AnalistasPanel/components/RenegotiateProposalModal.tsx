@@ -27,6 +27,7 @@ import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 import { formatNumber } from "@/utils";
 import { DURATION_UNITS } from "./RegisterProposalModal";
 import BsAmount from "@/components/UI/BsAmount";
+import UsdBcvNotice from "@/components/UI/UsdBcvNotice";
 
 interface MaterialItemRow extends ProposalMaterialItem {
   _id: string;
@@ -48,7 +49,7 @@ interface RenegotiateProposalModalProps {
 
 export default function RenegotiateProposalModal({ project, proposal, onClose, onRenegotiateProposal }: RenegotiateProposalModalProps) {
   const maxAdvancePercent = useMaxAdvancePercent();
-  const { convert, convertBetween, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const { convert, convertBetween, hasRates, isLoading: isLoadingRates, convertToModeUsd, usdLabel } = useCurrencyConversion();
   const quoteCurrencyOptions = useQuoteCurrencyOptions();
 
   const buildMaterialRows = (): MaterialItemRow[] =>
@@ -87,6 +88,12 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
   const priceAnteriorUSD = proposal.totalCostOriginal != null && proposal.quoteCurrency ? convertBetween(proposal.totalCostOriginal, proposal.quoteCurrency, "USD") : proposal.totalCost;
   const priceNuevoUSD = quoteCurrency !== "USD" ? convertBetween(newTotal, quoteCurrency, "USD") : newTotal;
   const diferencia = priceNuevoUSD - priceAnteriorUSD;
+
+  // Lo que se MUESTRA sigue al switch (dólar activo: USD-BCV o USD-USDT); la lógica (presupuesto, signo
+  // de la diferencia) sigue en USD-BCV, que es la unidad en que el backend guarda y compara.
+  const anteriorModeUsd = convertToModeUsd(priceAnteriorUSD, proposal.totalCostOriginal, proposal.quoteCurrency);
+  const nuevoModeUsd = convertToModeUsd(priceNuevoUSD, newTotal, quoteCurrency);
+  const diferenciaModeUsd = nuevoModeUsd - anteriorModeUsd;
 
   const approvedBudget = project.approvedInvestmentAmount ?? 0;
   const exceedsBudget = approvedBudget > 0 && priceNuevoUSD > approvedBudget;
@@ -170,6 +177,8 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
       infoLine={`Expediente ${project.id} — reemplaza la propuesta ${proposal.id}`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        <UsdBcvNotice scope="esta renegociación" defaultOpen={false} />
+
         {/* Precio anterior — solo lectura, tomado directamente del registro que se reemplaza */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-lg bg-warning-50/50 border border-warning-100">
           <div>
@@ -181,7 +190,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
               {proposal.totalCostOriginal != null && proposal.quoteCurrency ? (
                 <>
                   {formatCurrency(proposal.totalCostOriginal, proposal.quoteCurrency)}
-                  {proposal.quoteCurrency !== "USD" && <span className="text-slate-400 font-medium ml-1">= {formatCurrency(priceAnteriorUSD)}</span>}
+                  {proposal.quoteCurrency !== "USD" && <span className="text-slate-400 font-medium ml-1">= {formatCurrency(anteriorModeUsd)} {usdLabel}</span>}
                   <BsAmount amount={proposal.totalCostOriginal} fromCode={proposal.quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                 </>
               ) : (
@@ -199,19 +208,19 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             </span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold text-slate-700">
               {formatCurrency(newTotal, quoteCurrency)}
-              {quoteCurrency !== "USD" && <span className="text-slate-400 font-medium ml-1">= {formatCurrency(priceNuevoUSD)}</span>}
+              {quoteCurrency !== "USD" && <span className="text-slate-400 font-medium ml-1">= {formatCurrency(nuevoModeUsd)} {usdLabel}</span>}
               <BsAmount amount={newTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
           <div>
-            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia (USD)</span>
+            <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diferencia ({usdLabel})</span>
             <div className="w-full text-xs px-3.5 py-3 rounded-control border border-warning-200 bg-white font-mono font-bold">
               <div className="flex items-center gap-1.5">
                 <ArrowRight className={`h-3.5 w-3.5 shrink-0 ${diferencia <= 0 ? "text-success-500 -rotate-45" : "text-danger-500 rotate-45"}`} />
-                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferencia), "USD")}</span>
+                <span className={diferencia <= 0 ? "text-success-700" : "text-danger-700"}>{formatCurrency(Math.abs(diferenciaModeUsd), "USD")}</span>
                 <span className="text-[9px] text-slate-400 normal-case font-medium">{diferencia <= 0 ? "ahorro" : "aumento"}</span>
               </div>
-              <BsAmount amount={Math.abs(diferencia)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+              <BsAmount amount={Math.abs(diferenciaModeUsd)} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
             </div>
           </div>
         </div>
