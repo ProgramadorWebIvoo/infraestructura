@@ -6,6 +6,7 @@
  * Muestra última ejecución exitosa y lista de intentos (éxito/fallo).
  */
 
+import { exchangeRateSourceLabel } from "@/utils/exchangeRateSource";
 import { Check, X, Clock, Plus, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { Table, type Column } from "@/components/UI/Table";
@@ -31,12 +32,6 @@ interface ExchangeRateSyncLogsPanelProps {
   /** Configuración vigente del cronjob (Monedas > Sincronización de tasa) — para mostrar cuándo corre la próxima sincronización automática. */
   cronHour?: string;
   cronEnabled?: boolean;
-}
-
-function sourceLabel(source: string | null): string {
-  if (source === "DOLARVZLA_API") return "DolarVZLA API";
-  if (source === "BCV_SCRAPING") return "BCV Scraping";
-  return source || "-";
 }
 
 /** "hace 5 min" / "hace 3 h" / "hace 2 d" — misma idea que AuditLogSection.timeAgo, pero con soporte de días porque el sync corre solo días hábiles. */
@@ -118,7 +113,7 @@ export default function ExchangeRateSyncLogsPanel({
       key: "source",
       label: "Fuente",
       width: "20%",
-      render: (row) => sourceLabel(row.source),
+      render: (row) => exchangeRateSourceLabel(row.source),
     },
     {
       key: "rates_synced",
@@ -246,7 +241,7 @@ export default function ExchangeRateSyncLogsPanel({
                 })}
               </p>
               <p className="text-xs text-text-secondary mt-1">
-                Fuente: <span className="font-semibold text-text-primary">{sourceLabel(lastSync.source)}</span>
+                Fuente: <span className="font-semibold text-text-primary">{exchangeRateSourceLabel(lastSync.source)}</span>
               </p>
               {cronHour && (
                 <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">

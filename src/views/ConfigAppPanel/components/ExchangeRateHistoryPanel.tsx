@@ -23,27 +23,16 @@ import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
 import EmptyState from "@/components/UI/EmptyState";
 import { formatBs } from "@/hooks/useCurrencyConversion";
+import { exchangeRateSourceLabel, isUsdtSource } from "@/utils/exchangeRateSource";
 import { useExchangeRateHistory } from "@/hooks/useExchangeRateHistory";
 import type { ExchangeRateRecord } from "@/stores/exchangeRatesStore";
 import type { CurrencyRecord } from "@/hooks/useCurrencies";
-
-const USDT_SOURCE_PREFIX = "USDT_COM_VE:";
-
-function sourceLabel(source: string): string {
-  if (source === "DOLARVZLA_API") return "DolarVZLA API";
-  if (source === "BCV_SCRAPING") return "BCV Scraping";
-  if (source.startsWith(USDT_SOURCE_PREFIX)) {
-    const market = source.slice(USDT_SOURCE_PREFIX.length);
-    return `usdt.com.ve (${market.charAt(0).toUpperCase()}${market.slice(1)})`;
-  }
-  return source;
-}
 
 /** La tasa BCV es diaria (basta la fecha); la USDT cambia varias veces al día, así que muestra también la hora. */
 function formatEffectiveAt(row: ExchangeRateRecord): string {
   const date = new Date(row.effective_at);
   const day = date.toLocaleDateString("es-VE", { year: "numeric", month: "short", day: "numeric" });
-  if (!row.source.startsWith(USDT_SOURCE_PREFIX)) return day;
+  if (!isUsdtSource(row.source)) return day;
   return `${day}, ${date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
@@ -82,7 +71,7 @@ export default function ExchangeRateHistoryPanel({ authToken, currencies, enable
       key: "source",
       label: "Fuente",
       width: "33%",
-      render: row => sourceLabel(row.source),
+      render: row => exchangeRateSourceLabel(row.source),
     },
   ];
 
