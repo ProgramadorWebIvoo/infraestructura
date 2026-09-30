@@ -20,6 +20,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type FocusEvent,
@@ -54,6 +55,22 @@ type TipTargetProps = {
 };
 
 const GAP = 8;
+const EDGE_MARGIN = 8;
+
+// El foco que llega tras un click/tap (típicamente el navegador devolviéndolo
+// al trigger al cerrar un modal) no es navegación por teclado: mostrar el
+// tooltip ahí lo dejaba pegado, porque el mouse ya no está sobre el trigger y
+// nunca llega un mouseleave. Se registra una sola vez, a nivel de documento,
+// cuál fue la última interacción (puntero o teclado).
+let lastInteractionWasPointer = false;
+let modalityTracked = false;
+
+function trackInteractionModality() {
+  if (modalityTracked || typeof document === "undefined") return;
+  modalityTracked = true;
+  document.addEventListener("pointerdown", () => { lastInteractionWasPointer = true; }, true);
+  document.addEventListener("keydown", () => { lastInteractionWasPointer = false; }, true);
+}
 
 function computePosition(rect: DOMRect, placement: TooltipPlacement) {
   switch (placement) {
@@ -66,6 +83,52 @@ function computePosition(rect: DOMRect, placement: TooltipPlacement) {
     case "right":
       return { left: rect.right + GAP, top: rect.top + rect.height / 2 };
   }
+}
+
+// El bubble se posiciona con `left`/`top` + un translate por CSS según
+// `placement` (ver bubbleVariants). Para que no se corte contra el borde del
+// viewport, hay que clampear esa coordenada tomando en cuenta cuál lado del
+// bubble representa (centro, borde, o extremo) una vez conocido su tamaño
+// real ya renderizado — por eso corre en un segundo paso, después del mount.
+function clampToViewport(
+  pos: { left: number; top: number },
+  placement: TooltipPlacement,
+  size: { width: number; height: number },
+) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let { left, top } = pos;
+
+  switch (placement) {
+    case "top":
+    case "bottom": {
+      const halfW = size.width / 2;
+      const minLeft = EDGE_MARGIN + halfW;
+      const maxLeft = vw - EDGE_MARGIN - halfW;
+      left = Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft));
+      if (placement === "top") {
+        top = Math.min(Math.max(top, EDGE_MARGIN + size.height), vh - EDGE_MARGIN);
+      } else {
+        top = Math.min(Math.max(top, EDGE_MARGIN), vh - EDGE_MARGIN - size.height);
+      }
+      break;
+    }
+    case "left":
+    case "right": {
+      const halfH = size.height / 2;
+      const minTop = EDGE_MARGIN + halfH;
+      const maxTop = vh - EDGE_MARGIN - halfH;
+      top = Math.min(Math.max(top, minTop), Math.max(minTop, maxTop));
+      if (placement === "left") {
+        left = Math.min(Math.max(left, EDGE_MARGIN + size.width), vw - EDGE_MARGIN);
+      } else {
+        left = Math.min(Math.max(left, EDGE_MARGIN), vw - EDGE_MARGIN - size.width);
+      }
+      break;
+    }
+  }
+
+  return { left, top };
 }
 
 const bubbleVariants: Record<TooltipPlacement, { initial: TargetAndTransition; className: string }> = {
@@ -85,9 +148,11 @@ export default function Tooltip({
 }: TooltipProps) {
   const id = useId();
   const anchorRef = useRef<HTMLElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [clamped, setClamped] = useState(false);
 
   const clearTimer = useCallback(() => {
     if (showTimer.current) {
@@ -103,6 +168,7 @@ export default function Tooltip({
       const el = anchorRef.current;
       if (!el) return;
       setPos(computePosition(el.getBoundingClientRect(), placement));
+      setClamped(false);
       setIsVisible(true);
     }, delay);
   }, [disabled, delay, placement, clearTimer]);
@@ -113,6 +179,47 @@ export default function Tooltip({
   }, [clearTimer]);
 
   useEffect(() => clearTimer, [clearTimer]);
+
+  useEffect(trackInteractionModality, []);
+
+  const handleFocus = useCallback(() => {
+    if (lastInteractionWasPointer) return;
+    show();
+  }, [show]);
+
+  // Mientras está visible, el tooltip se cierra solo si el mouse deja de estar
+  // sobre el trigger, si se hace click (p.ej. el click que abre un modal) o si
+  // la ventana pierde el foco. mouseleave no basta: un modal/overlay que
+  // aparece encima del trigger no lo dispara hasta que el mouse se mueva.
+  useEffect(() => {
+    if (!isVisible) return;
+    const dismiss = (e: Event) => {
+      if (e.type === "pointermove" && anchorRef.current?.contains(e.target as Node)) return;
+      hide();
+    };
+    document.addEventListener("pointerdown", dismiss, true);
+    document.addEventListener("pointermove", dismiss, true);
+    window.addEventListener("blur", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss, true);
+      document.removeEventListener("pointermove", dismiss, true);
+      window.removeEventListener("blur", dismiss);
+    };
+  }, [isVisible, hide]);
+
+  // Corrige la posición una vez que el bubble ya tiene su tamaño real en el
+  // DOM (no se puede saber su ancho/alto antes de renderizarlo). Sin esto,
+  // un tooltip disparado cerca del borde de la ventana queda centrado en el
+  // anchor y su mitad sobresale fuera del viewport, cortándose visualmente.
+  useLayoutEffect(() => {
+    if (!isVisible || !pos || clamped) return;
+    const bubble = bubbleRef.current;
+    if (!bubble) return;
+    const { width, height } = bubble.getBoundingClientRect();
+    const next = clampToViewport(pos, placement, { width, height });
+    if (next.left !== pos.left || next.top !== pos.top) setPos(next);
+    setClamped(true);
+  }, [isVisible, pos, placement, clamped]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -139,7 +246,7 @@ export default function Tooltip({
     ref: mergedRef,
     onMouseEnter: show,
     onMouseLeave: hide,
-    onFocus: show,
+    onFocus: handleFocus,
     onBlur: hide,
     onKeyDown: handleKeyDown,
     "aria-describedby": isVisible ? id : undefined,
@@ -155,6 +262,7 @@ export default function Tooltip({
           <AnimatePresence>
             {isVisible && pos && (
               <motion.div
+                ref={bubbleRef}
                 id={id}
                 role="tooltip"
                 initial={variant.initial}
