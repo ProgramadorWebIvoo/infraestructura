@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, ArrowRightLeft, Camera, Expand, FileSearch, Loader2, MessageSquareWarning, Package, ShieldCheck, Info } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
+import UsdBcvNotice from "@/components/UI/UsdBcvNotice";
 import Modal from "@/components/UI/Modal";
 import SummaryStat from "@/components/UI/SummaryStat";
 import Tooltip from "@/components/UI/Tooltip";
@@ -148,6 +149,17 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
   const bsOf = (amount: number) => (hasRates ? `Bs. ${formatBs(convert(amount, "USD"))}` : undefined);
 
+  // Las líneas (precio unitario/total) están en la moneda en que se cotizó; los totales del resumen,
+  // en USD-BCV. Sin separar ambas, un unitario de 18 USDT convive con un total de $20.02 sin explicación.
+  const lineCurrency = currency ?? "USD";
+  const fxToBase = proposal.fxRateToBase ?? null;
+  const fmtLine = (amount: number) => (lineCurrency === "USD" ? formatCurrency(amount) : `${formatCurrency(amount, lineCurrency)} ${lineCurrency}`);
+  /** Bs. de un monto: una oferta en otra moneda usa la tasa de SU moneda (no depende del switch); en USD, el switch. */
+  const bsOfQuoted = (amountBase: number, amountOriginal: number | null | undefined) =>
+    hasRates && currency && currency !== "USD" && amountOriginal != null
+      ? `Bs. ${formatBs(convert(amountOriginal, currency))}`
+      : bsOf(amountBase);
+
   // Los montos de esta propuesta solo quedan "congelados" si es la que
   // realmente se adjudicó (CONTRATADO) — las demás ofertas del comparativo
   // nunca se contrataron, así que siguen mostrando la tasa en vivo.
@@ -157,10 +169,10 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const laborFrozen = useFrozenBsAmount(proposal.laborCost, project.rateFreezes, "CONTRATADO");
 
   /** Bs. congelado (con badge) si esta propuesta fue la adjudicada y hay freeze vigente; si no, la tasa en vivo de siempre. */
-  const bsOrFrozen = (amount: number, frozen: ReturnType<typeof useFrozenBsAmount>) =>
+  const bsOrFrozen = (amount: number, frozen: ReturnType<typeof useFrozenBsAmount>, original?: number | null) =>
     isAwardedProposal && frozen.isFrozen
       ? <span className="inline-flex items-center gap-1">{frozen.formatted}<FrozenRateBadge freeze={frozen.freeze!} /></span>
-      : bsOf(amount);
+      : bsOfQuoted(amount, original);
 
   // El backend solo puebla estos campos cuando realmente convirtió (moneda
   // del proveedor ≠ moneda base al importar) — ver SupplierProposalImportService.
@@ -186,9 +198,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
       <div className="space-y-4">
         {/* Resumen de costos */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOrFrozen(proposal.materialCost, materialFrozen)} />
-          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOrFrozen(proposal.laborCost, laborFrozen)} />
-          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOrFrozen(proposal.totalCost, totalFrozen)} emphasize />
+          <SummaryStat label="Materiales" value={formatCurrency(proposal.materialCost)} subValue={bsOrFrozen(proposal.materialCost, materialFrozen, proposal.materialCostOriginal)} />
+          <SummaryStat label="Mano de Obra" value={formatCurrency(proposal.laborCost)} subValue={bsOrFrozen(proposal.laborCost, laborFrozen, proposal.laborCostOriginal)} />
+          <SummaryStat label="Total" value={formatCurrency(proposal.totalCost)} subValue={bsOrFrozen(proposal.totalCost, totalFrozen, proposal.totalCostOriginal)} emphasize />
           <SummaryStat label="Plazo" value={formatProposalDuration(proposal)} />
         </div>
 
@@ -271,6 +283,10 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
           </div>
         )}
 
+        {currency && currency !== "USD" && (
+          <UsdBcvNotice scope="el resumen de costos de arriba" defaultOpen={false} />
+        )}
+
         {currency && !wasConverted && currency !== "USD" && (
           <p className="text-[10px] text-slate-400 font-medium">
             El proveedor cotizó esta propuesta en <span className="font-bold text-slate-600">{currency}</span> a través del portal público.
@@ -319,6 +335,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
           <div className="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-1.5">
             <Package className="h-3.5 w-3.5 text-slate-400" />
             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Detalle de Materiales Cotizados</span>
+            {lineCurrency !== "USD" && <span className="ml-auto font-mono text-[9px] font-bold text-amber-600">Cotizado en {lineCurrency}</span>}
           </div>
           {materialItems.length === 0 ? (
             <p className="px-3.5 py-4 text-center text-[10px] text-slate-400 italic">Sin detalle línea por línea para esta propuesta.</p>
@@ -330,10 +347,10 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                     <th className="px-3 py-2">Material</th>
                     <th className="px-3 py-2 text-center">Cant.</th>
                     <th className="px-3 py-2">Unidad</th>
-                    <th className="px-3 py-2 text-right">Precio unit.</th>
-                    <th className="px-3 py-2 text-right">Est.</th>
+                    <th className="px-3 py-2 text-right">Precio unit. ({lineCurrency})</th>
+                    <th className="px-3 py-2 text-right">Est. (USD)</th>
                     <th className="px-3 py-2 text-center">Var.</th>
-                    <th className="px-3 py-2 text-right">Total</th>
+                    <th className="px-3 py-2 text-right">Total ({lineCurrency})</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
@@ -347,8 +364,9 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                       <td className="px-3 py-2 text-center font-mono font-bold text-slate-600 text-[11px] align-top">{item.quantity}</td>
                       <td className="px-3 py-2 text-slate-500 font-medium text-[11px] align-top">{item.unit}</td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600 align-top">
-                        {formatCurrency(item.unitPrice)}
-                        <BsAmount amount={item.unitPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                        {fmtLine(item.unitPrice)}
+                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(item.unitPrice * fxToBase)} USD-BCV</span>}
+                        <BsAmount amount={item.unitPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-500 align-top">
                         {item.estimatedPriceUsd ? formatCurrency(item.estimatedPriceUsd) : "—"}
@@ -371,20 +389,29 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
                         )}
                       </td>
                       <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px] align-top">
-                        {formatCurrency(item.totalPrice)}
-                        <BsAmount amount={item.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
+                        {fmtLine(item.totalPrice)}
+                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(item.totalPrice * fxToBase)} USD-BCV</span>}
+                        <BsAmount amount={item.totalPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-200 bg-slate-50">
-                    <td colSpan={4} className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-500">
+                    <td colSpan={6} className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-500">
                       Total materiales:
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                      {formatCurrency(proposal.materialCost)}
-                      <BsAmount amount={proposal.materialCost} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
+                      {fmtLine(proposal.materialCostOriginal ?? proposal.materialCost)}
+                      {proposal.materialCostOriginal != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(proposal.materialCost)} USD-BCV</span>}
+                      <BsAmount
+                        amount={proposal.materialCostOriginal ?? proposal.materialCost}
+                        fromCode={proposal.materialCostOriginal != null ? lineCurrency : "USD"}
+                        convert={convert}
+                        hasRates={hasRates}
+                        isLoading={isLoadingRates}
+                        className="text-emerald-500/80"
+                      />
                     </td>
                   </tr>
                 </tfoot>
