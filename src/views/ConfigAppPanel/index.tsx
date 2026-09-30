@@ -194,7 +194,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
     currencies,
     isLoading: isLoadingCurrencies,
     updateCurrency,
-    deleteCurrency,
   } = useCurrencies(authToken, isSuperadmin);
 
   const { isSyncing, syncNow } = useExchangeRates(authToken, isSuperadmin);
@@ -227,11 +226,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
   const handleUpdateCurrency = async (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => {
     const updated = await updateCurrency(id, input);
     if (updated.auditLog && isSuperadmin) prependAuditLog(updated.auditLog);
-  };
-
-  const handleDeleteCurrency = async (id: number) => {
-    const result = await deleteCurrency(id);
-    if (result.auditLog && isSuperadmin) prependAuditLog(result.auditLog);
   };
 
   const allSettings = useMemo(() => Object.values(settings).flat(), [settings]);
@@ -483,7 +477,6 @@ export default function ConfigAppPanel({ authToken, activeRole, canAccess, onCon
                       currencies={currencies}
                       isLoading={isLoadingCurrencies}
                       onUpdate={handleUpdateCurrency}
-                      onDelete={handleDeleteCurrency}
                     />
                     <ExchangeRateHistoryPanel
                       authToken={authToken}

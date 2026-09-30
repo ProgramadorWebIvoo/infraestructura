@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Coins, CheckCircle, XCircle, Pencil, Trash2, X, Check, Landmark } from "lucide-react";
+import { Coins, CheckCircle, XCircle, Pencil, X, Check, Landmark } from "lucide-react";
 import { itemVariants } from "@/animations";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
@@ -26,10 +26,9 @@ interface CurrencyCardProps {
   currencies: CurrencyRecord[];
   isLoading: boolean;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
 }
 
-export default function CurrencyCard({ currencies, isLoading, onUpdate, onDelete }: CurrencyCardProps) {
+export default function CurrencyCard({ currencies, isLoading, onUpdate }: CurrencyCardProps) {
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<number | null>(null);
 
@@ -93,7 +92,7 @@ export default function CurrencyCard({ currencies, isLoading, onUpdate, onDelete
                   <Landmark className="h-3.5 w-3.5" /> Monedas oficiales BCV
                 </h4>
                 <p className="text-[10px] text-text-muted">
-                  Catálogo fijo del Banco Central de Venezuela — el nombre y símbolo no se pueden modificar ni eliminar. Solo se pueden activar o desactivar.
+                  Catálogo fijo del Banco Central de Venezuela — el nombre y símbolo no se pueden modificar. Solo se pueden activar o desactivar.
                 </p>
                 <div className="space-y-2">
                   <AnimatePresence initial={false}>
@@ -112,7 +111,6 @@ export default function CurrencyCard({ currencies, isLoading, onUpdate, onDelete
                         saveEdit={saveEdit}
                         run={run}
                         onUpdate={onUpdate}
-                        onDelete={onDelete}
                       />
                     ))}
                   </AnimatePresence>
@@ -142,7 +140,6 @@ export default function CurrencyCard({ currencies, isLoading, onUpdate, onDelete
                         saveEdit={saveEdit}
                         run={run}
                         onUpdate={onUpdate}
-                        onDelete={onDelete}
                       />
                     ))}
                   </AnimatePresence>
@@ -169,10 +166,9 @@ interface CurrencyRowProps {
   saveEdit: (id: number) => void;
   run: (id: number, action: () => Promise<void>) => void;
   onUpdate: (id: number, input: Partial<Pick<CurrencyRecord, "name" | "symbol" | "is_active">>) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
 }
 
-/** Fila de moneda — comportamiento idéntico para oficiales/custom salvo qué botones se muestran (una oficial nunca expone editar/eliminar). */
+/** Fila de moneda — comportamiento idéntico para oficiales/custom salvo qué botones se muestran (una oficial nunca expone editar). Las monedas nunca se eliminan: solo se activan/desactivan. */
 function CurrencyRow({
   currency,
   busyId,
@@ -186,7 +182,6 @@ function CurrencyRow({
   saveEdit,
   run,
   onUpdate,
-  onDelete,
 }: CurrencyRowProps) {
   const isEditing = editingId === currency.id;
 
@@ -240,7 +235,7 @@ function CurrencyRow({
         </span>
       </div>
       <div className="flex items-center gap-1.5">
-        {/* Moneda oficial BCV: nunca editable/eliminable — solo activar/desactivar (salvo si es la base, ver abajo). */}
+        {/* Moneda oficial BCV: nunca editable — solo activar/desactivar (salvo si es la base, ver abajo). */}
         {!currency.is_official && (
           isEditing ? (
             <>
@@ -279,16 +274,6 @@ function CurrencyRow({
             isBusy={busyId === currency.id}
             tone={currency.is_active ? "amber" : "emerald"}
             icon={currency.is_active ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-          />
-        )}
-        {!currency.is_official && !isEditing && (
-          <IconActionButton
-            label={`Eliminar ${currency.code}`}
-            tooltip="Eliminar moneda"
-            onClick={() => run(currency.id, () => onDelete(currency.id))}
-            isBusy={busyId === currency.id}
-            tone="rose"
-            icon={<Trash2 className="h-3.5 w-3.5" />}
           />
         )}
       </div>

@@ -4,7 +4,7 @@
  *
  * Catálogo de monedas aceptadas (CONFIG APP, exclusivo SUPERADMIN). A
  * diferencia de AppSetting/notification-rules, cada acción se persiste de
- * inmediato (alta/edición/activar-desactivar/moneda base/eliminar) — no pasa
+ * inmediato (alta/edición/activar-desactivar/moneda base) — no pasa
  * por la barra "Guardar todo": es un CRUD de catálogo, no un valor con
  * draft/dirty.
  */
@@ -21,7 +21,7 @@ export interface CurrencyRecord {
   symbol: string;
   is_base: boolean;
   is_active: boolean;
-  /** Moneda oficial del BCV (EUR, USD) — estructuralmente inmutable: solo is_active es editable, no se puede renombrar ni eliminar. */
+  /** Moneda oficial del BCV (EUR, USD) — estructuralmente inmutable: solo is_active es editable, no se puede renombrar. */
   is_official: boolean;
   created_at: string;
   updated_at: string;
@@ -81,17 +81,5 @@ export function useCurrencies(authToken: string, enabled: boolean) {
     [authToken],
   );
 
-  const deleteCurrency = useCallback(
-    async (id: number): Promise<{ auditLog?: ConfigAuditLogRecord }> => {
-      const result = await apiFetch<{ auditLog?: ConfigAuditLogRecord }>(`/currencies/${id}`, {
-        method: "DELETE",
-        token: authToken,
-      });
-      setCurrencies(prev => prev.filter(c => c.id !== id));
-      return result;
-    },
-    [authToken],
-  );
-
-  return { currencies, isLoading, addCurrency, updateCurrency, deleteCurrency };
+  return { currencies, isLoading, addCurrency, updateCurrency };
 }

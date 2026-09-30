@@ -26,7 +26,6 @@ function makeCurrency(overrides: Partial<CurrencyRecord> = {}): CurrencyRecord {
 describe("CurrencyCard", () => {
   const handlers = {
     onUpdate: vi.fn(),
-    onDelete: vi.fn(),
   };
 
   beforeEach(() => {
@@ -39,7 +38,6 @@ describe("CurrencyCard", () => {
         currencies={currencies}
         isLoading={isLoading}
         onUpdate={overrides.onUpdate ?? handlers.onUpdate}
-        onDelete={overrides.onDelete ?? handlers.onDelete}
       />,
     );
   }
@@ -121,7 +119,7 @@ describe("CurrencyCard", () => {
     expect(handlers.onUpdate).not.toHaveBeenCalled();
   });
 
-  // ── Activar/desactivar, eliminar ──────────────────────────────────────────
+  // ── Activar/desactivar ──────────────────────────────────────────
 
   it("desactiva una moneda activa", async () => {
     handlers.onUpdate.mockResolvedValueOnce(undefined);
@@ -141,22 +139,19 @@ describe("CurrencyCard", () => {
     await waitFor(() => expect(handlers.onUpdate).toHaveBeenCalledWith(2, { is_active: true }));
   });
 
-  it("elimina una moneda personalizada", async () => {
-    handlers.onDelete.mockResolvedValueOnce(undefined);
-    renderCard([makeCurrency({ id: 2, code: "EUR", is_active: true, is_official: false })]);
+  it("una moneda personalizada nunca expone el botón Eliminar", () => {
+    renderCard([makeCurrency({ id: 2, code: "GBP", is_active: true, is_official: false })]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Eliminar EUR" }));
-
-    await waitFor(() => expect(handlers.onDelete).toHaveBeenCalledWith(2));
+    expect(screen.queryByRole("button", { name: /Eliminar/ })).not.toBeInTheDocument();
   });
 
   it("muestra un toast de error genérico si una acción de fila falla", async () => {
-    handlers.onDelete.mockRejectedValueOnce(new Error("no se pudo eliminar"));
+    handlers.onUpdate.mockRejectedValueOnce(new Error("no se pudo actualizar"));
     renderCard([makeCurrency({ id: 2, code: "EUR", is_base: false, is_active: true })]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Eliminar EUR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Desactivar EUR" }));
 
-    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith("no se pudo eliminar", "error"));
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith("no se pudo actualizar", "error"));
   });
 
   // ── Monedas oficiales BCV (is_official) ──────────────────────────────────
