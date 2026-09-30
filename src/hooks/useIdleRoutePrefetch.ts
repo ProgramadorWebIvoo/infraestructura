@@ -42,11 +42,33 @@ type IdleWindow = Window & {
   cancelIdleCallback?: (handle: number) => void;
 };
 
+// Espera antes del primer prefetch (deja pasar el fetch inicial crítico) y
+// entre los pasos posteriores del resto de rutas. Sin requestIdleCallback
+// (Safari) el fallback usa setTimeout con estos mismos valores.
+const FIRST_IDLE_DELAY_MS = 2000;
+const NEXT_IDLE_DELAY_MS = 500;
+
+/** Programa `cb` en idle (o con setTimeout de respaldo) y devuelve su cancelación. */
+function scheduleIdle(cb: () => void, fallbackDelayMs: number, idleTimeoutMs: number): () => void {
+  const idleWindow = window as IdleWindow;
+  if (idleWindow.requestIdleCallback) {
+    const handle = idleWindow.requestIdleCallback(cb, { timeout: idleTimeoutMs });
+    return () => idleWindow.cancelIdleCallback?.(handle);
+  }
+  const timer = setTimeout(cb, fallbackDelayMs);
+  return () => clearTimeout(timer);
+}
+
 /**
  * Dispara una vez por `activeRole` (ej. si el usuario cambia de rol activo
  * en la sesión, vuelve a correr para el nuevo rol). Respeta `canAccess`:
  * nunca precarga una ruta que el usuario no puede ver (fail-closed, mismo
  * criterio que el sidebar).
+ *
+ * Orden: primero la ruta probable del rol, después el resto de rutas
+ * accesibles, una por ciclo idle. Sin esto, cualquier módulo cuyo chunk no
+ * estuviera cacheado hacía suspender `React.lazy` y el layout (fallback
+ * `null`) dejaba la pantalla en blanco antes de que apareciera el skeleton.
  */
 export function useIdleRoutePrefetch(activeRole: string | undefined, canAccess: (path: string) => boolean): void {
   const firedForRole = useRef<string | null>(null);
@@ -57,20 +79,30 @@ export function useIdleRoutePrefetch(activeRole: string | undefined, canAccess: 
     if (!activeRole || firedForRole.current === activeRole) return;
     firedForRole.current = activeRole;
 
-    const run = () => {
-      const candidates = ROLE_LIKELY_NEXT[activeRole] ?? [];
-      for (const path of candidates) {
-        if (!canAccessRef.current(path)) continue;
-        ROUTE_PREFETCH[path]?.loadChunk().catch(() => {});
+    const likely = ROLE_LIKELY_NEXT[activeRole] ?? [];
+    let cancelPending: () => void = () => {};
+
+    const loadIfAllowed = (path: string) => {
+      if (!canAccessRef.current(path)) return;
+      ROUTE_PREFETCH[path]?.loadChunk().catch(() => {});
+    };
+
+    const loadRemaining = (queue: string[]) => {
+      const [path, ...rest] = queue;
+      if (path === undefined) return;
+      loadIfAllowed(path);
+      if (rest.length > 0) {
+        cancelPending = scheduleIdle(() => loadRemaining(rest), NEXT_IDLE_DELAY_MS, 2000);
       }
     };
 
-    const idleWindow = window as IdleWindow;
-    if (idleWindow.requestIdleCallback) {
-      const handle = idleWindow.requestIdleCallback(run, { timeout: 4000 });
-      return () => idleWindow.cancelIdleCallback?.(handle);
-    }
-    const timer = setTimeout(run, 2000);
-    return () => clearTimeout(timer);
+    const run = () => {
+      likely.forEach(loadIfAllowed);
+      const remaining = Object.keys(ROUTE_PREFETCH).filter((path) => !likely.includes(path));
+      cancelPending = scheduleIdle(() => loadRemaining(remaining), NEXT_IDLE_DELAY_MS, 2000);
+    };
+
+    cancelPending = scheduleIdle(run, FIRST_IDLE_DELAY_MS, 4000);
+    return () => cancelPending();
   }, [activeRole]);
 }

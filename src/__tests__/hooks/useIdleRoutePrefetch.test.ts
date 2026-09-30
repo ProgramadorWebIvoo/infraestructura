@@ -97,10 +97,44 @@ describe("useIdleRoutePrefetch", () => {
     expect(loadChunkOther).toHaveBeenCalledTimes(1);
   });
 
-  it("un rol sin heurística mapeada no dispara nada (no explota)", async () => {
+  it("un rol sin heurística mapeada no precarga nada en el primer paso (no explota)", async () => {
     renderHook(() => useIdleRoutePrefetch("ROL_INEXISTENTE", () => true));
     await vi.advanceTimersByTimeAsync(2100);
     expect(loadChunkNext).not.toHaveBeenCalled();
+    expect(loadChunkOther).not.toHaveBeenCalled();
+  });
+
+  it("tras la ruta probable precarga el resto de rutas accesibles, una por ciclo", async () => {
+    renderHook(() => useIdleRoutePrefetch("SUPERADMIN", () => true));
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(loadChunkNext).toHaveBeenCalledTimes(1);
+    expect(loadChunkOther).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(600);
+    expect(loadChunkOther).toHaveBeenCalledTimes(1);
+    // La ruta probable no se vuelve a pedir en la fase del resto.
+    expect(loadChunkNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("un rol sin heurística también recibe el resto de rutas accesibles", async () => {
+    renderHook(() => useIdleRoutePrefetch("ROL_INEXISTENTE", () => true));
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(loadChunkNext).toHaveBeenCalledTimes(1);
+    expect(loadChunkOther).toHaveBeenCalledTimes(1);
+  });
+
+  it("el resto de rutas también respeta canAccess (fail-closed)", async () => {
+    renderHook(() => useIdleRoutePrefetch("SUPERADMIN", (path) => path !== "/config-app"));
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(loadChunkNext).toHaveBeenCalledTimes(1);
+    expect(loadChunkOther).not.toHaveBeenCalled();
+  });
+
+  it("desmontar cancela la cadena del resto de rutas", async () => {
+    const { unmount } = renderHook(() => useIdleRoutePrefetch("SUPERADMIN", () => true));
+    await vi.advanceTimersByTimeAsync(2100);
+    unmount();
+    await vi.advanceTimersByTimeAsync(3000);
     expect(loadChunkOther).not.toHaveBeenCalled();
   });
 
