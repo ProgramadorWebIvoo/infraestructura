@@ -70,7 +70,7 @@ export default function PaymentOrderDetailModal({ order, onClose, authToken, act
       infoLine={order.paymentType === "ADVANCE" ? "Anticipo" : "Finiquito"}
       footer={
         <div className="flex justify-end">
-          <Button variant="secondary" size="sm" icon={<Printer className="h-3.5 w-3.5" />} onClick={() => printPaymentOrder(order)}>
+          <Button variant="secondary" size="sm" icon={<Printer className="h-3.5 w-3.5" />} onClick={() => printPaymentOrder(payment ? { ...order, payment } : order)}>
             Imprimir orden
           </Button>
         </div>

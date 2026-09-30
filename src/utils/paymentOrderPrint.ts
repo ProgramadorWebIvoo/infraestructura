@@ -9,6 +9,7 @@
 
 import type { PaymentOrder, PaymentOrderStatus } from "@/types";
 import { formatCurrency } from "@/utils";
+import { PAYMENT_MODE_LABELS, RATE_SOURCE_LABELS, formatPaidAmount, formatRate, BS_CURRENCY } from "@/utils/paymentSettlement";
 
 export const PAYMENT_ORDER_PRINT_ROOT_ID = "payment-order-print-root";
 
@@ -30,6 +31,47 @@ function escapeXml(value: unknown): string {
 
 function money(n: number): string {
   return formatCurrency(n);
+}
+
+/**
+ * Total de la propuesta sobre el que se calculó la orden: el original en la
+ * moneda de cotización cuando la propuesta se convirtió; si no, el total en
+ * moneda base (órdenes anteriores a la obligación en moneda de cotización).
+ */
+function baseOfCalculation(proposal: NonNullable<PaymentOrder["snapshot"]>["proposal"]): string {
+  if (proposal.total_cost_original != null) return formatPaidAmount(Number(proposal.total_cost_original), proposal.currency);
+  return money(Number(proposal.total_cost));
+}
+
+/** Sección "Pago realizado" de la orden impresa — solo si la orden ya se pagó y tiene liquidación registrada. */
+function paymentSectionHtml(order: PaymentOrder): string {
+  const p = order.payment;
+  if (!p || p.paymentMode === null || p.paidAmount === null || p.paidCurrency === null || p.obligationCurrency === null) return "";
+
+  const rateUnit = p.paidCurrency === BS_CURRENCY ? "Bs." : p.paidCurrency;
+  const lines = [
+    ["Pagado", `${formatPaidAmount(p.paidAmount, p.paidCurrency)} (${PAYMENT_MODE_LABELS[p.paymentMode]})`],
+    p.paidCurrency !== p.obligationCurrency && p.appliedRate !== null
+      ? ["Tasa aplicada", `1 ${p.obligationCurrency} = ${formatRate(p.appliedRate)} ${rateUnit}${p.appliedRateSource ? ` (${RATE_SOURCE_LABELS[p.appliedRateSource]})` : ""}${p.suggestedRate !== null && p.suggestedRate !== p.appliedRate ? ` · sugerida ${formatRate(p.suggestedRate)}` : ""}`]
+      : null,
+    p.coveredAmount !== null ? ["Equivalente cubierto", formatPaidAmount(p.coveredAmount, p.obligationCurrency)] : null,
+    p.differenceAmount !== null && p.differenceAmount !== 0 ? ["Diferencia", `${formatPaidAmount(p.differenceAmount, p.obligationCurrency)}${p.differenceReason ? ` — ${p.differenceReason}` : ""}`] : null,
+    p.contractRateFreeze?.frozenRate != null ? ["Tasa congelada de la cotización", `1 ${p.contractRateFreeze.baseCurrency} = ${formatRate(p.contractRateFreeze.frozenRate)} Bs.`] : null,
+    p.paymentRateFreeze?.frozenRate != null ? ["Tasa congelada del pago", `1 ${p.paymentRateFreeze.baseCurrency} = ${formatRate(p.paymentRateFreeze.frozenRate)} Bs.`] : null,
+    p.paidDate || p.bank || p.reference ? ["Fecha / banco / referencia", [p.paidDate, p.bank, p.reference].filter(Boolean).join(" · ")] : null,
+  ].filter((line): line is string[] => line !== null);
+
+  return `
+    <div class="order-section">
+      <h2>Pago realizado</h2>
+      <div class="order-grid">
+        ${lines.map(([label, value]) => `
+        <div class="order-field">
+          <span class="order-field-label">${escapeXml(label)}</span>
+          <span class="order-field-value">${escapeXml(value)}</span>
+        </div>`).join("")}
+      </div>
+    </div>`;
 }
 
 export function printPaymentOrder(order: PaymentOrder): void {
@@ -107,14 +149,20 @@ export function printPaymentOrder(order: PaymentOrder): void {
       <div class="order-grid">
         <div class="order-field">
           <span class="order-field-label">Monto a pagar</span>
-          <span class="order-field-value order-amount">${escapeXml(money(order.amount))} ${escapeXml(order.currency)}</span>
+          <span class="order-field-value order-amount">${escapeXml(formatPaidAmount(order.amount, order.currency))}</span>
         </div>
         <div class="order-field">
           <span class="order-field-label">Base de cálculo</span>
-          <span class="order-field-value">${project ? `${escapeXml(money(Number(project.total_cost)))} × ${escapeXml(project.negotiated_advance_percent)}%` : "Finiquito verificado por Auditoría"}</span>
-        </div>
+          <span class="order-field-value">${project ? `${escapeXml(baseOfCalculation(project))} × ${escapeXml(project.negotiated_advance_percent)}%` : "Finiquito verificado por Auditoría"}</span>
+        </div>${order.amountBase !== order.amount ? `
+        <div class="order-field">
+          <span class="order-field-label">Equivalente en moneda base</span>
+          <span class="order-field-value">${escapeXml(money(order.amountBase))}${order.exchangeRate ? ` (tasa ${escapeXml(formatRate(order.exchangeRate))})` : ""}</span>
+        </div>` : ""}
       </div>
     </div>
+
+    ${paymentSectionHtml(order)}
 
     <div class="order-section">
       <h2>Trazabilidad</h2>
