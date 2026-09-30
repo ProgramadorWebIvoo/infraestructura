@@ -27,6 +27,7 @@ import Tabs from "@/components/UI/Tabs";
 import TabPanel from "@/components/UI/TabPanel";
 import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
 import { useToast } from "@/components/UI/Toast";
+import { useQuoteCurrencyOptions } from "@/hooks/useQuoteCurrencyOptions";
 import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 import { formatNumber } from "@/utils";
 import BsAmount from "@/components/UI/BsAmount";
@@ -88,6 +89,7 @@ export default function RegisterProposalModal({
   const { showToast } = useToast();
   const maxAdvancePercent = useMaxAdvancePercent();
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const quoteCurrencyOptions = useQuoteCurrencyOptions();
 
   const [modalTab, setModalTab] = useState<"portal" | "manual">(onImportSupplierProposals ? "portal" : "manual");
   const [contractorCode, setContractorCode] = useState(contractors[0]?.code ?? "");
@@ -300,10 +302,7 @@ export default function RegisterProposalModal({
                     <Select
                       value={quoteCurrency}
                       onChange={setQuoteCurrency}
-                      options={[
-                        { value: "USD", label: "USD ($)" },
-                        { value: "EUR", label: "EUR (€)" },
-                      ]}
+                      options={quoteCurrencyOptions}
                       size="md"
                     />
                   </div>

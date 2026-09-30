@@ -22,6 +22,7 @@ import DatePicker from "@/components/UI/DatePicker";
 import Button from "@/components/UI/Button";
 import { HelpHint, RequiredMark } from "@/components/UI/HintSignals";
 import { useMaxAdvancePercent } from "@/hooks/useMaxAdvancePercent";
+import { useQuoteCurrencyOptions } from "@/hooks/useQuoteCurrencyOptions";
 import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 import { formatNumber } from "@/utils";
 import { DURATION_UNITS } from "./RegisterProposalModal";
@@ -48,6 +49,7 @@ interface RenegotiateProposalModalProps {
 export default function RenegotiateProposalModal({ project, proposal, onClose, onRenegotiateProposal }: RenegotiateProposalModalProps) {
   const maxAdvancePercent = useMaxAdvancePercent();
   const { convert, convertBetween, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  const quoteCurrencyOptions = useQuoteCurrencyOptions();
 
   const buildMaterialRows = (): MaterialItemRow[] =>
     (proposal.materialItems ?? []).length > 0
@@ -399,10 +401,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             <Select
               value={quoteCurrency}
               onChange={setQuoteCurrency}
-              options={[
-                { value: "USD", label: "USD ($)" },
-                { value: "EUR", label: "EUR (€)" },
-              ]}
+              options={quoteCurrencyOptions}
               size="md"
             />
           </div>

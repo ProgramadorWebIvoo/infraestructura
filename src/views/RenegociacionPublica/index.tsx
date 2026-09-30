@@ -19,6 +19,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useToast } from "@/components/UI/Toast";
 import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, MessageSquareWarning, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
+import { useQuoteCurrencyOptions } from "@/hooks/useQuoteCurrencyOptions";
 import { apiFetch } from "@/services/api";
 import { containerVariants, itemVariants, springs } from "@/animations";
 import NumericInput from "@/components/UI/NumericInput";
@@ -110,6 +111,7 @@ export default function RenegociacionPublica() {
   const [description, setDescription] = useState("");
   const [fechaOferta, setFechaOferta] = useState(todayISODate());
   const [quoteCurrency, setQuoteCurrency] = useState("USD");
+  const quoteCurrencyOptions = useQuoteCurrencyOptions();
   const [motivo, setMotivo] = useState("");
   const [motivoAnticipoExcedido, setMotivoAnticipoExcedido] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -502,10 +504,7 @@ export default function RenegociacionPublica() {
                   <Select
                     value={quoteCurrency}
                     onChange={setQuoteCurrency}
-                    options={[
-                      { value: "USD", label: "USD ($)" },
-                      { value: "EUR", label: "EUR (€)" },
-                    ]}
+                    options={quoteCurrencyOptions}
                     size="md"
                   />
                 </div>
