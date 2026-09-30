@@ -24,13 +24,15 @@ interface PaymentOrderSignatureLineProps {
   authToken: string;
   /** Se invoca tras firmar, para que el padre refresque el estado de la orden (puede pasar a FIRMADA/PAGADA). */
   onSigned?: () => void;
+  /** Recibe el detalle de la orden (incluye `payment` si ya se pagó) cada vez que se descarga, para que el padre lo reutilice sin otra petición. */
+  onDetailLoaded?: (detail: PaymentOrderDetail) => void;
 }
 
 const success = SEMANTIC_COLOR_MAP.success;
 const info = SEMANTIC_COLOR_MAP.info;
 const neutral = SEMANTIC_COLOR_MAP.neutral;
 
-export default function PaymentOrderSignatureLine({ orderId, authToken, onSigned }: PaymentOrderSignatureLineProps) {
+export default function PaymentOrderSignatureLine({ orderId, authToken, onSigned, onDetailLoaded }: PaymentOrderSignatureLineProps) {
   const { showToast } = useToast();
   const [detail, setDetail] = useState<PaymentOrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,13 +42,15 @@ export default function PaymentOrderSignatureLine({ orderId, authToken, onSigned
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      setDetail(await fetchPaymentOrder(orderId, authToken));
+      const loaded = await fetchPaymentOrder(orderId, authToken);
+      setDetail(loaded);
+      onDetailLoaded?.(loaded);
     } catch (error) {
       logError("PaymentOrderSignatureLine.load", error);
     } finally {
       setIsLoading(false);
     }
-  }, [orderId, authToken]);
+  }, [orderId, authToken, onDetailLoaded]);
 
   useEffect(() => {
     void load();

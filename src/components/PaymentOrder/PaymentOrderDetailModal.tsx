@@ -8,17 +8,20 @@
  * cual (Finanzas solo puede ver/descargar, nunca cargar ni eliminar).
  */
 
+import { useState } from "react";
 import { FileSignature, Hash, Printer, User } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTokens";
 import ContractorDocumentsSection from "@/components/Contractor/ContractorDocumentsSection";
 import PaymentOrderSignatureLine from "./PaymentOrderSignatureLine";
+import PaymentSettlementSummary from "./PaymentSettlementSummary";
 import BsAmount from "@/components/UI/BsAmount";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { formatNumber } from "@/utils";
+import { formatPaidAmount } from "@/utils/paymentSettlement";
 import { printPaymentOrder } from "@/utils/paymentOrderPrint";
-import type { PaymentOrder, PaymentOrderStatus } from "@/types";
+import type { PaymentOrder, PaymentOrderDetail, PaymentOrderStatus } from "@/types";
 
 interface PaymentOrderDetailModalProps {
   order: PaymentOrder | null;
@@ -45,8 +48,13 @@ const STATUS_ACCENT: Record<PaymentOrderStatus, SemanticColor> = {
 
 export default function PaymentOrderDetailModal({ order, onClose, authToken, activeRole, onOrderSigned }: PaymentOrderDetailModalProps) {
   const { convert, hasRates, isLoading: isLoadingRates } = useCurrencyConversion();
+  // El detalle (con `payment` si la orden ya se pagó) lo descarga la línea de firmas: se reutiliza.
+  const [detail, setDetail] = useState<PaymentOrderDetail | null>(null);
 
   if (!order) return null;
+
+  const payment = detail?.id === order.id ? detail.payment ?? order.payment : order.payment;
+  const isConverted = order.amountBase !== order.amount;
 
   const accent = SEMANTIC_COLOR_MAP[STATUS_ACCENT[order.status]];
   const contractorName = order.snapshot?.contractor?.name ?? order.contractorCode;
@@ -86,8 +94,9 @@ export default function PaymentOrderDetailModal({ order, onClose, authToken, act
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Monto</p>
-            <p className="text-sm font-black text-text-primary">${formatNumber(order.amount)} {order.currency}</p>
-            <BsAmount amount={order.amount} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
+            <p className="text-sm font-black text-text-primary">{formatPaidAmount(order.amount, order.currency)}</p>
+            {isConverted && <p className="text-[11px] font-medium text-text-tertiary">Equivale a ${formatNumber(order.amountBase)} en moneda base</p>}
+            <BsAmount amount={order.amount} fromCode={order.currency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" />
           </div>
           <div className="flex items-center gap-2">
             <User className="h-3.5 w-3.5 text-text-tertiary" />
@@ -105,7 +114,14 @@ export default function PaymentOrderDetailModal({ order, onClose, authToken, act
           </div>
         </div>
 
-        <PaymentOrderSignatureLine orderId={order.id} authToken={authToken} onSigned={onOrderSigned} />
+        {payment && (
+          <div className="rounded-control border border-border-default bg-surface-raised p-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Cómo se pagó</p>
+            <PaymentSettlementSummary settlement={payment} />
+          </div>
+        )}
+
+        <PaymentOrderSignatureLine orderId={order.id} authToken={authToken} onSigned={onOrderSigned} onDetailLoaded={setDetail} />
 
         <ContractorDocumentsSection contractorCode={order.contractorCode} authToken={authToken} activeRole={activeRole} />
       </div>

@@ -6,6 +6,8 @@
  * Montos en moneda base (USD). `null` en approved = obra sin aprobar (sin fallback al estimado).
  */
 
+import type { PaymentSettlement } from "@/types";
+
 export interface ProjectHistoryFigures {
   estimated: number | null;
   approved: number | null;
@@ -135,6 +137,8 @@ export interface HistoryPayment {
   notes: string | null;
   proposalId: string | null;
   proof: { id: number; name: string } | null;
+  /** Cómo se pagó realmente (moneda, tasa, diferencia, congelados); null en pagos anteriores al registro. */
+  settlement: PaymentSettlement | null;
 }
 
 export interface HistoryDrawingVersion {

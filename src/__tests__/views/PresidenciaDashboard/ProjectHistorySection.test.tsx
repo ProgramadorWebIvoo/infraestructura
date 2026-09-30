@@ -59,8 +59,8 @@ const detail: ProjectHistoryDetail = {
   award: { proposalId: "P2", contractorCode: "CON-301", contractorName: "TestRif", totalCost: 1940, negotiatedAdvancePercent: 30, origen: "RENEGOCIACION", rateFreezes: [] },
   payments: {
     items: [
-      { id: 1, type: "ADVANCE", amount: 600, currency: "USD", paidDate: "2026-09-24", bank: "Banesco", reference: "REF-1", notes: null, proposalId: "P2", proof: { id: 5, name: "comp_ant.pdf" } },
-      { id: 2, type: "FINAL", amount: 1500, currency: "USD", paidDate: "2026-09-24", bank: null, reference: null, notes: null, proposalId: "P2", proof: null },
+      { id: 1, type: "ADVANCE", amount: 600, currency: "USD", paidDate: "2026-09-24", bank: "Banesco", reference: "REF-1", notes: null, proposalId: "P2", proof: { id: 5, name: "comp_ant.pdf" }, settlement: null },
+      { id: 2, type: "FINAL", amount: 1500, currency: "USD", paidDate: "2026-09-24", bank: null, reference: null, notes: null, proposalId: "P2", proof: null, settlement: null },
     ],
     total: 2100,
     percentOfAwarded: 108.25,

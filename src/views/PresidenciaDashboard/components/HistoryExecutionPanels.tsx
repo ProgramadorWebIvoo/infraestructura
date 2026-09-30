@@ -12,6 +12,7 @@ import StatusBadge from "@/components/UI/StatusBadge";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useCurrencyConversion, type UseCurrencyConversionReturn } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
+import PaymentSettlementSummary from "@/components/PaymentOrder/PaymentSettlementSummary";
 import type { HistoryPayment, HistoryTimelineEvent, ProjectHistoryDetail } from "../projectHistoryTypes";
 import { fmtMoney } from "./ProjectHistoryFigures";
 import { HistoryDocumentsList, useHistoryDocumentDownload } from "./HistoryDocumentsList";
@@ -28,6 +29,9 @@ function makePaymentColumns(onDownload: (doc: { id: number; name: string }) => v
         <BsAmount amount={p.amount} convert={rates.convert} hasRates={rates.hasRates} isLoading={rates.isLoading} fromCode={p.currency} variant="inline" />
       </span>
     ) },
+    { key: "settlement", label: "Cómo se pagó", render: (p) => p.settlement
+      ? <PaymentSettlementSummary settlement={p.settlement} variant="compact" />
+      : <span className="text-[11px] italic text-text-tertiary">Sin detalle de moneda</span> },
     { key: "bank", label: "Banco / referencia", render: (p) => <span className="text-xs">{[p.bank, p.reference].filter(Boolean).join(" · ") || "—"}</span> },
     { key: "proof", label: "Comprobante", render: (p) => p.proof
       ? (
