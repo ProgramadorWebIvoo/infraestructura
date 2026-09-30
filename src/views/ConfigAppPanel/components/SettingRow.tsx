@@ -16,7 +16,9 @@ import RoleMultiSelect from "@/components/UI/RoleMultiSelect";
 import { RATE_SWITCH_ROLES_KEY } from "@/hooks/useRateSwitchRoleAllowed";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { AppSettingRecord } from "@/hooks/useAppSettings";
+import SegmentedControl from "@/components/UI/SegmentedControl";
 import { formatRangeBound } from "@/views/ConfigAppPanel/utils";
+import { ENUM_SETTING_OPTIONS } from "@/views/ConfigAppPanel/settingOptions";
 
 interface SettingRowProps {
   setting: AppSettingRecord;
@@ -46,6 +48,7 @@ function parseRoleList(value: string): string[] {
 export default function SettingRow({ setting, value, onChange, error, readOnly, roles }: SettingRowProps) {
   const isNumeric = setting.type === "integer" || setting.type === "float";
   const isRoleList = setting.type === "json" && ROLE_LIST_SETTING_KEYS.has(setting.key) && !!roles?.length;
+  const enumOptions = ENUM_SETTING_OPTIONS[setting.key];
   const isCronHour = setting.key === "tasa_cambio_cron_hora" || setting.key === "rating_ia_cron_hora";
 
   const rangeHint =
@@ -80,6 +83,17 @@ export default function SettingRow({ setting, value, onChange, error, readOnly, 
               />
               <span className="text-xs text-text-tertiary">{value === "true" ? "Activado" : "Desactivado"}</span>
             </label>
+          ) : enumOptions ? (
+            // Opción única (radio): solo valores válidos. Sin permiso de edición, se muestra pero no responde.
+            <div className={`flex-1 min-w-0 ${readOnly ? "pointer-events-none opacity-60" : ""}`} aria-disabled={readOnly || undefined}>
+              <SegmentedControl
+                variant="card"
+                options={enumOptions}
+                value={value}
+                onChange={next => onChange(setting.id, next)}
+                ariaLabel={setting.label}
+              />
+            </div>
           ) : isRoleList ? (
             <RoleMultiSelect
               roles={roles ?? []}

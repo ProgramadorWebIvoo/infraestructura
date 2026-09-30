@@ -13,6 +13,7 @@ import { Lock } from "lucide-react";
 import type { RateFreeze } from "@/types";
 import Tooltip from "./Tooltip";
 import { formatBs } from "@/hooks/useCurrencyConversion";
+import { BS_CURRENCY, formatPaidAmount } from "@/utils/paymentSettlement";
 import { SEMANTIC_COLOR_MAP } from "./colorTokens";
 
 const TRIGGER_LABEL: Record<RateFreeze["trigger"], string> = {
@@ -28,10 +29,17 @@ interface FrozenRateBadgeProps {
 export default function FrozenRateBadge({ freeze }: FrozenRateBadgeProps) {
   const c = SEMANTIC_COLOR_MAP.info;
   const date = new Date(freeze.frozenAt).toLocaleDateString("es-VE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  // Lo congelado son los Bs. del monto en su moneda de cotización (no de la base).
+  const currency = freeze.frozenCurrency ?? freeze.baseCurrency;
 
   const tooltipContent = (
     <div className="space-y-0.5">
       <p>Congelada al {TRIGGER_LABEL[freeze.trigger]} ({date}).</p>
+      {freeze.frozenAmount != null && freeze.frozenAmountBs != null && (
+        <p>
+          {formatPaidAmount(freeze.frozenAmount, currency)} → {formatPaidAmount(freeze.frozenAmountBs, BS_CURRENCY)}
+        </p>
+      )}
       {freeze.source === "MANUAL" && (
         <p>
           Corrección manual{freeze.frozenByName ? ` por ${freeze.frozenByName}` : ""}
@@ -45,7 +53,7 @@ export default function FrozenRateBadge({ freeze }: FrozenRateBadgeProps) {
     <Tooltip content={tooltipContent}>
       <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap cursor-help ${c.bg100} ${c.text700}`}>
         <Lock className="h-3 w-3" />
-        {freeze.frozenRate != null ? `1 ${freeze.baseCurrency} = ${formatBs(freeze.frozenRate)} Bs.` : "Congelado"}
+        {freeze.frozenRate != null ? `1 ${currency} = ${formatBs(freeze.frozenRate)} Bs.` : "Congelado"}
       </span>
     </Tooltip>
   );

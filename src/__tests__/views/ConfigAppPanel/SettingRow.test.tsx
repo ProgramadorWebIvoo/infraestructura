@@ -150,4 +150,45 @@ describe("SettingRow", () => {
 
     expect(screen.getByText("Rango permitido: 0 a 0.5")).toBeInTheDocument();
   });
+
+  describe("congelar_tasa_momento (radio de opción única)", () => {
+    const freezeSetting = () => makeSetting({
+      id: 9,
+      group: "congelacion_tasa",
+      key: "congelar_tasa_momento",
+      value: "CONTRATADO",
+      type: "string",
+      min_value: null,
+      max_value: null,
+      label: "Momento en que se congela la tasa",
+    });
+
+    it("muestra las cuatro opciones como radiogroup con la actual marcada", () => {
+      render(<SettingRow setting={freezeSetting()} value="CONTRATADO" onChange={onChange as unknown as OnChange} />);
+
+      const radios = screen.getAllByRole("radio");
+      expect(radios).toHaveLength(4);
+      expect(screen.getByRole("radiogroup", { name: "Momento en que se congela la tasa" })).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /Al adjudicar/ })).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("radio", { name: /Al pagar el anticipo/ })).toHaveAttribute("aria-checked", "false");
+      expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    });
+
+    it("elegir una opción reemplaza el valor (una sola a la vez)", () => {
+      render(<ControlledSettingRow setting={freezeSetting()} />);
+
+      fireEvent.click(screen.getByRole("radio", { name: /Al pagar el finiquito/ }));
+
+      expect(screen.getByRole("radio", { name: /Al pagar el finiquito/ })).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("radio", { name: /Al adjudicar/ })).toHaveAttribute("aria-checked", "false");
+    });
+
+    it("permite elegir 'No congelar'", () => {
+      render(<SettingRow setting={freezeSetting()} value="CONTRATADO" onChange={onChange as unknown as OnChange} />);
+
+      fireEvent.click(screen.getByRole("radio", { name: /No congelar/ }));
+
+      expect(onChange).toHaveBeenCalledWith(9, "NINGUNO");
+    });
+  });
 });

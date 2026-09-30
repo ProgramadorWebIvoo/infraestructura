@@ -6,6 +6,7 @@
  * compra: presupuesto, solicitud, proveedores y adjudicación.
  */
 
+import { BS_CURRENCY, formatPaidAmount } from "@/utils/paymentSettlement";
 import { Award, Repeat2 } from "lucide-react";
 import { Table, type Column } from "@/components/UI/Table";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
@@ -124,7 +125,11 @@ export function SuppliersPanel({ suppliers, award }: { suppliers: HistorySupplie
             <ul className="text-[11px] text-text-secondary space-y-0.5">
               {award.rateFreezes.map((f) => (
                 <li key={f.trigger} className="font-mono">
-                  {f.trigger}: tasa {f.frozenRate ?? "—"} · base {fmtMoney(f.frozenAmountBase)} ({f.source})
+                  {f.trigger}: 1 {f.frozenCurrency} = {f.frozenRate ?? "—"} Bs.
+                  {f.frozenAmount != null && f.frozenAmountBs != null && (
+                    <> · {formatPaidAmount(f.frozenAmount, f.frozenCurrency)} → {formatPaidAmount(f.frozenAmountBs, BS_CURRENCY)}</>
+                  )}{" "}
+                  ({f.source})
                 </li>
               ))}
             </ul>

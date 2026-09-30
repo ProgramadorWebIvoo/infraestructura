@@ -87,7 +87,7 @@ const GROUP_META: Record<string, SettingGroupMeta> = {
   alertas: { title: "Alertas de precio", description: "Umbral de variación a partir del cual un precio se marca fuera de rango.", icon: <TrendingUp className="h-5 w-5" />, color: "rose" },
   inflacion: { title: "Inflación", description: "Tasa de inflación de referencia para el análisis de precios.", icon: <BarChart3 className="h-5 w-5" />, color: "slate" },
   app: { title: "Aplicación", description: "Umbrales operativos, límites de carga de archivos, vigencia de invitaciones y tiempo de sesión.", icon: <SettingsIcon className="h-5 w-5" />, color: "slate" },
-  congelacion_tasa: { title: "Congelación de tasa de cambio", description: "Qué triggers de negocio fijan la tasa BCV vigente, para que los montos en Bs. ya contratados/pagados dejen de recalcularse con la tasa del día.", icon: <Lock className="h-5 w-5" />, color: "indigo" },
+  congelacion_tasa: { title: "Congelación de tasa de cambio", description: "En qué momento del flujo se congelan los Bs. de la obra (una sola opción): el monto en su moneda de cotización con la tasa de esa moneda, para que deje de recalcularse con la tasa del día.", icon: <Lock className="h-5 w-5" />, color: "indigo" },
   sincronizacion_tasa: { title: "Sincronización de tasa", description: "Hora, activación y modo debug del cronjob que sincroniza las tasas BCV, y roles que ven el switch BCV / USDT.", icon: <RefreshCw className="h-5 w-5" />, color: "sky" },
   rating_ia: { title: "Cronjob de RatingIA", description: "Activación, frecuencia (en días), hora y modo debug del batch que evalúa la sugerencia de rating IA de todos los proveedores activos.", icon: <BrainCircuit className="h-5 w-5" />, color: "purple" },
 };

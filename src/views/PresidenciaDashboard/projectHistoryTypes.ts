@@ -110,7 +110,11 @@ export interface HistorySupplier {
 export interface HistoryRateFreeze {
   trigger: string;
   baseCurrency: string;
+  frozenCurrency: string;
+  /** Bs. por unidad de frozenCurrency. */
   frozenRate: number | null;
+  frozenAmount: number | null;
+  frozenAmountBs: number | null;
   frozenAmountBase: number | null;
   frozenAt: string | null;
   source: string;

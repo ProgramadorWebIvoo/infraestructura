@@ -11,6 +11,9 @@ function makeFreeze(overrides: Partial<RateFreeze> = {}): RateFreeze {
     trigger: "CONTRATADO",
     baseCurrency: "USD",
     frozenRate: 100,
+    frozenCurrency: "USD",
+    frozenAmount: 1000,
+    frozenAmountBs: null,
     frozenAmountBase: 1000,
     source: "AUTO",
     reason: null,
@@ -39,6 +42,18 @@ describe("useFrozenBsAmount", () => {
     expect(result.current.bs).toBe(100000);
     expect(result.current.isFrozen).toBe(true);
     expect(result.current.freeze?.id).toBe(1);
+  });
+
+  it("un congelado en otra moneda (USDT) fija los Bs. de esa moneda, no los del USD base × tasa", () => {
+    // 1.200 USDT × 1.000 Bs = 1.200.000 Bs; su equivalente base son 1.500 USD.
+    const freezes = [makeFreeze({ frozenCurrency: "USDT", frozenRate: 1000, frozenAmount: 1200, frozenAmountBs: 1200000, frozenAmountBase: 1500 })];
+
+    const total = renderHook(() => useFrozenBsAmount(1500, freezes, "CONTRATADO"));
+    const half = renderHook(() => useFrozenBsAmount(750, freezes, "CONTRATADO"));
+
+    expect(total.result.current.bs).toBe(1200000);
+    expect(half.result.current.bs).toBe(600000);
+    expect(total.result.current.isFrozen).toBe(true);
   });
 
   it("ignora un freeze ya superseded (no vigente) y usa la tasa en vivo", () => {

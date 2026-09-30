@@ -90,7 +90,7 @@ export default function SegmentedControl<T extends string>({
     );
   }
 
-  const GRID_COLS: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" };
+  const GRID_COLS: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-2 sm:grid-cols-4" };
   const gridColsClass = GRID_COLS[options.length] ?? "grid-cols-2";
 
   return (

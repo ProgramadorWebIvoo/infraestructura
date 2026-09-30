@@ -144,8 +144,15 @@ export interface RateFreeze {
   id: number;
   trigger: "CONTRATADO" | "PAGO_ANTICIPO" | "PAGO_FINIQUITO";
   baseCurrency: string;
-  /** Bs. por unidad de baseCurrency — null si no había tasa BCV cargada al momento de congelar. */
+  /** Moneda del monto congelado (la de cotización: USD, EUR, USDT...). */
+  frozenCurrency: string;
+  /** Bs. por unidad de frozenCurrency (la tasa de ESA moneda) — null si no había tasa cargada al congelar. */
   frozenRate: number | null;
+  /** Monto congelado, en frozenCurrency. */
+  frozenAmount: number | null;
+  /** Bolívares congelados (frozenAmount × frozenRate) — null si no había tasa. */
+  frozenAmountBs: number | null;
+  /** Equivalente del monto en moneda base. */
   frozenAmountBase: number | null;
   source: "AUTO" | "MANUAL";
   reason: string | null;

@@ -5,8 +5,8 @@
  * Punto único de decisión "monto en Bs. congelado vs. en vivo" para montos
  * de un proyecto — envuelve useCurrencyConversion(). Si el proyecto tiene
  * una congelación vigente (no reemplazada) para el trigger dado, usa
- * frozenRate * amountBase (fijo, no se mueve con la tasa BCV del día); si
- * no, cae al convert() en vivo de siempre. Único lugar donde vive este
+ * los Bs. congelados (fijos, no se mueven con ninguna tasa del día ni con el
+ * switch BCV/USDT); si no, cae al convert() en vivo de siempre. Único lugar donde vive este
  * `if`, para no repetirlo en cada vista que muestra montos de proyecto.
  */
 
@@ -22,6 +22,17 @@ export interface FrozenBsAmountResult {
   isFrozen: boolean;
   /** Solo presente si isFrozen. */
   freeze?: RateFreeze;
+}
+
+/**
+ * Bs. por unidad de moneda base implícitos en un congelado: sus Bs. sobre su
+ * equivalente en base. Así un monto en base (USD) se convierte con la misma
+ * proporción que se congeló aunque el monto original estuviera en EUR o USDT
+ * (su tasa propia). Sin esos datos (congelados antiguos), la tasa registrada.
+ */
+function bsPerBase(freeze: RateFreeze): number | null {
+  if (freeze.frozenAmountBs != null && freeze.frozenAmountBase) return freeze.frozenAmountBs / freeze.frozenAmountBase;
+  return freeze.frozenRate;
 }
 
 /** Última congelación vigente (no superseded) para un trigger dado. */
@@ -40,8 +51,9 @@ export function useFrozenBsAmount(
     const amount = amountBase ?? 0;
     const freeze = activeFreezeFor(rateFreezes, trigger);
 
-    if (freeze && freeze.frozenRate != null) {
-      const bs = amount * freeze.frozenRate;
+    const frozenBsPerBase = freeze ? bsPerBase(freeze) : null;
+    if (freeze && frozenBsPerBase != null) {
+      const bs = amount * frozenBsPerBase;
       return { bs, formatted: `Bs. ${formatBs(bs)}`, isFrozen: true, freeze };
     }
 
