@@ -66,7 +66,9 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
         }));
 
   const [materialRows, setMaterialRows] = useState<MaterialItemRow[]>(buildMaterialRows);
-  const [laborCost, setLaborCost] = useState<number | "">(proposal.laborCost);
+  // Mano de obra en la moneda en que se cotizó (quoteCurrency): laborCost está en la
+  // moneda base, así que una propuesta convertida precarga su monto original.
+  const [laborCost, setLaborCost] = useState<number | "">(proposal.laborCostOriginal ?? proposal.laborCost);
   const [durationValue, setDurationValue] = useState<number | "">(proposal.durationValue ?? proposal.deliveryWeeks);
   const [durationUnit, setDurationUnit] = useState<ProposalDurationUnit>(proposal.durationUnit ?? "semanas");
   const [advancePercent, setAdvancePercent] = useState<number | "">(proposal.negotiatedAdvancePercent);
@@ -131,12 +133,14 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
 
     setIsSubmitting(true);
     try {
-      const materialCostUSD = quoteCurrency !== "USD" ? convertBetween(materialCostTotal, quoteCurrency, "USD") : materialCostTotal;
+      // Los montos viajan tal como se digitaron, en quoteCurrency: el backend los
+      // convierte a la moneda base y guarda original + tasa (ProposalCurrencyConverter).
       await onRenegotiateProposal(project.id, proposal.id, {
-        materialCost: materialCostUSD,
+        quoteCurrency,
+        materialCost: materialCostTotal,
         materialItems,
         laborCost: laborCostNum,
-        totalCost: priceNuevoUSD,
+        totalCost: newTotal,
         deliveryWeeks,
         durationValue: durationValueNum,
         durationUnit,
@@ -145,7 +149,6 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
         fechaOferta,
         motivo: motivo.trim(),
         ...(motivoAnticipoFilled ? { motivoAnticipoExcedido: motivoAnticipoExcedido.trim() } : {}),
-        ...(quoteCurrency !== proposal.quoteCurrency ? { quoteCurrency } : {}),
       });
       onClose();
     } catch {
@@ -232,7 +235,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                   <th className="px-3 py-2">Material</th>
                   <th className="px-3 py-2 text-center">Cant.</th>
                   <th className="px-3 py-2">Unidad</th>
-                  <th className="px-3 py-2 text-right">Precio unit. ($)</th>
+                  <th className="px-3 py-2 text-right">Precio unit. ({quoteCurrency})</th>
                   <th className="px-3 py-2 text-right">Total</th>
                   <th className="px-3 py-2 w-8" />
                 </tr>
@@ -341,7 +344,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label htmlFor="renegotiate-labor-cost" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-              Costo Mano de Obra ($)
+              Costo Mano de Obra ({quoteCurrency})
             </label>
             <NumericInput id="renegotiate-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
             {hasRates && typeof laborCost === "number" && laborCost > 0 && (
