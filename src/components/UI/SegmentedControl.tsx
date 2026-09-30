@@ -39,6 +39,8 @@ interface SegmentedControlProps<T extends string> {
   /** Requerido en variant="card" — nombra el radiogroup para accesibilidad. */
   ariaLabel?: string;
   id?: string;
+  /** Deshabilita todas las opciones (no operable con mouse ni con teclado). */
+  disabled?: boolean;
 }
 
 export default function SegmentedControl<T extends string>({
@@ -50,6 +52,7 @@ export default function SegmentedControl<T extends string>({
   accent = "brand",
   ariaLabel,
   id,
+  disabled = false,
 }: SegmentedControlProps<T>) {
   const indicatorId = useId();
   const reduceMotion = useReducedMotion();
@@ -70,6 +73,7 @@ export default function SegmentedControl<T extends string>({
               key={opt.value}
               type="button"
               aria-pressed={ariaLabel ? isActive : undefined}
+              disabled={disabled}
               onClick={() => onChange(opt.value)}
               className={`relative ${isSmall ? "px-2.5 py-1" : "px-4 py-2"} rounded-lg transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-slate-400 ${
                 isActive ? SEMANTIC_COLOR_MAP[opt.accent ?? accent].text700 : "text-slate-500 hover:text-slate-700"
@@ -104,6 +108,7 @@ export default function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={isActive}
+            disabled={disabled}
             onClick={() => onChange(opt.value)}
             className={`flex items-center gap-2 px-3.5 py-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
               isActive

@@ -10,9 +10,9 @@
  * Reutiliza PaymentOrderDetailModal (mismo componente que Finanzas/Procura).
  */
 
+import { formatPaidAmount } from "@/utils/paymentSettlement";
 import { useState } from "react";
 import { FileSignature } from "lucide-react";
-import { formatCurrency } from "@ivoo/shared";
 import Card from "@/components/UI/Card";
 import EmptyState from "@/components/UI/EmptyState";
 import SectionHeader from "@/components/UI/SectionHeader";
@@ -61,7 +61,7 @@ export default function MisFirmasPanel({ authToken, activeRole }: MisFirmasPanel
               </div>
               <div className="text-right whitespace-nowrap">
                 <div className="text-[10px] text-slate-400 uppercase font-bold">Monto</div>
-                <div className="font-mono font-black text-slate-800">{formatCurrency(order.amount)}</div>
+                <div className="font-mono font-black text-slate-800">{formatPaidAmount(order.amount, order.currency)}</div>
               </div>
               <Button size="sm" colorScheme="amber" icon={<FileSignature className="h-3.5 w-3.5" />} onClick={() => setViewOrder(order)}>
                 Revisar y firmar

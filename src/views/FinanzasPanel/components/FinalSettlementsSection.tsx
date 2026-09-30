@@ -39,7 +39,7 @@ import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 interface FinalSettlementsSectionProps {
   pendingFinalPayments: Project[];
   /** El comprobante de pago es obligatorio — sin él no se puede confirmar la liquidación. */
-  onPayFinal: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
+  onPayFinal: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<boolean | void>;
   onRefresh?: () => Promise<void> | void;
   authToken?: string;
   activeRole?: string;

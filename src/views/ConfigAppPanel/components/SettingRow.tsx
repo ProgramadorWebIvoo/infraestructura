@@ -84,14 +84,15 @@ export default function SettingRow({ setting, value, onChange, error, readOnly, 
               <span className="text-xs text-text-tertiary">{value === "true" ? "Activado" : "Desactivado"}</span>
             </label>
           ) : enumOptions ? (
-            // Opción única (radio): solo valores válidos. Sin permiso de edición, se muestra pero no responde.
-            <div className={`flex-1 min-w-0 ${readOnly ? "pointer-events-none opacity-60" : ""}`} aria-disabled={readOnly || undefined}>
+            // Opción única (radio): solo valores válidos. Sin permiso de edición, se muestra pero no responde (ni por teclado).
+            <div className={`flex-1 min-w-0 ${readOnly ? "opacity-60" : ""}`}>
               <SegmentedControl
                 variant="card"
                 options={enumOptions}
                 value={value}
                 onChange={next => onChange(setting.id, next)}
                 ariaLabel={setting.label}
+                disabled={readOnly}
               />
             </div>
           ) : isRoleList ? (

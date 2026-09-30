@@ -47,9 +47,27 @@ export function formatRate(rate: number): string {
   return rate.toLocaleString("es-VE", { minimumFractionDigits: 0, maximumFractionDigits: 8 });
 }
 
+/**
+ * Redondeo half-up a `decimals` decimales, equivalente a `round()` de PHP: se hace sobre la
+ * representación decimal (1.005 → 1.01) y no sobre el float binario, que en medios exactos
+ * daba un centavo distinto y podía discrepar del backend en el borde de la tolerancia.
+ */
+export function roundTo(value: number, decimals: number): number {
+  if (!Number.isFinite(value)) return value;
+  // Half-up "alejándose del cero" como PHP (Math.round de JS redondea los medios hacia +∞:
+  // -1.005 daría -1.00 en vez de -1.01, y las diferencias negativas son frecuentes).
+  const sign = value < 0 ? -1 : 1;
+  const abs = Math.abs(value);
+  const text = String(abs);
+  // Notación exponencial (números muy pequeños o enormes): sin representación decimal fiable.
+  if (text.includes("e")) return sign * (Math.round(abs * 10 ** decimals) / 10 ** decimals);
+  const rounded = Math.round(Number(`${text}e${decimals}`));
+  return sign * Number(`${rounded}e-${decimals}`);
+}
+
 /** Redondeo a 2 decimales (mismo criterio que `round(x, 2)` del backend). */
 export function round2(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
+  return roundTo(value, 2);
 }
 
 /**

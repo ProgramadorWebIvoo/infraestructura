@@ -49,7 +49,7 @@ export function usePaymentWorkflows({
       } catch (error) {
         logError("handlePayAdvance:uploadProof", error);
         show(getErrorMessage(error, "No se pudo adjuntar el comprobante de pago. El anticipo no fue liberado."), "error");
-        return;
+        return false;
       }
 
       const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_EJECUCION, advancePaidAmount: amount });
@@ -60,10 +60,13 @@ export function usePaymentWorkflows({
           body: JSON.stringify({ paymentType: "ADVANCE", amount, ...settlement }),
         });
         sync(project);
+        return true;
       } catch (error) {
         logError("handlePayAdvance", error);
         if (previous) sync(previous);
-        show("No se pudo registrar el anticipo.", "error");
+        // Incluye el motivo real del backend (ej. "indica el motivo de la diferencia").
+        show(`No se pudo registrar el anticipo. ${getErrorMessage(error, "")}`.trim(), "error");
+        return false;
       }
     },
     [authTokenRef, showToastRef, syncProjectRef, optimisticUpdate],
@@ -80,7 +83,7 @@ export function usePaymentWorkflows({
       } catch (error) {
         logError("handlePayFinal:uploadProof", error);
         show(getErrorMessage(error, "No se pudo adjuntar el comprobante de pago. El finiquito no fue liquidado."), "error");
-        return;
+        return false;
       }
 
       const previous = optimisticUpdate(projectId, { status: ProjectStatus.COMPLETADO_PAGADO, finalPaidAmount: amount });
@@ -91,10 +94,12 @@ export function usePaymentWorkflows({
           body: JSON.stringify({ paymentType: "FINAL", amount, ...settlement }),
         });
         sync(project);
+        return true;
       } catch (error) {
         logError("handlePayFinal", error);
         if (previous) sync(previous);
-        show("No se pudo registrar el pago final.", "error");
+        show(`No se pudo registrar el pago final. ${getErrorMessage(error, "")}`.trim(), "error");
+        return false;
       }
     },
     [authTokenRef, showToastRef, syncProjectRef, optimisticUpdate],

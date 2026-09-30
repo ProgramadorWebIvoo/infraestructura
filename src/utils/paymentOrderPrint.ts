@@ -56,8 +56,8 @@ function paymentSectionHtml(order: PaymentOrder): string {
       : null,
     p.coveredAmount !== null ? ["Equivalente cubierto", formatPaidAmount(p.coveredAmount, p.obligationCurrency)] : null,
     p.differenceAmount !== null && p.differenceAmount !== 0 ? ["Diferencia", `${formatPaidAmount(p.differenceAmount, p.obligationCurrency)}${p.differenceReason ? ` — ${p.differenceReason}` : ""}`] : null,
-    p.contractRateFreeze?.frozenRate != null ? ["Tasa congelada de la cotización", `1 ${p.contractRateFreeze.baseCurrency} = ${formatRate(p.contractRateFreeze.frozenRate)} Bs.`] : null,
-    p.paymentRateFreeze?.frozenRate != null ? ["Tasa congelada del pago", `1 ${p.paymentRateFreeze.baseCurrency} = ${formatRate(p.paymentRateFreeze.frozenRate)} Bs.`] : null,
+    p.contractRateFreeze?.frozenRate != null ? ["Tasa congelada de la cotización", `1 ${p.contractRateFreeze.frozenCurrency ?? p.contractRateFreeze.baseCurrency} = ${formatRate(p.contractRateFreeze.frozenRate)} Bs.`] : null,
+    p.paymentRateFreeze?.frozenRate != null ? ["Tasa congelada del pago", `1 ${p.paymentRateFreeze.frozenCurrency ?? p.paymentRateFreeze.baseCurrency} = ${formatRate(p.paymentRateFreeze.frozenRate)} Bs.`] : null,
     p.paidDate || p.bank || p.reference ? ["Fecha / banco / referencia", [p.paidDate, p.bank, p.reference].filter(Boolean).join(" · ")] : null,
   ].filter((line): line is string[] => line !== null);
 

@@ -86,10 +86,11 @@ export default function PaymentSettlementForm({ settlement, obligation, contract
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {mode === "OTHER_CURRENCY" && (
             <div>
-              <label className={LABEL_CLASS}>
+              <label htmlFor="payment-paid-currency" className={LABEL_CLASS}>
                 Moneda pagada <RequiredMark filled={!!state.paidCurrency} />
               </label>
               <Select
+                id="payment-paid-currency"
                 value={state.paidCurrency}
                 onChange={settlement.setPaidCurrency}
                 options={[{ value: "", label: "Selecciona…" }, ...otherCurrencyOptions]}
@@ -101,14 +102,15 @@ export default function PaymentSettlementForm({ settlement, obligation, contract
           {isConversion && (
             <>
               <div>
-                <label className={LABEL_CLASS}>Origen de la tasa</label>
-                <Select value={state.rateSource} onChange={value => settlement.setRateSource(value as AppliedRateSource)} options={RATE_SOURCE_OPTIONS} size="md" />
+                <label htmlFor="payment-rate-source" className={LABEL_CLASS}>Origen de la tasa</label>
+                <Select id="payment-rate-source" value={state.rateSource} onChange={value => settlement.setRateSource(value as AppliedRateSource)} options={RATE_SOURCE_OPTIONS} size="md" />
               </div>
               <div>
-                <label className={LABEL_CLASS}>
+                <label htmlFor="payment-applied-rate" className={LABEL_CLASS}>
                   Tasa aplicada (1 {obligation.currency} = ? {paidCurrency === BS_CURRENCY ? "Bs." : paidCurrency || "…"}) <RequiredMark filled={state.appliedRate !== "" && state.appliedRate > 0} />
                 </label>
                 <NumericInput
+                  id="payment-applied-rate"
                   value={state.appliedRate}
                   onChange={value => settlement.setField("appliedRate", value)}
                   step="0.0001"
@@ -130,10 +132,11 @@ export default function PaymentSettlementForm({ settlement, obligation, contract
           )}
 
           <div className={isConversion ? "sm:col-span-2" : ""}>
-            <label className={LABEL_CLASS}>
+            <label htmlFor="payment-paid-amount" className={LABEL_CLASS}>
               Monto pagado {paidCurrency ? `(${paidCurrency === BS_CURRENCY ? "Bs." : paidCurrency})` : ""} <RequiredMark filled={state.paidAmount !== "" && state.paidAmount > 0} />
             </label>
             <NumericInput
+              id="payment-paid-amount"
               value={state.paidAmount}
               onChange={value => settlement.setField("paidAmount", value)}
               placeholder="0.00"
@@ -160,14 +163,14 @@ export default function PaymentSettlementForm({ settlement, obligation, contract
         </div>
       )}
 
-      {needsReason && (
+      {mode && difference !== 0 && (
         <TextField
           id="payment-difference-reason"
-          label="Motivo de la diferencia"
+          label={needsReason ? "Motivo de la diferencia" : "Motivo de la diferencia (opcional)"}
           as="textarea"
           rows={2}
           maxLength={500}
-          required
+          required={needsReason}
           value={state.differenceReason}
           onChange={value => settlement.setField("differenceReason", value)}
           placeholder="Ej. Comisión bancaria descontada, diferencia cambiaria del día…"

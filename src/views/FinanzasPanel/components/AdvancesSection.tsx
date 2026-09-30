@@ -39,7 +39,7 @@ import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 interface AdvancesSectionProps {
   pendingAdvances: Project[];
   /** El comprobante de pago y cómo se pagó (moneda, monto, tasa) son obligatorios para confirmar la liberación. */
-  onPayAdvance: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
+  onPayAdvance: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<boolean | void>;
   onRefresh?: () => Promise<void> | void;
   authToken?: string;
   activeRole?: string;

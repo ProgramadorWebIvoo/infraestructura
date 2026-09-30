@@ -23,6 +23,7 @@ import {
   differenceAmount,
   exceedsTolerance,
   round2,
+  roundTo,
   suggestedRate,
 } from "@/utils/paymentSettlement";
 
@@ -122,13 +123,16 @@ export function usePaymentSettlement(obligation: PaymentObligation | null) {
 
   const payload = useMemo<SettlementPayload | null>(() => {
     if (!state.mode || !derived.isValid) return null;
-    const base: SettlementPayload = { paymentMode: state.mode, paidAmount: Number(state.paidAmount) };
+    // A la precisión con la que el backend valida y guarda (montos 2 decimales, tasa 8).
+    const base: SettlementPayload = { paymentMode: state.mode, paidAmount: round2(Number(state.paidAmount)) };
     if (state.mode !== "QUOTE_CURRENCY") {
-      base.appliedRate = Number(state.appliedRate);
+      base.appliedRate = roundTo(Number(state.appliedRate), 8);
       base.appliedRateSource = state.rateSource;
       if (state.mode === "OTHER_CURRENCY") base.paidCurrency = state.paidCurrency;
     }
-    if (derived.needsReason) base.differenceReason = state.differenceReason.trim();
+    // El motivo viaja siempre que haya diferencia y esté escrito: si la vista previa cree que
+    // está dentro de la tolerancia y el backend no, el pago no se rechaza por falta de motivo.
+    if (derived.difference !== 0 && state.differenceReason.trim()) base.differenceReason = state.differenceReason.trim();
     if (state.bank.trim()) base.bank = state.bank.trim();
     if (state.reference.trim()) base.reference = state.reference.trim();
     return base;

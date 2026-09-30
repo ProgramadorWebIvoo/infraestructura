@@ -43,7 +43,8 @@ export function buildPaymentTarget(project: Project, amountBase: number, order: 
 interface PaymentSettlementModalProps {
   target: PaymentTarget | null;
   onClose: () => void;
-  onConfirm: (projectId: string, amountBase: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
+  /** Devuelve false si el pago no se registró: el modal se queda abierto con el formulario intacto. */
+  onConfirm: (projectId: string, amountBase: number, proofFile: File, settlement: SettlementPayload) => Promise<boolean | void>;
   title: string;
   /** Acción en infinitivo para el mensaje: "liberar el anticipo", "aprobar el finiquito". */
   action: string;
@@ -80,8 +81,8 @@ export default function PaymentSettlementModal({ target, onClose, onConfirm, tit
     if (!target || proofFiles.length === 0 || !settlement.payload) return;
     setIsPaying(true);
     try {
-      await onConfirm(target.projectId, order?.amountBase ?? target.amountBase, proofFiles[0], settlement.payload);
-      handleClose();
+      const registered = await onConfirm(target.projectId, order?.amountBase ?? target.amountBase, proofFiles[0], settlement.payload);
+      if (registered !== false) handleClose();
     } finally {
       setIsPaying(false);
     }

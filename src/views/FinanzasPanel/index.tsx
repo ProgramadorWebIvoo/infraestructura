@@ -33,8 +33,8 @@ interface FinanzasPanelProps {
   /** Opcional con default "" — solo se usa para resolver tabs dinámicas (GET /auth/tabs); sin token, todas las tabs quedan visibles. */
   authToken?: string;
   activeRole?: string;
-  onPayAdvance: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
-  onPayFinal: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<void>;
+  onPayAdvance: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<boolean | void>;
+  onPayFinal: (projectId: string, amount: number, proofFile: File, settlement: SettlementPayload) => Promise<boolean | void>;
   isLoading?: boolean;
   onRefreshData?: () => Promise<void> | void;
 }

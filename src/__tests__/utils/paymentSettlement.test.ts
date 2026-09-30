@@ -4,6 +4,8 @@ import {
   differenceAmount,
   exceedsTolerance,
   formatPaidAmount,
+  round2,
+  roundTo,
   suggestedRate,
 } from "@/utils/paymentSettlement";
 
@@ -59,5 +61,24 @@ describe("formatPaidAmount", () => {
   it("muestra USDT y monedas ISO con su símbolo y código", () => {
     expect(formatPaidAmount(360, "USDT")).toBe("₮360.00 USDT");
     expect(formatPaidAmount(1200, "EUR")).toBe("€1,200.00 EUR");
+  });
+});
+
+describe("roundTo / round2 (equivalente a round() de PHP)", () => {
+  it("redondea half-up sobre la representación decimal, no sobre el float binario", () => {
+    expect(round2(1.005)).toBe(1.01);
+    expect(round2(0.615)).toBe(0.62);
+    expect(round2(2.675)).toBe(2.68);
+    expect(round2(-1.005)).toBe(-1.01);
+  });
+
+  it("respeta el número de decimales pedido", () => {
+    expect(roundTo(1000.123456789, 8)).toBe(1000.12345679);
+    expect(roundTo(360.001, 2)).toBe(360);
+  });
+
+  it("no rompe con exponenciales ni valores no finitos", () => {
+    expect(roundTo(1e-9, 2)).toBe(0);
+    expect(roundTo(Number.POSITIVE_INFINITY, 2)).toBe(Number.POSITIVE_INFINITY);
   });
 });
