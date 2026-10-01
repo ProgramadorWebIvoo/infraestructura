@@ -9,9 +9,8 @@
  */
 
 import { useState } from "react";
-import { FileSignature, Hash, Printer, User } from "lucide-react";
+import { FileSignature, Hash, User } from "lucide-react";
 import Modal from "@/components/UI/Modal";
-import Button from "@/components/UI/Button";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "@/components/UI/colorTokens";
 import ContractorDocumentsSection from "@/components/Contractor/ContractorDocumentsSection";
 import PaymentOrderSignatureLine from "./PaymentOrderSignatureLine";
@@ -20,7 +19,6 @@ import BsAmount from "@/components/UI/BsAmount";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { formatNumber } from "@/utils";
 import { formatPaidAmount } from "@/utils/paymentSettlement";
-import { printPaymentOrder } from "@/utils/paymentOrderPrint";
 import type { PaymentOrder, PaymentOrderDetail, PaymentOrderStatus } from "@/types";
 
 interface PaymentOrderDetailModalProps {
@@ -68,13 +66,6 @@ export default function PaymentOrderDetailModal({ order, onClose, authToken, act
       iconColor="rose"
       title={`Orden de pago #${order.number}`}
       infoLine={order.paymentType === "ADVANCE" ? "Anticipo" : "Finiquito"}
-      footer={
-        <div className="flex justify-end">
-          <Button variant="secondary" size="sm" icon={<Printer className="h-3.5 w-3.5" />} onClick={() => printPaymentOrder(payment ? { ...order, payment } : order)}>
-            Imprimir orden
-          </Button>
-        </div>
-      }
     >
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -123,7 +114,7 @@ export default function PaymentOrderDetailModal({ order, onClose, authToken, act
 
         <PaymentOrderSignatureLine orderId={order.id} authToken={authToken} onSigned={onOrderSigned} onDetailLoaded={setDetail} />
 
-        <ContractorDocumentsSection contractorCode={order.contractorCode} authToken={authToken} activeRole={activeRole} />
+        <ContractorDocumentsSection contractorCode={order.contractorCode} authToken={authToken} activeRole={activeRole} readOnly />
       </div>
     </Modal>
   );

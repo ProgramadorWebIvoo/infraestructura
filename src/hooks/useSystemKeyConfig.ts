@@ -69,7 +69,7 @@ export function useSystemKeyConfig(authToken: string) {
   );
 
   const testConfig = useCallback(
-    async (group: SystemKeyGroup, payload?: Record<string, string>): Promise<{ success: boolean; message: string }> => {
+    async (group: SystemKeyGroup, payload?: Record<string, string | boolean>): Promise<{ success: boolean; message: string }> => {
       return apiFetch(`/system-keys/${group}/test`, {
         method: "POST",
         body: JSON.stringify(payload ?? {}),

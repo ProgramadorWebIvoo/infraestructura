@@ -38,6 +38,8 @@ interface ContractorDocumentsSectionProps {
   contractorCode: string;
   authToken: string;
   activeRole?: string;
+  /** Fuerza modo consulta (ver/descargar) sin importar el rol, p. ej. dentro del detalle de una orden de pago. */
+  readOnly?: boolean;
 }
 
 interface DocumentRow {
@@ -48,11 +50,11 @@ interface DocumentRow {
   document?: ContractorDocument;
 }
 
-export default function ContractorDocumentsSection({ contractorCode, authToken, activeRole }: ContractorDocumentsSectionProps) {
+export default function ContractorDocumentsSection({ contractorCode, authToken, activeRole, readOnly = false }: ContractorDocumentsSectionProps) {
   const { showToast } = useToast();
   const { maxFileSizeBytes } = useAppGroupSettings();
   const { types } = useContractorDocumentTypes();
-  const canManage = canManageContractorDocuments(activeRole);
+  const canManage = !readOnly && canManageContractorDocuments(activeRole);
   const [documents, setDocuments] = useState<ContractorDocument[]>([]);
   const [completeness, setCompleteness] = useState<ContractorDocumentCompleteness | null>(null);
   const [isLoading, setIsLoading] = useState(true);
