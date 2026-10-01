@@ -11,6 +11,7 @@
 import { ShieldCheck, Paperclip } from "lucide-react";
 import type { MaterialItem, Project, ProjectDocument } from "@/types";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
+import ProductLinesTable from "@/components/UI/ProductLinesTable";
 
 export const CONDITION_LABEL: Record<MaterialItem["condition"], string> = {
   NUEVO: "Nuevo",
@@ -43,38 +44,65 @@ export function ConditionBadge({ condition }: { condition: MaterialItem["conditi
   );
 }
 
-export function MaterialDetailRow({ material }: { material: MaterialItem }) {
+/** Marca, modelo, garantía, especificaciones y observaciones de un material (solo lo que tenga). */
+function MaterialExtras({ material }: { material: MaterialItem }) {
   const hasExtras = material.brand || material.model || material.warrantyValue || material.specifications || material.observations;
+  if (!hasExtras) return null;
 
   return (
-    <li className="py-2.5 first:pt-0 last:pb-0 border-b border-brand-100/60 last:border-0">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
-          <span className="font-bold text-slate-700">{material.name}</span>
-          <ConditionBadge condition={material.condition} />
-        </div>
-        <span className="font-mono font-bold text-slate-700 shrink-0">{material.quantity} {material.unit}</span>
-      </div>
-      {hasExtras && (
-        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
-          {(material.brand || material.model) && (
-            <span>
-              {material.brand}
-              {material.brand && material.model ? " · " : ""}
-              {material.model}
-            </span>
-          )}
-          {material.warrantyValue != null && material.warrantyUnit && (
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3 text-success-500" />
-              Garantía: {material.warrantyValue} {WARRANTY_UNIT_LABEL[material.warrantyUnit]}
-            </span>
-          )}
-          {material.specifications && <span className="italic">{material.specifications}</span>}
-          {material.observations && <span className="italic">{material.observations}</span>}
-        </div>
+    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
+      {(material.brand || material.model) && (
+        <span>
+          {material.brand}
+          {material.brand && material.model ? " · " : ""}
+          {material.model}
+        </span>
       )}
-    </li>
+      {material.warrantyValue != null && material.warrantyUnit && (
+        <span className="flex items-center gap-1">
+          <ShieldCheck className="h-3 w-3 text-success-500" />
+          Garantía: {material.warrantyValue} {WARRANTY_UNIT_LABEL[material.warrantyUnit]}
+        </span>
+      )}
+      {material.specifications && <span className="italic">{material.specifications}</span>}
+      {material.observations && <span className="italic">{material.observations}</span>}
+    </div>
+  );
+}
+
+/**
+ * Materiales solicitados de una obra, con sus características, en tabla paginada con
+ * buscador: la revisión técnica puede recibir ~70 materiales y la lista plana desbordaba
+ * el paso del asistente.
+ */
+export function MaterialsReviewTable({ materials }: { materials: MaterialItem[] }) {
+  return (
+    <ProductLinesTable
+      ariaLabel="Materiales solicitados"
+      items={materials}
+      rowKey={(m, i) => m.id ?? `${m.name}-${i}`}
+      rowAlign="top"
+      pageSize={8}
+      maxHeight="22rem"
+      searchText={(m) => `${m.name} ${m.brand ?? ""} ${m.model ?? ""}`}
+      searchPlaceholder="Buscar material…"
+      columns={[
+        {
+          key: "material",
+          label: "Material",
+          render: (m) => (
+            <>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <span className="font-bold text-slate-700">{m.name}</span>
+                <ConditionBadge condition={m.condition} />
+              </div>
+              <MaterialExtras material={m} />
+            </>
+          ),
+        },
+        { key: "quantity", label: "Cantidad", align: "right", className: "whitespace-nowrap font-mono font-bold text-slate-700", render: (m) => `${m.quantity} ${m.unit}` },
+      ]}
+    />
   );
 }
 

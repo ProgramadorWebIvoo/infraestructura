@@ -10,6 +10,7 @@ import { formatCurrency } from "@ivoo/shared";
 import { Calendar, DollarSign, FileText, MapPin, Package } from "lucide-react";
 import type { Project } from "@/types";
 import Modal from "@/components/UI/Modal";
+import ProductLinesTable from "@/components/UI/ProductLinesTable";
 import StatusBadge from "@/components/UI/StatusBadge";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
@@ -111,48 +112,55 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
             {project.materials.length === 0 ? (
               <p className="text-xs text-slate-400 italic">Sin materiales registrados.</p>
             ) : (
-              <div className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-slate-100/60 text-slate-500 font-bold text-[9px] uppercase tracking-wider">
-                      <th className="py-2 px-3 text-left">Material</th>
-                      <th className="py-2 px-3 text-center">Cant.</th>
-                      <th className="py-2 px-3 text-right">P. Unit.</th>
-                      <th className="py-2 px-3 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {project.materials.map((m) => (
-                      <tr key={m.id} className="bg-white">
-                        <td className="py-2 px-3 font-semibold text-slate-800">{m.name}</td>
-                        <td className="py-2 px-3 text-center font-mono text-slate-600">{m.quantity} {m.unit}</td>
-                        <td className="py-2 px-3 text-right font-mono text-slate-500">
-                          {formatCurrency(m.estimatedUnitPrice)}
-                          <BsAmount amount={m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
-                        </td>
-                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
-                          {formatCurrency(m.quantity * m.estimatedUnitPrice)}
-                          <BsAmount amount={m.quantity * m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-slate-50">
-                      <td colSpan={3} className="py-2.5 px-3 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        <span className="flex items-center justify-end gap-1.5">
-                          <DollarSign className="h-3.5 w-3.5" />
-                          Total Estimado
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-black text-sky-700 text-sm">
-                        {formatCurrency(project.estimatedTotal)}
-                        <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+              <ProductLinesTable
+                ariaLabel="Materiales solicitados"
+                items={project.materials}
+                rowKey={(m, i) => m.id ?? i}
+                pageSize={10}
+                maxHeight="22rem"
+                searchText={(m) => m.name}
+                searchPlaceholder="Buscar material…"
+                columns={[
+                  { key: "name", label: "Material", className: "font-semibold text-slate-800", render: (m) => m.name },
+                  { key: "quantity", label: "Cant.", align: "center", className: "font-mono text-slate-600", render: (m) => `${m.quantity} ${m.unit}` },
+                  {
+                    key: "unitPrice",
+                    label: "P. Unit.",
+                    align: "right",
+                    className: "font-mono text-slate-500",
+                    render: (m) => (
+                      <>
+                        {formatCurrency(m.estimatedUnitPrice)}
+                        <BsAmount amount={m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+                      </>
+                    ),
+                  },
+                  {
+                    key: "total",
+                    label: "Total",
+                    align: "right",
+                    className: "font-mono font-bold text-slate-800",
+                    render: (m) => (
+                      <>
+                        {formatCurrency(m.quantity * m.estimatedUnitPrice)}
+                        <BsAmount amount={m.quantity * m.estimatedUnitPrice} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+                      </>
+                    ),
+                  },
+                ]}
+                summary={
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      Total Estimado
+                    </span>
+                    <span className="text-right font-mono text-sm font-black text-sky-700">
+                      {formatCurrency(project.estimatedTotal)}
+                      <BsAmount amount={project.estimatedTotal} convert={convert} hasRates={hasRates} isLoading={ratesLoading} />
+                    </span>
+                  </div>
+                }
+              />
             )}
           </section>
 

@@ -41,7 +41,7 @@ import AlertBanner from "@/components/UI/AlertBanner";
 import DossierEvaluationPanel from "./DossierEvaluationPanel";
 import ReviewResidentField from "./ReviewResidentField";
 import { reviewNeedsResidentChoice, reviewResidentPayload } from "@/utils/projectLocation";
-import { AttachmentsSummary, MaterialDetailRow, ProjectTypeBadge } from "./TechnicalReviewPresentational";
+import { AttachmentsSummary, MaterialsReviewTable, ProjectTypeBadge } from "./TechnicalReviewPresentational";
 import { apiFetch, downloadProjectDocument } from "@/services/api";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
@@ -302,11 +302,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                       <Package className="h-3 w-3" />
                       Materiales Solicitados
                     </span>
-                    <ul>
-                      {project.materials.map((m) => (
-                        <MaterialDetailRow key={m.id ?? m.name} material={m} />
-                      ))}
-                    </ul>
+                    <MaterialsReviewTable materials={project.materials} />
                   </div>
                 </div>
 

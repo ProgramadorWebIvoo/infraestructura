@@ -13,6 +13,7 @@ import type { Project } from "@/types";
 import StatusBadge from "@/components/UI/StatusBadge";
 import Button from "@/components/UI/Button";
 import { canChangeProjectResident, canResendClosureLink } from "@/utils/projectLocation";
+import ProductLinesTable from "@/components/UI/ProductLinesTable";
 
 interface ExpedienteDetailTabProps {
   project: Project;
@@ -37,14 +38,19 @@ export default function ExpedienteDetailTab({ project, rejectionCount, onChangeR
                 <Package className="h-3 w-3 shrink-0" />
                 Materiales ({project.materials.length})
               </span>
-              <ul className="text-[11px] text-slate-600 space-y-0.5">
-                {project.materials.map((m, i) => (
-                  <li key={m.id ?? i} className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate">{m.name}</span>
-                    <span className="shrink-0 font-mono text-slate-400">{m.quantity} {m.unit}</span>
-                  </li>
-                ))}
-              </ul>
+              <ProductLinesTable
+                ariaLabel="Materiales del expediente"
+                items={project.materials}
+                rowKey={(m, i) => m.id ?? i}
+                pageSize={8}
+                maxHeight="16rem"
+                searchText={(m) => m.name}
+                searchPlaceholder="Buscar material…"
+                columns={[
+                  { key: "name", label: "Material", className: "text-[11px] text-slate-600", render: (m) => <span className="block max-w-xs truncate" title={m.name}>{m.name}</span> },
+                  { key: "quantity", label: "Cantidad", align: "right", className: "whitespace-nowrap font-mono text-[11px] text-slate-500", render: (m) => `${m.quantity} ${m.unit}` },
+                ]}
+              />
             </div>
           )}
 
