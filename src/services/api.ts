@@ -29,6 +29,7 @@ import {
 import type { ApiFetchOptions, ApiDebugEvent } from "@ivoo/shared";
 import type { ProjectDocument } from "@/types";
 import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugStore";
+import { applyDebugNetworkProfile } from "./debugNetwork";
 export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
@@ -129,6 +130,7 @@ export async function apiFetch<T = unknown>(
 ): Promise<T> {
   const { token: _webIgnoresBearer, ...rest } = options;
   const method = (options.method ?? "GET").toUpperCase();
+  await applyDebugNetworkProfile(`${method} ${path}`, options.signal);
 
   const headers: Record<string, string> = {
     ...(rest.headers as Record<string, string> | undefined),
@@ -148,6 +150,7 @@ export async function apiDownload(
   options: ApiFetchOptions = {},
 ): Promise<Blob> {
   const { token: _webIgnoresBearer, ...rest } = options;
+  await applyDebugNetworkProfile(`DOWNLOAD ${path}`, options.signal);
   const startedAt = performance.now();
   try {
     const blob = await sharedApiDownload(path, { ...rest, credentials: "include" });

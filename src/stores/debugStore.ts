@@ -20,6 +20,7 @@
 
 import { create } from "zustand";
 import { sanitizeForDebug, maskSensitiveString } from "@/utils/debugSanitizer";
+import { notifyConnectivity, type NetworkProfileKey } from "@/utils/debugNetworkProfile";
 import { appendToRing } from "./debugRingBuffer";
 
 const STORAGE_KEY = "ivoo_debug_mode";
@@ -70,6 +71,9 @@ interface DebugState {
   entries: DebugEntry[];
   /** Eventos descartados por el buffer circular desde que se encendió/limpió (ver debugRingBuffer.ts). */
   dropped: number;
+  /** Red simulada para apiFetch/apiDownload (ver services/debugNetwork.ts). Se resetea a "none" al apagar el modo. */
+  networkProfile: NetworkProfileKey;
+  setNetworkProfile: (profile: NetworkProfileKey) => void;
   setEnabled: (enabled: boolean, options?: SetEnabledOptions) => void;
   setPaused: (paused: boolean) => void;
   push: (entry: PushableDebugEntry) => void;
@@ -94,11 +98,12 @@ function buildSearchText(label: string, detail: DebugEntry["detail"]): string {
   return `${label} ${detailText}`.slice(0, MAX_SEARCH_TEXT_CHARS).toLowerCase();
 }
 
-export const useDebugStore = create<DebugState>((set) => ({
+export const useDebugStore = create<DebugState>((set, get) => ({
   enabled: readInitialEnabled(),
   paused: false,
   entries: [],
   dropped: 0,
+  networkProfile: "none",
 
   setEnabled: (enabled, { persist = true } = {}) => {
     if (persist) {
@@ -109,10 +114,16 @@ export const useDebugStore = create<DebugState>((set) => ({
         // funcionando en memoria para el resto de la sesión.
       }
     }
-    set({ enabled, paused: false, entries: [], dropped: 0 });
+    notifyConnectivity(get().networkProfile, "none");
+    set({ enabled, paused: false, entries: [], dropped: 0, networkProfile: "none" });
   },
 
   setPaused: (paused) => set({ paused }),
+
+  setNetworkProfile: (profile) => {
+    notifyConnectivity(get().networkProfile, profile);
+    set({ networkProfile: profile });
+  },
 
   push: (entry) =>
     set((state) => {
