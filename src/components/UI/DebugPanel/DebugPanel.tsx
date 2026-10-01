@@ -12,12 +12,16 @@
  * rol activo es ADMIN/SUPERADMIN y el flag fue activado desde CONFIG APP —
  * no depende de env vars ni de build flags, es 100% runtime y por-navegador.
  *
+ * La captura global (errores, Web Vitals) NO se instala acá sino en
+ * hooks/useDebugRuntime.ts (desde App): sigue viva con el panel cerrado y se
+ * remueve por completo al apagar el modo.
+ *
  * Atajo de teclado: Ctrl/Cmd+Shift+D alterna abierto/cerrado sin necesidad
  * de apuntar al botón flotante — útil mientras se reproduce un bug con las
  * manos ya en el teclado.
  *
  * ── Rendimiento: por qué está partido en Trigger + Content ──
- * <DebugPanelTrigger> (el botón flotante) es lo único montado mientras el
+ * <DebugPanelTrigger> (el botón flotante, ver DebugPanelTrigger.tsx) es lo único montado mientras el
  * panel está cerrado, y solo se suscribe a `entries.length` (un número) —
  * ni filtra, ni busca, ni le importa el contenido de cada entrada. El
  * filtrado/búsqueda real (<DebugPanelContent>) ni siquiera se monta hasta
@@ -38,13 +42,12 @@ import Select from "@/components/UI/Select";
 import { SearchInput } from "@/components/UI/FilterBar";
 import {
   useDebugStore,
-  installGlobalErrorCapture,
-  installPerfObservers,
   type DebugEntry,
   type DebugEntryKind,
   type DebugLevel,
 } from "@/stores/debugStore";
 import type { AuthUser } from "@/hooks/useAuth";
+import DebugPanelTrigger from "./DebugPanelTrigger";
 import DebugEntryList from "./DebugEntryList";
 import DebugQueryPanel from "./DebugQueryPanel";
 import DebugInfoPanel from "./DebugInfoPanel";
@@ -87,15 +90,6 @@ interface DebugPanelProps {
 export default function DebugPanel({ authUser, activeRole }: DebugPanelProps) {
   const [open, setOpen] = useState(false);
 
-  // Instalar la captura global de errores y el atajo de teclado no dependen
-  // de si el panel está abierto — deben quedar armados apenas el rol/flag
-  // habilitan DEBUG-MODE (ver docblock: ambos son baratos y globales al
-  // componente, no a `open`).
-  useEffect(() => {
-    installGlobalErrorCapture();
-    installPerfObservers();
-  }, []);
-
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "d") {
@@ -112,27 +106,6 @@ export default function DebugPanel({ authUser, activeRole }: DebugPanelProps) {
   }
 
   return <DebugPanelContent authUser={authUser} activeRole={activeRole} onClose={() => setOpen(false)} />;
-}
-
-/** Solo se suscribe a la longitud del buffer — nunca al array completo ni a su contenido. */
-function DebugPanelTrigger({ onOpen }: { onOpen: () => void }) {
-  const entryCount = useDebugStore(s => s.entries.length);
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      title="Abrir DEBUG-MODE (Ctrl+Shift+D)"
-      className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white shadow-xl transition-transform hover:scale-105 cursor-pointer"
-    >
-      <Bug className="h-5 w-5" />
-      {entryCount > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-pill bg-rose-500 px-1 text-[10px] font-black text-white">
-          {entryCount > 99 ? "99+" : entryCount}
-        </span>
-      )}
-    </button>
-  );
 }
 
 interface DebugPanelContentProps {

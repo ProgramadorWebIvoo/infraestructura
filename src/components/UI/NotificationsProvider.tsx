@@ -43,7 +43,7 @@ import { useToast } from "./Toast";
 import { BACKEND_NOTIFICATION_TYPE_MAP } from "./alertStyles";
 import { notifyBrowser } from "@/services/browserNotifications";
 import { useNotificationsStore } from "@/stores/notificationsStore";
-import { pushDebugEntry, truncateForDebug, useDebugStore } from "@/stores/debugStore";
+import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugStore";
 
 export interface UseNotificationsResult {
   notifications: AppNotification[];
@@ -98,7 +98,7 @@ export function NotificationsProvider({ authToken, authUser, children }: Notific
           kind: "websocket",
           level: "info",
           label: `${channelName} — .notification.created`,
-          detail: { channel: channelName, event: ".notification.created", payload: truncateForDebug(payload) as Record<string, unknown> },
+          detail: { channel: channelName, event: ".notification.created", payload: prepareForDebug(payload) as Record<string, unknown> },
         });
       }
       pushFromSocket(payload);

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Tab "Performance" del DEBUG-MODE: Web Vitals (LCP/CLS/FCP + long tasks,
- * ver installPerfObservers en debugStore.ts), memoria del heap de JS
+ * ver installPerfObservers en debugCapture.ts), memoria del heap de JS
  * (Chrome-only, performance.memory) y un resumen de red derivado de las
  * entradas `kind: "http"` ya capturadas por el tab Network — no duplica
  * captura, solo agrega otra lectura sobre el mismo buffer.
@@ -11,7 +11,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Activity, Gauge, HardDrive, Timer } from "lucide-react";
-import { useDebugStore, usePerfStore } from "@/stores/debugStore";
+import { useDebugStore } from "@/stores/debugStore";
+import { usePerfStore } from "@/stores/debugCapture";
 
 const MEMORY_POLL_MS = 2000;
 

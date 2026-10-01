@@ -41,6 +41,8 @@ import { ExchangeRatesProvider } from "./components/UI/ExchangeRatesProvider";
 import { AiFeatureGateProvider } from "./components/UI/AiFeatureGateProvider";
 import DebugPanel from "./components/UI/DebugPanel/DebugPanel";
 import { useDebugStore } from "./stores/debugStore";
+import { useDebugModeGuard, canUseDebugMode } from "./hooks/useDebugModeGuard";
+import { useDebugRuntime } from "./hooks/useDebugRuntime";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -214,7 +216,11 @@ function AppRoutes() {
   // distinto nunca ve el botón flotante aunque el flag haya quedado
   // encendido en su localStorage (ej. cambio de rol sin logout).
   const debugModeEnabled = useDebugStore(s => s.enabled);
-  const canUseDebugMode = activeRole === "SUPERADMIN" || activeRole === "ADMIN";
+  const debugModeAllowed = canUseDebugMode(activeRole);
+  // Guardia: si la sesión cae o el rol pierde acceso, el modo se apaga y se limpia.
+  useDebugModeGuard({ hasSession: !!authUser, activeRole, isLoadingPermissions });
+  // Captura global (errores, Web Vitals) solo mientras el modo está activo y permitido.
+  useDebugRuntime(debugModeAllowed && debugModeEnabled);
 
   // ---- Pre-fetching inteligente: heurística "próxima ruta probable por rol" ----
   useIdleRoutePrefetch(activeRole, canAccess);
@@ -435,7 +441,7 @@ function AppRoutes() {
         authToken={authToken}
         location={location}
       />
-      {canUseDebugMode && debugModeEnabled && <DebugPanel authUser={authUser} activeRole={activeRole} />}
+      {debugModeAllowed && debugModeEnabled && <DebugPanel authUser={authUser} activeRole={activeRole} />}
       </ExchangeRatesProvider>
     </NotificationsProvider>
   );

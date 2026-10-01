@@ -28,7 +28,7 @@ import {
 } from "@ivoo/shared";
 import type { ApiFetchOptions, ApiDebugEvent } from "@ivoo/shared";
 import type { ProjectDocument } from "@/types";
-import { pushDebugEntry, truncateForDebug, useDebugStore } from "@/stores/debugStore";
+import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugStore";
 export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
@@ -53,9 +53,9 @@ function handleApiDebugEvent(event: ApiDebugEvent): void {
       fullUrl: event.fullUrl,
       status: event.status,
       durationMs: event.durationMs,
-      requestHeaders: redactHeaders(event.requestHeaders),
-      requestBody: truncateForDebug(event.requestBody),
-      responseBody: truncateForDebug(event.responseBody),
+      requestHeaders: prepareForDebug(event.requestHeaders),
+      requestBody: prepareForDebug(event.requestBody),
+      responseBody: prepareForDebug(event.responseBody),
       errorMessage: event.errorMessage,
     },
   });
@@ -69,15 +69,6 @@ syncApiDebugHook(useDebugStore.getState().enabled);
 useDebugStore.subscribe((state, prevState) => {
   if (state.enabled !== prevState.enabled) syncApiDebugHook(state.enabled);
 });
-
-/** Nunca mostrar tokens/cookies en claro en el panel de debug, aunque sea local. */
-function redactHeaders(headers: Record<string, string>): Record<string, string> {
-  const redacted: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    redacted[key] = /authorization|cookie|x-xsrf-token/i.test(key) ? "[redacted]" : value;
-  }
-  return redacted;
-}
 
 // ---------------------------------------------------------------------------
 // Inicialización de la base URL

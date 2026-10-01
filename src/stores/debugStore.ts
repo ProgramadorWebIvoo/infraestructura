@@ -11,9 +11,15 @@
  * sesión de depuración limpio es más útil que arrastrar ruido de la sesión
  * anterior, y evita competir por la cuota de localStorage con el cache de
  * TanStack Query (ver App.tsx).
+ *
+ * Captura global (errores, Web Vitals): ver debugCapture.ts. Sanitización de
+ * datos sensibles: ver utils/debugSanitizer.ts — `push()` es el único punto
+ * de entrada al buffer, así que NADA llega sin sanear (ni al panel ni a la
+ * exportación).
  */
 
 import { create } from "zustand";
+import { sanitizeForDebug, maskSensitiveString } from "@/utils/debugSanitizer";
 
 const STORAGE_KEY = "ivoo_debug_mode";
 const MAX_ENTRIES = 500;
@@ -44,11 +50,16 @@ export interface DebugEntry {
 /** Lo que un caller (services/, componentes) provee — `id`/`timestamp`/`searchText` los calcula el store en push(). */
 export type PushableDebugEntry = Omit<DebugEntry, "id" | "timestamp" | "searchText">;
 
+interface SetEnabledOptions {
+  /** false = apagar solo en memoria (guardia de rol): conserva la preferencia del admin en localStorage. */
+  persist?: boolean;
+}
+
 interface DebugState {
   enabled: boolean;
   paused: boolean;
   entries: DebugEntry[];
-  setEnabled: (enabled: boolean) => void;
+  setEnabled: (enabled: boolean, options?: SetEnabledOptions) => void;
   setPaused: (paused: boolean) => void;
   push: (entry: PushableDebugEntry) => void;
   clear: (kind?: DebugEntryKind) => void;
@@ -77,12 +88,14 @@ export const useDebugStore = create<DebugState>((set) => ({
   paused: false,
   entries: [],
 
-  setEnabled: (enabled) => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0");
-    } catch {
-      // localStorage inaccesible (modo privado, cuota): el flag sigue
-      // funcionando en memoria para el resto de la sesión.
+  setEnabled: (enabled, { persist = true } = {}) => {
+    if (persist) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0");
+      } catch {
+        // localStorage inaccesible (modo privado, cuota): el flag sigue
+        // funcionando en memoria para el resto de la sesión.
+      }
     }
     set({ enabled, paused: false, entries: [] });
   },
@@ -92,11 +105,18 @@ export const useDebugStore = create<DebugState>((set) => ({
   push: (entry) =>
     set((state) => {
       if (!state.enabled || state.paused) return state;
+      // Red de seguridad: los callers ya sanean ANTES de truncar (ver
+      // prepareForDebug), pero esto garantiza que ninguna entrada llegue al
+      // buffer sin pasar por el sanitizer (idempotente).
+      const label = maskSensitiveString(entry.label);
+      const detail = sanitizeForDebug(entry.detail);
       const next: DebugEntry = {
         ...entry,
+        label,
+        detail,
         id: nextId++,
         timestamp: Date.now(),
-        searchText: buildSearchText(entry.label, entry.detail),
+        searchText: buildSearchText(label, detail),
       };
       const entries = [...state.entries, next];
       if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
@@ -157,127 +177,12 @@ export function truncateForDebug(value: unknown): unknown {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Captura global de errores no manejados
-// ---------------------------------------------------------------------------
-// Excepciones fuera de un try/catch (bug en un handler, error de render que
-// escapó al ErrorBoundary, promesa rechazada sin .catch) no pasan por
-// logError() — sin esto, el DEBUG-MODE se quedaría ciego justo para el tipo
-// de error más difícil de reproducir a mano. Se instala una sola vez, desde
-// DebugPanel al montarse (ver DebugPanel.tsx), no a nivel de módulo: así no
-// hay listeners globales activos para usuarios que nunca activan el modo.
-let globalCaptureInstalled = false;
-
-// ---------------------------------------------------------------------------
-// Web Vitals — capturados en vivo para el tab "Performance"
-// ---------------------------------------------------------------------------
-// No usa la librería `web-vitals` (no es dependencia del proyecto — agregarla
-// solo para 3 números que la Performance API nativa ya expone sería la
-// definición de sobre-ingeniería). PerformanceObserver corre nativo en todos
-// los navegadores que ya soporta la app; los tres tipos de entry (LCP, CLS,
-// FCP) tienen soporte estable desde hace años.
-export interface PerfMetrics {
-  lcpMs?: number;
-  clsScore?: number;
-  fcpMs?: number;
-  longTasksCount: number;
-}
-
-interface PerfState {
-  perfMetrics: PerfMetrics;
-  setPerfMetrics: (updater: (prev: PerfMetrics) => PerfMetrics) => void;
-}
-
-export const usePerfStore = create<PerfState>((set) => ({
-  perfMetrics: { longTasksCount: 0 },
-  setPerfMetrics: (updater) => set((state) => ({ perfMetrics: updater(state.perfMetrics) })),
-}));
-
-let perfObserversInstalled = false;
-
 /**
- * Instala observers de Performance API una sola vez por sesión de pestaña
- * (idéntico criterio a installGlobalErrorCapture: se arma desde DebugPanel
- * al montar, no a nivel de módulo, para no pagar el costo en sesiones sin
- * el rol/flag de DEBUG-MODE). Envuelto en try/catch por entry type — un
- * navegador sin soporte para un `type` particular lanza en `observe()`, y
- * eso no debe tumbar la captura del resto de las métricas.
+ * Forma estándar de preparar un payload para el buffer: SANEAR primero (las
+ * claves sensibles solo existen mientras el valor sigue siendo un objeto) y
+ * después truncar. Invertir el orden dejaría passwords/tokens dentro del
+ * string `preview` de un payload grande.
  */
-export function installPerfObservers(): void {
-  if (perfObserversInstalled) return;
-  perfObserversInstalled = true;
-  if (typeof PerformanceObserver === "undefined") return;
-
-  const setPerfMetrics = usePerfStore.getState().setPerfMetrics;
-
-  try {
-    new PerformanceObserver((list) => {
-      const entries = list.getEntries();
-      const last = entries[entries.length - 1] as PerformanceEntry | undefined;
-      if (last) setPerfMetrics((prev) => ({ ...prev, lcpMs: Math.round(last.startTime) }));
-    }).observe({ type: "largest-contentful-paint", buffered: true });
-  } catch {
-    // Navegador sin soporte para largest-contentful-paint — LCP queda undefined.
-  }
-
-  try {
-    let clsScore = 0;
-    new PerformanceObserver((list) => {
-      for (const entry of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) {
-        if (!entry.hadRecentInput) clsScore += entry.value;
-      }
-      setPerfMetrics((prev) => ({ ...prev, clsScore: Math.round(clsScore * 1000) / 1000 }));
-    }).observe({ type: "layout-shift", buffered: true });
-  } catch {
-    // Navegador sin soporte para layout-shift — CLS queda undefined.
-  }
-
-  try {
-    new PerformanceObserver((list) => {
-      const fcpEntry = list.getEntries().find((e) => e.name === "first-contentful-paint");
-      if (fcpEntry) setPerfMetrics((prev) => ({ ...prev, fcpMs: Math.round(fcpEntry.startTime) }));
-    }).observe({ type: "paint", buffered: true });
-  } catch {
-    // Navegador sin soporte para paint timing — FCP queda undefined.
-  }
-
-  try {
-    new PerformanceObserver((list) => {
-      const count = list.getEntries().length;
-      setPerfMetrics((prev) => ({ ...prev, longTasksCount: prev.longTasksCount + count }));
-    }).observe({ type: "longtask", buffered: true });
-  } catch {
-    // Navegador sin soporte para longtask (ej. Firefox) — contador queda en 0.
-  }
-}
-
-export function installGlobalErrorCapture(): void {
-  if (globalCaptureInstalled) return;
-  globalCaptureInstalled = true;
-
-  window.addEventListener("error", (event) => {
-    pushDebugEntry({
-      kind: "error",
-      level: "error",
-      label: `Uncaught: ${event.message}`,
-      detail: {
-        message: event.message,
-        source: event.filename ? `${event.filename}:${event.lineno}:${event.colno}` : undefined,
-        stack: event.error instanceof Error ? event.error.stack : undefined,
-      },
-    });
-  });
-
-  window.addEventListener("unhandledrejection", (event) => {
-    const reason = event.reason;
-    pushDebugEntry({
-      kind: "error",
-      level: "error",
-      label: `Unhandled rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-      detail: {
-        stack: reason instanceof Error ? reason.stack : undefined,
-        reason: reason instanceof Error ? undefined : reason,
-      },
-    });
-  });
+export function prepareForDebug(value: unknown): unknown {
+  return truncateForDebug(sanitizeForDebug(value));
 }

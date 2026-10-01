@@ -10,7 +10,7 @@
  * simplemente no se emiten a ningún lado.
  */
 
-import { useDebugStore, pushDebugEntry, truncateForDebug } from "@/stores/debugStore";
+import { useDebugStore, pushDebugEntry, prepareForDebug } from "@/stores/debugStore";
 
 const PREFIX = "[IVOO]";
 const isProd = import.meta.env.PROD;
@@ -29,7 +29,7 @@ function pushToDebugBuffer(level: "info" | "warn" | "error", context: string, me
     kind: "log",
     level,
     label: `${context}: ${message}`,
-    detail: detail !== undefined ? { detail: truncateForDebug(detail) } : undefined,
+    detail: detail !== undefined ? { detail: prepareForDebug(detail) } : undefined,
   });
 }
 
