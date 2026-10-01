@@ -44,6 +44,8 @@ import {
   SIDEBAR_FOCUS_RING,
 } from "./sidebarNavClasses";
 import { getUserInitials } from "@/utils";
+import { getReadyForFinanceCount } from "@/utils/workflowStatus";
+import type { Project } from "@/types";
 import { usePrefetchOnIntent } from "@/hooks/usePrefetchOnIntent";
 import { useMyPendingSignatures } from "@/hooks/useMyPendingSignatures";
 import { ROUTES } from "@/routes";
@@ -57,6 +59,8 @@ interface SidebarNavProps {
   canAccess: (path: string) => boolean;
   /** Sentinel en memoria de useAuth() — ver usePrefetchOnIntent para por qué hace falta acá. */
   authToken: string;
+  /** Proyectos cargados — alimentan el contador de Procura (listas para Finanzas). */
+  projects?: Project[];
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
@@ -70,9 +74,15 @@ function SidebarNav({
   onLogout,
   canAccess,
   authToken,
+  projects,
   isCollapsed,
   onToggleCollapse,
 }: SidebarNavProps) {
+  // Solo para Procura: es quien opera el envío; otros roles con acceso a la
+  // vista (p. ej. ADMIN) no deben ver un contador que no les toca atender.
+  const readyForFinanceCount =
+    activeRole === "PROCURA" && projects ? getReadyForFinanceCount(projects) : 0;
+
   // Pre-fetch en hover/focus: un handler por ruta del sidebar (ver
   // usePrefetchOnIntent — debounced, respeta saveData/2G, no compite con la
   // navegación real). Los hooks de React no pueden llamarse condicionalmente
@@ -405,7 +415,17 @@ function SidebarNav({
               >
                 {({ isActive }) => (
                   <>
-                    <FileSearch className={sidebarIconClass(isActive)} />
+                    <span className="relative inline-flex">
+                      <FileSearch className={sidebarIconClass(isActive)} />
+                      {readyForFinanceCount > 0 && (
+                        <span
+                          aria-label={`${readyForFinanceCount} adjudicaciones listas para enviar a Finanzas`}
+                          className="absolute -top-1 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white ring-2 ring-white"
+                        >
+                          {readyForFinanceCount}
+                        </span>
+                      )}
+                    </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Procura
                     </span>

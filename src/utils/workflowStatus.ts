@@ -7,6 +7,11 @@
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
 
+/** Awards approved by Presidencia that Procura still has to send to Finanzas. */
+export function getReadyForFinanceCount(projects: Project[]): number {
+  return projects.filter(p => p.status === ProjectStatus.APROBADO_PRESIDENCIA).length;
+}
+
 /**
  * Returns the count of projects that are pending action for a given role,
  * based on their current workflow status.

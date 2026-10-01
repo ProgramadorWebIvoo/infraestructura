@@ -15,11 +15,12 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ClipboardList, Handshake, Scale, TrendingUp } from "lucide-react";
+import { ClipboardList, Handshake, Scale, Send, TrendingUp } from "lucide-react";
 import type { Project } from "@/types";
 import { ProjectStatus } from "@/types";
 import { SkeletonCard, SkeletonTable, SkeletonBlock } from "@/components/SkeletonLoader";
 import { containerVariants, itemVariants } from "@/animations";
+import AlertBanner from "@/components/UI/AlertBanner";
 import KpiPill from "@/components/UI/KpiPill";
 import RateModeSwitch from "@/components/UI/RateModeSwitch";
 import Tabs from "@/components/UI/Tabs";
@@ -87,6 +88,8 @@ export default function ProcuraPanel({
     { key: "finiquito", label: "Solicitud de finiquito", count: kpis.pendingFiniquito },
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
+  const showFinanceBanner =
+    kpis.approvedByPresidencia > 0 && activeTab !== "finanzas" && visibleTabs.some((t) => t.key === "finanzas");
 
   if (isLoading || isLoadingTabs) return <ProcuraSkeleton />;
 
@@ -112,9 +115,26 @@ export default function ProcuraPanel({
         <KpiPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Por Autorizar" value={kpis.pendingApproval} accent="brand" tooltip="Proyectos confirmados por Procura, pendientes de abrir a licitación." />
         <KpiPill icon={<ClipboardList className="h-3.5 w-3.5" />} label="En Licitación" value={kpis.inBidding} accent="info" tooltip="Proyectos abiertos, recibiendo propuestas de proveedores." />
         <KpiPill icon={<Scale className="h-3.5 w-3.5" />} label="Comparativa" value={kpis.comparative} accent="success" tooltip="Proyectos con cuadro comparativo enviado, listos para adjudicar." />
+        <KpiPill icon={<Send className="h-3.5 w-3.5" />} label="Listas para Finanzas" value={kpis.approvedByPresidencia} accent="warning" tooltip="Adjudicaciones aprobadas por Presidencia, pendientes de que Procura las envíe a Finanzas para liberar el anticipo." />
         <KpiPill icon={<Handshake className="h-3.5 w-3.5" />} label="Contratados" value={kpis.contracted} accent="neutral" tooltip="Proyectos ya adjudicados y contratados con un proveedor." />
         <RateModeSwitch />
       </motion.div>
+
+      {showFinanceBanner && (
+        <motion.div variants={itemVariants} className="shrink-0">
+          <AlertBanner
+            type="warning"
+            message={
+              <>
+                Presidencia aprobó {kpis.approvedByPresidencia} {kpis.approvedByPresidencia === 1 ? "adjudicación" : "adjudicaciones"}: están listas para enviar a Finanzas y liberar el anticipo.{" "}
+                <button type="button" className="font-bold underline" onClick={() => setActiveTab("finanzas")}>
+                  Ir a Envío a Finanzas
+                </button>
+              </>
+            }
+          />
+        </motion.div>
+      )}
 
       <motion.div variants={itemVariants} className="min-h-0 flex flex-col flex-1">
         <TabPanel activeKey={activeTab}>

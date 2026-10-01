@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SidebarNav from "@/components/UI/SidebarNav";
 import { __resetPrefetchStateForTests } from "@/hooks/usePrefetchOnIntent";
+import { ProjectStatus, type Project } from "@/types";
 
 vi.mock("../../../components/UI/NotificationsProvider", () => ({
   useNotifications: () => ({
@@ -228,6 +229,36 @@ describe("SidebarNav", () => {
 
     fireEvent.click(screen.getByText("Presidencia"));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  // ── Contador de Procura (adjudicaciones listas para Finanzas) ───────────────
+  const approvedProjects = [
+    { id: "A", status: ProjectStatus.APROBADO_PRESIDENCIA },
+    { id: "B", status: ProjectStatus.APROBADO_PRESIDENCIA },
+    { id: "C", status: ProjectStatus.CONTRATADO },
+  ] as unknown as Project[];
+
+  it("muestra el contador en Procura cuando el rol activo es PROCURA y hay obras aprobadas", () => {
+    renderSidebar({ activeRole: "PROCURA", projects: approvedProjects });
+
+    const link = screen.getByText("Procura").closest("a")!;
+    expect(link).toHaveTextContent("2");
+    expect(screen.getByLabelText("2 adjudicaciones listas para enviar a Finanzas")).toBeInTheDocument();
+  });
+
+  it("no muestra el contador si el rol activo no es PROCURA", () => {
+    renderSidebar({ activeRole: "ADMIN", projects: approvedProjects });
+
+    expect(screen.queryByLabelText(/listas para enviar a Finanzas/)).not.toBeInTheDocument();
+  });
+
+  it("no muestra el contador si no hay obras aprobadas ni proyectos", () => {
+    const { unmount } = renderSidebar({ activeRole: "PROCURA", projects: [] });
+    expect(screen.queryByLabelText(/listas para enviar a Finanzas/)).not.toBeInTheDocument();
+    unmount();
+
+    renderSidebar({ activeRole: "PROCURA" });
+    expect(screen.queryByLabelText(/listas para enviar a Finanzas/)).not.toBeInTheDocument();
   });
 
   // ── Collapsed state ─────────────────────────────────────────────────────────

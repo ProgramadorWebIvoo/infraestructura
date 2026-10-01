@@ -28,6 +28,8 @@ interface AuthenticatedLayoutProps {
   canAccess: (path: string) => boolean;
   /** Sentinel en memoria de useAuth() ("authenticated", no un secreto) — necesario para componer la queryKey del pre-fetch de datos en hover, ver usePrefetchOnIntent. */
   authToken: string;
+  /** Proyectos cargados — el sidebar los usa para el contador de Procura. */
+  projects?: Project[];
   inspectedProject: Project | null;
   onCloseInspectedProject: () => void;
   onLogout: () => void;
@@ -78,6 +80,7 @@ export default function AuthenticatedLayout({
   activeRole,
   canAccess,
   authToken,
+  projects,
   inspectedProject,
   onCloseInspectedProject,
   onLogout,
@@ -120,6 +123,7 @@ export default function AuthenticatedLayout({
           onLogout={onLogout}
           canAccess={canAccess}
           authToken={authToken}
+          projects={projects}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleOnToggleCollapsed}
         />
