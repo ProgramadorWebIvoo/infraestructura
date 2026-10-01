@@ -7,8 +7,8 @@
  */
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { useDebugStore, type DebugEntry, type DebugEntryKind, type DebugLevel } from "@/stores/debugStore";
-import { matchesSearch } from "@/components/UI/DebugPanel/debugUtils";
+import { useDebugStore, type DebugCategory, type DebugEntry, type DebugEntryKind, type DebugLevel } from "@/stores/debugStore";
+import { buildSearchMatcher } from "@/utils/debugSearch";
 import {
   HTTP_METHOD_FILTERS,
   HTTP_STATUS_FILTERS,
@@ -19,7 +19,9 @@ import {
 
 export function useDebugEntryFilters(activeTab: DebugPanelTab) {
   const [search, setSearch] = useState("");
+  const [regexMode, setRegexMode] = useState(false);
   const [levelFilter, setLevelFilter] = useState<DebugLevel | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<DebugCategory | "all">("all");
   const [httpMethodFilter, setHttpMethodFilter] = useState<(typeof HTTP_METHOD_FILTERS)[number]>("all");
   const [httpStatusFilter, setHttpStatusFilter] = useState<(typeof HTTP_STATUS_FILTERS)[number]>("all");
   const [wsChannelFilter, setWsChannelFilter] = useState<string>("all");
@@ -28,7 +30,7 @@ export function useDebugEntryFilters(activeTab: DebugPanelTab) {
   // en el buscador no debería competir por el hilo principal con los
   // re-renders que cada nuevo evento capturado ya dispara.
   const deferredSearch = useDeferredValue(search);
-  const searchLower = deferredSearch.trim().toLowerCase();
+  const matcher = useMemo(() => buildSearchMatcher(deferredSearch, regexMode), [deferredSearch, regexMode]);
 
   const entries = useDebugStore(s => s.entries);
 
@@ -61,7 +63,8 @@ export function useDebugEntryFilters(activeTab: DebugPanelTab) {
     if (!isEntryTab) return { filteredEntries: [] as DebugEntry[], hiddenCount: 0 };
     const matched = entriesForTab
       .filter(e => levelFilter === "all" || e.level === levelFilter)
-      .filter(e => matchesSearch(e, searchLower))
+      .filter(e => categoryFilter === "all" || e.category === categoryFilter)
+      .filter(matcher.matches)
       .filter(e => {
         if (activeTab !== "http") return true;
         const detail = e.detail as Record<string, unknown> | undefined;
@@ -82,7 +85,7 @@ export function useDebugEntryFilters(activeTab: DebugPanelTab) {
       filteredEntries: matched.slice(0, MAX_RENDERED_ROWS),
       hiddenCount: Math.max(0, matched.length - MAX_RENDERED_ROWS),
     };
-  }, [entriesForTab, isEntryTab, activeTab, levelFilter, searchLower, httpMethodFilter, httpStatusFilter, wsChannelFilter]);
+  }, [entriesForTab, isEntryTab, activeTab, levelFilter, categoryFilter, matcher, httpMethodFilter, httpStatusFilter, wsChannelFilter]);
 
   return {
     entries,
@@ -95,8 +98,13 @@ export function useDebugEntryFilters(activeTab: DebugPanelTab) {
     search,
     setSearch,
     deferredSearch,
+    searchError: matcher.error,
+    regexMode,
+    setRegexMode,
     levelFilter,
     setLevelFilter,
+    categoryFilter,
+    setCategoryFilter,
     httpMethodFilter,
     setHttpMethodFilter,
     httpStatusFilter,

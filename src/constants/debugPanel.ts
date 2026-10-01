@@ -5,7 +5,7 @@
  * Constantes del panel del DEBUG-MODE (tabs y opciones de filtro).
  */
 
-import type { DebugEntryKind, DebugLevel } from "@/stores/debugStore";
+import type { DebugCategory, DebugEntryKind, DebugLevel } from "@/stores/debugStore";
 
 export type DebugPanelTab = DebugEntryKind | "query" | "info" | "actions" | "codebase" | "performance" | "storage";
 
@@ -34,6 +34,14 @@ export const LEVEL_FILTERS: { key: DebugLevel | "all"; label: string }[] = [
   { key: "warn", label: "Warn" },
   { key: "error", label: "Error" },
   { key: "fatal", label: "Fatal" },
+];
+
+export const CATEGORY_FILTERS: { key: DebugCategory | "all"; label: string }[] = [
+  { key: "all", label: "Todas las categorías" },
+  { key: "SYSTEM", label: "Sistema" },
+  { key: "NETWORK", label: "Red" },
+  { key: "STATE", label: "Estado" },
+  { key: "USER_ACTION", label: "Acción de usuario" },
 ];
 
 /**

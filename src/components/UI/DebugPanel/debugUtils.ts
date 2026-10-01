@@ -53,15 +53,3 @@ export function matchesSearchText(haystack: string, query: string): boolean {
   if (!query.trim()) return true;
   return haystack.toLowerCase().includes(query.toLowerCase());
 }
-
-/**
- * true si `query` (YA en minúsculas — lowercasear una vez antes del
- * `.filter()`, no por entrada) aparece en `entry.searchText`, precomputado
- * una sola vez al capturar el evento (ver debugStore.ts). Evitar
- * relowercasear acá es lo que mantiene barato filtrar cientos de entradas
- * en cada keystroke.
- */
-export function matchesSearch(entry: DebugEntry, queryLower: string): boolean {
-  if (!queryLower) return true;
-  return entry.searchText.includes(queryLower);
-}

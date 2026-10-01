@@ -2,12 +2,14 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Buscador y filtros del panel del DEBUG-MODE: texto, nivel, método/status
+ * Buscador (texto o regex) y filtros del panel del DEBUG-MODE: nivel,
+ * categoría, método/status
  * HTTP (tab Network), canal (tab WebSocket) y red simulada (tab Network).
  */
 
 import { SearchInput } from "@/components/UI/FilterBar";
-import { HTTP_METHOD_FILTERS, HTTP_STATUS_FILTERS, LEVEL_FILTERS, type DebugPanelTab } from "@/constants/debugPanel";
+import { CATEGORY_FILTERS, HTTP_METHOD_FILTERS, HTTP_STATUS_FILTERS, LEVEL_FILTERS, type DebugPanelTab } from "@/constants/debugPanel";
+import type { DebugCategory } from "@/stores/debugStore";
 import type { DebugEntryFilters } from "@/hooks/useDebugEntryFilters";
 import DebugNetworkProfileSelect from "./DebugNetworkProfileSelect";
 
@@ -20,7 +22,8 @@ interface DebugEntryFilterBarProps {
 
 export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFilterBarProps) {
   const {
-    search, setSearch, isEntryTab, levelFilter, setLevelFilter,
+    search, setSearch, isEntryTab, levelFilter, setLevelFilter, regexMode, setRegexMode, searchError,
+    categoryFilter, setCategoryFilter,
     httpMethodFilter, setHttpMethodFilter, httpStatusFilter, setHttpStatusFilter,
     wsChannelFilter, setWsChannelFilter, wsChannels,
   } = filters;
@@ -35,6 +38,20 @@ export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFi
           placeholder="Buscar por texto, URL, key..."
           ariaLabel="Buscar en el panel de debug"
         />
+        {isEntryTab && (
+          <button
+            type="button"
+            onClick={() => setRegexMode(!regexMode)}
+            aria-pressed={regexMode}
+            aria-label="Buscar con expresión regular"
+            title="Expresión regular (busca en la etiqueta y el inicio del detalle)"
+            className={`shrink-0 rounded-lg border px-2 py-1.5 font-mono text-[11px] font-black cursor-pointer ${
+              regexMode ? "border-brand-300 bg-brand-50 text-brand-700" : "border-border-default bg-white text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            .*
+          </button>
+        )}
         {isEntryTab && (
           <div className="flex shrink-0 gap-1 rounded-xl bg-slate-100/60 p-1">
             {LEVEL_FILTERS.map(f => (
@@ -52,6 +69,21 @@ export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFi
           </div>
         )}
       </div>
+      {isEntryTab && searchError && <p className="text-[10px] font-bold text-danger-600">{searchError}</p>}
+      {isEntryTab && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value as DebugCategory | "all")}
+            aria-label="Filtrar por categoría"
+            className={SELECT_CLASS}
+          >
+            {CATEGORY_FILTERS.map(c => (
+              <option key={c.key} value={c.key}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
       {activeTab === "http" && (
         <div className="flex flex-wrap items-center gap-1.5">
           <select
