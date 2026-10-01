@@ -18,9 +18,11 @@ const SELECT_CLASS = "rounded-lg border border-border-default bg-white px-2 py-1
 interface DebugEntryFilterBarProps {
   activeTab: DebugPanelTab;
   filters: DebugEntryFilters;
+  /** Modo compacto: solo búsqueda; oculta nivel, categoría y filtros por tab. */
+  compact?: boolean;
 }
 
-export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFilterBarProps) {
+export default function DebugEntryFilterBar({ activeTab, filters, compact = false }: DebugEntryFilterBarProps) {
   const {
     search, setSearch, isEntryTab, levelFilter, setLevelFilter, regexMode, setRegexMode, searchError,
     categoryFilter, setCategoryFilter,
@@ -52,7 +54,7 @@ export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFi
             .*
           </button>
         )}
-        {isEntryTab && (
+        {isEntryTab && !compact && (
           <div className="flex shrink-0 gap-1 rounded-xl bg-slate-100/60 p-1">
             {LEVEL_FILTERS.map(f => (
               <button
@@ -70,7 +72,7 @@ export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFi
         )}
       </div>
       {isEntryTab && searchError && <p className="text-[10px] font-bold text-danger-600">{searchError}</p>}
-      {isEntryTab && (
+      {isEntryTab && !compact && (
         <div className="flex flex-wrap items-center gap-1.5">
           <select
             value={categoryFilter}
@@ -84,7 +86,7 @@ export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFi
           </select>
         </div>
       )}
-      {activeTab === "http" && (
+      {activeTab === "http" && !compact && (
         <div className="flex flex-wrap items-center gap-1.5">
           <select
             value={httpMethodFilter}
@@ -109,7 +111,7 @@ export default function DebugEntryFilterBar({ activeTab, filters }: DebugEntryFi
           <DebugNetworkProfileSelect />
         </div>
       )}
-      {activeTab === "websocket" && wsChannels.length > 0 && (
+      {activeTab === "websocket" && !compact && wsChannels.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <select
             value={wsChannelFilter}

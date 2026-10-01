@@ -12,21 +12,12 @@ import { Copy, Check } from "lucide-react";
 import type { AuthUser } from "@/hooks/useAuth";
 import { getApiBaseUrl } from "@/services/api";
 import { useCopyDiagnostic } from "@/hooks/useCopyDiagnostic";
+import { useViewportSize } from "@/hooks/useViewportSize";
 import { copyToClipboard } from "./debugUtils";
 
 interface DebugInfoPanelProps {
   authUser: AuthUser;
   activeRole?: string | null;
-}
-
-function useViewportSize() {
-  const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
-  useEffect(() => {
-    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  return size;
 }
 
 export default function DebugInfoPanel({ authUser, activeRole }: DebugInfoPanelProps) {
@@ -40,7 +31,7 @@ export default function DebugInfoPanel({ authUser, activeRole }: DebugInfoPanelP
     ["Rol activo", activeRole ?? "—"],
     ["API base URL", getApiBaseUrl()],
     ["Modo build", import.meta.env.PROD ? "production" : "development"],
-    ["Viewport", `${viewport.w}×${viewport.h}px`],
+    ["Viewport", `${viewport.width}×${viewport.height}px`],
     ["User agent", navigator.userAgent],
     ["Idioma", navigator.language],
     ["Online", navigator.onLine ? "sí" : "no"],

@@ -55,7 +55,16 @@ import DebugPerformancePanel from "./DebugPerformancePanel";
 import { useCopyDiagnostic } from "@/hooks/useCopyDiagnostic";
 import { useDebugSessionIO } from "@/hooks/useDebugSessionIO";
 import { useDebugReviewStore } from "@/stores/debugReviewStore";
+import { useDebugPrefs } from "@/hooks/useDebugPrefs";
+import { useDebugResize } from "@/hooks/useDebugResize";
+import { useViewportSize } from "@/hooks/useViewportSize";
+import { useToast } from "@/components/UI/Toast";
+import { computeDockLayout, resizeAxes, type DebugLayoutMode } from "@/utils/debugLayout";
+import { openDebugPopup } from "@/utils/debugPopup";
 import DebugReviewBanner from "./DebugReviewBanner";
+import DebugPanelViewMenu from "./DebugPanelViewMenu";
+import DebugResizeHandle from "./DebugResizeHandle";
+import DebugPopupWindow from "./DebugPopupWindow";
 
 interface DebugPanelProps {
   authUser: AuthUser;
@@ -91,6 +100,7 @@ interface DebugPanelContentProps {
 
 function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentProps) {
   const [expanded, setExpanded] = useState(false);
+  const [popup, setPopup] = useState<Window | null>(null);
   const [activeTab, setActiveTab] = useState<DebugPanelTab>("http");
   const filters = useDebugEntryFilters(activeTab);
   const { entries, isReviewing, countsByKind, isEntryTab, filteredEntries, hiddenCount, entriesForTabCount, deferredSearch } = filters;
@@ -99,9 +109,33 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
   const copyDiagnostic = useCopyDiagnostic(activeRole);
   const { exportSession, importSession } = useDebugSessionIO(entries);
   const closeReview = useDebugReviewStore(s => s.close);
+  const { showToast } = useToast();
+  const { prefs, setPrefs, reset } = useDebugPrefs();
+  const viewport = useViewportSize();
 
   // La sesión importada solo vive mientras el panel está abierto.
   useEffect(() => closeReview, [closeReview]);
+
+  const mode: DebugLayoutMode = popup ? "window" : expanded ? "expanded" : "normal";
+  const { size, handleProps } = useDebugResize({
+    dock: prefs.dock,
+    size: { width: prefs.width, height: prefs.height },
+    viewport,
+    onCommit: setPrefs,
+  });
+  const layout = computeDockLayout({ ...prefs, ...size }, viewport, mode);
+  const axes = resizeAxes(prefs.dock);
+  const canResize = mode === "normal" && (axes.horizontal || axes.vertical);
+
+  // window.open debe ocurrir dentro del click del usuario (bloqueador de popups).
+  const openWindow = () => {
+    const win = openDebugPopup();
+    if (!win) {
+      showToast("El navegador bloqueó la ventana emergente. Permite popups para este sitio.", "error");
+      return;
+    }
+    setPopup(win);
+  };
 
   const tabDefinitions: TabDefinition[] = DEBUG_PANEL_TABS.map(t => ({
     key: t.key,
@@ -109,15 +143,14 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
     count: NON_ENTRY_TABS.includes(t.key) ? undefined : countsByKind[t.key as DebugEntryKind],
     showDot: t.key === "error" && countsByKind.error > 0,
   }));
+  const tabOptions = tabDefinitions.map(t => ({
+    value: t.key,
+    label: t.count !== undefined && t.count > 0 ? `${t.label} (${t.count})` : t.label,
+  }));
 
-  return (
-    <div
-      className={`fixed z-50 flex flex-col overflow-hidden rounded-container border border-border-default bg-surface shadow-2xl transition-[width,height] duration-200 ${
-        expanded
-          ? "inset-3 sm:inset-6"
-          : "bottom-3 right-3 h-[min(34rem,calc(100vh-1.5rem))] w-[min(28rem,calc(100vw-1.5rem))] sm:bottom-6 sm:right-6 sm:h-[min(34rem,calc(100vh-3rem))] sm:w-[min(28rem,calc(100vw-3rem))]"
-      }`}
-    >
+  const panel = (
+    <div className={layout.className} style={{ ...layout.style, opacity: popup ? 1 : prefs.opacity }}>
+      {canResize && <DebugResizeHandle dock={prefs.dock} handleProps={handleProps} />}
       <DebugPanelHeader
         expanded={expanded}
         onToggleExpanded={() => setExpanded(v => !v)}
@@ -126,6 +159,16 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
         onImport={file => void importSession(file)}
         onCopyDiagnostic={copyDiagnostic}
         onClearTab={isEntryTab && !isReviewing ? () => clear(activeTab as DebugEntryKind) : undefined}
+        viewMenu={
+          <DebugPanelViewMenu
+            prefs={prefs}
+            onChange={setPrefs}
+            onReset={reset}
+            inWindow={popup !== null}
+            onOpenWindow={openWindow}
+            onCloseWindow={() => setPopup(null)}
+          />
+        }
       />
 
       <DebugReviewBanner />
@@ -139,6 +182,20 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             fullWidth
             tabs={tabDefinitions}
           />
+        ) : popup ? (
+          // El <Select> del sistema de diseño renderiza su listbox en el
+          // document.body de la ventana PRINCIPAL; en el popup se usa el
+          // <select> nativo, que funciona en cualquier documento.
+          <select
+            value={activeTab}
+            onChange={e => setActiveTab(e.target.value as DebugPanelTab)}
+            aria-label="Sección de debug activa"
+            className="w-full rounded-control border border-border-default bg-white px-2 py-1.5 text-xs font-bold text-slate-700"
+          >
+            {tabOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
         ) : (
           // Con 10 tabs, <Tabs fullWidth> en el ancho colapsado (28rem) las
           // aprieta hasta volverlas ilegibles (sin ícono ni label completo).
@@ -148,14 +205,11 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             ariaLabel="Sección de debug activa"
             value={activeTab}
             onChange={key => setActiveTab(key as DebugPanelTab)}
-            options={tabDefinitions.map(t => ({
-              value: t.key,
-              label: t.count !== undefined && t.count > 0 ? `${t.label} (${t.count})` : t.label,
-            }))}
+            options={tabOptions}
             size="sm"
           />
         )}
-        <DebugEntryFilterBar activeTab={activeTab} filters={filters} />
+        <DebugEntryFilterBar activeTab={activeTab} filters={filters} compact={prefs.compact} />
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-2">
@@ -198,5 +252,13 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
         </TabPanel>
       </div>
     </div>
+  );
+
+  return popup ? (
+    <DebugPopupWindow popup={popup} onClosed={() => setPopup(null)}>
+      {panel}
+    </DebugPopupWindow>
+  ) : (
+    panel
   );
 }

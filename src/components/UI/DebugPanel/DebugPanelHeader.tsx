@@ -7,7 +7,7 @@
  * cerrar).
  */
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { Bug, Trash2, X, Pause, Play, Download, Upload, Maximize2, Minimize2, Gauge, ClipboardCopy } from "lucide-react";
 import IconActionButton from "@/components/UI/IconActionButton";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
@@ -23,11 +23,13 @@ interface DebugPanelHeaderProps {
   onImport: (file: File) => void;
   /** Copia el System Snapshot (entorno, versión, rol, memoria, FPS, últimos eventos). */
   onCopyDiagnostic: () => void;
+  /** Menú de vista (acople, opacidad, compacto) — lo provee el panel. */
+  viewMenu?: ReactNode;
   /** undefined = el tab actual no tiene entradas que limpiar. */
   onClearTab?: () => void;
 }
 
-export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, onExport, onImport, onCopyDiagnostic, onClearTab }: DebugPanelHeaderProps) {
+export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, onExport, onImport, onCopyDiagnostic, onClearTab, viewMenu }: DebugPanelHeaderProps) {
   const paused = useDebugStore(s => s.paused);
   const setPaused = useDebugStore(s => s.setPaused);
   const networkProfile = useDebugStore(s => s.networkProfile);
@@ -93,6 +95,7 @@ export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, 
             onClick={onClearTab}
           />
         )}
+        {viewMenu}
         <IconActionButton
           icon={expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           label={expanded ? "Achicar panel" : "Expandir panel"}
