@@ -96,6 +96,11 @@ const ACCENT_HOVER_BORDER_CLASSES: Record<SemanticColor, string> = {
   neutral: "hover:border-neutral-200",
 };
 
+const PANEL_MAX_HEIGHT = 224;
+const PANEL_OPTION_HEIGHT = 36;
+const PANEL_GAP = 6;
+const PANEL_VIEWPORT_MARGIN = 8;
+
 export default function Select({
   value,
   onChange,
@@ -113,7 +118,13 @@ export default function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((o) => o.value === value)));
-  const [panelRect, setPanelRect] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [panelRect, setPanelRect] = useState<{
+    left: number;
+    width: number;
+    maxHeight: number;
+    top?: number;
+    bottom?: number;
+  } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const generatedId = useId();
@@ -128,8 +139,19 @@ export default function Select({
     const el = rootRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    setPanelRect({ left: rect.left, top: rect.bottom + 6, width: rect.width });
-  }, []);
+    const spaceBelow = window.innerHeight - rect.bottom - PANEL_GAP - PANEL_VIEWPORT_MARGIN;
+    const spaceAbove = rect.top - PANEL_GAP - PANEL_VIEWPORT_MARGIN;
+    const desiredHeight = Math.min(PANEL_MAX_HEIGHT, options.length * PANEL_OPTION_HEIGHT + 8);
+    // Flip upward only when the list doesn't fit below and there is more room above.
+    const openUp = spaceBelow < desiredHeight && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(80, Math.min(PANEL_MAX_HEIGHT, openUp ? spaceAbove : spaceBelow));
+    setPanelRect({
+      left: rect.left,
+      width: rect.width,
+      maxHeight,
+      ...(openUp ? { bottom: window.innerHeight - rect.top + PANEL_GAP } : { top: rect.bottom + PANEL_GAP }),
+    });
+  }, [options.length]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -249,8 +271,14 @@ export default function Select({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: -4 }}
               transition={springs.snappy}
-              style={{ left: panelRect.left, top: panelRect.top, width: panelRect.width }}
-              className="fixed z-50 max-h-56 overflow-auto rounded-control border border-border-default bg-surface py-1 shadow-lg outline-hidden"
+              style={{
+                left: panelRect.left,
+                top: panelRect.top,
+                bottom: panelRect.bottom,
+                width: panelRect.width,
+                maxHeight: panelRect.maxHeight,
+              }}
+              className="fixed z-50 overflow-auto rounded-control border border-border-default bg-surface py-1 shadow-lg outline-hidden"
             >
               {options.map((opt, i) => {
                 const isSelected = opt.value === value;
