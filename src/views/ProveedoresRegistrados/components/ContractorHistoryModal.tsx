@@ -24,6 +24,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { History, TrendingUp, TrendingDown, Minus, Boxes, Sparkles, Briefcase, Trophy, AlertCircle, type LucideIcon } from "lucide-react";
 import Modal from "@/components/UI/Modal";
+import ProductLinesTable, { type ProductColumn } from "@/components/UI/ProductLinesTable";
 import EmptyState from "@/components/UI/EmptyState";
 import StatusBadge from "@/components/UI/StatusBadge";
 import SummaryStat from "@/components/UI/SummaryStat";
@@ -189,6 +190,61 @@ function ProductRow({ name, meta, priceLabel, variationPercent, currency }: { na
   );
 }
 
+type CustomProduct = ContractorHistory["customProducts"][number];
+type HistoryProject = ContractorHistory["projects"][number];
+
+// Listas SIN tope en el backend (todos los productos personalizados / todos los proyectos a los que
+// ofertó): se paginan con buscador en lugar de dibujar cientos de filas de una vez.
+const CUSTOM_PRODUCT_COLUMNS: ProductColumn<CustomProduct>[] = [
+  {
+    key: "product",
+    label: "Producto",
+    render: (p) => (
+      <div className="min-w-0 max-w-sm">
+        <div className="truncate text-xs font-bold text-text-primary" title={p.productName}>{p.productName}</div>
+        <div className="mt-0.5 text-[11px] text-text-muted">
+          {`${p.quoteCount} cotización${p.quoteCount !== 1 ? "es" : ""} · desde ${formatUsd(p.firstPriceUsd)}`}
+        </div>
+      </div>
+    ),
+  },
+  {
+    key: "lastPrice",
+    label: "Último precio",
+    align: "right",
+    render: (p) => (
+      <div className="flex flex-col items-end">
+        <div className="font-mono text-xs font-black text-text-primary">{formatUsd(p.lastPriceUsd)}</div>
+        {p.lastCurrency && p.lastCurrency !== "USD" && <div className="text-[10px] font-medium text-text-muted">{p.lastCurrency}</div>}
+      </div>
+    ),
+  },
+  { key: "variation", label: "Variación", align: "right", render: (p) => <VariationBadge percent={p.variationPercent} /> },
+];
+
+const PROJECT_COLUMNS: ProductColumn<HistoryProject>[] = [
+  {
+    key: "project",
+    label: "Proyecto",
+    render: (p) => (
+      <div className="min-w-0 max-w-md">
+        <div className="flex items-center gap-1.5">
+          {p.isAwarded && <Trophy className="h-3.5 w-3.5 shrink-0 text-warning-500" />}
+          <span className={`truncate text-xs font-bold ${p.isWithdrawn ? "text-text-muted line-through" : "text-text-primary"}`}>{p.projectTitle}</span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-muted">
+          <span>{p.fechaOferta ?? "—"}</span>
+          <span>·</span>
+          <span>{ORIGEN_LABELS[p.origen] ?? p.origen}</span>
+          {p.isSuperseded && <span className="italic">(renegociada)</span>}
+          {p.isWithdrawn && <span className="italic">(retirada)</span>}
+        </div>
+      </div>
+    ),
+  },
+  { key: "status", label: "Estado", align: "right", render: (p) => <StatusBadge code={p.projectStatus} /> },
+];
+
 export default function ContractorHistoryModal({ contractor, onClose }: ContractorHistoryModalProps) {
   const [history, setHistory] = useState<ContractorHistory | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -332,18 +388,16 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                       ) : history && history.customProducts.length === 0 ? (
                         <EmptyState message="Este proveedor no tiene productos personalizados cotizados en el período." icon={<Sparkles className="h-7 w-7" />} className="py-6" />
                       ) : history ? (
-                        <div className="divide-y divide-border-subtle">
-                          {history.customProducts.map((p) => (
-                            <ProductRow
-                              key={p.catalogProductId}
-                              name={p.productName}
-                              meta={`${p.quoteCount} cotización${p.quoteCount !== 1 ? "es" : ""} · desde ${formatUsd(p.firstPriceUsd)}`}
-                              priceLabel={formatUsd(p.lastPriceUsd)}
-                              variationPercent={p.variationPercent}
-                              currency={p.lastCurrency}
-                            />
-                          ))}
-                        </div>
+                        <ProductLinesTable
+                          ariaLabel="Productos personalizados"
+                          items={history.customProducts}
+                          columns={CUSTOM_PRODUCT_COLUMNS}
+                          rowKey={(p) => p.catalogProductId}
+                          pageSize={10}
+                          maxHeight="24rem"
+                          searchText={(p) => p.productName}
+                          searchPlaceholder="Buscar producto…"
+                        />
                       ) : null}
                     </div>
                   </div>
@@ -368,30 +422,17 @@ export default function ContractorHistoryModal({ contractor, onClose }: Contract
                     ) : history && history.projects.length === 0 ? (
                       <EmptyState message="Este proveedor no ha ofertado en ningún proyecto todavía." icon={<Briefcase className="h-7 w-7" />} className="py-6" />
                     ) : history ? (
-                      <div className="divide-y divide-border-subtle">
-                        {history.projects.map((p) => (
-                          <div key={p.proposalId} className="flex items-center justify-between gap-4 py-3 text-xs">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                {p.isAwarded && <Trophy className="h-3.5 w-3.5 shrink-0 text-warning-500" />}
-                                <span className={`truncate font-bold ${p.isWithdrawn ? "text-text-muted line-through" : "text-text-primary"}`}>
-                                  {p.projectTitle}
-                                </span>
-                              </div>
-                              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-muted">
-                                <span>{p.fechaOferta ?? "—"}</span>
-                                <span>·</span>
-                                <span>{ORIGEN_LABELS[p.origen] ?? p.origen}</span>
-                                {p.isSuperseded && <span className="italic">(renegociada)</span>}
-                                {p.isWithdrawn && <span className="italic">(retirada)</span>}
-                              </div>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                              <StatusBadge code={p.projectStatus} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <ProductLinesTable
+                        ariaLabel="Proyectos ofertados"
+                        items={history.projects}
+                        columns={PROJECT_COLUMNS}
+                        rowKey={(p) => p.proposalId}
+                        pageSize={10}
+                        maxHeight="26rem"
+                        searchText={(p) => p.projectTitle}
+                        searchPlaceholder="Buscar proyecto…"
+                        filters={[{ key: "awarded", label: "Adjudicados", predicate: (p) => p.isAwarded }]}
+                      />
                     ) : null}
                   </div>
                 )}
