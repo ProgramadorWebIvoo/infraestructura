@@ -2,34 +2,25 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Materiales del proyecto + materiales adicionales del proveedor — una
- * tarjeta por material, no filas de tabla. Reemplaza el acordeón anterior
- * (RowDetailPanel colapsado/auto-expandido): condición, garantía, specs
- * técnicas e imagen quedan SIEMPRE visibles en la tarjeta, sin clics ni
- * paneles que el proveedor pueda pasar por alto — el objetivo es que sea
- * imposible no ver que esos campos existen y son obligatorios.
+ * Materiales del proyecto + materiales adicionales del proveedor, en una tabla
+ * compacta (misma que Renegociación): nombre, cantidad, unidad, precio, total
+ * y estado por fila. Con ~70 materiales, una tarjeta por línea era una pared
+ * de campos y de componentes montados; ahora la tabla es paginada con buscador
+ * y filtros, y lo que no cabe en una fila (condición, garantía, specs, imagen,
+ * notas) se completa en un panel de detalle por línea con navegación entre
+ * materiales y salto al siguiente con datos faltantes.
  */
 
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "motion/react";
-import { AlertCircle, Camera, ChevronDown, Loader2, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import { CheckCircle2, ChevronRight, ListChecks, Plus, Trash2 } from "lucide-react";
 import NumericInput from "@/components/UI/NumericInput";
-import Select from "@/components/UI/Select";
-import TextField from "@/components/UI/TextField";
-import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
+import ProductLinesTable, { type ProductColumn } from "@/components/UI/ProductLinesTable";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
-import { itemVariants, springs } from "@/animations";
-import { apiFetch, getApiBaseUrl } from "@/services/api";
-import { getErrorMessage } from "@/services/logger";
-import { useToast } from "@/components/UI/Toast";
-import {
-  sanitize,
-  CONDITION_OPTIONS,
-  DURATION_UNITS,
-  type CatalogProductSearchResult,
-  type ItemRow,
-  type PublicCatalogCategory,
-} from "@/views/PropuestaMaterialesPublica/types";
+import { springs } from "@/animations";
+import { getItemStatus, type ItemStatus } from "@/views/PropuestaMaterialesPublica/itemStatus";
+import type { ItemRow, PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
+import MaterialDetailPanel from "./MaterialDetailPanel";
 
 interface MaterialsProposalCardsProps {
   token: string;
@@ -43,39 +34,11 @@ interface MaterialsProposalCardsProps {
   currencyCode: string;
 }
 
-/**
- * Valor de duración de garantía cargado pero sin unidad — van juntos o
- * ninguno. `warrantyValue !== ""` (no `> 0`): el backend exige la unidad
- * ante cualquier valor "presente", incluido un 0 explícito.
- */
-function isWarrantyDurationIncomplete(item: ItemRow): boolean {
-  return item.warrantyValue !== "" && item.warrantyValue !== undefined && !item.warrantyUnit;
-}
-
-/** Para el badge "Faltan datos" en la fila colapsada — solo molesta si el proveedor ya empezó a cotizar esta línea (precio cargado). */
-function isMissingRequiredDetails(item: ItemRow): boolean {
-  return Number(item.unitPrice) > 0 && (!item.conditionStatus || !item.warrantyDescription?.trim() || isWarrantyDurationIncomplete(item));
-}
-
-/**
- * Para el check verde del RequiredMark del header — a diferencia de
- * isMissingRequiredDetails(), NO es condicional a que haya precio cargado:
- * una línea sin precio nunca está "completa", así que sin esto el check
- * verde aparecía en materiales completamente vacíos (precio 0 hacía que
- * isMissingRequiredDetails() devolviera false por su cortocircuito inicial,
- * lo que se leía como "sin pendientes" en vez de "sin tocar").
- */
-function isFullyComplete(item: ItemRow, category: PublicCatalogCategory | undefined): boolean {
-  if (!(Number(item.unitPrice) > 0)) return false;
-  if (!item.conditionStatus) return false;
-  if (!item.warrantyDescription?.trim()) return false;
-  if (isWarrantyDurationIncomplete(item)) return false;
-  const requiredSpecs = category?.spec_schema?.filter((f) => f.required) ?? [];
-  return requiredSpecs.every((f) => {
-    const v = item.technicalSpecs?.[f.key];
-    return v !== undefined && v !== "" && v !== null;
-  });
-}
+const STATUS_BADGE: Record<ItemStatus, { label: string; className: string }> = {
+  complete: { label: "Completo", className: "bg-success-50 text-success-700" },
+  missing: { label: "Faltan datos", className: "bg-danger-50 text-danger-600" },
+  unpriced: { label: "Sin cotizar", className: "bg-surface-sunken text-text-muted" },
+};
 
 function AnimatedTotal({ value, currencyCode }: { value: number; currencyCode: string }) {
   const motionValue = useMotionValue(value);
@@ -90,454 +53,17 @@ function AnimatedTotal({ value, currencyCode }: { value: number; currencyCode: s
   }, [value, motionValue]);
 
   // key={currencyCode}: fuerza remount cuando cambia la moneda sin tocar el
-  // total (ej. el proveedor recién elige moneda con precios ya cargados) —
-  // useTransform no reevalúa su callback solo porque una variable externa
-  // capturada por closure cambió, así que sin esto el símbolo quedaría
-  // desactualizado hasta el próximo cambio de `value`.
+  // total — useTransform no reevalúa su callback solo porque una variable
+  // externa capturada por closure cambió.
   return <motion.span key={currencyCode}>{rounded}</motion.span>;
 }
 
-/** Búsqueda remota de producto de catálogo — solo para materiales personalizados. */
-function CatalogProductPicker({ item, onSelect }: { item: ItemRow; onSelect: (product: CatalogProductSearchResult | null) => void }) {
-  const [query, setQuery] = useState(item.materialName);
-  const [results, setResults] = useState<CatalogProductSearchResult[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const warningColor = SEMANTIC_COLOR_MAP.warning;
-
-  useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    const timeout = setTimeout(async () => {
-      try {
-        const res = await apiFetch<CatalogProductSearchResult[]>(`/public/catalog-products/search?search=${encodeURIComponent(query.trim())}`);
-        setResults(res);
-      } catch {
-        setResults([]);
-      }
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [query]);
-
+function ProgressChip({ icon, label, value, className }: { icon: React.ReactNode; label: string; value: number; className: string }) {
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        <Search className={`pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${warningColor.icon400}`} />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setIsOpen(true);
-            if (item.catalogProductId) onSelect(null);
-          }}
-          onFocus={() => setIsOpen(true)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 150)}
-          placeholder="Buscar en catálogo o escribir nombre nuevo *"
-          maxLength={220}
-          className={`w-full rounded-control border py-2.5 pl-9 pr-3.5 text-sm font-medium text-text-primary outline-hidden transition-shadow duration-150 ${warningColor.border100} focus:${warningColor.text600} focus:ring-1 focus:ring-offset-0`}
-        />
-      </div>
-      <AnimatePresence>
-        {isOpen && results.length > 0 && (
-          <motion.ul
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={springs.snappy}
-            className={`absolute z-20 mt-1 w-full max-h-40 overflow-auto rounded-control border ${warningColor.border100} bg-surface py-1 shadow-md`}
-          >
-            {results.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    setQuery(p.name);
-                    setIsOpen(false);
-                    onSelect(p);
-                  }}
-                  className={`w-full cursor-pointer px-3.5 py-2 text-left text-xs font-medium text-text-primary transition-colors hover:${warningColor.bg50}`}
-                >
-                  {p.name} <span className="text-text-muted">({p.unit})</span>
-                </button>
-              </li>
-            ))}
-          </motion.ul>
-        )}
-      </AnimatePresence>
-      {item.catalogProductId && (
-        <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.success.text700}`}>
-          <ShieldCheck className="h-3 w-3" /> Vinculado a catálogo
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** Subida + preview de imagen del material — opcional, con estado de carga propio. */
-function ImageUploader({ token, item, onUploaded }: { token: string; item: ItemRow; onUploaded: (path: string | null) => void }) {
-  const [isUploading, setIsUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { showToast } = useToast();
-
-  const handleFile = async (file: File) => {
-    setIsUploading(true);
-    try {
-      const form = new FormData();
-      form.append("image", file);
-      const res = await apiFetch<{ path: string; optimized: boolean }>(`/public/invitations/${token}/proposal-image`, { method: "POST", body: form });
-      onUploaded(res.path);
-    } catch (error) {
-      // Mensaje del backend (pared de seguridad, tipo/tamaño no permitido) —
-      // ya viene en español y listo para mostrar tal cual, sin detalle interno.
-      showToast(getErrorMessage(error, "No se pudo subir la imagen."), "error");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const previewUrl = item.imagePath
-    ? `${getApiBaseUrl()}/public/invitations/${token}/proposal-image/${item.imagePath.split("/").pop()}`
-    : null;
-
-  return (
-    <div className="flex items-start gap-3">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-control border border-dashed border-border-subtle bg-surface-sunken/50">
-        {isUploading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-        ) : previewUrl ? (
-          <img src={previewUrl} alt={item.materialName || "Material"} className="h-full w-full object-cover" />
-        ) : (
-          <Camera className="h-5 w-5 text-text-muted/50" />
-        )}
-      </div>
-      <div className="flex flex-col gap-2">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-            e.target.value = "";
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={isUploading}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-control border border-border-default px-3 py-2 text-[11px] font-bold text-text-primary transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Camera className="h-3.5 w-3.5" />
-          {item.imagePath ? "Cambiar imagen" : "Agregar imagen"}
-        </button>
-        {item.imagePath && (
-          <button
-            type="button"
-            onClick={() => onUploaded(null)}
-            className="inline-flex cursor-pointer items-center gap-1 text-[10px] font-bold text-semantic-critical hover:text-semantic-critical/80"
-          >
-            <X className="h-3 w-3" /> Quitar
-          </button>
-        )}
-        <span className="text-[9px] text-text-muted">Opcional — JPG, PNG o WEBP, máx. 5MB</span>
-      </div>
-    </div>
-  );
-}
-
-function MaterialCard({
-  token,
-  item,
-  index,
-  category,
-  onUpdateItem,
-  onUpdateItemSpec,
-  onRemove,
-  currencyCode,
-}: {
-  token: string;
-  item: ItemRow;
-  index: number;
-  category: PublicCatalogCategory | undefined;
-  onUpdateItem: MaterialsProposalCardsProps["onUpdateItem"];
-  onUpdateItemSpec: MaterialsProposalCardsProps["onUpdateItemSpec"];
-  onRemove?: () => void;
-  currencyCode: string;
-}) {
-  const missing = isMissingRequiredDetails(item);
-  const complete = isFullyComplete(item, category);
-  // Colapsada por defecto: con muchos materiales, todo expandido a la vez
-  // es una pared de campos — el RequiredMark en el header ya deja ver de
-  // un vistazo cuáles faltan completar, sin necesidad de abrirlas todas.
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const customColor = SEMANTIC_COLOR_MAP.warning;
-  const dangerColor = SEMANTIC_COLOR_MAP.danger;
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className={`overflow-hidden rounded-2xl border transition-colors duration-200 ${
-        item.isCustom ? `${customColor.border100} ${customColor.bg50}` : "border-border-default bg-surface"
-      } ${missing ? `ring-2 ${dangerColor.border100}` : ""}`}
-    >
-      <button
-        type="button"
-        onClick={() => setIsExpanded((v) => !v)}
-        className="flex w-full cursor-pointer items-center justify-between gap-3 p-5 text-left"
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <RequiredMark filled={complete} className="shrink-0" />
-          <div className="min-w-0 flex-1">
-            {item.isCustom && !isExpanded ? (
-              <h4 className="truncate text-sm font-black text-text-primary">{item.materialName || "Material personalizado (sin nombre)"}</h4>
-            ) : item.isCustom ? (
-              <div onClick={(e) => e.stopPropagation()}>
-                <CatalogProductPicker
-                  item={item}
-                  onSelect={(product) => {
-                    onUpdateItem(index, "catalogProductId", product?.id as ItemRow["catalogProductId"]);
-                    if (product) {
-                      onUpdateItem(index, "materialName", product.name);
-                      onUpdateItem(index, "unit", product.unit);
-                      onUpdateItem(index, "categoryId", product.category_id as ItemRow["categoryId"]);
-                    } else {
-                      onUpdateItem(index, "materialName", "");
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <h4 className="truncate text-sm font-black text-text-primary">{item.materialName}</h4>
-            )}
-            <div className="mt-1 flex items-center gap-2 text-[11px] font-medium text-text-muted">
-              <span>
-                {item.quantity} {item.unit}
-              </span>
-              {item.totalPrice > 0 && (
-                <span className="font-mono font-bold text-text-primary">
-                  {currencyCode} {item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </span>
-              )}
-              {missing && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-danger-600">
-                  <AlertCircle className="h-2.5 w-2.5" /> Faltan datos
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {onRemove && (
-            <motion.span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="cursor-pointer rounded-lg p-1.5 text-text-muted transition-colors hover:bg-danger-50 hover:text-danger-600"
-              aria-label="Eliminar material"
-            >
-              <Trash2 className="h-4 w-4" />
-            </motion.span>
-          )}
-          <ChevronDown className={`h-4 w-4 text-text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-        </div>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-          >
-            <div className="border-t border-border-subtle px-5 pb-5 pt-4">
-              {/* Fila 1: cantidad/unidad/precio/total */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Cantidad</label>
-                  {item.isCustom ? (
-                    <NumericInput value={item.quantity === 0 ? "" : item.quantity} onChange={(v) => onUpdateItem(index, "quantity", v)} placeholder="0" />
-                  ) : (
-                    <div className="rounded-control border border-border-subtle bg-surface-sunken px-3.5 py-2.5 font-mono text-sm font-bold text-text-primary">{item.quantity}</div>
-                  )}
-                </div>
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Unidad</label>
-                  {item.isCustom ? (
-                    <input
-                      type="text"
-                      value={item.unit}
-                      onChange={(e) => onUpdateItem(index, "unit", sanitize(e.target.value))}
-                      placeholder="Und."
-                      maxLength={60}
-                      className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100"
-                    />
-                  ) : (
-                    <div className="rounded-control border border-border-subtle bg-surface-sunken px-3.5 py-2.5 text-sm font-medium text-text-primary">{item.unit}</div>
-                  )}
-                </div>
-                <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    Precio unitario ({currencyCode}) <RequiredMark filled={Number(item.unitPrice) > 0} />
-                  </label>
-                  <NumericInput thousands
-                    value={item.unitPrice === 0 ? "" : item.unitPrice}
-                    onChange={(v) => onUpdateItem(index, "unitPrice", v)}
-                    placeholder="0.00"
-                    className={Number(item.unitPrice) <= 0 ? `border-${SEMANTIC_COLOR_MAP.danger.border200.split('-').pop()}` : ""}
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Total</label>
-                  <div className="rounded-control border border-border-subtle bg-surface-sunken px-3.5 py-2.5 text-right font-mono text-sm font-black text-text-primary">
-                    {item.totalPrice > 0 ? `${currencyCode} ${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Fila 2: condición/garantía */}
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    Condición <RequiredMark filled={!!item.conditionStatus} />
-                  </label>
-                  <Select
-                    value={item.conditionStatus ?? ""}
-                    onChange={(v) => onUpdateItem(index, "conditionStatus", v as ItemRow["conditionStatus"])}
-                    options={[{ value: "", label: "Selecciona una opción..." }, ...CONDITION_OPTIONS]}
-                    hasError={!item.conditionStatus}
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    Garantía <RequiredMark filled={!!item.warrantyDescription?.trim()} />
-                    <HelpHint content="Describa la garantía que ofrece para este material — si no ofrece ninguna, indíquelo explícitamente (ej: 'Sin garantía')." />
-                  </label>
-                  <input
-                    type="text"
-                    value={item.warrantyDescription ?? ""}
-                    onChange={(e) => onUpdateItem(index, "warrantyDescription", sanitize(e.target.value))}
-                    placeholder="Ej: 12 meses de fábrica, sin garantía..."
-                    maxLength={255}
-                    className={`w-full rounded-control border px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100 ${
-                      !item.warrantyDescription?.trim() ? `border-${SEMANTIC_COLOR_MAP.danger.border200.split('-').pop()}` : "border-border-default"
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Duración de la garantía — opcional, valor + unidad juntos */}
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:w-1/2 sm:pr-1.5">
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Duración de garantía (opcional)</label>
-                  <NumericInput
-                    value={item.warrantyValue ?? ""}
-                    onChange={(v) => onUpdateItem(index, "warrantyValue", v)}
-                    placeholder="0"
-                    min={0}
-                    integer
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    Unidad
-                    {item.warrantyValue !== "" && item.warrantyValue !== undefined && <RequiredMark filled={!!item.warrantyUnit} />}
-                  </label>
-                  <Select
-                    value={item.warrantyUnit ?? ""}
-                    onChange={(v) => onUpdateItem(index, "warrantyUnit", v as ItemRow["warrantyUnit"])}
-                    options={[{ value: "", label: "—" }, ...DURATION_UNITS.map((u) => ({ value: u.value, label: u.label }))]}
-                    hasError={isWarrantyDurationIncomplete(item)}
-                  />
-                </div>
-              </div>
-
-              {/* Fila 3: notas + imagen */}
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Notas (opcional)</label>
-                  <input
-                    type="text"
-                    value={item.notes ?? ""}
-                    onChange={(e) => onUpdateItem(index, "notes", sanitize(e.target.value))}
-                    placeholder="Marca, plazo de entrega..."
-                    maxLength={500}
-                    className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-text-muted">Imagen del producto</label>
-                  <ImageUploader token={token} item={item} onUploaded={(path) => onUpdateItem(index, "imagePath", path as ItemRow["imagePath"])} />
-                </div>
-              </div>
-
-              {/* Specs técnicas de la categoría */}
-              {category?.spec_schema && category.spec_schema.length > 0 && (
-                <div className="mt-5 border-t border-border-subtle pt-4">
-                  <h5 className="mb-3 text-[10px] font-black uppercase tracking-wider text-text-muted">
-                    Características técnicas — {category.name}
-                  </h5>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {category.spec_schema.map((field) => (
-                      <div key={field.key}>
-                        <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                          {field.label} {field.unit ? `(${field.unit})` : ""}
-                          {field.required && (
-                            <RequiredMark
-                              filled={
-                                item.technicalSpecs?.[field.key] !== undefined &&
-                                item.technicalSpecs?.[field.key] !== "" &&
-                                item.technicalSpecs?.[field.key] !== null
-                              }
-                            />
-                          )}
-                        </label>
-                        {field.type === "boolean" ? (
-                          <Select
-                            value={String(item.technicalSpecs?.[field.key] ?? "")}
-                            onChange={(v) => onUpdateItemSpec(index, field.key, v === "true")}
-                            options={[
-                              { value: "", label: "—" },
-                              { value: "true", label: "Sí" },
-                              { value: "false", label: "No" },
-                            ]}
-                            size="sm"
-                          />
-                        ) : field.type === "number" ? (
-                          <NumericInput value={(item.technicalSpecs?.[field.key] as number) ?? ""} onChange={(v) => onUpdateItemSpec(index, field.key, v)} placeholder="0" />
-                        ) : (
-                          <input
-                            type="text"
-                            value={(item.technicalSpecs?.[field.key] as string) ?? ""}
-                            onChange={(e) => onUpdateItemSpec(index, field.key, sanitize(e.target.value))}
-                            maxLength={120}
-                            className="w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+    <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-[11px] font-bold ${className}`}>
+      {icon}
+      {label} <span className="font-mono">{value}</span>
+    </span>
   );
 }
 
@@ -551,79 +77,164 @@ export default function MaterialsProposalCards({
   categories,
   currencyCode,
 }: MaterialsProposalCardsProps) {
-  const grandTotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
-  const projectItems = items.filter((i) => !i.isCustom);
-  const customItems = items.filter((i) => i.isCustom);
-  const categoryFor = (item: ItemRow) => categories.find((c) => c.id === item.categoryId);
-
+  const [detailIndex, setDetailIndex] = useState<number | null>(null);
   const infoColor = SEMANTIC_COLOR_MAP.info;
   const warningColor = SEMANTIC_COLOR_MAP.warning;
+
+  const categoryFor = useCallback((item: ItemRow) => categories.find((c) => c.id === item.categoryId), [categories]);
+  const statusOf = useCallback((item: ItemRow) => getItemStatus(item, categoryFor(item)), [categoryFor]);
+
+  const statuses = useMemo(() => items.map(statusOf), [items, statusOf]);
+  const counts = useMemo(
+    () => ({
+      complete: statuses.filter((s) => s === "complete").length,
+      missing: statuses.filter((s) => s === "missing").length,
+      unpriced: statuses.filter((s) => s === "unpriced").length,
+    }),
+    [statuses],
+  );
+  const grandTotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
+
+  const nextMissingAfter = (from: number) => {
+    for (let step = 1; step <= items.length; step++) {
+      const candidate = (from + step) % items.length;
+      if (statuses[candidate] === "missing") return candidate;
+    }
+    return null;
+  };
+
+  const handleAdd = () => {
+    onAddCustomItem();
+    // La fila nueva queda al final: su índice es el largo actual.
+    setDetailIndex(items.length);
+  };
+
+  const handleRemove = (index: number) => {
+    onRemoveItem(index);
+    setDetailIndex((current) => (current === null ? null : current === index ? null : current > index ? current - 1 : current));
+  };
+
+  const columns: ProductColumn<ItemRow>[] = [
+    {
+      key: "material",
+      label: "Material",
+      render: (item, index) => (
+        <button type="button" onClick={() => setDetailIndex(index)} className="flex max-w-full cursor-pointer items-center gap-2 text-left" aria-label={`Abrir detalle de ${item.materialName || "material personalizado"}`}>
+          <span className={`truncate text-[11px] font-semibold ${item.materialName ? "text-slate-800" : "italic text-slate-400"}`}>{item.materialName || "Material personalizado (sin nombre)"}</span>
+          {item.isCustom && <span className={`shrink-0 rounded-pill px-1.5 py-0.5 text-[8px] font-black uppercase ${warningColor.bg50} ${warningColor.text700}`}>Adicional</span>}
+        </button>
+      ),
+    },
+    { key: "quantity", label: "Cant.", align: "center", className: "font-mono text-[11px] font-bold text-slate-600", render: (item) => item.quantity },
+    { key: "unit", label: "Unidad", className: "text-[11px] font-medium text-slate-500", render: (item) => item.unit },
+    {
+      key: "unitPrice",
+      label: `Precio unit. (${currencyCode || "—"})`,
+      align: "right",
+      render: (item, index) => (
+        <NumericInput
+          thousands
+          value={item.unitPrice === 0 ? "" : item.unitPrice}
+          onChange={(v) => onUpdateItem(index, "unitPrice", v)}
+          placeholder="0.00"
+          className="ml-auto w-32! px-2! py-1.5! text-right! text-[11px]!"
+        />
+      ),
+    },
+    {
+      key: "total",
+      label: "Total",
+      align: "right",
+      className: "font-mono text-[11px] font-bold text-emerald-700",
+      render: (item) => (item.totalPrice > 0 ? item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—"),
+    },
+    {
+      key: "status",
+      label: "Estado",
+      align: "center",
+      render: (item) => {
+        const badge = STATUS_BADGE[statusOf(item)];
+        return <span className={`inline-block whitespace-nowrap rounded-pill px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${badge.className}`}>{badge.label}</span>;
+      },
+    },
+    {
+      key: "actions",
+      label: "",
+      align: "right",
+      width: "5.5rem",
+      render: (item, index) => (
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => setDetailIndex(index)}
+            className="inline-flex cursor-pointer items-center gap-0.5 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 transition-colors hover:bg-slate-50"
+            aria-label={`Editar detalle de ${item.materialName || "material personalizado"}`}
+          >
+            Detalle <ChevronRight className="h-3 w-3" />
+          </button>
+          {item.isCustom && (
+            <button type="button" onClick={() => handleRemove(index)} className="cursor-pointer rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-500" aria-label="Eliminar material">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const detailStatus = detailIndex !== null ? statuses[detailIndex] : undefined;
 
   return (
     <div className="space-y-5">
       <div className={`rounded-2xl border ${infoColor.border100} ${infoColor.bg50} p-4`}>
         <h3 className={`text-sm font-black uppercase tracking-wider ${infoColor.text700}`}>Materiales requeridos por el proyecto</h3>
         <p className={`mt-2 text-xs font-medium ${infoColor.text600}`}>
-          Ingrese el precio unitario que puede ofrecer para cada material, en {currencyCode || "la moneda seleccionada"}.
-          Condición y garantía son obligatorias para todo material con precio cargado. Puede dejar en 0 los que no provee.
+          Ingrese el precio unitario que puede ofrecer para cada material, en {currencyCode || "la moneda seleccionada"}. Condición y garantía son obligatorias para todo material con precio cargado
+          (se completan en «Detalle»). Puede dejar sin precio los que no provee.
         </p>
       </div>
 
-      <motion.div layout className="space-y-3">
-        <AnimatePresence initial={false}>
-          {projectItems.map((item) => {
-            const index = items.indexOf(item);
-            return (
-              <MaterialCard
-                key={item._id}
-                token={token}
-                item={item}
-                index={index}
-                category={categoryFor(item)}
-                onUpdateItem={onUpdateItem}
-                onUpdateItemSpec={onUpdateItemSpec}
-                currencyCode={currencyCode || "—"}
-              />
-            );
-          })}
-        </AnimatePresence>
-      </motion.div>
+      <div className="rounded-2xl border border-white/10 bg-white p-4 text-slate-900 shadow-xl shadow-slate-950/30">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <ProgressChip icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Completos" value={counts.complete} className="bg-success-50 text-success-700" />
+          <ProgressChip icon={<ListChecks className="h-3.5 w-3.5" />} label="Con datos faltantes" value={counts.missing} className="bg-danger-50 text-danger-600" />
+          <ProgressChip icon={null} label="Sin cotizar" value={counts.unpriced} className="bg-surface-sunken text-text-muted" />
+          {counts.missing > 0 && (
+            <button type="button" onClick={() => setDetailIndex(nextMissingAfter(-1))} className="ml-auto cursor-pointer rounded-control border border-danger-200 px-3 py-1 text-[11px] font-bold text-danger-700 transition-colors hover:bg-danger-50">
+              Completar los que faltan
+            </button>
+          )}
+        </div>
 
-      <div className={`flex items-center justify-between rounded-2xl border ${warningColor.border100} ${warningColor.bg50} px-5 py-3`}>
-        <span className={`text-xs font-black uppercase tracking-wider ${warningColor.text700}`}>Materiales adicionales — agregados por usted</span>
-        <motion.button
-          type="button"
-          onClick={onAddCustomItem}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.94 }}
-          transition={springs.snappy}
-          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r ${warningColor.gradientFrom} ${warningColor.gradientTo} px-3 py-2 text-xs font-black text-white transition-colors ${warningColor.gradientFromHover} ${warningColor.gradientToHover}`}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Agregar material
-        </motion.button>
+        <ProductLinesTable
+          ariaLabel="Materiales de la propuesta"
+          items={items}
+          columns={columns}
+          rowKey={(item) => item._id}
+          searchText={(item) => item.materialName}
+          searchPlaceholder="Buscar material…"
+          filters={[
+            { key: "missing", label: "Faltan datos", predicate: (item) => statusOf(item) === "missing" },
+            { key: "unpriced", label: "Sin cotizar", predicate: (item) => statusOf(item) === "unpriced" },
+            { key: "complete", label: "Completos", predicate: (item) => statusOf(item) === "complete" },
+          ]}
+          rowClassName={(item) => (statusOf(item) === "missing" ? "bg-danger-50/30" : item.isCustom ? "bg-amber-50/30" : "")}
+          emptyMessage="Ningún material coincide con la búsqueda."
+          toolbarActions={
+            <motion.button
+              type="button"
+              onClick={handleAdd}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.94 }}
+              transition={springs.snappy}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r ${warningColor.gradientFrom} ${warningColor.gradientTo} px-3 py-1.5 text-[11px] font-black text-white transition-colors ${warningColor.gradientFromHover} ${warningColor.gradientToHover}`}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Agregar material adicional
+            </motion.button>
+          }
+        />
       </div>
-
-      <motion.div layout className="space-y-3">
-        <AnimatePresence initial={false}>
-          {customItems.map((item) => {
-            const index = items.indexOf(item);
-            return (
-              <MaterialCard
-                key={item._id}
-                token={token}
-                item={item}
-                index={index}
-                category={categoryFor(item)}
-                onUpdateItem={onUpdateItem}
-                onUpdateItemSpec={onUpdateItemSpec}
-                onRemove={() => onRemoveItem(index)}
-                currencyCode={currencyCode || "—"}
-              />
-            );
-          })}
-        </AnimatePresence>
-      </motion.div>
 
       <div className={`flex items-center justify-between rounded-2xl border ${infoColor.border100} ${infoColor.bg50} px-5 py-4`}>
         <span className={`text-xs font-black uppercase tracking-wider ${infoColor.text700}`}>Total estimado de la propuesta</span>
@@ -631,6 +242,23 @@ export default function MaterialsProposalCards({
           <AnimatedTotal value={grandTotal} currencyCode={currencyCode || "—"} />
         </span>
       </div>
+
+      {detailIndex !== null && items[detailIndex] && (
+        <MaterialDetailPanel
+          token={token}
+          items={items}
+          index={detailIndex}
+          category={categoryFor(items[detailIndex])}
+          currencyCode={currencyCode}
+          hasPending={counts.missing > (detailStatus === "missing" ? 1 : 0)}
+          onUpdateItem={onUpdateItem}
+          onUpdateItemSpec={onUpdateItemSpec}
+          onNavigate={setDetailIndex}
+          onNextPending={() => setDetailIndex(nextMissingAfter(detailIndex))}
+          onRemove={handleRemove}
+          onClose={() => setDetailIndex(null)}
+        />
+      )}
     </div>
   );
 }
