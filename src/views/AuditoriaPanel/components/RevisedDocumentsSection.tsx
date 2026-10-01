@@ -161,7 +161,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
       label: "Estado",
       width: "9rem",
       sortable: true,
-      render: (p) => <StatusBadge code={p.status} />,
+      render: (p) => <StatusBadge code={p.status} returnInfo={p.returnInfo} />,
     },
     {
       key: "documents",

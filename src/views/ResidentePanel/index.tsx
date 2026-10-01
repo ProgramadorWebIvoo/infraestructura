@@ -77,7 +77,16 @@ export default function ResidentePanel({ authToken }: ResidentePanelProps) {
         label: "Estado de la obra",
         width: "11rem",
         sortable: true,
-        render: (p) => <StatusBadge code={p.status} />,
+        render: (p) => (
+          <StatusBadge
+            code={p.status}
+            returnInfo={
+              reportState(p) === "DEVUELTO"
+                ? { byRole: "AUDITORIA", target: "RESIDENTE", reason: p.closure?.rejectionReason ?? null, at: null }
+                : null
+            }
+          />
+        ),
       },
       {
         key: "report",

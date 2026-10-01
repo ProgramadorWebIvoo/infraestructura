@@ -13,6 +13,7 @@ import { formatCurrency } from "@ivoo/shared";
 import type { Project, SupplierMaterialProposal } from "@/types";
 import { calculatePendingPortalProposals } from "@/views/AnalistasPanel/utils/portalProposalUtils";
 import BsAmount from "@/components/UI/BsAmount";
+import ReturnedBadge from "@/components/UI/ReturnedBadge";
 import OriginalAmount from "@/components/UI/OriginalAmount";
 
 interface AnalistasGridCardProps {
@@ -57,6 +58,7 @@ function AnalistasGridCard({
           <MapPin className="h-3 w-3 shrink-0" />
           {project.location}
         </div>
+        {project.returnInfo && <ReturnedBadge info={project.returnInfo} className="mt-1 text-[9px]" />}
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">

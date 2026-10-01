@@ -89,7 +89,7 @@ export default function InspectRequestModal({ isOpen, project, onClose }: Inspec
               Estado del Flujo
             </h4>
             <div className="flex items-center gap-3">
-              <StatusBadge code={project.status} />
+              <StatusBadge code={project.status} returnInfo={project.returnInfo} />
               <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border ${
                 project.type === "INFRAESTRUCTURA"
                   ? "bg-sky-50 text-sky-700 border-sky-200"

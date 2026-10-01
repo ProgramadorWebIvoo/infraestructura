@@ -100,7 +100,7 @@ export default function RequestsTableSection({ projects, stageKey, onStageKeyCha
       label: "Estado",
       width: "8rem",
       sortable: true,
-      render: (p) => <StatusBadge code={p.status} />,
+      render: (p) => <StatusBadge code={p.status} returnInfo={p.returnInfo} />,
     },
     {
       key: "createdDate",

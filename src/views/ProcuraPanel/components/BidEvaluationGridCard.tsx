@@ -13,6 +13,7 @@ import { MapPin, Trophy } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import type { Project } from "@/types";
 import BsAmount from "@/components/UI/BsAmount";
+import ReturnedBadge from "@/components/UI/ReturnedBadge";
 
 interface BidEvaluationGridCardProps {
   project: Project;
@@ -40,6 +41,7 @@ function BidEvaluationGridCard({ project, convert, hasRates, isLoadingRates }: B
           <MapPin className="h-3 w-3 shrink-0" />
           {project.location}
         </div>
+        {project.returnInfo && <ReturnedBadge info={project.returnInfo} className="mt-1 text-[9px]" />}
       </div>
 
       {best && (

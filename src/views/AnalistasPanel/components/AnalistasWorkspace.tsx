@@ -63,6 +63,7 @@ import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
 import OriginalAmount from "@/components/UI/OriginalAmount";
 import UsdBcvNotice from "@/components/UI/UsdBcvNotice";
+import ReturnedBadge from "@/components/UI/ReturnedBadge";
 
 const ORIGIN_BADGE: Record<ProposalOrigin, { label: string; className: string }> = {
   MANUAL: { label: "Manual", className: "bg-slate-100 text-slate-600 border-slate-200" },
@@ -152,6 +153,7 @@ export default function AnalistasWorkspace({
         <div className="min-w-0">
           <div className="font-bold text-slate-800 truncate">{p.title}</div>
           <div className="text-[10px] text-slate-400 font-medium truncate">{p.location}</div>
+          {p.returnInfo && <ReturnedBadge info={p.returnInfo} className="mt-1 text-[9px]" />}
         </div>
       ),
     },

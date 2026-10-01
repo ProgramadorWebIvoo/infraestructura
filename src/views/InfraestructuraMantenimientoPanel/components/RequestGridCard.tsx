@@ -63,7 +63,7 @@ function RequestGridCard({ item: project, onInspect, convert, hasRates, isLoadin
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-        <StatusBadge code={project.status} className="text-[9px]" />
+        <StatusBadge code={project.status} returnInfo={project.returnInfo} className="text-[9px]" />
         <div className="text-right">
           <div className="font-mono font-bold text-[11px] text-slate-700 whitespace-nowrap">{formatCurrency(project.estimatedTotal)}</div>
           {convert && (

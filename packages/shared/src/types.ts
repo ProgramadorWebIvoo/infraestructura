@@ -177,6 +177,15 @@ export interface ProjectDocument {
   optimized?: boolean;
 }
 
+export interface ReturnInfo {
+  /** Rol que rechazó o devolvió (ej. "PROCURA", "AUDITORIA"). */
+  byRole: string;
+  /** En devoluciones del informe de cierre, a quién va dirigida. */
+  target: "CONTRATISTA" | "RESIDENTE" | null;
+  reason: string | null;
+  at: string | null;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -240,6 +249,8 @@ export interface Project {
   residentName?: string | null;
   closureReportStatus?: string | null;
   closureReportRevision?: number | null;
+  /** Devolución vigente del flujo (quién devolvió y por qué); null si la obra no está devuelta. Ver ProjectReturnResolver. */
+  returnInfo?: ReturnInfo | null;
   /** Finiquito propuesto por Auditoría (solo con el informe de cierre cargado). */
   finiquitoAmount?: number | null;
   /** Congelaciones de tasa de cambio — ver RateFreeze. Solo viene poblado cuando el backend carga la relación (detailRelations()). */

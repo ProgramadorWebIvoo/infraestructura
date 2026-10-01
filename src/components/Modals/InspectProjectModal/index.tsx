@@ -59,7 +59,7 @@ export default function InspectProjectModal({ isOpen, project, onClose }: Inspec
         <>
           {/* Metadata + estado actual */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <StatusBadge code={project.status} className="text-sm font-bold px-2.5 py-1" />
+            <StatusBadge code={project.status} returnInfo={project.returnInfo} className="text-sm font-bold px-2.5 py-1" />
             <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 font-medium">
               <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               {project.location}

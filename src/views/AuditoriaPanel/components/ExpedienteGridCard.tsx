@@ -23,7 +23,7 @@ function ExpedienteGridCard({ project, rejectionCount }: ExpedienteGridCardProps
     <div className="p-3.5 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
         <span className="font-mono font-bold text-[10px] text-success-600 whitespace-nowrap">{project.id}</span>
-        <StatusBadge code={project.status} className="text-[9px]" />
+        <StatusBadge code={project.status} returnInfo={project.returnInfo} className="text-[9px]" />
       </div>
 
       <div className="min-w-0">

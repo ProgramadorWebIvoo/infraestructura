@@ -69,7 +69,7 @@ export default function ExpedienteDetailTab({ project, rejectionCount, onChangeR
         <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 space-y-2.5">
           <div>
             <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Estado</span>
-            <StatusBadge code={project.status} />
+            <StatusBadge code={project.status} returnInfo={project.returnInfo} />
           </div>
           <div>
             <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">

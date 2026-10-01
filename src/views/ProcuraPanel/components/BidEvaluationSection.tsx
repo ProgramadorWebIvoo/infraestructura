@@ -36,6 +36,7 @@ import type { Project, Proposal } from "@/types";
 import { formatProposalDuration } from "@/views/AnalistasPanel/components/RegisterProposalModal";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import BsAmount from "@/components/UI/BsAmount";
+import ReturnedBadge from "@/components/UI/ReturnedBadge";
 
 interface BidEvaluationSectionProps {
   projects: Project[];
@@ -399,6 +400,7 @@ export default function BidEvaluationSection({
           <div className="text-[10px] text-slate-400 font-medium truncate">{p.location}</div>
         </div>
       ),
+          {p.returnInfo && <ReturnedBadge info={p.returnInfo} className="mt-1 text-[9px]" />}
     },
     {
       key: "proposals",

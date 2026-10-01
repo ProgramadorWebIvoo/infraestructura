@@ -101,7 +101,7 @@ export default function CompletionAuditSection({ projects, authToken, closureAct
       width: "9rem",
       sortable: true,
       render: (p) => (
-        <StatusBadge code={p.status} />
+        <StatusBadge code={p.status} returnInfo={p.returnInfo} />
       ),
     },
     {
