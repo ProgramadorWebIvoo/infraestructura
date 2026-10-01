@@ -108,7 +108,7 @@ export default function MaterialFormModal({
             <label htmlFor="material-price" className={labelClass}>
               Precio unitario est. ($) <RequiredMark filled={form.estimatedUnitPrice !== "" && form.estimatedUnitPrice > 0} />
             </label>
-            <NumericInput
+            <NumericInput thousands
               id="material-price"
               value={form.estimatedUnitPrice}
               onChange={(v) => onFormChange({ ...form, estimatedUnitPrice: v === "" ? "" : Math.round(v * 100) / 100 })}

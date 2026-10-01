@@ -98,7 +98,7 @@ export default function ProposalDetailsSection({
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Mano de obra ({currencyCode || "—"})
             </label>
-            <NumericInput value={laborCost} onChange={onLaborCostChange} placeholder="0.00" min={0} />
+            <NumericInput thousands value={laborCost} onChange={onLaborCostChange} placeholder="0.00" min={0} />
           </div>
         </div>
       </motion.div>

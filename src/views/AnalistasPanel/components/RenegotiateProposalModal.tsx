@@ -303,7 +303,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        <NumericInput
+                        <NumericInput thousands
                           value={row.unitPrice === 0 ? "" : row.unitPrice}
                           onChange={(v) => updateMaterialRow(index, "unitPrice", v === "" ? 0 : v)}
                           placeholder="0.00"
@@ -355,7 +355,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             <label htmlFor="renegotiate-labor-cost" className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               Costo Mano de Obra ({quoteCurrency})
             </label>
-            <NumericInput id="renegotiate-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
+            <NumericInput thousands id="renegotiate-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" />
             {hasRates && typeof laborCost === "number" && laborCost > 0 && (
               <p className="mt-1.5 text-[10px] font-mono font-semibold text-slate-500">≈ Bs. {formatBs(convert(laborCost, "USD"))}</p>
             )}

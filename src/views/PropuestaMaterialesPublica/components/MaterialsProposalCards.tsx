@@ -394,7 +394,7 @@ function MaterialCard({
                   <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
                     Precio unitario ({currencyCode}) <RequiredMark filled={Number(item.unitPrice) > 0} />
                   </label>
-                  <NumericInput
+                  <NumericInput thousands
                     value={item.unitPrice === 0 ? "" : item.unitPrice}
                     onChange={(v) => onUpdateItem(index, "unitPrice", v)}
                     placeholder="0.00"

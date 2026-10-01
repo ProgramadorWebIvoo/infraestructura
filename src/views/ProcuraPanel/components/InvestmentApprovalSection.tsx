@@ -395,7 +395,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                         Inversión Aprobada Autorizada ($)
                         <RequiredMark filled={approvedAmount !== "" && approvedAmount > 0} />
                       </label>
-                      <NumericInput
+                      <NumericInput thousands
                         id="procura-approved-amount"
                         value={approvedAmount}
                         onChange={setApprovedAmount}

@@ -441,7 +441,7 @@ export default function RenegociacionPublica() {
                               )}
                             </td>
                             <td className="px-3 py-2">
-                              <NumericInput
+                              <NumericInput thousands
                                 value={row.unitPrice === 0 ? "" : row.unitPrice}
                                 onChange={(v) => updateMaterialRow(index, "unitPrice", v === "" ? 0 : v)}
                                 placeholder="0.00"
@@ -485,7 +485,7 @@ export default function RenegociacionPublica() {
                   <label htmlFor="rn-labor-cost" className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Costo Mano de Obra ({quoteCurrency})
                   </label>
-                  <NumericInput id="rn-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" accent="warning" />
+                  <NumericInput thousands id="rn-labor-cost" value={laborCost} onChange={setLaborCost} min={0} placeholder="0.00" accent="warning" />
                 </div>
 
                 <div>

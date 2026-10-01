@@ -78,7 +78,7 @@ export default function CustomMaterialForm({ onAdd }: CustomMaterialFormProps) {
         <label htmlFor="custom-mat-price" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
           Costo Estimado ($)
         </label>
-        <NumericInput
+        <NumericInput thousands
           id="custom-mat-price"
           value={price}
           onChange={setPrice}
