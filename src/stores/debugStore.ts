@@ -150,6 +150,16 @@ export const useDebugStore = create<DebugState>((set, get) => ({
     set((state) => (kind ? { entries: state.entries.filter((e) => e.kind !== kind) } : { entries: [], dropped: 0 })),
 }));
 
+/**
+ * Cuenta entradas por nivel. Usada como selector (devuelve un número, así que
+ * zustand solo re-renderiza cuando el número cambia — ver DebugPanelTrigger).
+ */
+export function countEntriesByLevel(entries: readonly DebugEntry[], levels: readonly DebugLevel[]): number {
+  let count = 0;
+  for (const entry of entries) if (levels.includes(entry.level ?? "info")) count++;
+  return count;
+}
+
 /** Empuja una entrada al buffer de debug sin necesidad de un hook — usable desde services/ (logger, api, echo). No-op si el modo está apagado o en pausa. */
 export function pushDebugEntry(entry: PushableDebugEntry): void {
   useDebugStore.getState().push(entry);
