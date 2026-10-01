@@ -18,6 +18,7 @@ const LEVEL_ACCENT: Record<DebugLevel, SemanticColor> = {
   info: "info",
   warn: "warning",
   error: "danger",
+  fatal: "danger",
 };
 
 function durationTone(ms?: number): string {
@@ -73,6 +74,11 @@ function DebugEntryRow({ entry, showCurl }: { entry: DebugEntry; showCurl: boole
         <span className={`shrink-0 rounded-pill px-1.5 py-0.5 text-[9px] font-black uppercase ${accent.bg100} ${accent.text700}`}>
           {entry.level ?? "info"}
         </span>
+        {entry.category !== "NETWORK" && entry.category !== "SYSTEM" && (
+          <span className="shrink-0 rounded-pill bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-500">
+            {entry.category === "USER_ACTION" ? "acción" : "estado"}
+          </span>
+        )}
         <span className="font-mono text-[10px] text-text-tertiary shrink-0">{time}</span>
         <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text-primary">{entry.label}</span>
         {entry.durationMs !== undefined && (

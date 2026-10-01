@@ -20,16 +20,23 @@
 
 import { create } from "zustand";
 import { sanitizeForDebug, maskSensitiveString } from "@/utils/debugSanitizer";
+import { appendToRing } from "./debugRingBuffer";
 
 const STORAGE_KEY = "ivoo_debug_mode";
-const MAX_ENTRIES = 500;
 
 export type DebugEntryKind = "log" | "http" | "websocket" | "error";
-export type DebugLevel = "info" | "warn" | "error";
+export type DebugLevel = "info" | "warn" | "error" | "fatal";
+export type DebugCategory = "SYSTEM" | "NETWORK" | "STATE" | "USER_ACTION";
+
+/** Única fuente del default de categoría: http/websocket son red; log/error son del sistema. STATE y USER_ACTION se piden explícitamente. */
+export function defaultCategory(kind: DebugEntryKind): DebugCategory {
+  return kind === "http" || kind === "websocket" ? "NETWORK" : "SYSTEM";
+}
 
 export interface DebugEntry {
   id: number;
   kind: DebugEntryKind;
+  category: DebugCategory;
   timestamp: number;
   label: string;
   detail?: Record<string, unknown> | string;
@@ -48,7 +55,9 @@ export interface DebugEntry {
 }
 
 /** Lo que un caller (services/, componentes) provee — `id`/`timestamp`/`searchText` los calcula el store en push(). */
-export type PushableDebugEntry = Omit<DebugEntry, "id" | "timestamp" | "searchText">;
+export type PushableDebugEntry = Omit<DebugEntry, "id" | "timestamp" | "searchText" | "category"> & {
+  category?: DebugCategory;
+};
 
 interface SetEnabledOptions {
   /** false = apagar solo en memoria (guardia de rol): conserva la preferencia del admin en localStorage. */
@@ -59,6 +68,8 @@ interface DebugState {
   enabled: boolean;
   paused: boolean;
   entries: DebugEntry[];
+  /** Eventos descartados por el buffer circular desde que se encendió/limpió (ver debugRingBuffer.ts). */
+  dropped: number;
   setEnabled: (enabled: boolean, options?: SetEnabledOptions) => void;
   setPaused: (paused: boolean) => void;
   push: (entry: PushableDebugEntry) => void;
@@ -87,6 +98,7 @@ export const useDebugStore = create<DebugState>((set) => ({
   enabled: readInitialEnabled(),
   paused: false,
   entries: [],
+  dropped: 0,
 
   setEnabled: (enabled, { persist = true } = {}) => {
     if (persist) {
@@ -97,7 +109,7 @@ export const useDebugStore = create<DebugState>((set) => ({
         // funcionando en memoria para el resto de la sesión.
       }
     }
-    set({ enabled, paused: false, entries: [] });
+    set({ enabled, paused: false, entries: [], dropped: 0 });
   },
 
   setPaused: (paused) => set({ paused }),
@@ -112,19 +124,19 @@ export const useDebugStore = create<DebugState>((set) => ({
       const detail = sanitizeForDebug(entry.detail);
       const next: DebugEntry = {
         ...entry,
+        category: entry.category ?? defaultCategory(entry.kind),
         label,
         detail,
         id: nextId++,
         timestamp: Date.now(),
         searchText: buildSearchText(label, detail),
       };
-      const entries = [...state.entries, next];
-      if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
-      return { entries };
+      const { entries, dropped } = appendToRing(state.entries, next);
+      return dropped > 0 ? { entries, dropped: state.dropped + dropped } : { entries };
     }),
 
   clear: (kind) =>
-    set((state) => (kind ? { entries: state.entries.filter((e) => e.kind !== kind) } : { entries: [] })),
+    set((state) => (kind ? { entries: state.entries.filter((e) => e.kind !== kind) } : { entries: [], dropped: 0 })),
 }));
 
 /** Empuja una entrada al buffer de debug sin necesidad de un hook — usable desde services/ (logger, api, echo). No-op si el modo está apagado o en pausa. */
@@ -136,7 +148,7 @@ export function pushDebugEntry(entry: PushableDebugEntry): void {
 // Truncado de payloads grandes
 // ---------------------------------------------------------------------------
 // Un catálogo de materiales o una lista de proyectos completa puede pesar
-// varios MB en JSON — guardarla tal cual en el buffer (hasta 500 entradas)
+// varios MB en JSON — guardarla tal cual en el buffer (hasta 300 entradas)
 // es la forma más directa de que "activar debug mode" termine colgando la
 // pestaña por presión de memoria. Cortamos el texto serializado a un tope
 // razonable para lectura humana; nadie necesita los 8000 items de un array

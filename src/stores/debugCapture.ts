@@ -11,6 +11,7 @@
  */
 
 import { create } from "zustand";
+import type { QueryClient } from "@tanstack/react-query";
 import { pushDebugEntry, prepareForDebug } from "./debugStore";
 
 export type Dispose = () => void;
@@ -47,7 +48,7 @@ export const installGlobalErrorCapture = createRefCountedInstaller(() => {
   const onError = (event: ErrorEvent) => {
     pushDebugEntry({
       kind: "error",
-      level: "error",
+      level: "fatal",
       label: `Uncaught: ${event.message}`,
       detail: {
         message: event.message,
@@ -77,6 +78,102 @@ export const installGlobalErrorCapture = createRefCountedInstaller(() => {
     window.removeEventListener("unhandledrejection", onRejection);
   };
 });
+
+// ---------------------------------------------------------------------------
+// console.error / console.warn
+// ---------------------------------------------------------------------------
+// Cubre lo que NO pasa por logger.ts: errores de React/librerías de terceros
+// (p. ej. "Warning: Each child…"). Reglas de seguridad del parche:
+//  - reentrancia: pushDebugEntry → zustand/React podría volver a llamar a
+//    console.error; el flag a nivel de módulo corta el bucle;
+//  - anti-duplicado: logger.ts ya registra sus propios logs y los emite a
+//    console con el prefijo "[IVOO]" (incluye variantes "%c[IVOO]"): se omiten;
+//  - restauración: solo si console[method] sigue siendo NUESTRO parche (otra
+//    herramienta pudo parchear encima); si no, el parche queda inerte
+//    (`active=false`) y solo reenvía al original.
+const OWN_LOGGER_MARKER = "[IVOO]";
+let inConsolePatch = false;
+
+function formatConsoleArgs(args: unknown[]): string {
+  const first = args[0];
+  if (typeof first === "string") return first;
+  return first instanceof Error ? first.message : "(sin mensaje)";
+}
+
+function patchConsole(method: "error" | "warn", level: "error" | "warn"): Dispose {
+  const original = console[method];
+  let active = true;
+
+  const patched = function (this: Console, ...args: unknown[]) {
+    original.apply(this, args);
+    if (!active || inConsolePatch) return;
+    if (typeof args[0] === "string" && args[0].includes(OWN_LOGGER_MARKER)) return;
+    inConsolePatch = true;
+    try {
+      pushDebugEntry({
+        kind: "log",
+        level,
+        category: "SYSTEM",
+        label: `console.${method}: ${formatConsoleArgs(args)}`,
+        detail: { source: "console", args: prepareForDebug(args) as unknown[] },
+      });
+    } finally {
+      inConsolePatch = false;
+    }
+  };
+
+  console[method] = patched;
+  return () => {
+    active = false;
+    if (console[method] === patched) console[method] = original;
+  };
+}
+
+export const installConsoleCapture = createRefCountedInstaller(() => {
+  const disposers = [patchConsole("error", "error"), patchConsole("warn", "warn")];
+  return () => disposers.reverse().forEach((dispose) => dispose());
+});
+
+// ---------------------------------------------------------------------------
+// Estado de TanStack Query (categoría STATE)
+// ---------------------------------------------------------------------------
+// Solo errores de queries y resultado de mutaciones — NO cada fetch exitoso
+// (el polling generaría cientos de entradas por minuto y taparía lo útil).
+export function installStateCapture(queryClient: QueryClient): Dispose {
+  const unsubscribeQueries = queryClient.getQueryCache().subscribe((event) => {
+    if (event.type !== "updated" || event.action.type !== "error") return;
+    pushDebugEntry({
+      kind: "log",
+      level: "error",
+      category: "STATE",
+      label: `Query error: ${JSON.stringify(event.query.queryKey)}`,
+      detail: { queryKey: event.query.queryKey, error: prepareForDebug(event.action.error) },
+    });
+  });
+
+  const unsubscribeMutations = queryClient.getMutationCache().subscribe((event) => {
+    if (event.type !== "updated") return;
+    const { action, mutation } = event;
+    if (action.type !== "success" && action.type !== "error") return;
+    const key = mutation.options.mutationKey;
+    pushDebugEntry({
+      kind: "log",
+      level: action.type === "error" ? "error" : "info",
+      category: "STATE",
+      label: `Mutation ${action.type === "error" ? "error" : "ok"}${key ? `: ${JSON.stringify(key)}` : ""}`,
+      detail: {
+        mutationKey: key,
+        variables: prepareForDebug(mutation.state.variables),
+        error: action.type === "error" ? prepareForDebug(action.error) : undefined,
+      },
+    });
+  });
+
+  return () => {
+    unsubscribeQueries();
+    unsubscribeMutations();
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Web Vitals — capturados en vivo para el tab "Performance"

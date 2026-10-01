@@ -10,7 +10,7 @@
  * simplemente no se emiten a ningún lado.
  */
 
-import { useDebugStore, pushDebugEntry, prepareForDebug } from "@/stores/debugStore";
+import { useDebugStore, pushDebugEntry, prepareForDebug, type DebugLevel } from "@/stores/debugStore";
 
 const PREFIX = "[IVOO]";
 const isProd = import.meta.env.PROD;
@@ -23,7 +23,7 @@ const isProd = import.meta.env.PROD;
 // (miles por sesión), incluso con el modo apagado — justo el tipo de
 // overhead que DEBUG-MODE no debería imponerle al 99% de las sesiones que
 // nunca lo activan.
-function pushToDebugBuffer(level: "info" | "warn" | "error", context: string, message: string, detail?: unknown): void {
+function pushToDebugBuffer(level: DebugLevel, context: string, message: string, detail?: unknown): void {
   if (!useDebugStore.getState().enabled) return;
   pushDebugEntry({
     kind: "log",
@@ -63,6 +63,19 @@ export function logError(context: string, error: unknown, ...args: unknown[]): v
     console.error(`${PREFIX} ${context}:`, msg, ...args);
   }
   pushToDebugBuffer("error", context, msg, args.length ? args : undefined);
+}
+
+/**
+ * Error irrecuperable (ej. render que tumbó un ErrorBoundary): igual que
+ * logError pero con nivel `fatal` en el DEBUG-MODE.
+ */
+export function logFatal(context: string, error: unknown, ...args: unknown[]): void {
+  const msg = getErrorMessage(error);
+  errorSink?.(context, error, msg);
+  if (!isProd) {
+    console.error(`${PREFIX} ${context}:`, msg, ...args);
+  }
+  pushToDebugBuffer("fatal", context, msg, args.length ? args : undefined);
 }
 
 export function logWarn(context: string, message: string, ...args: unknown[]): void {

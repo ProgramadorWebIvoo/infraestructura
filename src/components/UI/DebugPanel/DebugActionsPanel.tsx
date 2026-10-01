@@ -122,6 +122,13 @@ export default function DebugActionsPanel() {
       return;
     }
     setConfirmingKey(null);
+    pushDebugEntry({
+      kind: "log",
+      level: "info",
+      category: "USER_ACTION",
+      label: `Acción de debug: ${action.label}`,
+      detail: { action: action.key },
+    });
     action.run({ queryClient, showToast });
   };
 

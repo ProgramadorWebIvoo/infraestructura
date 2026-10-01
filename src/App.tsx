@@ -43,6 +43,7 @@ import DebugPanel from "./components/UI/DebugPanel/DebugPanel";
 import { useDebugStore } from "./stores/debugStore";
 import { useDebugModeGuard, canUseDebugMode } from "./hooks/useDebugModeGuard";
 import { useDebugRuntime } from "./hooks/useDebugRuntime";
+import { useDebugRouteTracking } from "./hooks/useDebugRouteTracking";
 
 // ---------------------------------------------------------------------------
 // App root
@@ -221,6 +222,7 @@ function AppRoutes() {
   useDebugModeGuard({ hasSession: !!authUser, activeRole, isLoadingPermissions });
   // Captura global (errores, Web Vitals) solo mientras el modo está activo y permitido.
   useDebugRuntime(debugModeAllowed && debugModeEnabled);
+  useDebugRouteTracking(debugModeAllowed && debugModeEnabled);
 
   // ---- Pre-fetching inteligente: heurística "próxima ruta probable por rol" ----
   useIdleRoutePrefetch(activeRole, canAccess);

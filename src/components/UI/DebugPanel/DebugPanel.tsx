@@ -46,6 +46,7 @@ import {
   type DebugEntryKind,
   type DebugLevel,
 } from "@/stores/debugStore";
+import { MAX_DEBUG_ENTRIES } from "@/stores/debugRingBuffer";
 import type { AuthUser } from "@/hooks/useAuth";
 import DebugPanelTrigger from "./DebugPanelTrigger";
 import DebugEntryList from "./DebugEntryList";
@@ -80,6 +81,7 @@ const LEVEL_FILTERS: { key: DebugLevel | "all"; label: string }[] = [
   { key: "info", label: "Info" },
   { key: "warn", label: "Warn" },
   { key: "error", label: "Error" },
+  { key: "fatal", label: "Fatal" },
 ];
 
 interface DebugPanelProps {
@@ -133,6 +135,7 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
   const paused = useDebugStore(s => s.paused);
   const setPaused = useDebugStore(s => s.setPaused);
   const clear = useDebugStore(s => s.clear);
+  const dropped = useDebugStore(s => s.dropped);
 
   const countsByKind = useMemo(() => {
     const counts: Record<DebugEntryKind, number> = { http: 0, log: 0, websocket: 0, error: 0 };
@@ -357,6 +360,11 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             <DebugInfoPanel authUser={authUser} activeRole={activeRole} />
           ) : (
             <div className="space-y-2">
+              {dropped > 0 && (
+                <p className="text-[10px] font-bold text-text-tertiary">
+                  Buffer circular ({MAX_DEBUG_ENTRIES} máx.) — {dropped} eventos antiguos descartados.
+                </p>
+              )}
               {hiddenCount > 0 && (
                 <p className="text-[10px] font-bold text-text-tertiary">
                   Mostrando las últimas {MAX_RENDERED_ROWS} — {hiddenCount} más ocultas (afiná la búsqueda o exportá todo).
