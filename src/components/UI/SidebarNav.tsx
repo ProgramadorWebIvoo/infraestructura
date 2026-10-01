@@ -595,7 +595,7 @@ function SidebarNav({
           {/* User info */}
           {user && (
             <div
-              className={`flex items-center py-2 rounded-xl text-xs ${effectiveCollapsed ? "justify-center px-0" : "gap-3 px-3"}`}
+              className={`flex items-center py-2 rounded-xl text-xs ${effectiveCollapsed ? "justify-center px-0" : "gap-3 px-2.5"}`}
             >
               <SidebarTip
                 label={
@@ -626,7 +626,7 @@ function SidebarNav({
 
               {/* <SidebarTip label="Mi Perfil">
                 <div
-                  className="cursor-pointer p-1 bg-slate-600" 
+                  className="cursor-pointer" 
                   onMouseEnter={() => setIsHovered(true)} 
                   onMouseLeave={() => setIsHovered(false)}
                 >
@@ -636,6 +636,20 @@ function SidebarNav({
                   }
                 </div>
               </SidebarTip> */}
+
+                <div
+                  className={`${isCollapsed ? 'hidden' : 'flex items-center justify-center shrink-0 cursor-pointer rounded-md h-8 w-8 hover:bg-slate-800 transition-all ease-in-out duration-300'}`}
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                >  
+                  <SidebarTip label="Mi Perfil" > 
+                    {
+                      isHovered
+                      ? (<UserRound className={`h-5 w-5`} />)
+                      : (<ChevronRight className={`h-5 w-5`} />)
+                    }
+                  </SidebarTip>
+                </div> 
             </div>
           )}
 
