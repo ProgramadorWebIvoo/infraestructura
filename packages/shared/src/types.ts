@@ -238,9 +238,6 @@ export interface Project {
   /** Residente efectivo: el de la ubicación registrada o, si es personalizada, el que eligió Auditoría. */
   residentUserId?: number | null;
   residentName?: string | null;
-  /** F3: la obra tiene modificaciones aprobadas (badge "Modificada") o pendientes de Auditoría. */
-  hasApprovedModifications?: boolean;
-  hasPendingModifications?: boolean;
   closureReportStatus?: string | null;
   closureReportRevision?: number | null;
   /** Finiquito propuesto por Auditoría (solo con el informe de cierre cargado). */

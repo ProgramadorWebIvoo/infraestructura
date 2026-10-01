@@ -2,11 +2,7 @@ export interface ClosureReportItem {
   id: number;
   name: string;
   unit: string;
-  /** Cantidad vigente (original + modificaciones aprobadas). */
   contractedQuantity: number;
-  /** F3: cantidad original y variación por modificaciones aprobadas (0 si no hubo). */
-  originalQuantity?: number;
-  modificationQuantity?: number;
   executedQuantity: number;
   unitPriceUsd: number | null;
   /** Nota del contratista (obligatoria si declaró menos de lo contratado). */

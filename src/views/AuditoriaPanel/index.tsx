@@ -21,11 +21,10 @@ import TechnicalReviewSection from "./components/TechnicalReviewSection";
 import ReevaluationSection from "./components/ReevaluationSection";
 import CompletionAuditSection from "./components/CompletionAuditSection";
 import RevisedDocumentsSection from "./components/RevisedDocumentsSection";
-import ModificationsInboxSection from "./components/ModificationsInboxSection";
 import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 import { useTabAccess, useSyncActiveTab } from "@/hooks/useTabAccess";
 
-type TabKey = "revision" | "reevaluacion" | "modificaciones" | "auditoria" | "documentos";
+type TabKey = "revision" | "reevaluacion" | "auditoria" | "documentos";
 
 interface AuditoriaPanelProps {
   projects: Project[];
@@ -65,7 +64,6 @@ export default function AuditoriaPanel({
       pendingReview: projects.filter((p) => p.status === ProjectStatus.CREADO).length,
       pendingReevaluation: projects.filter((p) => p.status === ProjectStatus.EN_REEVALUACION_AUDITORIA).length,
       inExecution: projects.filter((p) => p.status === ProjectStatus.EN_EJECUCION).length,
-      pendingModifications: projects.filter((p) => p.hasPendingModifications).length,
       underAudit: projects.filter((p) => p.status === ProjectStatus.VERIFICANDO_FINALIZACION).length,
       revised: projects.filter((p) => p.status !== ProjectStatus.CREADO).length,
     }),
@@ -75,7 +73,6 @@ export default function AuditoriaPanel({
   const visibleTabs = filterTabs("/auditoria", [
     { key: "revision", label: "Revisión de Cálculos y Planos", count: kpis.pendingReview, showDot: kpis.pendingReview > 0 && activeTab !== "revision" },
     { key: "reevaluacion", label: "Reevaluaciones de Procura", count: kpis.pendingReevaluation, showDot: kpis.pendingReevaluation > 0 && activeTab !== "reevaluacion" },
-    { key: "modificaciones", label: "Modificaciones de Obra", count: kpis.pendingModifications, showDot: kpis.pendingModifications > 0 && activeTab !== "modificaciones" },
     { key: "auditoria", label: "Auditoría de Fin de Obra", count: kpis.underAudit, showDot: kpis.underAudit > 0 && activeTab !== "auditoria" },
     { key: "documentos", label: "Historial de Expedientes", count: kpis.revised },
   ]);
@@ -130,11 +127,6 @@ export default function AuditoriaPanel({
             {activeTab === "reevaluacion" && (
               <div className="min-h-0 flex flex-col flex-1">
                 <ReevaluationSection projects={projects} auditLogs={auditLogs} authToken={authToken} onResolveReevaluation={onResolveReevaluation} onSyncProject={onSyncProject} onRefresh={onRefreshData} />
-              </div>
-            )}
-            {activeTab === "modificaciones" && (
-              <div className="min-h-0 flex flex-col flex-1">
-                <ModificationsInboxSection authToken={authToken} onRefresh={onRefreshData} />
               </div>
             )}
             {activeTab === "auditoria" && (
