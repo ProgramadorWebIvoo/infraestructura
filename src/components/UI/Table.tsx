@@ -213,7 +213,7 @@ const SortIcon = memo(function SortIcon({ sortable, active, dir }: { sortable?: 
 // ─── Pagination bar (mismo motivo: extraída para no perder su identidad de
 // tipo en cada render de Table) ───
 
-interface PaginationBarProps {
+export interface PaginationBarProps {
   paginationEnabled: boolean;
   totalItems: number;
   totalPages: number;
@@ -221,9 +221,11 @@ interface PaginationBarProps {
   fromItem: number;
   toItem: number;
   onGoToPage: (page: number) => void;
+  /** "dark" para las páginas públicas sobre fondo oscuro. Default "light". */
+  tone?: "light" | "dark";
 }
 
-const PaginationBar = memo(function PaginationBar({
+export const PaginationBar = memo(function PaginationBar({
   paginationEnabled,
   totalItems,
   totalPages,
@@ -231,8 +233,10 @@ const PaginationBar = memo(function PaginationBar({
   fromItem,
   toItem,
   onGoToPage,
+  tone = "light",
 }: PaginationBarProps) {
   if (!paginationEnabled || totalItems === 0) return null;
+  const dark = tone === "dark";
 
   const pages: (number | "ellipsis")[] = [];
   if (totalPages <= 7) {
@@ -248,14 +252,14 @@ const PaginationBar = memo(function PaginationBar({
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/30 text-xs shrink-0">
+    <div className={`flex items-center justify-between px-4 py-3 border-t text-xs shrink-0 ${dark ? "border-white/10 bg-white/5" : "border-slate-100 bg-slate-50/30"}`}>
       {/* Info */}
-      <span className="text-slate-500 font-medium hidden sm:inline">
-        Mostrando <span className="font-bold text-slate-700">{fromItem}</span>
+      <span className={`font-medium hidden sm:inline ${dark ? "text-slate-400" : "text-slate-500"}`}>
+        Mostrando <span className={`font-bold ${dark ? "text-slate-200" : "text-slate-700"}`}>{fromItem}</span>
         {" — "}
-        <span className="font-bold text-slate-700">{toItem}</span>
+        <span className={`font-bold ${dark ? "text-slate-200" : "text-slate-700"}`}>{toItem}</span>
         {" de "}
-        <span className="font-bold text-slate-700">{totalItems}</span>
+        <span className={`font-bold ${dark ? "text-slate-200" : "text-slate-700"}`}>{totalItems}</span>
         {" registros"}
       </span>
 
@@ -265,7 +269,7 @@ const PaginationBar = memo(function PaginationBar({
           type="button"
           onClick={() => onGoToPage(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className={`cursor-pointer p-1.5 rounded-control disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors ${dark ? "text-slate-400 hover:text-white hover:bg-white/10" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"}`}
           aria-label="Página anterior"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -284,7 +288,9 @@ const PaginationBar = memo(function PaginationBar({
               className={`cursor-pointer min-w-[28px] h-7 px-2 rounded-control text-[11px] font-bold transition-colors ${
                 p === currentPage
                   ? "bg-sky-500 text-white shadow-sm shadow-sky-500/20"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                  : dark
+                    ? "text-slate-400 hover:bg-white/10 hover:text-white"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               }`}
             >
               {p}
@@ -296,7 +302,7 @@ const PaginationBar = memo(function PaginationBar({
           type="button"
           onClick={() => onGoToPage(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="cursor-pointer p-1.5 rounded-control text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className={`cursor-pointer p-1.5 rounded-control disabled:cursor-not-allowed disabled:opacity-30 disabled:pointer-events-none transition-colors ${dark ? "text-slate-400 hover:text-white hover:bg-white/10" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"}`}
           aria-label="Página siguiente"
         >
           <ChevronRight className="h-4 w-4" />
