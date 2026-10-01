@@ -7,7 +7,7 @@
  * cerrar).
  */
 
-import { Bug, Trash2, X, Pause, Play, Download, Maximize2, Minimize2, Gauge } from "lucide-react";
+import { Bug, Trash2, X, Pause, Play, Download, Maximize2, Minimize2, Gauge, ClipboardCopy } from "lucide-react";
 import IconActionButton from "@/components/UI/IconActionButton";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useDebugStore } from "@/stores/debugStore";
@@ -18,11 +18,13 @@ interface DebugPanelHeaderProps {
   onToggleExpanded: () => void;
   onClose: () => void;
   onExport: () => void;
+  /** Copia el System Snapshot (entorno, versión, rol, memoria, FPS, últimos eventos). */
+  onCopyDiagnostic: () => void;
   /** undefined = el tab actual no tiene entradas que limpiar. */
   onClearTab?: () => void;
 }
 
-export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, onExport, onClearTab }: DebugPanelHeaderProps) {
+export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, onExport, onCopyDiagnostic, onClearTab }: DebugPanelHeaderProps) {
   const paused = useDebugStore(s => s.paused);
   const setPaused = useDebugStore(s => s.setPaused);
   const networkProfile = useDebugStore(s => s.networkProfile);
@@ -54,6 +56,12 @@ export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, 
           label="Exportar todo"
           tooltip="Exportar todo como JSON"
           onClick={onExport}
+        />
+        <IconActionButton
+          icon={<ClipboardCopy className="h-3.5 w-3.5" />}
+          label="Copiar diagnóstico"
+          tooltip="Copiar diagnóstico (JSON para reportar un bug)"
+          onClick={onCopyDiagnostic}
         />
         {onClearTab && (
           <IconActionButton

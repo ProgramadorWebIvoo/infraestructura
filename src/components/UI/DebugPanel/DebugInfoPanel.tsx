@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Copy, Check } from "lucide-react";
 import type { AuthUser } from "@/hooks/useAuth";
 import { getApiBaseUrl } from "@/services/api";
+import { useCopyDiagnostic } from "@/hooks/useCopyDiagnostic";
 import { copyToClipboard } from "./debugUtils";
 
 interface DebugInfoPanelProps {
@@ -31,6 +32,7 @@ function useViewportSize() {
 export default function DebugInfoPanel({ authUser, activeRole }: DebugInfoPanelProps) {
   const viewport = useViewportSize();
   const [copied, setCopied] = useState(false);
+  const copyDiagnostic = useCopyDiagnostic(activeRole);
 
   const rows: [string, string][] = [
     ["Usuario", authUser ? `${authUser.name} (#${authUser.id})` : "—"],
@@ -62,6 +64,14 @@ export default function DebugInfoPanel({ authUser, activeRole }: DebugInfoPanelP
       >
         {copied ? <Check className="h-3 w-3 text-success-600" /> : <Copy className="h-3 w-3" />}
         Copiar todo (para reportar un bug)
+      </button>
+      <button
+        type="button"
+        onClick={() => void copyDiagnostic()}
+        className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+      >
+        <Copy className="h-3 w-3" />
+        Copiar diagnóstico completo (JSON con rol, memoria, FPS y últimos eventos)
       </button>
       <dl className="divide-y divide-border-default overflow-hidden rounded-control border border-border-default bg-white">
         {rows.map(([key, value]) => (

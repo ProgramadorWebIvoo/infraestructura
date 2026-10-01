@@ -7,7 +7,7 @@
 
 import type { DebugEntryKind, DebugLevel } from "@/stores/debugStore";
 
-export type DebugPanelTab = DebugEntryKind | "query" | "info" | "actions" | "codebase" | "performance";
+export type DebugPanelTab = DebugEntryKind | "query" | "info" | "actions" | "codebase" | "performance" | "storage";
 
 export const DEBUG_PANEL_TABS: { key: DebugPanelTab; label: string }[] = [
   { key: "http", label: "Network" },
@@ -16,13 +16,14 @@ export const DEBUG_PANEL_TABS: { key: DebugPanelTab; label: string }[] = [
   { key: "error", label: "Errors" },
   { key: "query", label: "Queries" },
   { key: "performance", label: "Performance" },
+  { key: "storage", label: "Storage" },
   { key: "codebase", label: "Codebase" },
   { key: "actions", label: "Acciones" },
   { key: "info", label: "Info" },
 ];
 
 /** Tabs que no listan entradas del buffer (tienen su propio contenido). */
-export const NON_ENTRY_TABS: DebugPanelTab[] = ["query", "info", "actions", "codebase", "performance"];
+export const NON_ENTRY_TABS: DebugPanelTab[] = ["query", "info", "actions", "codebase", "performance", "storage"];
 
 export const HTTP_METHOD_FILTERS = ["all", "GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 export const HTTP_STATUS_FILTERS = ["all", "2xx", "3xx", "4xx", "5xx"] as const;

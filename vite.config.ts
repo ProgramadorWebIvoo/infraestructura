@@ -1,8 +1,12 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 import {visualizer} from 'rollup-plugin-visualizer';
+
+// Versión de la app para el diagnóstico del DEBUG-MODE (ver src/global.d.ts).
+const appVersion = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')).version as string;
 
 export default defineConfig(({mode}) => {
   const isDev = mode === 'development';
@@ -32,6 +36,9 @@ export default defineConfig(({mode}) => {
   ].join(' ');
 
   return {
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+    },
     plugins: [
       react(),
       tailwindcss(),

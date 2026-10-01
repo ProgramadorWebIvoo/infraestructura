@@ -185,6 +185,8 @@ export interface PerfMetrics {
   lcpMs?: number;
   clsScore?: number;
   fcpMs?: number;
+  /** FPS reales del hilo principal; solo se mide mientras el tab Performance está abierto (ver useFpsMeter). */
+  fps?: number;
   longTasksCount: number;
 }
 

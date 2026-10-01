@@ -2,9 +2,11 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Tab "Performance" del DEBUG-MODE: Web Vitals (LCP/CLS/FCP + long tasks,
- * ver installPerfObservers en debugCapture.ts), memoria del heap de JS
- * (Chrome-only, performance.memory) y un resumen de red derivado de las
+ * Tab "Performance" del DEBUG-MODE: Web Vitals (LCP/CLS/FCP + long tasks)
+ * (ver installPerfObservers en debugCapture.ts), FPS en tiempo real
+ * (useFpsMeter: el rAF solo corre con este tab abierto), memoria del heap de
+ * JS (Chrome-only, performance.memory) con su tendencia y aviso de posible
+ * fuga (DebugHeapTrend), y un resumen de red derivado de las
  * entradas `kind: "http"` ya capturadas por el tab Network — no duplica
  * captura, solo agrega otra lectura sobre el mismo buffer.
  */
@@ -13,36 +15,28 @@ import { useEffect, useMemo, useState } from "react";
 import { Activity, Gauge, HardDrive, Timer } from "lucide-react";
 import { useDebugStore } from "@/stores/debugStore";
 import { usePerfStore } from "@/stores/debugCapture";
+import { useFpsMeter } from "@/hooks/useFpsMeter";
+import { HEAP_HISTORY_MAX_SAMPLES, rateFps, readMemory, type MemorySnapshot } from "@/utils/debugPerformance";
+import DebugHeapTrend from "./DebugHeapTrend";
 
 const MEMORY_POLL_MS = 2000;
 
-interface MemorySnapshot {
-  usedMb: number;
-  totalMb: number;
-  limitMb: number;
-}
-
-/** performance.memory es no-estándar (solo Chromium) — undefined en Firefox/Safari. */
-function readMemory(): MemorySnapshot | null {
-  const perf = performance as Performance & {
-    memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
-  };
-  if (!perf.memory) return null;
-  const toMb = (bytes: number) => Math.round((bytes / 1024 / 1024) * 10) / 10;
-  return {
-    usedMb: toMb(perf.memory.usedJSHeapSize),
-    totalMb: toMb(perf.memory.totalJSHeapSize),
-    limitMb: toMb(perf.memory.jsHeapSizeLimit),
-  };
-}
-
-function useMemorySnapshot(): MemorySnapshot | null {
-  const [memory, setMemory] = useState<MemorySnapshot | null>(() => readMemory());
+function useMemorySnapshot(): { memory: MemorySnapshot | null; history: number[] } {
+  const [state, setState] = useState(() => {
+    const memory = readMemory();
+    return { memory, history: memory ? [memory.usedMb] : [] };
+  });
   useEffect(() => {
-    const interval = setInterval(() => setMemory(readMemory()), MEMORY_POLL_MS);
+    const interval = setInterval(() => {
+      const memory = readMemory();
+      setState(prev => ({
+        memory,
+        history: memory ? [...prev.history, memory.usedMb].slice(-HEAP_HISTORY_MAX_SAMPLES) : prev.history,
+      }));
+    }, MEMORY_POLL_MS);
     return () => clearInterval(interval);
   }, []);
-  return memory;
+  return state;
 }
 
 function ratingFor(metric: "lcp" | "cls" | "fcp", value: number): "good" | "needs-improvement" | "poor" {
@@ -61,7 +55,11 @@ const RATING_CLASS: Record<string, string> = {
 
 export default function DebugPerformancePanel() {
   const perfMetrics = usePerfStore(s => s.perfMetrics);
-  const memory = useMemorySnapshot();
+  const { memory, history } = useMemorySnapshot();
+  // El panel solo está montado con el tab Performance abierto: el rAF no corre en otro caso.
+  useFpsMeter(true);
+  const fps = perfMetrics.fps;
+  const fpsRating = fps !== undefined ? rateFps(fps) : null;
   const entries = useDebugStore(s => s.entries);
 
   const networkSummary = useMemo(() => {
@@ -90,6 +88,15 @@ export default function DebugPerformancePanel() {
           <VitalCard label="CLS" value={perfMetrics.clsScore} unit="" metric="cls" decimals={3} />
           <VitalCard label="FCP" value={perfMetrics.fcpMs} unit="ms" metric="fcp" />
         </div>
+        <div className="mt-2 flex items-center justify-between rounded-control border border-border-default bg-white px-3 py-2">
+          <span className="flex items-center gap-1 text-[10px] font-bold text-text-tertiary"><Gauge className="h-3 w-3" /> FPS (tiempo real)</span>
+          <span className="flex items-center gap-2">
+            <span className="font-mono text-base font-black text-text-primary">{fps !== undefined ? fps : "—"}</span>
+            {fpsRating && (
+              <span className={`rounded-pill px-1.5 py-0.5 text-[9px] font-black uppercase ${RATING_CLASS[fpsRating]}`}>{fpsRating}</span>
+            )}
+          </span>
+        </div>
         <p className="mt-1.5 flex items-center gap-1 text-[10px] text-text-tertiary">
           <Timer className="h-3 w-3 shrink-0" />
           {perfMetrics.longTasksCount} long task{perfMetrics.longTasksCount === 1 ? "" : "s"} (&gt;50ms bloqueando el hilo principal) desde que se abrió la pestaña.
@@ -111,6 +118,7 @@ export default function DebugPerformancePanel() {
             <p className="mt-1.5 font-mono text-[11px] text-text-secondary">
               {memory.usedMb} MB usados de {memory.totalMb} MB asignados (límite del navegador: {memory.limitMb} MB)
             </p>
+            <DebugHeapTrend samplesMb={history} />
           </div>
         ) : (
           <p className="text-[11px] text-text-tertiary">performance.memory no disponible en este navegador (solo Chromium).</p>

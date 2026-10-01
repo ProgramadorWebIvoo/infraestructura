@@ -50,7 +50,9 @@ import DebugQueryPanel from "./DebugQueryPanel";
 import DebugInfoPanel from "./DebugInfoPanel";
 import DebugActionsPanel from "./DebugActionsPanel";
 import DebugCodebasePanel from "./DebugCodebasePanel";
+import DebugStoragePanel from "./DebugStoragePanel";
 import DebugPerformancePanel from "./DebugPerformancePanel";
+import { useCopyDiagnostic } from "@/hooks/useCopyDiagnostic";
 import { downloadJson } from "./debugUtils";
 
 interface DebugPanelProps {
@@ -92,6 +94,7 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
   const { entries, countsByKind, isEntryTab, filteredEntries, hiddenCount, entriesForTabCount, deferredSearch } = filters;
   const clear = useDebugStore(s => s.clear);
   const dropped = useDebugStore(s => s.dropped);
+  const copyDiagnostic = useCopyDiagnostic(activeRole);
 
   const tabDefinitions: TabDefinition[] = DEBUG_PANEL_TABS.map(t => ({
     key: t.key,
@@ -113,6 +116,7 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
         onToggleExpanded={() => setExpanded(v => !v)}
         onClose={onClose}
         onExport={() => downloadJson(`ivoo-debug-${Date.now()}.json`, entries)}
+        onCopyDiagnostic={copyDiagnostic}
         onClearTab={isEntryTab ? () => clear(activeTab as DebugEntryKind) : undefined}
       />
 
@@ -126,7 +130,7 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             tabs={tabDefinitions}
           />
         ) : (
-          // Con 9 tabs, <Tabs fullWidth> en el ancho colapsado (28rem) las
+          // Con 10 tabs, <Tabs fullWidth> en el ancho colapsado (28rem) las
           // aprieta hasta volverlas ilegibles (sin ícono ni label completo).
           // Un <Select> muestra siempre la tab activa entera y el resto en
           // un listbox — mismo <activeTab>/<onChange>, solo cambia el control.
@@ -150,6 +154,8 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             <DebugQueryPanel search={deferredSearch} />
           ) : activeTab === "performance" ? (
             <DebugPerformancePanel />
+          ) : activeTab === "storage" ? (
+            <DebugStoragePanel search={deferredSearch} />
           ) : activeTab === "codebase" ? (
             <DebugCodebasePanel />
           ) : activeTab === "actions" ? (
