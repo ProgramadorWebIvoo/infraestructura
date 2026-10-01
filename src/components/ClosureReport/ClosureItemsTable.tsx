@@ -1,9 +1,8 @@
-import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle } from "lucide-react";
 import NumericInput from "@/components/UI/NumericInput";
 import FieldError from "@/components/UI/FieldError";
+import ProductLinesTable, { type ProductColumn } from "@/components/UI/ProductLinesTable";
 import { differs, differsFromBaseline, parseQuantity, type MeasurementDraft, type MeasurementDrafts } from "./closureMeasurements";
-import { isDecrease, type ClosureReportItem } from "./types";
+import { isDecrease, isIncrease, type ClosureReportItem } from "./types";
 
 /** readonly: comparación completa · resident: el residente mide. */
 export type ClosureTableMode = "readonly" | "resident";
@@ -17,27 +16,16 @@ interface ClosureItemsTableProps {
   disabled?: boolean;
 }
 
-const GRID_BY_COLUMNS: Record<number, string> = {
-  3: "md:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]",
-  4: "md:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]",
-  5: "md:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]",
-};
+const WARN_CHIP = "border-amber-200 bg-amber-50 text-amber-800";
 
-function Cell({ label, tone, children }: { label: string; tone?: "warn" | "alert" | "ok"; children: React.ReactNode }) {
-  const toneClass =
-    tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-800" : tone === "alert" ? "border-rose-200 bg-rose-50 text-rose-800" : "border-transparent";
-  return (
-    <div className={`rounded-lg border px-2 py-1.5 md:text-right ${toneClass}`}>
-      <span className="block text-[10px] font-bold uppercase tracking-wider text-text-secondary md:hidden">{label}</span>
-      <div className="font-mono text-xs font-semibold">{children}</div>
-    </div>
-  );
+function QuantityChip({ children, warn }: { children: React.ReactNode; warn?: boolean }) {
+  return <span className={`inline-block rounded-lg border px-2 py-1 font-mono text-xs font-semibold ${warn ? WARN_CHIP : "border-transparent text-text-primary"}`}>{children}</span>;
 }
 
 function StageNote({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <p className="text-[11px] text-text-secondary">
+    <p className="line-clamp-2 text-[11px] text-text-secondary" title={value}>
       <span className="font-bold">{label}:</span> {value}
     </p>
   );
@@ -45,123 +33,125 @@ function StageNote({ label, value }: { label: string; value?: string | null }) {
 
 /**
  * Comparación por partida de las cifras del cierre — contratado, declarado por el
- * contratista y verificado por el residente (que rige el finiquito). El residente solo ve lo contratado. Tarjetas apiladas
- * en móvil y tabla en escritorio (misma estructura, solo cambia la rejilla).
+ * contratista y verificado por el residente (que rige el finiquito). El residente solo
+ * ve lo contratado y mide. Tabla paginada con buscador: una obra puede traer ~70 partidas,
+ * y la justificación solo aparece en las filas que se apartan de lo contratado.
  */
 export default function ClosureItemsTable({ items, mode = "readonly", drafts = {}, errors = {}, onDraftChange, disabled = false }: ClosureItemsTableProps) {
   const showResident = mode === "readonly" && items.some((i) => i.residentQuantity != null);
   const showContractor = mode !== "resident";
-  const columns = 2 + (showContractor ? 1 : 0) + (mode === "resident" ? 1 : 0) + (showResident ? 1 : 0);
-  const gridClass = GRID_BY_COLUMNS[columns] ?? GRID_BY_COLUMNS[5];
   const editable = mode !== "readonly";
-  const editLabel = "Verificado en obra";
+
+  const residentDiffers = (item: ClosureReportItem) => differs(item.residentQuantity, item.executedQuantity);
+  const draftDiffers = (item: ClosureReportItem) => (editable && drafts[item.id] ? differsFromBaseline(item, drafts[item.id]) : false);
+  const isAdjusted = (item: ClosureReportItem) => (editable ? draftDiffers(item) : isDecrease(item) || isIncrease(item) || residentDiffers(item));
+
+  const columns: ProductColumn<ClosureReportItem>[] = [
+    {
+      key: "name",
+      label: "Partida",
+      render: (item) => (
+        <div className="max-w-64 min-w-32">
+          <p className="truncate text-sm font-bold text-text-primary" title={item.name}>
+            {item.name}
+          </p>
+          <p className="text-[11px] text-text-secondary">{item.unit}</p>
+        </div>
+      ),
+    },
+    { key: "contracted", label: "Contratado", align: "right", render: (item) => <QuantityChip>{item.contractedQuantity}</QuantityChip> },
+  ];
+
+  if (showContractor) {
+    columns.push({ key: "contractor", label: "Contratista", align: "right", render: (item) => <QuantityChip warn={isDecrease(item)}>{item.executedQuantity}</QuantityChip> });
+  }
+  if (showResident) {
+    columns.push({ key: "resident", label: "Residente", align: "right", render: (item) => <QuantityChip warn={residentDiffers(item)}>{item.residentQuantity ?? "—"}</QuantityChip> });
+  }
+
+  if (mode === "resident") {
+    columns.push(
+      {
+        key: "verified",
+        label: "Verificado en obra",
+        align: "right",
+        render: (item) => {
+          const draft = drafts[item.id];
+          if (!draft) return null;
+          return (
+            <NumericInput
+              id={`closure-qty-${item.id}`}
+              value={parseQuantity(draft.quantity) ?? ""}
+              integer
+              placeholder="0"
+              disabled={disabled}
+              accent={errors[item.id] ? "danger" : "brand"}
+              className="ml-auto w-28! px-2! py-1.5! text-right! font-mono"
+              onChange={(value) => onDraftChange?.(item.id, { quantity: value === "" ? "" : String(value) })}
+            />
+          );
+        },
+      },
+      {
+        key: "justification",
+        label: "Justificación",
+        render: (item) => {
+          const draft = drafts[item.id];
+          const error = errors[item.id];
+          return (
+            <div className="min-w-48 space-y-1">
+              {draft && draftDiffers(item) ? (
+                <input
+                  id={`closure-note-${item.id}`}
+                  type="text"
+                  value={draft.note}
+                  maxLength={500}
+                  disabled={disabled}
+                  aria-label={`Justificación de ${item.name}`}
+                  placeholder="Obligatoria: motivo del aumento o disminución"
+                  onChange={(e) => onDraftChange?.(item.id, { note: e.target.value })}
+                  className="w-full rounded-lg border border-amber-200 bg-surface px-2 py-1.5 text-xs outline-hidden focus:border-amber-400"
+                />
+              ) : (
+                <span className="text-xs text-text-secondary">—</span>
+              )}
+              <FieldError message={error} />
+            </div>
+          );
+        },
+      },
+    );
+  } else {
+    columns.push({
+      key: "notes",
+      label: "Notas",
+      render: (item) => (
+        <div className="max-w-72 min-w-40 space-y-1">
+          {showContractor && <StageNote label="Contratista" value={item.note} />}
+          <StageNote label="Residente" value={item.residentNote} />
+          {!item.note && !item.residentNote && <span className="text-xs text-text-secondary">—</span>}
+        </div>
+      ),
+    });
+  }
 
   return (
-    <div className="space-y-2" role="table" aria-label="Comparación de partidas del cierre">
-      <div role="row" className={`hidden gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary md:grid ${gridClass}`}>
-        <span role="columnheader">Partida</span>
-        <span role="columnheader" className="text-right">Contratado</span>
-        {showContractor && <span role="columnheader" className="text-right">Contratista</span>}
-        {showResident && <span role="columnheader" className="text-right">Residente</span>}
-        {mode === "resident" && <span role="columnheader" className="text-right">{editLabel}</span>}
-      </div>
-
-      {items.map((item) => {
-        const draft = drafts[item.id];
-        const error = errors[item.id];
-        const differsNow = editable && draft ? differsFromBaseline(item, draft) : false;
-        const contractorDecrease = isDecrease(item);
-        const residentDiffers = differs(item.residentQuantity, item.executedQuantity);
-
-        return (
-          <motion.div
-            key={item.id}
-            layout
-            role="row"
-            data-testid={`closure-item-${item.id}`}
-            className={`rounded-xl border p-3 ${
-              error ? "border-rose-300 bg-rose-50/40" : differsNow || residentDiffers ? "border-amber-200 bg-amber-50/40" : "border-border-default bg-surface"
-            }`}
-          >
-            <div className={`grid grid-cols-2 items-start gap-2 ${gridClass}`}>
-              <div role="cell" className="col-span-2 min-w-0 md:col-span-1">
-                <p className="truncate text-sm font-bold text-text-primary">{item.name}</p>
-                <p className="text-[11px] text-text-secondary">{item.unit}</p>
-              </div>
-              <div role="cell">
-                <Cell label="Contratado">
-                  {item.contractedQuantity}
-                  {!!item.modificationQuantity && (
-                    <span className="block text-[10px] font-medium text-text-secondary" data-testid={`closure-modification-${item.id}`}>
-                      {item.originalQuantity} {item.modificationQuantity > 0 ? "+" : "−"} {Math.abs(item.modificationQuantity)} modif.
-                    </span>
-                  )}
-                </Cell>
-              </div>
-              {showContractor && (
-                <div role="cell">
-                  <Cell label="Contratista" tone={contractorDecrease ? "warn" : undefined}>{item.executedQuantity}</Cell>
-                </div>
-              )}
-              {showResident && (
-                <div role="cell">
-                  <Cell label="Residente" tone={residentDiffers ? "warn" : undefined}>{item.residentQuantity ?? "—"}</Cell>
-                </div>
-              )}
-              {editable && draft && (
-                <div role="cell" className="col-span-2 md:col-span-1">
-                  <label htmlFor={`closure-qty-${item.id}`} className="block text-[10px] font-bold uppercase tracking-wider text-text-secondary md:hidden">
-                    {editLabel}
-                  </label>
-                  <NumericInput
-                    id={`closure-qty-${item.id}`}
-                    value={parseQuantity(draft.quantity) ?? ""}
-                    integer
-                    placeholder="0"
-                    disabled={disabled}
-                    accent={error ? "danger" : "brand"}
-                    className="w-full text-right font-mono"
-                    onChange={(value) => onDraftChange?.(item.id, { quantity: value === "" ? "" : String(value) })}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-2 space-y-1">
-              {showContractor && <StageNote label="Contratista" value={item.note} />}
-              {mode !== "resident" && <StageNote label="Residente" value={item.residentNote} />}
-            </div>
-
-            <AnimatePresence initial={false}>
-              {editable && draft && differsNow && (
-                <motion.div
-                  key="note"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <label htmlFor={`closure-note-${item.id}`} className="mt-2 flex items-center gap-1 text-[11px] font-bold text-amber-700">
-                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
-                    Justifique el aumento o la disminución respecto a lo contratado
-                  </label>
-                  <textarea
-                    id={`closure-note-${item.id}`}
-                    value={draft.note}
-                    maxLength={500}
-                    rows={2}
-                    disabled={disabled}
-                    onChange={(e) => onDraftChange?.(item.id, { note: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-amber-200 bg-surface p-2 text-xs"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <FieldError message={error} />
-          </motion.div>
-        );
-      })}
-    </div>
+    <ProductLinesTable
+      ariaLabel="Comparación de partidas del cierre"
+      items={items}
+      columns={columns}
+      rowKey={(item) => item.id}
+      rowAlign="top"
+      maxHeight="26rem"
+      searchText={(item) => item.name}
+      searchPlaceholder="Buscar partida…"
+      filters={[
+        { key: "adjusted", label: "Con diferencias", predicate: isAdjusted },
+        ...(editable ? [{ key: "errors", label: "Con errores", predicate: (item: ClosureReportItem) => Boolean(errors[item.id]) }] : []),
+      ]}
+      rowTestId={(item) => `closure-item-${item.id}`}
+      rowClassName={(item) => (errors[item.id] ? "bg-rose-50/40" : isAdjusted(item) ? "bg-amber-50/40" : "")}
+      emptyMessage="Ninguna partida coincide con la búsqueda."
+    />
   );
 }

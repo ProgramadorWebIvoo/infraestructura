@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CierrePublico from "@/views/CierrePublico";
@@ -122,5 +122,33 @@ describe("CierrePublico — presentación", () => {
 
     await screen.findByText(/está en revisión/i);
     expect(screen.queryByRole("button", { name: /agregar fotos de evidencia/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("CierrePublico — 70 partidas", () => {
+  beforeEach(() => apiFetch.mockReset());
+
+  const manyItems = Array.from({ length: 70 }, (_, i) => ({ ...baseItem, id: i + 1, name: `Partida ${String(i + 1).padStart(2, "0")}` }));
+
+  it("muestra una página de partidas y permite buscar una de otra página", async () => {
+    apiFetch.mockResolvedValueOnce(response({ items: manyItems }));
+    renderPage();
+
+    const table = await screen.findByRole("table", { name: "Partidas ejecutadas" });
+    expect(within(table).getAllByRole("row")).toHaveLength(16); // cabecera + 15
+    expect(screen.queryByText("Partida 68")).not.toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole("searchbox"), "Partida 68");
+    expect(screen.getByText("Partida 68")).toBeInTheDocument();
+  });
+
+  it("'Sin justificar' lista las partidas con ajuste sin motivo", async () => {
+    const items = manyItems.map((item) => (item.id === 50 ? { ...item, executedQuantity: 8 } : item));
+    apiFetch.mockResolvedValueOnce(response({ items }));
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Sin justificar/ }));
+    expect(screen.getByText("Partida 50")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Justifique la disminución.");
   });
 });

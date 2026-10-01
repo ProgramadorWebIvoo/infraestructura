@@ -50,6 +50,8 @@ export interface ProductLinesTableProps<T> {
   tone?: "light" | "dark";
   /** Alineación vertical del contenido de cada fila. Default "middle". */
   rowAlign?: "top" | "middle";
+  /** `data-testid` de cada fila (para tests y selección por id de dominio). */
+  rowTestId?: (row: T, index: number) => string | undefined;
   /** Describe la tabla a lectores de pantalla. */
   ariaLabel: string;
 }
@@ -100,6 +102,7 @@ export default function ProductLinesTable<T>({
   emptyMessage = "No hay productos que coincidan.",
   tone = "light",
   rowAlign = "middle",
+  rowTestId,
   ariaLabel,
 }: ProductLinesTableProps<T>) {
   const t = TONES[tone];
@@ -119,10 +122,10 @@ export default function ProductLinesTable<T>({
       if (q && searchText && !normalize(searchText(row)).includes(q)) return false;
       return true;
     });
-    // `filters` y `searchText` suelen declararse inline en el padre (identidad nueva en cada
-    // render), por eso no están en las dependencias: deben ser funciones puras de la fila.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, activeFilter, deferredQuery]);
+    // `filters`/`searchText` suelen declararse inline (identidad nueva en cada render): se
+    // re-evalúan siempre, lo que es barato (decenas de filas) y evita predicados desactualizados
+    // cuando dependen de estado externo, como borradores o errores de validación.
+  }, [entries, activeFilter, deferredQuery, filters, searchText]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -226,7 +229,7 @@ export default function ProductLinesTable<T>({
               </tr>
             ) : (
               visible.map(({ row, index }) => (
-                <tr key={rowKey(row, index)} className={rowClassName?.(row, index) ?? ""}>
+                <tr key={rowKey(row, index)} data-testid={rowTestId?.(row, index)} className={rowClassName?.(row, index) ?? ""}>
                   {columns.map((col) => (
                     <td key={col.key} className={`px-3 py-2 ${rowAlign === "top" ? "align-top" : "align-middle"} ${ALIGN[col.align ?? "left"]} ${col.className ?? ""}`}>
                       {col.render(row, index)}
