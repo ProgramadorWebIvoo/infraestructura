@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getItemStatus } from "@/views/PropuestaMaterialesPublica/itemStatus";
+import { canBeBulkSource, getItemStatus, planBulkApply } from "@/views/PropuestaMaterialesPublica/itemStatus";
 import type { ItemRow, PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
 
 const base: ItemRow = {
@@ -56,5 +56,46 @@ describe("getItemStatus", () => {
     const ok = priced({ conditionStatus: "new", warrantyDescription: "1 año" });
     expect(getItemStatus(ok, category)).toBe("missing");
     expect(getItemStatus({ ...ok, technicalSpecs: { diametro: 12 } }, category)).toBe("complete");
+  });
+});
+
+describe("planBulkApply", () => {
+  const source = priced({ _id: "src", conditionStatus: "new", warrantyDescription: "12 meses de fábrica", warrantyValue: 12, warrantyUnit: "meses" });
+
+  it("no hay plan si la línea origen no está completa", () => {
+    expect(canBeBulkSource(priced({ conditionStatus: "new" }))).toBe(false);
+    expect(planBulkApply([priced({ conditionStatus: "new" }), priced({ _id: "2" })], 0)).toEqual([]);
+    expect(planBulkApply([{ ...source, warrantyValue: 12, warrantyUnit: undefined }, priced({ _id: "2" })], 0)).toEqual([]);
+  });
+
+  it("solo toca líneas cotizadas: las sin precio se ignoran", () => {
+    const plan = planBulkApply([source, base, priced({ _id: "3" })], 0);
+    expect(plan.map((e) => e.index)).toEqual([2]);
+  });
+
+  it("copia condición, garantía y duración a una línea vacía", () => {
+    const [entry] = planBulkApply([source, priced({ _id: "2" })], 0);
+    expect(entry.index).toBe(1);
+    expect(entry.patch).toEqual({ conditionStatus: "new", warrantyDescription: "12 meses de fábrica", warrantyValue: 12, warrantyUnit: "meses" });
+  });
+
+  it("nunca pisa lo ya cargado: solo completa los vacíos", () => {
+    const onlyCondition = priced({ _id: "2", conditionStatus: "used" });
+    const onlyWarranty = priced({ _id: "3", warrantyDescription: "Sin garantía" });
+    const plan = planBulkApply([source, onlyCondition, onlyWarranty], 0);
+
+    expect(plan.find((e) => e.index === 1)?.patch).toEqual({ warrantyDescription: "12 meses de fábrica", warrantyValue: 12, warrantyUnit: "meses" });
+    expect(plan.find((e) => e.index === 2)?.patch).toEqual({ conditionStatus: "new" });
+  });
+
+  it("respeta una duración propia de la línea destino", () => {
+    const own = priced({ _id: "2", warrantyValue: 6, warrantyUnit: "dias" });
+    const [entry] = planBulkApply([source, own], 0);
+    expect(entry.patch).toEqual({ conditionStatus: "new", warrantyDescription: "12 meses de fábrica" });
+  });
+
+  it("las líneas ya completas no entran al plan", () => {
+    const done = priced({ _id: "2", conditionStatus: "used", warrantyDescription: "Otra" });
+    expect(planBulkApply([source, done], 0)).toEqual([]);
   });
 });

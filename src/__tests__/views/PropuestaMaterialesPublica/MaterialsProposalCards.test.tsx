@@ -97,6 +97,26 @@ describe("MaterialsProposalCards (tabla compacta)", () => {
     expect(screen.getByText("Material 7 de 10")).toBeInTheDocument();
   });
 
+  it("aplica condición y garantía a los demás materiales cotizados desde el panel", async () => {
+    render(<Harness initial={makeItems(5)} />);
+    const prices = screen.getAllByPlaceholderText("0.00");
+    for (const i of [0, 1, 2]) await userEvent.type(prices[i], "10");
+    expect(screen.getByText("Con datos faltantes").textContent).toContain("3");
+
+    await userEvent.click(screen.getByRole("button", { name: "Abrir detalle de Material 01" }));
+    expect(screen.queryByRole("button", { name: /Aplicar a/ })).not.toBeInTheDocument(); // origen incompleto
+
+    await userEvent.type(screen.getByPlaceholderText(/12 meses de fábrica/), "12 meses");
+    await userEvent.click(screen.getByText("Selecciona una opción..."));
+    await userEvent.click(await screen.findByRole("option", { name: "Nuevo" }));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Aplicar a 2 materiales" }));
+    await userEvent.click(screen.getByRole("button", { name: "Listo" }));
+
+    expect(screen.getByText("Con datos faltantes").textContent).toContain("0");
+    expect(screen.getAllByText("Completos")[0].textContent).toContain("3"); // el 1.º es el contador de arriba; el 2.º, el chip de filtro
+  });
+
   it("agregar un material adicional abre su panel y el nombre escrito queda en la fila", async () => {
     render(<Harness initial={makeItems(3)} />);
     await userEvent.click(screen.getByRole("button", { name: /Agregar material adicional/ }));

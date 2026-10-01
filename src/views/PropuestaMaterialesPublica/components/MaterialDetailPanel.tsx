@@ -9,14 +9,15 @@
  * de campos; lo demás se completa aquí, con navegación entre líneas.
  */
 
-import { ChevronLeft, ChevronRight, ListChecks, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CopyCheck, ListChecks, Trash2 } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import NumericInput from "@/components/UI/NumericInput";
 import Select from "@/components/UI/Select";
 import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
+import { useToast } from "@/components/UI/Toast";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { sanitize, CONDITION_OPTIONS, DURATION_UNITS, type ItemRow, type PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
-import { isWarrantyDurationIncomplete } from "@/views/PropuestaMaterialesPublica/itemStatus";
+import { isWarrantyDurationIncomplete, planBulkApply, type BulkPatch } from "@/views/PropuestaMaterialesPublica/itemStatus";
 import CatalogProductPicker from "./CatalogProductPicker";
 import ImageUploader from "./ImageUploader";
 
@@ -57,8 +58,18 @@ export default function MaterialDetailPanel({
   onRemove,
   onClose,
 }: MaterialDetailPanelProps) {
+  const { showToast } = useToast();
   const item = items[index];
   if (!item) return null;
+
+  // Copiar condición y garantía de esta línea a las demás cotizadas que no las tienen.
+  const bulkPlan = planBulkApply(items, index);
+  const applyToOthers = () => {
+    bulkPlan.forEach(({ index: target, patch }) => {
+      (Object.keys(patch) as (keyof BulkPatch)[]).forEach((field) => onUpdateItem(target, field, patch[field] as ItemRow[keyof ItemRow]));
+    });
+    showToast(`Condición y garantía aplicadas a ${bulkPlan.length} material${bulkPlan.length === 1 ? "" : "es"}.`, "success");
+  };
 
   const total = item.totalPrice > 0 ? `${currencyCode} ${item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—";
 
@@ -228,6 +239,22 @@ export default function MaterialDetailPanel({
             />
           </div>
         </div>
+
+        {bulkPlan.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-info-200 bg-info-50 px-4 py-3">
+            <p className="min-w-0 flex-1 text-xs font-medium text-info-700">
+              ¿Es igual para el resto? Aplique esta condición y garantía a los otros materiales cotizados que aún no las tienen. Solo completa los vacíos; no cambia lo que ya cargó.
+            </p>
+            <button
+              type="button"
+              onClick={applyToOthers}
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-control bg-info-600 px-3 py-2 text-[11px] font-black text-white transition-colors hover:bg-info-700"
+            >
+              <CopyCheck className="h-3.5 w-3.5" />
+              Aplicar a {bulkPlan.length} material{bulkPlan.length === 1 ? "" : "es"}
+            </button>
+          </div>
+        )}
 
         {/* Notas + imagen */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

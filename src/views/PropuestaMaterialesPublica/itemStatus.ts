@@ -48,3 +48,47 @@ export function getItemStatus(item: ItemRow, category: PublicCatalogCategory | u
   }
   return "complete";
 }
+
+export type BulkPatch = Partial<Pick<ItemRow, "conditionStatus" | "warrantyDescription" | "warrantyValue" | "warrantyUnit">>;
+
+export interface BulkApplyEntry {
+  index: number;
+  patch: BulkPatch;
+}
+
+/** La línea origen tiene lo mínimo para servir de modelo: condición, garantía y, si hay duración, su unidad. */
+export function canBeBulkSource(item: ItemRow): boolean {
+  return !!item.conditionStatus && !!item.warrantyDescription?.trim() && !isWarrantyDurationIncomplete(item);
+}
+
+/**
+ * Plan para copiar condición y garantía de `items[sourceIndex]` a las demás
+ * líneas COTIZADAS (con precio). Solo rellena lo que está vacío: nunca pisa
+ * lo que el proveedor ya cargó en otra línea. La duración de garantía
+ * (valor + unidad) viaja junto con la descripción: solo se copia a las líneas
+ * cuya garantía estaba vacía, y solo si no tenían ya una duración propia.
+ */
+export function planBulkApply(items: ItemRow[], sourceIndex: number): BulkApplyEntry[] {
+  const source = items[sourceIndex];
+  if (!source || !canBeBulkSource(source)) return [];
+
+  const plan: BulkApplyEntry[] = [];
+  items.forEach((item, index) => {
+    if (index === sourceIndex || !isPriced(item)) return;
+    const patch: BulkPatch = {};
+
+    if (!item.conditionStatus) patch.conditionStatus = source.conditionStatus;
+
+    if (!item.warrantyDescription?.trim()) {
+      patch.warrantyDescription = source.warrantyDescription;
+      const hasOwnDuration = (item.warrantyValue !== "" && item.warrantyValue !== undefined) || !!item.warrantyUnit;
+      if (!hasOwnDuration) {
+        patch.warrantyValue = source.warrantyValue ?? "";
+        patch.warrantyUnit = source.warrantyUnit;
+      }
+    }
+
+    if (Object.keys(patch).length > 0) plan.push({ index, patch });
+  });
+  return plan;
+}
