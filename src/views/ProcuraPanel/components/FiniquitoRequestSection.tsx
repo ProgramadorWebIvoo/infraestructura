@@ -48,7 +48,7 @@ export default function FiniquitoRequestSection({ projects, authToken, actions }
               <div className="min-w-0 flex-1">
                 <div className="font-bold text-slate-800 truncate">{project.title}</div>
                 <div className="text-[11px] text-slate-500 truncate">
-                  {project.location} · Contratista: {project.selectedContractorCode}
+                  {project.location} · Proveedor: {project.selectedContractorCode}
                 </div>
               </div>
               <div className="text-right whitespace-nowrap">

@@ -92,7 +92,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
   const columns: Column<AdvanceRow>[] = useMemo(() => [
     { key: "id", label: "ID", width: "6.5rem", sortable: true, render: ({ project }) => <span className="font-mono font-bold text-[10px] text-rose-600 whitespace-nowrap">{project.id}</span> },
     { key: "title", label: "Obra", sortable: true, render: ({ project }) => <div className="min-w-0 font-bold text-slate-800 truncate">{project.title}</div> },
-    { key: "contractor", label: "Contratista", sortable: true, render: ({ winner }) => (
+    { key: "contractor", label: "Proveedor", sortable: true, render: ({ winner }) => (
       <div className="min-w-0">
         <div className="font-bold text-slate-800 truncate">{winner.contractorName}</div>
         <div className="font-mono text-[9px] text-sky-600 font-bold">{winner.contractorCode}</div>
@@ -164,7 +164,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         <SectionHeader
           icon={<Coins className="h-5 w-5" />}
           title="Liberación de Anticipos Pactados (Inicio Obra)"
-          description="Autorice el primer desembolso de fondos acordado para que el contratista inicie los trabajos de campo."
+          description="Autorice el primer desembolso de fondos acordado para que el proveedor inicie los trabajos de campo."
           color="rose"
         />
 
@@ -187,7 +187,7 @@ export default function AdvancesSection({ pendingAdvances, onPayAdvance, onRefre
         searchId="finanzas-advances-search"
         searchValue={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Buscar por obra, contratista o ID..."
+        searchPlaceholder="Buscar por obra, proveedor o ID..."
         searchAriaLabel="Buscar anticipos pendientes"
         countIcon={<Coins />}
         filteredCount={visibleRows.length}

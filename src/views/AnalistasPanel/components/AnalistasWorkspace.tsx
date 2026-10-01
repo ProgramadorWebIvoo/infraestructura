@@ -3,7 +3,7 @@ import { formatCurrency } from "@ivoo/shared";
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Convergencia de Carga de Propuestas de Contratistas + Cuadro Comparativo
+ * Convergencia de Carga de Propuestas de Proveedores + Cuadro Comparativo
  * Digital — reemplaza a BidRegistrationSection.tsx + ComparativeTableSection.tsx.
  * Sigue el mismo patrón que ProcuraPanel/components/BidEvaluationSection.tsx:
  * lista compacta seleccionable (TableToolbar + Table/GridView) de expedientes
@@ -208,7 +208,7 @@ export default function AnalistasWorkspace({
           <SectionHeader
             icon={<Award className="h-5 w-5" />}
             title="Carga de Propuestas y Cuadro Comparativo"
-            description="Seleccione un expediente en licitación para registrar ofertas de contratistas y consolidar su cuadro comparativo."
+            description="Seleccione un expediente en licitación para registrar ofertas de proveedores y consolidar su cuadro comparativo."
             color="emerald"
           />
         </div>
@@ -371,7 +371,7 @@ function ExpedienteWorkspaceModal({
   const proposalColumns: Column<Proposal>[] = [
     {
       key: "contractor",
-      label: "Contratista (Código)",
+      label: "Proveedor (Código)",
       width: "14rem",
       render: (prop) => (
         <div className="min-w-0">

@@ -15,7 +15,7 @@ type ProposalRow = IdleViewProps["proposals"][number];
 const IDLE_COLUMNS: Column<ProposalRow>[] = [
   {
     key: "contractorName",
-    label: "Contratista",
+    label: "Proveedor",
     render: (p) => <span className="font-semibold text-slate-800">{p.contractorName}</span>,
   },
   {

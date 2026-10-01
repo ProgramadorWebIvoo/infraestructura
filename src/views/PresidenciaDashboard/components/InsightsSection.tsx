@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Insights ejecutivos: top contratistas, desglose por ubicación y tendencia
+ * Insights ejecutivos: top proveedores, desglose por ubicación y tendencia
  * mensual de creación (gráfico de barras). Las barras de ranking se miden
  * contra el monto máximo del grupo (no contra un string formateado).
  */
@@ -44,9 +44,9 @@ export default function InsightsSection({ summary }: InsightsSectionProps) {
 
   return (
     <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Top contratistas */}
+      {/* Top proveedores */}
       <div className={CARD}>
-        <MiniSectionTitle icon={<Award className="h-4 w-4" />} label="Top Contratistas" />
+        <MiniSectionTitle icon={<Award className="h-4 w-4" />} label="Top Proveedores" />
         <div className="space-y-3">
           {summary.topContractors.length === 0 ? (
             <p className="text-[11px] text-slate-400 italic">Aún no hay contratos adjudicados.</p>

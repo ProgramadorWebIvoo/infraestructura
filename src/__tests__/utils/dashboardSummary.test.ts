@@ -152,7 +152,7 @@ describe("computeDashboardSummary", () => {
     expect(contratado.committedAmount).toBe(500);
   });
 
-  it("top contratistas: top 5 ordenados por monto", () => {
+  it("top proveedores: top 5 ordenados por monto", () => {
     const projects = Array.from({ length: 6 }, (_, i) =>
       makeProject({
         id: `P${i}`,
@@ -162,7 +162,7 @@ describe("computeDashboardSummary", () => {
           makeWinner({
             id: `prop-${i}`,
             contractorCode: `C-${i}`,
-            contractorName: `Contratista ${i}`,
+            contractorName: `Proveedor ${i}`,
             totalCost: (i + 1) * 100,
           }),
         ],

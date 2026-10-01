@@ -154,7 +154,7 @@ describe("InspectProjectModal", () => {
     expect(screen.getAllByText("Completado").length).toBe(9);
   });
 
-  it("lista las ofertas recibidas con contratista, rating y monto", () => {
+  it("lista las ofertas recibidas con proveedor, rating y monto", () => {
     const project = createProject({
       status: ProjectStatus.COMPARATIVA_ENVIADA,
       proposals: [createProposal(), createProposal({ id: "PROP-2", contractorCode: "C-002", contractorName: "Beta S.A.", totalCost: 82000, deliveryWeeks: 12, contractorRating: 4.2 })],

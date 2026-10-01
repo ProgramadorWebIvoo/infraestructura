@@ -29,7 +29,7 @@ export function reviewResidentPayload(project: Pick<Project, "localizationId">, 
 /**
  * Estados en los que Auditoría todavía puede tocar el expediente de cierre
  * de una obra personalizada: cambiar el residente o reenviar el enlace del
- * informe al contratista. El corte es VERIFICANDO_FINALIZACION — una vez
+ * informe al proveedor. El corte es VERIFICANDO_FINALIZACION — una vez
  * Auditoría aprueba el cierre (pasa a PENDIENTE_SOLICITUD_FINIQUITO), el
  * expediente queda certificado con ese residente y ese informe, y ninguna
  * de las dos acciones vuelve a estar disponible (backend lo valida igual en

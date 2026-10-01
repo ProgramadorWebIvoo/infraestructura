@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Portal público de CIERRE — el contratista abre el enlace personal enviado por
+ * Portal público de CIERRE — el proveedor abre el enlace personal enviado por
  * correo al liberarse el anticipo y reporta las partidas ejecutadas + fotos de
  * evidencia. El enlace no caduca y es reutilizable mientras el informe no esté
  * en revisión (backend: PublicClosureReportController).

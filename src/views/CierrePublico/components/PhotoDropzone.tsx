@@ -12,7 +12,7 @@ interface PhotoDropzoneProps {
   isUploading: boolean;
   onFiles: (files: File[]) => void;
   onDelete: (photo: ClosureReportPhoto) => void;
-  /** "dark" (portal público del contratista) o "light" (módulos internos). */
+  /** "dark" (portal público del proveedor) o "light" (módulos internos). */
   theme?: "dark" | "light";
   /** Si se define, la miniatura abre el previsualizador en lugar de una pestaña nueva. */
   onPreview?: (photo: ClosureReportPhoto) => void;

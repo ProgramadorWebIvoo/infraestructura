@@ -232,7 +232,7 @@ export default function EvaluacionInteligenteModal({
       (p) => p.contractorCode === result.winnerContractorCode,
     );
     if (!winnerProposal) {
-      setAcceptError("No se encontró la propuesta del contratista ganador.");
+      setAcceptError("No se encontró la propuesta del proveedor ganador.");
       setAccepting(false);
       return;
     }
@@ -243,7 +243,7 @@ export default function EvaluacionInteligenteModal({
       setTimeout(() => onClose(), 1800);
     } catch (err: unknown) {
       const error = err as Error;
-      setAcceptError(error?.message ?? "Error al adjudicar el contratista.");
+      setAcceptError(error?.message ?? "Error al adjudicar el proveedor.");
       setAccepting(false);
     }
   };
@@ -373,7 +373,7 @@ function FooterHint({
     idle: "Powered by ChatGPT · Gemini · Claude",
     loading: "Evaluando propuestas...",
     result: (acceptSuccess
-      ? "Contratista seleccionado. Pendiente de aprobación de Presidencia."
+      ? "Proveedor seleccionado. Pendiente de aprobación de Presidencia."
       : acceptError
         ? "Error al adjudicar. Puede reintentar o cerrar."
         : "Puede aceptar la recomendación o cerrar y decidir manualmente.") + cachedNote,

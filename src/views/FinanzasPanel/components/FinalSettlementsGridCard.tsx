@@ -44,7 +44,7 @@ function FinalSettlementsGridCard({ project, winner, balanceDue, paidAdvance, on
 
       <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-gradient-to-br from-sky-50/40 to-white border border-sky-100/60 text-[11px]">
         <div className="min-w-0">
-          <span className="text-[9px] text-slate-500 font-bold block mb-0.5">Contratista:</span>
+          <span className="text-[9px] text-slate-500 font-bold block mb-0.5">Proveedor:</span>
           <span className="font-bold text-slate-800 line-clamp-1">{winner.contractorName}</span>
         </div>
         <div>

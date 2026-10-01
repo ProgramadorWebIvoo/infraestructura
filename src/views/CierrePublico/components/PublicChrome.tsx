@@ -57,7 +57,7 @@ export function TopBar() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-base font-black tracking-tight">IVOO — Informe de Cierre de Obra</h1>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Portal público del contratista</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Portal público del proveedor</p>
           </div>
         </div>
         <div className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-bold text-emerald-200 shadow-[0_0_12px_-4px_#34d399] sm:flex">

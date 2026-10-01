@@ -467,7 +467,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
             onChange={(e) => setMotivo(e.target.value)}
             rows={2}
             maxLength={500}
-            placeholder="Ej. El contratista bajó el precio tras revisar cantidades."
+            placeholder="Ej. El proveedor bajó el precio tras revisar cantidades."
             className="w-full text-xs px-3.5 py-2.5 rounded-lg border border-warning-200 bg-white focus:outline-hidden focus:ring-1 focus:ring-warning-500 text-slate-700 font-medium resize-none"
           />
         </div>

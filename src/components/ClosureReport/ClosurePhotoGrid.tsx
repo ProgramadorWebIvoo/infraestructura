@@ -12,7 +12,7 @@ interface ClosurePhotoGridProps {
 }
 
 const AUTHOR_LABEL: Record<ClosureReportPhoto["uploadedByType"], string> = {
-  CONTRATISTA: "Contratista",
+  CONTRATISTA: "Proveedor",
   RESIDENTE: "Residente",
 };
 

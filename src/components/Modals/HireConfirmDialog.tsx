@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Confirmación de adjudicación de contratista. El gauge circular de
+ * Confirmación de adjudicación de proveedor. El gauge circular de
  * ejecución presupuestaria siempre se muestra (contexto); la alerta de
  * anticipo excedido es la única condicional — se suma cuando la oferta
  * pacta un anticipo por encima del máximo configurado en CONFIG APP.
@@ -58,7 +58,7 @@ export default function HireConfirmDialog({
       icon={<Icon className="h-5 w-5" />}
       iconColor={iconColor}
       badge={badge}
-      title="Adjudicar Contratista"
+      title="Adjudicar Proveedor"
       closeDisabled={isLoading}
       footer={
         <div className="flex justify-end gap-3">
@@ -81,7 +81,7 @@ export default function HireConfirmDialog({
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
         <motion.p variants={itemVariants} className="text-sm text-slate-600 leading-relaxed">
           ¿Estás seguro de adjudicar el contrato a <strong className="text-slate-800">"{contractorName}"</strong>? Esta acción seleccionará a
-          este contratista como ganador y enviará la adjudicación a Presidencia para su aprobación. Una vez aprobada, Procura la enviará a Finanzas para liberar el anticipo.
+          este proveedor como ganador y enviará la adjudicación a Presidencia para su aprobación. Una vez aprobada, Procura la enviará a Finanzas para liberar el anticipo.
         </motion.p>
 
         {/* Semáforo de ejecución presupuestaria — gauge circular en vez de

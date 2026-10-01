@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Reporte ejecutivo consolidado de Presidencia — vista imprimible con
- * KPIs, funnel, flujo de caja, top contratistas, inversión por ubicación
+ * KPIs, funnel, flujo de caja, top proveedores, inversión por ubicación
  * y obras estancadas, en un único PDF (vía window.print(), mismo mecanismo
  * que ExportButton para no introducir una dependencia nueva de PDF).
  */
@@ -78,7 +78,7 @@ export function printExecutiveReport({ summary, projects, auditLogsCount, isExac
   );
 
   const contractorsTable = table(
-    ["Contratista", "Obras adjudicadas", "Monto total"],
+    ["Proveedor", "Obras adjudicadas", "Monto total"],
     summary.topContractors.map((c) => [c.contractorName, c.projectCount, money(c.totalAmount)]),
   );
 
@@ -138,7 +138,7 @@ export function printExecutiveReport({ summary, projects, auditLogsCount, isExac
     ${section("Indicadores clave", `<div class="kpi-grid">${kpiCards}</div>`)}
     ${section("Funnel de estados", funnelTable)}
     ${section("Flujo de caja mensual (últimos 12 meses con desembolsos)", cashFlowTable)}
-    ${section("Top contratistas por monto adjudicado", contractorsTable)}
+    ${section("Top proveedores por monto adjudicado", contractorsTable)}
     ${section("Inversión por ubicación", locationTable)}
     ${section("Obras estancadas", stalledTable)}
   `;

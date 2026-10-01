@@ -384,7 +384,7 @@ export default function RegisterProposalModal({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="md:col-span-2">
                     <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Proveedor / Contratista
+                      Proveedor
                       <RequiredMark filled={!!contractorCode} />
                     </label>
                     <SelectModal

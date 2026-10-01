@@ -77,7 +77,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
     setResendingId(project.id);
     try {
       const { mailSent } = await onResendLink(project.id);
-      showToast(mailSent ? "Enlace reenviado al contratista." : "No se pudo enviar el correo; revise el contacto del contratista.", mailSent ? "success" : "error");
+      showToast(mailSent ? "Enlace reenviado al proveedor." : "No se pudo enviar el correo; revise el contacto del proveedor.", mailSent ? "success" : "error");
     } catch (error) {
       showToast(getErrorMessage(error, "No se pudo reenviar el enlace."), "error");
     } finally {

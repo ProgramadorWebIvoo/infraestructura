@@ -59,7 +59,7 @@ const TYPE_LABEL: Record<StepForm["paymentType"], string> = { ADVANCE: "Anticipo
  */
 const AUTO_SIGN_HINT: Record<StepForm["paymentType"], Record<string, { where: string; blocks: boolean }>> = {
   ADVANCE: {
-    PROCURA: { where: "Selección de contratista", blocks: false },
+    PROCURA: { where: "Selección de proveedor", blocks: false },
     PRESIDENCIA: { where: "Aprobación de la adjudicación", blocks: true },
     FINANZAS: { where: "Liberación del anticipo (pago)", blocks: true },
   },
@@ -234,11 +234,11 @@ export default function PaymentSignatureStepsPanel({ authToken }: PaymentSignatu
 
       <InfoBanner title="¿Cómo funcionan las firmas?" color="indigo">
         <ul className="list-disc space-y-1 pl-4">
-          <li><strong>Qué se firma:</strong> la orden de pago de cada obra. La de anticipo nace al seleccionar el contratista; la de finiquito, al solicitar el pago del finiquito.</li>
+          <li><strong>Qué se firma:</strong> la orden de pago de cada obra. La de anticipo nace al seleccionar el proveedor; la de finiquito, al solicitar el pago del finiquito.</li>
           <li><strong>En qué orden:</strong> estricto según el número de paso. Nadie puede firmar antes de que firme el paso anterior.</li>
           <li><strong>Cuándo:</strong> cada paso se firma solo al ejecutar el trámite del rol en su pantalla habitual (columna «Cuándo se firma»). Si el rol no coincide con ningún trámite, el usuario abre la orden y pulsa «Firmar».</li>
           <li><strong>Dónde:</strong> en la orden de pago, accesible desde Procura (Envío a Finanzas) y Finanzas (Anticipos y Finiquitos), con la línea de firmas y quién firmó cada paso.</li>
-          <li><strong>Qué bloquea de verdad:</strong> si un paso es <em>obligatorio</em> y le falta la firma, <strong>solo</strong> se rechazan la aprobación de Presidencia y el pago de Finanzas (nadie los salta, ni ADMIN/SUPERADMIN). Seleccionar contratista y solicitar el finiquito firman su paso si aplica, pero nunca esperan por él, para no trabar el circuito.</li>
+          <li><strong>Qué bloquea de verdad:</strong> si un paso es <em>obligatorio</em> y le falta la firma, <strong>solo</strong> se rechazan la aprobación de Presidencia y el pago de Finanzas (nadie los salta, ni ADMIN/SUPERADMIN). Seleccionar proveedor y solicitar el finiquito firman su paso si aplica, pero nunca esperan por él, para no trabar el circuito.</li>
           <li><strong>Opcional vs. obligatorio:</strong> un paso opcional se puede firmar igual, pero nunca bloquea nada — útil para dejar constancia sin frenar el proceso. Colócalo al final de la cadena: uno opcional sin firmar puede tapar el turno de los pasos siguientes.</li>
           <li>Un tipo de pago sin pasos configurados no exige firmas.</li>
         </ul>

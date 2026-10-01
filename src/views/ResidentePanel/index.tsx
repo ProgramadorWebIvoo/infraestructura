@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Módulo del ingeniero residente ("Mis obras"): carga su propio informe de campo,
- * independiente del contratista (Auditoría compara). Sin datos financieros (los
+ * independiente del proveedor (Auditoría compara). Sin datos financieros (los
  * endpoints los omiten). Búsqueda, filtro por estado del informe y tabla paginada
  * para que siga usable con muchas obras.
  */

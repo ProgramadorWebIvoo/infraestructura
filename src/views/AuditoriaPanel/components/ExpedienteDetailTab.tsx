@@ -92,7 +92,7 @@ export default function ExpedienteDetailTab({ project, rejectionCount, onChangeR
             )}
             {onResendLink && canResendClosureLink(project) && (
               <Button size="sm" variant="secondary" className="mt-1.5 ml-1.5" isLoading={isResendingLink} onClick={() => onResendLink(project)}>
-                Reenviar enlace al contratista
+                Reenviar enlace al proveedor
               </Button>
             )}
           </div>

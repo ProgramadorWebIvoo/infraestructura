@@ -92,7 +92,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
   const columns: Column<SettlementRow>[] = useMemo(() => [
     { key: "id", label: "ID", width: "6.5rem", sortable: true, render: ({ project }) => <span className="font-mono font-bold text-[10px] text-sky-600 whitespace-nowrap">{project.id}</span> },
     { key: "title", label: "Obra", sortable: true, render: ({ project }) => <div className="min-w-0 font-bold text-slate-800 truncate">{project.title}</div> },
-    { key: "contractor", label: "Contratista", sortable: true, render: ({ winner }) => <div className="min-w-0 font-bold text-slate-800 truncate">{winner.contractorName}</div> },
+    { key: "contractor", label: "Proveedor", sortable: true, render: ({ winner }) => <div className="min-w-0 font-bold text-slate-800 truncate">{winner.contractorName}</div> },
     { key: "paidAdvance", label: "Anticipo Pagado", width: "9rem", align: "right", sortable: true, render: ({ paidAdvance }) => <span className="font-mono font-bold text-slate-600">${paidAdvance.toLocaleString()}</span> },
     { key: "totalCost", label: "Total Obra", width: "9rem", align: "right", sortable: true, render: ({ winner }) => <span className="font-mono font-bold text-slate-600">${winner.totalCost.toLocaleString()}</span> },
     { key: "balanceDue", label: "Saldo Pendiente", width: "10rem", align: "right", sortable: true, render: ({ balanceDue }) => (
@@ -182,7 +182,7 @@ export default function FinalSettlementsSection({ pendingFinalPayments, onPayFin
         searchId="finanzas-settlements-search"
         searchValue={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Buscar por obra, contratista o ID..."
+        searchPlaceholder="Buscar por obra, proveedor o ID..."
         searchAriaLabel="Buscar liquidaciones pendientes"
         countIcon={<DollarSign />}
         filteredCount={visibleRows.length}

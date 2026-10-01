@@ -186,7 +186,7 @@ export default function PresidenciaDashboard({
             accent="success"
             tooltip={
               <>
-                Monto efectivamente pagado a contratistas.
+                Monto efectivamente pagado a proveedores.
                 <BsAmount amount={totalReleasedFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} variant="block" className="text-slate-300 mt-1" />
               </>
             }

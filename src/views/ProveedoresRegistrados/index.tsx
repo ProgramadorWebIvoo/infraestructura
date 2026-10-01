@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Proveedores: base de contratistas registrados + propuestas de materiales
+ * Proveedores: base de proveedores registrados + propuestas de materiales
  * recibidas por el portal público, en dos tabs (mismo patrón de Tabs+TabPanel
  * que ProcuraPanel/InfraestructuraMantenimientoPanel) en vez de dos secciones
  * apiladas en scroll — separa dos flujos de trabajo distintos (gestionar la

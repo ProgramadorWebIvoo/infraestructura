@@ -15,7 +15,7 @@ describe("ClosureFollowUp", () => {
   it("muestra residente y pasos en solo lectura, sin acciones", () => {
     render(<ClosureFollowUp project={{ ...base, status: "INFORME_ENVIADO" } as Project} />);
     expect(screen.getByText("Ana Ruiz")).toBeInTheDocument();
-    expect(screen.getByText("Falta el informe del contratista o del residente")).toBeInTheDocument();
+    expect(screen.getByText("Falta el informe del proveedor o del residente")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
   });
 

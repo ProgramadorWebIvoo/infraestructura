@@ -48,7 +48,7 @@ export interface ResidentDocument {
   mimeType: string | null;
 }
 
-/** Los ítems del residente no traen precios ni lo declarado por el contratista (informe independiente); se rellenan para reutilizar los componentes del cierre. */
+/** Los ítems del residente no traen precios ni lo declarado por el proveedor (informe independiente); se rellenan para reutilizar los componentes del cierre. */
 export function toResidentProject(dto: ResidentProjectDto): ResidentProject {
   return {
     ...dto,

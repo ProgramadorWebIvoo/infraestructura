@@ -4,7 +4,7 @@
  *
  * Pruebas unitarias para AnalistasWorkspace — lista compacta de expedientes
  * en licitación (TableToolbar + Table/GridView) que abre un modal de detalle
- * donde se registra la oferta del contratista, se revisa el cuadro
+ * donde se registra la oferta del proveedor, se revisa el cuadro
  * comparativo y se envía a Procura.
  */
 
@@ -262,7 +262,7 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
     }
   });
 
-  it("muestra RequiredMark pendiente en Proveedor/Contratista hasta seleccionar uno", () => {
+  it("muestra RequiredMark pendiente en Proveedor hasta seleccionar uno", () => {
     const restoreRO = stubSyncResizeObserver();
     const restoreSize = stubContainerSize(900, 600);
     try {
@@ -411,8 +411,8 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       expect(confirmButton).toBeDisabled();
 
       const motivoField = document.getElementById("renegotiate-motivo") as HTMLTextAreaElement;
-      fireEvent.change(motivoField, { target: { value: "El contratista bajó el precio." } });
-      expect(motivoField.value).toBe("El contratista bajó el precio.");
+      fireEvent.change(motivoField, { target: { value: "El proveedor bajó el precio." } });
+      expect(motivoField.value).toBe("El proveedor bajó el precio.");
       const enabledConfirmButton = screen.getByText("Confirmar Renegociación").closest("button");
       expect(enabledConfirmButton).not.toBeDisabled();
 
@@ -420,7 +420,7 @@ describe("AnalistasWorkspace — carga de propuestas dentro del modal", () => {
       await vi.waitFor(() => expect(onRenegotiateProposal).toHaveBeenCalledWith(
         "P1",
         "PROP-1",
-        expect.objectContaining({ motivo: "El contratista bajó el precio." }),
+        expect.objectContaining({ motivo: "El proveedor bajó el precio." }),
       ));
     } finally {
       restoreSize();

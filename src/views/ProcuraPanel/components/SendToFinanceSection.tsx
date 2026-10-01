@@ -67,7 +67,7 @@ export default function SendToFinanceSection({ projects, onSendToFinance, authTo
                 <div className="min-w-0 flex-1">
                   <div className="font-bold text-slate-800 truncate">{project.title}</div>
                   <div className="text-[11px] text-slate-500 truncate">
-                    {project.location} · Contratista: {proposal?.contractorName ?? project.selectedContractorCode}
+                    {project.location} · Proveedor: {proposal?.contractorName ?? project.selectedContractorCode}
                   </div>
                 </div>
                 <div className="font-mono font-black text-slate-800 whitespace-nowrap">

@@ -38,7 +38,7 @@ describe("residentRules", () => {
     expect(validateResidentPhoto({ name: "a.png", type: "image/png", size: 6 * 1024 * 1024 })).toMatch(/5 MB/);
   });
 
-  it("exige foto del residente y no cuenta las del contratista", () => {
+  it("exige foto del residente y no cuenta las del proveedor", () => {
     const contractor = [{ id: 1, itemId: null, uploadedByType: "CONTRATISTA", originalName: "x", path: "p" }];
     expect(hasResidentPhoto(project("a", true, contractor))).toBe(false);
     expect(hasResidentPhoto(project("a", true, [{ ...contractor[0], uploadedByType: "RESIDENTE" }]))).toBe(true);

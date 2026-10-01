@@ -289,7 +289,7 @@ describe("BidEvaluationSection — adjudicación", () => {
       fireEvent.click(screen.getByText("Remodelación de oficinas"));
       fireEvent.click(screen.getByText("Adjudicar"));
 
-      expect(screen.getByText("Adjudicar Contratista")).toBeInTheDocument();
+      expect(screen.getByText("Adjudicar Proveedor")).toBeInTheDocument();
     } finally {
       restoreSize();
       restoreRO();

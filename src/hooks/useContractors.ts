@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Hook de contratistas. Estado + fetch GET /contractors + handlers.
+ * Hook de proveedores. Estado + fetch GET /contractors + handlers.
  * Incluye polling para mantener el listado actualizado (nuevos registros
  * desde el portal público o cambios desde la configuración).
  */
@@ -30,7 +30,7 @@ export function useContractors(authToken: string, showToast: ShowToast, enabled 
         (data: Contractor[]) => data.map(c => [c.code, c.name, c.rating].join(":")).join("|"),
         [],
       ),
-      errorMessage: "No se pudo cargar el catálogo de contratistas.",
+      errorMessage: "No se pudo cargar el catálogo de proveedores.",
     });
 
   const handleAddContractor = useCallback((newContractor: Contractor) => {

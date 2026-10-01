@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Hook facade de proyectos. Compone useProjectsData (fetch) y
- * useProjectsWorkflows (handlers). Ya NO carga contratistas/materiales
+ * useProjectsWorkflows (handlers). Ya NO carga proveedores/materiales
  * para otros hooks (acoplamiento eliminado); cada dominio fetchea lo suyo.
  */
 

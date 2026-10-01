@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Workflows de Procura y Analistas: aprobación de inversión, selección de
- * contratista, cuadro comparativo, propuestas (agregar/renegociar/invitar/
+ * proveedor, cuadro comparativo, propuestas (agregar/renegociar/invitar/
  * eliminar) e importación de propuestas del portal de proveedores.
  * Extraído de useProjectsWorkflows.ts (antes 795 líneas / 22 handlers en un
  * solo archivo — ver graphify toxic hotspot).

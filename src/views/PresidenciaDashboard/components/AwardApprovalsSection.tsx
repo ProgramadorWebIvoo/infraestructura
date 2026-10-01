@@ -77,7 +77,7 @@ export default function AwardApprovalsSection({ projects, onApproveAward, onReje
       <SectionHeader
         icon={<Landmark className="h-5 w-5" />}
         title="Aprobación de Adjudicaciones"
-        description="Procura seleccionó al contratista. Apruebe para que Procura envíe la obra a Finanzas, o rechace con un motivo para que Procura la revise."
+        description="Procura seleccionó al proveedor. Apruebe para que Procura envíe la obra a Finanzas, o rechace con un motivo para que Procura la revise."
         color="amber"
         actions={
           <Button
@@ -112,7 +112,7 @@ export default function AwardApprovalsSection({ projects, onApproveAward, onReje
                     {project.location} · {project.description}
                   </div>
                   <div className="text-[11px] text-slate-600 mt-1">
-                    Contratista: <span className="font-bold">{proposal?.contractorName ?? project.selectedContractorCode}</span>
+                    Proveedor: <span className="font-bold">{proposal?.contractorName ?? project.selectedContractorCode}</span>
                   </div>
                 </div>
                 <div className="text-right whitespace-nowrap">

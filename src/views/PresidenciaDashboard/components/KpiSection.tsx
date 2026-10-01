@@ -85,7 +85,7 @@ export default function KpiSection({
           accent={overBudget ? "text-rose-400" : "text-sky-600"}
           borderAccent={overBudget ? "border-l-rose-400" : "border-l-sky-400"}
           onInspect={() => setInspecting("released")}
-          tooltip="Monto efectivamente pagado a contratistas. Si supera lo aprobado, se marca en rojo el exceso liberado."
+          tooltip="Monto efectivamente pagado a proveedores. Si supera lo aprobado, se marca en rojo el exceso liberado."
         >
           <span className="text-2xl font-black font-mono bg-gradient-to-r from-sky-700 to-sky-500 bg-clip-text text-transparent">${fmt(totalReleasedFunds)}</span>
           <BsAmount amount={totalReleasedFunds} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />

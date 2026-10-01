@@ -219,7 +219,7 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     role: "PROCURA",
     action: "Confirmación de contratación",
     timestamp: "2026-05-17 16:30",
-    details: "Contratista Constructora Andes C.A. asignada bajo código CON-301."
+    details: "Proveedor Constructora Andes C.A. asignada bajo código CON-301."
   },
   {
     id: "LOG-106",

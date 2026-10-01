@@ -251,7 +251,7 @@ export default function WorkflowTimeline({ project }: { project: Project }) {
         <div className="flex gap-3 relative">
           <StepBadge index={5} state={stepProps(5).state} />
           <div className="flex-1 min-w-0">
-            <StepHeader icon={ShieldCheck} role="PROCURA" title="Adjudicación por Procura" subtitle="Adjudicación del contratista final de la base de datos." state={stepProps(5).state} />
+            <StepHeader icon={ShieldCheck} role="PROCURA" title="Adjudicación por Procura" subtitle="Adjudicación del proveedor final de la base de datos." state={stepProps(5).state} />
             {project.selectedContractorCode ? (
               <div className="mt-2 bg-indigo-50/40 p-3 rounded-lg border border-indigo-100 text-[11px] text-slate-700 font-semibold">
                 <div>Proveedor Adjudicado: {project.selectedContractorCode}</div>

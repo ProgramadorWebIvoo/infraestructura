@@ -8,7 +8,7 @@
  * + KPIs secundarios (ticket promedio, eficiencia de pago, sobrecostos, fondos
  * en riesgo) + distribución de inversión por tipo de obra y ubicación + obras
  * estancadas con fondos comprometidos + comportamiento de desembolsos + top
- * contratistas por monto liberado + tendencia mensual de desembolsos.
+ * proveedores por monto liberado + tendencia mensual de desembolsos.
  */
 
 import { useEffect, useState } from "react";
@@ -507,9 +507,9 @@ export default function FinancialSummarySection({ projects, paidLedger }: Financ
       </div>
     </motion.div>
 
-    {/* Top contratistas por monto liberado */}
+    {/* Top proveedores por monto liberado */}
     <motion.div variants={itemVariants} initial="hidden" animate="visible" className={CARD}>
-      <SectionTitle icon={<Award className="h-4 w-4" />} label="Top Contratistas por Monto Liberado" />
+      <SectionTitle icon={<Award className="h-4 w-4" />} label="Top Proveedores por Monto Liberado" />
       <div className="space-y-3">
         {summary.topContractors.length === 0 ? (
           <p className="text-[11px] text-slate-400 italic">Aún no hay contratos adjudicados.</p>

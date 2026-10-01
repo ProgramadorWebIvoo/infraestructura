@@ -11,8 +11,8 @@ import type { Project } from "@/types";
 import { ProjectStatus } from "@/types";
 
 const STEPS: { status: string; label: string }[] = [
-  { status: ProjectStatus.EN_EJECUCION, label: "En ejecución (informes del contratista y del residente)" },
-  { status: ProjectStatus.INFORME_ENVIADO, label: "Falta el informe del contratista o del residente" },
+  { status: ProjectStatus.EN_EJECUCION, label: "En ejecución (informes del proveedor y del residente)" },
+  { status: ProjectStatus.INFORME_ENVIADO, label: "Falta el informe del proveedor o del residente" },
   { status: ProjectStatus.VERIFICANDO_FINALIZACION, label: "Revisión de Auditoría" },
   { status: ProjectStatus.PENDIENTE_SOLICITUD_FINIQUITO, label: "Solicitud de finiquito (Procura)" },
   { status: ProjectStatus.LISTO_PAGO_FINAL, label: "Pago final (Finanzas)" },

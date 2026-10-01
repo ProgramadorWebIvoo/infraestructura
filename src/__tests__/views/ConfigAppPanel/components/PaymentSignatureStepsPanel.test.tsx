@@ -28,7 +28,7 @@ describe("PaymentSignatureStepsPanel", () => {
     await waitFor(() => expect(screen.getByText("Elaboración")).toBeInTheDocument());
     expect(screen.getByText("Aprobación")).toBeInTheDocument();
     expect(screen.getAllByText("Anticipo")).toHaveLength(2);
-    expect(screen.getByText("Selección de contratista — nunca bloquea esa acción (se firma si aplica, sin esperar)")).toBeInTheDocument();
+    expect(screen.getByText("Selección de proveedor — nunca bloquea esa acción (se firma si aplica, sin esperar)")).toBeInTheDocument();
     expect(screen.getByText("Aprobación de la adjudicación — bloquea la acción si falta")).toBeInTheDocument();
     expect(screen.getAllByText("Obligatorio")).toHaveLength(3);
   });
@@ -40,7 +40,7 @@ describe("PaymentSignatureStepsPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Editar Elaboración" }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
     fireEvent.click(screen.getByLabelText(/Obligatorio \(bloquea/));
-    expect(screen.getAllByText("Selección de contratista — nunca bloquea esa acción (se firma si aplica, sin esperar)").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Selección de proveedor — nunca bloquea esa acción (se firma si aplica, sin esperar)").length).toBeGreaterThan(0);
 
     mockApiFetch.mockResolvedValueOnce({});
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));

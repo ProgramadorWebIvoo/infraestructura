@@ -37,7 +37,7 @@ function Notes({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-/** Informe de cierre completo: partidas (contratado, contratista, residente, final), notas por etapa y fotos por autor. */
+/** Informe de cierre completo: partidas (contratado, proveedor, residente, final), notas por etapa y fotos por autor. */
 export default function ClosureReportDetail({
   report,
   isLoading,
@@ -73,7 +73,7 @@ export default function ClosureReportDetail({
       )}
       {summary}
       <ClosureItemsTable items={report.items} mode={tableMode} drafts={drafts} errors={errors} onDraftChange={onDraftChange} disabled={disabled} />
-      <Notes label="Observaciones del contratista" value={report.contractorNotes} />
+      <Notes label="Observaciones del proveedor" value={report.contractorNotes} />
       <Notes label="Notas del residente" value={report.residentNotes} />
       <Notes label="Notas de Auditoría" value={report.auditNotes} />
       {showFiniquito && report.finiquitoAmount != null && (
@@ -89,7 +89,7 @@ export default function ClosureReportDetail({
       )}
       <div className="space-y-3">
         <div>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Evidencia del contratista</p>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Evidencia del proveedor</p>
           <ClosurePhotoGrid photos={contractorPhotos} onPreview={authToken ? (p) => setPreview(p) : undefined} />
         </div>
         <div>

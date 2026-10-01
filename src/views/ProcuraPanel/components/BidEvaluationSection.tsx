@@ -252,7 +252,7 @@ function BidEvaluationDetail({
       footer={
         <div className="flex items-center justify-between gap-3">
           <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
-            Seleccione el contratista idóneo desde la columna "Contratación" de la tabla.
+            Seleccione el proveedor idóneo desde la columna "Contratación" de la tabla.
           </span>
           <div className="flex items-center gap-2">
             {showAiEval && (
@@ -439,7 +439,7 @@ export default function BidEvaluationSection({
           <SectionHeader
             icon={<Users className="h-5 w-5" />}
             title="Evaluación Comparativa de Ofertas y Contratación"
-            description="Examine el cuadro comparativo estructurado por los Analistas. Seleccione el contratista idóneo considerando precio, plazo y condiciones de anticipo."
+            description="Examine el cuadro comparativo estructurado por los Analistas. Seleccione el proveedor idóneo considerando precio, plazo y condiciones de anticipo."
             color="emerald"
           />
         </div>
@@ -560,7 +560,7 @@ export default function BidEvaluationSection({
       >
         <div className="space-y-4">
           <p className="text-xs text-danger-600/80 font-medium leading-relaxed">
-            Se eliminarán todas las propuestas cargadas y el proyecto regresará a <strong>Carga de Propuestas de Contratistas</strong> para que los Analistas inicien una nueva ronda.
+            Se eliminarán todas las propuestas cargadas y el proyecto regresará a <strong>Carga de Propuestas de Proveedores</strong> para que los Analistas inicien una nueva ronda.
           </p>
           <div>
             <label htmlFor="bid-evaluation-reject-reason" className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-danger-600">

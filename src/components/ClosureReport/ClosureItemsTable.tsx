@@ -41,7 +41,7 @@ function StageNote({ label, value }: { label: string; value?: string | null }) {
 
 /**
  * Comparación por partida de las cifras del cierre — contratado, declarado por el
- * contratista y verificado por el residente (que rige el finiquito). El residente solo
+ * proveedor y verificado por el residente (que rige el finiquito). El residente solo
  * ve lo contratado y mide. Tabla paginada con buscador: una obra puede traer ~70 partidas,
  * y la justificación solo aparece en las filas que se apartan de lo contratado.
  */
@@ -72,7 +72,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = E
     ];
 
     if (showContractor) {
-      cols.push({ key: "contractor", label: "Contratista", align: "right", render: (item) => <QuantityChip warn={isDecrease(item)}>{item.executedQuantity}</QuantityChip> });
+      cols.push({ key: "contractor", label: "Proveedor", align: "right", render: (item) => <QuantityChip warn={isDecrease(item)}>{item.executedQuantity}</QuantityChip> });
     }
     if (showResident) {
       cols.push({ key: "resident", label: "Residente", align: "right", render: (item) => <QuantityChip warn={residentDiffers(item)}>{item.residentQuantity ?? "—"}</QuantityChip> });
@@ -136,7 +136,7 @@ export default function ClosureItemsTable({ items, mode = "readonly", drafts = E
         label: "Notas",
         render: (item) => (
           <div className="max-w-72 min-w-40 space-y-1">
-            {showContractor && <StageNote label="Contratista" value={item.note} />}
+            {showContractor && <StageNote label="Proveedor" value={item.note} />}
             <StageNote label="Residente" value={item.residentNote} />
             {!item.note && !item.residentNote && <span className="text-xs text-text-secondary">—</span>}
           </div>

@@ -10,16 +10,16 @@ describe("ExpedienteDetailTab — reenviar enlace", () => {
   it("se ofrece mientras el cierre no haya pasado la verificación de Auditoría, incluso con un informe ya enviado", async () => {
     const onResendLink = vi.fn();
     const { rerender } = render(<ExpedienteDetailTab project={project("EN_EJECUCION")} rejectionCount={0} onResendLink={onResendLink} />);
-    await userEvent.click(screen.getByRole("button", { name: /reenviar enlace al contratista/i }));
+    await userEvent.click(screen.getByRole("button", { name: /reenviar enlace al proveedor/i }));
     expect(onResendLink).toHaveBeenCalledOnce();
 
-    // El residente (u otro) ya mandó su parte del informe de cierre — el enlace del contratista sigue siendo reenviable.
+    // El residente (u otro) ya mandó su parte del informe de cierre — el enlace del proveedor sigue siendo reenviable.
     rerender(<ExpedienteDetailTab project={project("INFORME_ENVIADO")} rejectionCount={0} onResendLink={onResendLink} />);
-    expect(screen.getByRole("button", { name: /reenviar enlace al contratista/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /reenviar enlace al proveedor/i })).toBeInTheDocument();
 
     // Ambos informes llegaron; Auditoría aún no verificó — sigue disponible.
     rerender(<ExpedienteDetailTab project={project("VERIFICANDO_FINALIZACION")} rejectionCount={0} onResendLink={onResendLink} />);
-    expect(screen.getByRole("button", { name: /reenviar enlace al contratista/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /reenviar enlace al proveedor/i })).toBeInTheDocument();
   });
 
   it("desaparece una vez Auditoría verificó el cierre", () => {

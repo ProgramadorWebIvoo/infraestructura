@@ -5,13 +5,13 @@ export interface ClosureReportItem {
   contractedQuantity: number;
   executedQuantity: number;
   unitPriceUsd: number | null;
-  /** Nota del contratista (obligatoria si declaró menos de lo contratado). */
+  /** Nota del proveedor (obligatoria si declaró menos de lo contratado). */
   note: string | null;
   /** Lo verificado en obra por el residente (null hasta que da su visto bueno). */
   residentQuantity?: number | null;
   residentNote?: string | null;
   /** Cantidad fijada por Auditoría (null hasta que verifica). */
-  /** Cantidad que rige el finiquito: Auditoría, o residente, o contratista. */
+  /** Cantidad que rige el finiquito: Auditoría, o residente, o proveedor. */
   finalQuantity?: number;
 }
 
