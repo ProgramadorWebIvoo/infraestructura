@@ -313,7 +313,7 @@ export default function PropuestaMaterialesPublica() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white antialiased">
+    <div data-theme="dark" className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white antialiased">
       <BackgroundDecor />
 
       <div className="relative z-10">

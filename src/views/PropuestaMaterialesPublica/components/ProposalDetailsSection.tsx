@@ -45,17 +45,17 @@ export default function ProposalDetailsSection({
   return (
     <>
       {/* Estimated duration */}
-      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
-        <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
-          <Clock className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Tiempo estimado de ejecución</h3>
+      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-white">
+        <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-3">
+          <Clock className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-200">Tiempo estimado de ejecución</h3>
         </div>
-        <p className="mb-4 text-xs font-medium text-slate-500">
+        <p className="mb-4 text-xs font-medium text-slate-400">
           Indique cuánto tiempo estima que tomaría completar esta obra desde el inicio de los trabajos.
         </p>
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Cantidad</label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Cantidad</label>
             <NumericInput
               value={estimatedDays}
               onChange={onEstimatedDaysChange}
@@ -64,7 +64,7 @@ export default function ProposalDetailsSection({
             />
           </div>
           <div className="w-36">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Unidad</label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Unidad</label>
             <Select
               value={durationUnit}
               onChange={(v) => onDurationUnitChange(v as DurationUnit)}
@@ -75,17 +75,17 @@ export default function ProposalDetailsSection({
       </motion.div>
 
       {/* Advance percent + labor cost */}
-      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
-        <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
-          <HandCoins className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Anticipo y mano de obra</h3>
+      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-white">
+        <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-3">
+          <HandCoins className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-200">Anticipo y mano de obra</h3>
         </div>
-        <p className="mb-4 text-xs font-medium text-slate-500">
+        <p className="mb-4 text-xs font-medium text-slate-400">
           Ambos campos son opcionales — déjelos vacíos si no requiere anticipo o no cotiza mano de obra por separado.
         </p>
         <div className="flex flex-wrap items-start gap-4">
           <div className="w-32">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Anticipo (%)</label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Anticipo (%)</label>
             <NumericInput
               value={advancePercent}
               onChange={(v) => onAdvancePercentChange(v === "" ? "" : Math.min(100, v))}
@@ -95,7 +95,7 @@ export default function ProposalDetailsSection({
             />
           </div>
           <div className="w-44">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Mano de obra ({currencyCode || "—"})
             </label>
             <NumericInput thousands value={laborCost} onChange={onLaborCostChange} placeholder="0.00" min={0} />
@@ -104,8 +104,8 @@ export default function ProposalDetailsSection({
       </motion.div>
 
       {/* General notes */}
-      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white p-5 text-slate-900 shadow-xl shadow-slate-950/30">
-        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-white">
+        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
           Observaciones generales (opcional)
         </label>
         <textarea
@@ -114,7 +114,7 @@ export default function ProposalDetailsSection({
           rows={3}
           maxLength={1000}
           placeholder="Condiciones de pago, garantías, disponibilidad, etc."
-          className="w-full resize-none rounded-xl border border-slate-200 px-3.5 py-3 text-sm font-medium text-slate-800 outline-hidden transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+          className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3.5 py-3 text-sm font-medium text-slate-200 outline-hidden transition placeholder:text-slate-500 focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/30"
         />
       </motion.div>
 

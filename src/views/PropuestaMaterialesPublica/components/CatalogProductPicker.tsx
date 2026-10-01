@@ -60,7 +60,7 @@ export default function CatalogProductPicker({
           onBlur={() => setTimeout(() => setIsOpen(false), 150)}
           placeholder="Buscar en catálogo o escribir nombre nuevo *"
           maxLength={220}
-          className={`w-full rounded-control border py-2.5 pl-9 pr-3.5 text-sm font-medium text-text-primary outline-hidden transition-shadow duration-150 ${warningColor.border100} focus:${warningColor.text600} focus:ring-1 focus:ring-offset-0`}
+          className={`w-full rounded-control border bg-surface py-2.5 pl-9 pr-3.5 text-sm font-medium text-text-primary outline-hidden placeholder:text-text-muted transition-shadow duration-150 ${warningColor.border100} focus:${warningColor.text600} focus:ring-1 focus:ring-offset-0`}
         />
       </div>
       <AnimatePresence>
@@ -70,7 +70,7 @@ export default function CatalogProductPicker({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={springs.snappy}
-            className={`absolute z-20 mt-1 w-full max-h-40 overflow-auto rounded-control border ${warningColor.border100} bg-surface py-1 shadow-md`}
+            className={`absolute z-20 mt-1 w-full max-h-40 overflow-auto rounded-control border ${warningColor.border100} bg-slate-800 py-1 shadow-md`}
           >
             {results.map((p) => (
               <li key={p.id}>
@@ -82,9 +82,9 @@ export default function CatalogProductPicker({
                     setIsOpen(false);
                     onSelect(p);
                   }}
-                  className={`w-full cursor-pointer px-3.5 py-2 text-left text-xs font-medium text-text-primary transition-colors hover:${warningColor.bg50}`}
+                  className={`w-full cursor-pointer px-3.5 py-2 text-left text-xs font-medium text-slate-100 transition-colors hover:bg-white/10`}
                 >
-                  {p.name} <span className="text-text-muted">({p.unit})</span>
+                  {p.name} <span className="text-slate-400">({p.unit})</span>
                 </button>
               </li>
             ))}
@@ -92,7 +92,7 @@ export default function CatalogProductPicker({
         )}
       </AnimatePresence>
       {item.catalogProductId && (
-        <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${SEMANTIC_COLOR_MAP.success.text700}`}>
+        <span className={`inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300`}>
           <ShieldCheck className="h-3 w-3" /> Vinculado a catálogo
         </span>
       )}

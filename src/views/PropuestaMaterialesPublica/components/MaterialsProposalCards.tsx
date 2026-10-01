@@ -35,9 +35,9 @@ interface MaterialsProposalCardsProps {
 }
 
 const STATUS_BADGE: Record<ItemStatus, { label: string; className: string }> = {
-  complete: { label: "Completo", className: "bg-success-50 text-success-700" },
-  missing: { label: "Faltan datos", className: "bg-danger-50 text-danger-600" },
-  unpriced: { label: "Sin cotizar", className: "bg-surface-sunken text-text-muted" },
+  complete: { label: "Completo", className: "bg-emerald-400/10 text-emerald-300" },
+  missing: { label: "Faltan datos", className: "bg-rose-400/10 text-rose-300" },
+  unpriced: { label: "Sin cotizar", className: "bg-white/5 text-slate-400" },
 };
 
 function AnimatedTotal({ value, currencyCode }: { value: number; currencyCode: string }) {
@@ -78,7 +78,6 @@ export default function MaterialsProposalCards({
   currencyCode,
 }: MaterialsProposalCardsProps) {
   const [detailIndex, setDetailIndex] = useState<number | null>(null);
-  const infoColor = SEMANTIC_COLOR_MAP.info;
   const warningColor = SEMANTIC_COLOR_MAP.warning;
 
   const categoryFor = useCallback((item: ItemRow) => categories.find((c) => c.id === item.categoryId), [categories]);
@@ -120,13 +119,13 @@ export default function MaterialsProposalCards({
       label: "Material",
       render: (item, index) => (
         <button type="button" onClick={() => setDetailIndex(index)} className="flex max-w-full cursor-pointer items-center gap-2 text-left" aria-label={`Abrir detalle de ${item.materialName || "material personalizado"}`}>
-          <span className={`truncate text-[11px] font-semibold ${item.materialName ? "text-slate-800" : "italic text-slate-400"}`}>{item.materialName || "Material personalizado (sin nombre)"}</span>
+          <span className={`truncate text-[11px] font-semibold ${item.materialName ? "text-slate-100" : "italic text-slate-500"}`}>{item.materialName || "Material personalizado (sin nombre)"}</span>
           {item.isCustom && <span className={`shrink-0 rounded-pill px-1.5 py-0.5 text-[8px] font-black uppercase ${warningColor.bg50} ${warningColor.text700}`}>Adicional</span>}
         </button>
       ),
     },
-    { key: "quantity", label: "Cant.", align: "center", className: "font-mono text-[11px] font-bold text-slate-600", render: (item) => item.quantity },
-    { key: "unit", label: "Unidad", className: "text-[11px] font-medium text-slate-500", render: (item) => item.unit },
+    { key: "quantity", label: "Cant.", align: "center", className: "font-mono text-[11px] font-bold text-slate-300", render: (item) => item.quantity },
+    { key: "unit", label: "Unidad", className: "text-[11px] font-medium text-slate-400", render: (item) => item.unit },
     {
       key: "unitPrice",
       label: `Precio unit. (${currencyCode || "—"})`,
@@ -145,7 +144,7 @@ export default function MaterialsProposalCards({
       key: "total",
       label: "Total",
       align: "right",
-      className: "font-mono text-[11px] font-bold text-emerald-700",
+      className: "font-mono text-[11px] font-bold text-emerald-400",
       render: (item) => (item.totalPrice > 0 ? item.totalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—"),
     },
     {
@@ -167,13 +166,13 @@ export default function MaterialsProposalCards({
           <button
             type="button"
             onClick={() => setDetailIndex(index)}
-            className="inline-flex cursor-pointer items-center gap-0.5 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 transition-colors hover:bg-slate-50"
+            className="inline-flex cursor-pointer items-center gap-0.5 rounded-lg border border-white/10 px-2 py-1 text-[10px] font-bold text-slate-300 transition-colors hover:bg-white/10"
             aria-label={`Editar detalle de ${item.materialName || "material personalizado"}`}
           >
             Detalle <ChevronRight className="h-3 w-3" />
           </button>
           {item.isCustom && (
-            <button type="button" onClick={() => handleRemove(index)} className="cursor-pointer rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-500" aria-label="Eliminar material">
+            <button type="button" onClick={() => handleRemove(index)} className="cursor-pointer rounded-lg p-1 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400" aria-label="Eliminar material">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
@@ -186,27 +185,28 @@ export default function MaterialsProposalCards({
 
   return (
     <div className="space-y-5">
-      <div className={`rounded-2xl border ${infoColor.border100} ${infoColor.bg50} p-4`}>
-        <h3 className={`text-sm font-black uppercase tracking-wider ${infoColor.text700}`}>Materiales requeridos por el proyecto</h3>
-        <p className={`mt-2 text-xs font-medium ${infoColor.text600}`}>
+      <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4">
+        <h3 className="text-sm font-black uppercase tracking-wider text-sky-300">Materiales requeridos por el proyecto</h3>
+        <p className="mt-2 text-xs font-medium text-sky-100/80">
           Ingrese el precio unitario que puede ofrecer para cada material, en {currencyCode || "la moneda seleccionada"}. Condición y garantía son obligatorias para todo material con precio cargado
           (se completan en «Detalle»). Puede dejar sin precio los que no provee.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white p-4 text-slate-900 shadow-xl shadow-slate-950/30">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-white">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <ProgressChip icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Completos" value={counts.complete} className="bg-success-50 text-success-700" />
-          <ProgressChip icon={<ListChecks className="h-3.5 w-3.5" />} label="Con datos faltantes" value={counts.missing} className="bg-danger-50 text-danger-600" />
-          <ProgressChip icon={null} label="Sin cotizar" value={counts.unpriced} className="bg-surface-sunken text-text-muted" />
+          <ProgressChip icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Completos" value={counts.complete} className="bg-emerald-400/10 text-emerald-300" />
+          <ProgressChip icon={<ListChecks className="h-3.5 w-3.5" />} label="Con datos faltantes" value={counts.missing} className="bg-rose-400/10 text-rose-300" />
+          <ProgressChip icon={null} label="Sin cotizar" value={counts.unpriced} className="bg-white/5 text-slate-400" />
           {counts.missing > 0 && (
-            <button type="button" onClick={() => setDetailIndex(nextMissingAfter(-1))} className="ml-auto cursor-pointer rounded-control border border-danger-200 px-3 py-1 text-[11px] font-bold text-danger-700 transition-colors hover:bg-danger-50">
+            <button type="button" onClick={() => setDetailIndex(nextMissingAfter(-1))} className="ml-auto cursor-pointer rounded-control border border-rose-400/30 px-3 py-1 text-[11px] font-bold text-rose-300 transition-colors hover:bg-rose-400/10">
               Completar los que faltan
             </button>
           )}
         </div>
 
         <ProductLinesTable
+          tone="dark"
           ariaLabel="Materiales de la propuesta"
           items={items}
           columns={columns}
@@ -218,7 +218,7 @@ export default function MaterialsProposalCards({
             { key: "unpriced", label: "Sin cotizar", predicate: (item) => statusOf(item) === "unpriced" },
             { key: "complete", label: "Completos", predicate: (item) => statusOf(item) === "complete" },
           ]}
-          rowClassName={(item) => (statusOf(item) === "missing" ? "bg-danger-50/30" : item.isCustom ? "bg-amber-50/30" : "")}
+          rowClassName={(item) => (statusOf(item) === "missing" ? "bg-rose-400/5" : item.isCustom ? "bg-amber-400/5" : "")}
           emptyMessage="Ningún material coincide con la búsqueda."
           toolbarActions={
             <motion.button
@@ -236,9 +236,9 @@ export default function MaterialsProposalCards({
         />
       </div>
 
-      <div className={`flex items-center justify-between rounded-2xl border ${infoColor.border100} ${infoColor.bg50} px-5 py-4`}>
-        <span className={`text-xs font-black uppercase tracking-wider ${infoColor.text700}`}>Total estimado de la propuesta</span>
-        <span className={`font-mono text-lg font-black ${infoColor.text700}`}>
+      <div className="flex items-center justify-between rounded-2xl border border-sky-400/20 bg-sky-400/10 px-5 py-4">
+        <span className="text-xs font-black uppercase tracking-wider text-sky-300">Total estimado de la propuesta</span>
+        <span className="font-mono text-lg font-black text-sky-200">
           <AnimatedTotal value={grandTotal} currencyCode={currencyCode || "—"} />
         </span>
       </div>

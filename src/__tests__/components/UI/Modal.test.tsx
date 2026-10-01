@@ -276,3 +276,15 @@ describe("Modal", () => {
     expect(dialog).toHaveTextContent("Body");
   });
 });
+
+describe("Modal — tono", () => {
+  it("por defecto no declara tema (claro)", () => {
+    render(<Modal isOpen onClose={() => {}} title="Claro">Body</Modal>);
+    expect(screen.getByRole("dialog").querySelector("[data-theme]")).toBeNull();
+  });
+
+  it("tone='dark' declara data-theme='dark' en el panel para que los tokens pasen a su versión oscura", () => {
+    render(<Modal isOpen onClose={() => {}} title="Oscuro" tone="dark">Body</Modal>);
+    expect(screen.getByRole("dialog").querySelector('[data-theme="dark"]')).not.toBeNull();
+  });
+});

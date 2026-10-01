@@ -48,6 +48,12 @@ interface ModalProps {
   infoLine?: string;
   /** Background del icono: color tailwind ej. "amber" */
   iconColor?: string;
+  /**
+   * "dark" para las páginas públicas oscuras: el panel declara `data-theme="dark"`
+   * (los tokens de superficie/texto/borde pasan a su versión oscura, ver index.css)
+   * sobre un fondo sólido. Default "light": sin cambios para el resto de la app.
+   */
+  tone?: "light" | "dark";
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +96,7 @@ export default function Modal({
   title,
   infoLine,
   iconColor = "amber",
+  tone = "light",
 }: ModalProps) {
   const semantic = SEMANTIC_COLOR_MAP[ICON_COLOR_TO_SEMANTIC[iconColor] ?? "warning"];
   const iconStyle = { bg: semantic.bgAlpha400, text: semantic.icon400 };
@@ -180,7 +187,8 @@ export default function Modal({
                     ease: [0.16, 1, 0.3, 1],
                   }
             }
-            className={`bg-surface rounded-container w-full ${maxWidth} border border-border-default overflow-hidden max-h-[90vh] flex flex-col [box-shadow:0_2px_4px_rgba(0,0,0,0.06),0_12px_24px_-6px_rgba(0,0,0,0.14),0_40px_80px_-20px_rgba(2,6,23,0.45)]`}
+            data-theme={tone === "dark" ? "dark" : undefined}
+            className={`${tone === "dark" ? "bg-slate-900 text-text-primary" : "bg-surface"} rounded-container w-full ${maxWidth} border border-border-default overflow-hidden max-h-[90vh] flex flex-col [box-shadow:0_2px_4px_rgba(0,0,0,0.06),0_12px_24px_-6px_rgba(0,0,0,0.14),0_40px_80px_-20px_rgba(2,6,23,0.45)]`}
           >
             {/* ── Header ── */}
             {(title || icon || badge) && (

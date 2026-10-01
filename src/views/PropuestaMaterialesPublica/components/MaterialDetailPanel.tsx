@@ -41,7 +41,7 @@ interface MaterialDetailPanelProps {
 type PublicCategory = PublicCatalogCategory | undefined;
 
 const labelClass = "mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted";
-const textInputClass = "w-full rounded-control border border-border-default px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden focus:border-info-400 focus:ring-1 focus:ring-info-100";
+const textInputClass = "w-full rounded-control border border-border-default bg-surface px-3.5 py-2.5 text-sm font-medium text-text-primary outline-hidden placeholder:text-text-muted focus:border-info-400 focus:ring-1 focus:ring-info-100";
 const dangerBorder = `border-${SEMANTIC_COLOR_MAP.danger.border200.split("-").pop()}`;
 
 export default function MaterialDetailPanel({
@@ -76,6 +76,7 @@ export default function MaterialDetailPanel({
   return (
     <Modal
       isOpen
+      tone="dark"
       onClose={onClose}
       maxWidth="max-w-3xl"
       iconColor="sky"
@@ -105,7 +106,7 @@ export default function MaterialDetailPanel({
               <button
                 type="button"
                 onClick={onNextPending}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-control border border-danger-200 bg-danger-50 px-3 py-2 text-[11px] font-bold text-danger-700 transition-colors hover:bg-danger-100"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-control border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-[11px] font-bold text-rose-300 transition-colors hover:bg-rose-400/20"
               >
                 <ListChecks className="h-3.5 w-3.5" /> Siguiente con datos faltantes
               </button>
@@ -116,7 +117,7 @@ export default function MaterialDetailPanel({
               <button
                 type="button"
                 onClick={() => onRemove(index)}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-control px-3 py-2 text-[11px] font-bold text-danger-600 transition-colors hover:bg-danger-50"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-control px-3 py-2 text-[11px] font-bold text-rose-300 transition-colors hover:bg-rose-400/10"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Eliminar
               </button>
@@ -241,14 +242,14 @@ export default function MaterialDetailPanel({
         </div>
 
         {bulkPlan.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-info-200 bg-info-50 px-4 py-3">
-            <p className="min-w-0 flex-1 text-xs font-medium text-info-700">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-sky-400/30 bg-sky-400/10 px-4 py-3">
+            <p className="min-w-0 flex-1 text-xs font-medium text-sky-100/90">
               ¿Es igual para el resto? Aplique esta condición y garantía a los otros materiales cotizados que aún no las tienen. Solo completa los vacíos; no cambia lo que ya cargó.
             </p>
             <button
               type="button"
               onClick={applyToOthers}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-control bg-info-600 px-3 py-2 text-[11px] font-black text-white transition-colors hover:bg-info-700"
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-control bg-sky-500 px-3 py-2 text-[11px] font-black text-white transition-colors hover:bg-sky-400"
             >
               <CopyCheck className="h-3.5 w-3.5" />
               Aplicar a {bulkPlan.length} material{bulkPlan.length === 1 ? "" : "es"}
