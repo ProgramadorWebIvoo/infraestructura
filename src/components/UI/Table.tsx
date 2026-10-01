@@ -74,6 +74,8 @@ export interface TableProps<T> {
    */
   fillViewport?: boolean;
   containerClassName?: string;
+  /** Permite scroll horizontal en vez de recortar cuando las columnas no caben (opt-in; úsalo junto con `className="min-w-[…]"`). */
+  scrollX?: boolean;
 
   // Table element classes
   className?: string;
@@ -327,6 +329,7 @@ export function Table<T>({
   maxHeight,
   fillViewport = false,
   containerClassName = "",
+  scrollX = false,
   className = "",
   stickyHeader = false,
   rowHoverClass = "hover:bg-sky-50/70",
@@ -438,7 +441,7 @@ export function Table<T>({
     <div className={`rounded-control overflow-hidden ${fillViewport ? "flex h-full flex-col min-h-0" : ""} ${containerClassName}`}>
       {onRefresh && <RefreshToolbar onRefresh={onRefresh} lastUpdated={lastUpdated} />}
       <div
-        className={`overflow-x-hidden ${
+        className={`${scrollX ? "overflow-x-auto" : "overflow-x-hidden"} ${
           fillViewport ? "flex-1 min-h-0 overflow-y-auto" : maxHeight ? "overflow-y-auto" : ""
         }`}
         style={!fillViewport && maxHeight ? { maxHeight } : undefined}

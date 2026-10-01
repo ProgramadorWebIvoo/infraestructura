@@ -83,8 +83,8 @@ function BidEvaluationDetail({
   const columns = useMemo<Column<Proposal>[]>(() => [
     {
       key: "contractor",
-      label: "Contratista (Código)",
-      width: "13rem",
+      label: "Proveedor (Código)",
+      width: "14rem",
       render: (prop) => (
         <div className="flex items-center gap-2">
           {prop.id === best?.id && (
@@ -115,7 +115,7 @@ function BidEvaluationDetail({
     {
       key: "laborCost",
       label: "Mano de Obra",
-      width: "7.5rem",
+      width: "9rem",
       align: "right",
       render: (prop) => (
         <div>
@@ -127,11 +127,11 @@ function BidEvaluationDetail({
     {
       key: "totalCost",
       label: "Costo Total",
-      width: "9rem",
+      width: "12rem",
       align: "right",
       render: (prop) => (
         <div>
-          <div className="flex items-center justify-end gap-1.5">
+          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
             <span className={`font-mono font-black text-sm ${prop.id === best?.id ? "text-success-700" : "text-slate-700"}`}>
               {formatCurrency(prop.totalCost)}
             </span>
@@ -171,7 +171,7 @@ function BidEvaluationDetail({
     {
       key: "advance",
       label: "Anticipo Pactado",
-      width: "8rem",
+      width: "10.5rem",
       align: "center",
       render: (prop) => {
         const exceedsMax = prop.negotiatedAdvancePercent > maxAdvancePercent;
@@ -201,13 +201,13 @@ function BidEvaluationDetail({
     {
       key: "actions",
       label: "Contratación",
-      width: "11.5rem",
+      width: "13.5rem",
       align: "center",
       render: (prop) => {
         const authorized = project.approvedInvestmentAmount ?? 0;
         const executedPct = authorized > 0 ? (prop.totalCost / authorized) * 100 : 0;
         return (
-          <div className="flex items-center justify-center gap-1.5">
+          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
             <Tooltip content="Inspeccionar" placement="top">
               <Button
                 id={`btn-inspect-${project.id}-${prop.contractorCode}`}
@@ -244,7 +244,7 @@ function BidEvaluationDetail({
     <Modal
       isOpen
       onClose={onClose}
-      maxWidth="max-w-6xl"
+      maxWidth="max-w-7xl"
       icon={<Users className="h-5 w-5" />}
       iconColor="emerald"
       badge="Evaluación Comparativa"
@@ -295,6 +295,8 @@ function BidEvaluationDetail({
         <div className="border border-slate-100 rounded-xl bg-white overflow-hidden shadow-xs">
           <Table
             columns={columns}
+            scrollX
+            className="min-w-[79.5rem]"
             data={proposals}
             rowKey={(prop) => prop.id}
             selectedRowKey={best?.id}
