@@ -93,7 +93,7 @@ let nextId = 1;
 /** Tope corto a propósito — es un índice de búsqueda, no una copia del payload (ver DebugEntry.searchText). */
 const MAX_SEARCH_TEXT_CHARS = 400;
 
-function buildSearchText(label: string, detail: DebugEntry["detail"]): string {
+export function buildSearchText(label: string, detail: DebugEntry["detail"]): string {
   const detailText = typeof detail === "string" ? detail : detail ? JSON.stringify(detail) : "";
   return `${label} ${detailText}`.slice(0, MAX_SEARCH_TEXT_CHARS).toLowerCase();
 }

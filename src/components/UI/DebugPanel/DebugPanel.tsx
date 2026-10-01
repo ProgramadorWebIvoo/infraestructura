@@ -53,7 +53,9 @@ import DebugCodebasePanel from "./DebugCodebasePanel";
 import DebugStoragePanel from "./DebugStoragePanel";
 import DebugPerformancePanel from "./DebugPerformancePanel";
 import { useCopyDiagnostic } from "@/hooks/useCopyDiagnostic";
-import { downloadJson } from "./debugUtils";
+import { useDebugSessionIO } from "@/hooks/useDebugSessionIO";
+import { useDebugReviewStore } from "@/stores/debugReviewStore";
+import DebugReviewBanner from "./DebugReviewBanner";
 
 interface DebugPanelProps {
   authUser: AuthUser;
@@ -91,10 +93,15 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<DebugPanelTab>("http");
   const filters = useDebugEntryFilters(activeTab);
-  const { entries, countsByKind, isEntryTab, filteredEntries, hiddenCount, entriesForTabCount, deferredSearch } = filters;
+  const { entries, isReviewing, countsByKind, isEntryTab, filteredEntries, hiddenCount, entriesForTabCount, deferredSearch } = filters;
   const clear = useDebugStore(s => s.clear);
   const dropped = useDebugStore(s => s.dropped);
   const copyDiagnostic = useCopyDiagnostic(activeRole);
+  const { exportSession, importSession } = useDebugSessionIO(entries);
+  const closeReview = useDebugReviewStore(s => s.close);
+
+  // La sesión importada solo vive mientras el panel está abierto.
+  useEffect(() => closeReview, [closeReview]);
 
   const tabDefinitions: TabDefinition[] = DEBUG_PANEL_TABS.map(t => ({
     key: t.key,
@@ -115,10 +122,13 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
         expanded={expanded}
         onToggleExpanded={() => setExpanded(v => !v)}
         onClose={onClose}
-        onExport={() => downloadJson(`ivoo-debug-${Date.now()}.json`, entries)}
+        onExport={exportSession}
+        onImport={file => void importSession(file)}
         onCopyDiagnostic={copyDiagnostic}
-        onClearTab={isEntryTab ? () => clear(activeTab as DebugEntryKind) : undefined}
+        onClearTab={isEntryTab && !isReviewing ? () => clear(activeTab as DebugEntryKind) : undefined}
       />
+
+      <DebugReviewBanner />
 
       <div className="space-y-2 px-3 pt-2">
         {expanded ? (
@@ -164,7 +174,7 @@ function DebugPanelContent({ authUser, activeRole, onClose }: DebugPanelContentP
             <DebugInfoPanel authUser={authUser} activeRole={activeRole} />
           ) : (
             <div className="space-y-2">
-              {dropped > 0 && (
+              {dropped > 0 && !isReviewing && (
                 <p className="text-[10px] font-bold text-text-tertiary">
                   Buffer circular ({MAX_DEBUG_ENTRIES} máx.) — {dropped} eventos antiguos descartados.
                 </p>

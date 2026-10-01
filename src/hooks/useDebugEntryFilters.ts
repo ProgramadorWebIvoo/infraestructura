@@ -8,6 +8,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import { useDebugStore, type DebugCategory, type DebugEntry, type DebugEntryKind, type DebugLevel } from "@/stores/debugStore";
+import { useDebugReviewStore } from "@/stores/debugReviewStore";
 import { buildSearchMatcher } from "@/utils/debugSearch";
 import {
   HTTP_METHOD_FILTERS,
@@ -32,7 +33,11 @@ export function useDebugEntryFilters(activeTab: DebugPanelTab) {
   const deferredSearch = useDeferredValue(search);
   const matcher = useMemo(() => buildSearchMatcher(deferredSearch, regexMode), [deferredSearch, regexMode]);
 
-  const entries = useDebugStore(s => s.entries);
+  // Con una sesión importada abierta (modo revisión) se listan SUS entradas;
+  // si no, la captura en vivo. El buffer de revisión es independiente del vivo.
+  const liveEntries = useDebugStore(s => s.entries);
+  const reviewEntries = useDebugReviewStore(s => s.session?.entries);
+  const entries = reviewEntries ?? liveEntries;
 
   const countsByKind = useMemo(() => {
     const counts: Record<DebugEntryKind, number> = { http: 0, log: 0, websocket: 0, error: 0 };
@@ -89,6 +94,7 @@ export function useDebugEntryFilters(activeTab: DebugPanelTab) {
 
   return {
     entries,
+    isReviewing: reviewEntries !== undefined,
     countsByKind,
     isEntryTab,
     entriesForTabCount: entriesForTab.length,

@@ -7,7 +7,8 @@
  * cerrar).
  */
 
-import { Bug, Trash2, X, Pause, Play, Download, Maximize2, Minimize2, Gauge, ClipboardCopy } from "lucide-react";
+import { useRef } from "react";
+import { Bug, Trash2, X, Pause, Play, Download, Upload, Maximize2, Minimize2, Gauge, ClipboardCopy } from "lucide-react";
 import IconActionButton from "@/components/UI/IconActionButton";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { useDebugStore } from "@/stores/debugStore";
@@ -18,17 +19,20 @@ interface DebugPanelHeaderProps {
   onToggleExpanded: () => void;
   onClose: () => void;
   onExport: () => void;
+  /** Recibe el archivo .json elegido (la validación de tamaño/forma la hace el caller). */
+  onImport: (file: File) => void;
   /** Copia el System Snapshot (entorno, versión, rol, memoria, FPS, últimos eventos). */
   onCopyDiagnostic: () => void;
   /** undefined = el tab actual no tiene entradas que limpiar. */
   onClearTab?: () => void;
 }
 
-export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, onExport, onCopyDiagnostic, onClearTab }: DebugPanelHeaderProps) {
+export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, onExport, onImport, onCopyDiagnostic, onClearTab }: DebugPanelHeaderProps) {
   const paused = useDebugStore(s => s.paused);
   const setPaused = useDebugStore(s => s.setPaused);
   const networkProfile = useDebugStore(s => s.networkProfile);
   const warning = SEMANTIC_COLOR_MAP.warning;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="flex items-center justify-between border-b border-border-default px-4 py-3">
@@ -53,9 +57,27 @@ export default function DebugPanelHeader({ expanded, onToggleExpanded, onClose, 
         />
         <IconActionButton
           icon={<Download className="h-3.5 w-3.5" />}
-          label="Exportar todo"
-          tooltip="Exportar todo como JSON"
+          label="Exportar sesión"
+          tooltip="Exportar la sesión como JSON"
           onClick={onExport}
+        />
+        <IconActionButton
+          icon={<Upload className="h-3.5 w-3.5" />}
+          label="Importar sesión"
+          tooltip="Importar una sesión .json para revisarla (solo lectura)"
+          onClick={() => fileInputRef.current?.click()}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          aria-label="Archivo de sesión de debug"
+          onChange={e => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) onImport(file);
+          }}
         />
         <IconActionButton
           icon={<ClipboardCopy className="h-3.5 w-3.5" />}
