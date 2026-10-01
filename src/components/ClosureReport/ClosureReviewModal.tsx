@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
@@ -8,8 +8,6 @@ import { getErrorMessage } from "@/services/logger";
 import type { ClosureActions } from "@/hooks/projectsWorkflows/useClosureWorkflows";
 import type { Project } from "@/types";
 import ClosureReportDetail from "./ClosureReportDetail";
-import ClosureMeasurementSummary from "./ClosureMeasurementSummary";
-import { previewFiniquito } from "./closureMeasurements";
 
 export type ClosureReviewMode = "audit" | "procura";
 export type RejectionTarget = "CONTRATISTA" | "RESIDENTE";
@@ -27,8 +25,8 @@ const MODES: Record<ClosureReviewMode, ModeConfig> = {
   audit: {
     title: "Verificación de Auditoría",
     approveLabel: "Verificar y enviar a Procura",
-    rejectLabel: "Rechazar y devolver al contratista",
-    rejectHint: "La obra vuelve a ejecución y el contratista debe corregir y reenviar el informe.",
+    rejectLabel: "Rechazar y devolver al proveedor",
+    rejectHint: "La obra vuelve a ejecución y el proveedor debe corregir y reenviar el informe.",
     approve: (a, id, notes) => a.handleAuditApproval(id, notes || undefined),
     reject: (a, id, reason, target) => a.handleRejectClosure(id, reason, target),
   },
@@ -53,7 +51,7 @@ interface ClosureReviewModalProps {
 }
 
 const TARGET_OPTIONS: { value: RejectionTarget; label: string; hint: string }[] = [
-  { value: "CONTRATISTA", label: "Devolver al contratista", hint: "El informe está mal: la obra vuelve a ejecución y el contratista lo corrige y reenvía." },
+  { value: "CONTRATISTA", label: "Devolver al proveedor", hint: "El informe está mal: la obra vuelve a ejecución y el proveedor lo corrige y reenvía." },
   { value: "RESIDENTE", label: "Devolver al residente", hint: "La medición está en duda: se borran las mediciones y el residente debe volver a verificar en obra." },
 ];
 
@@ -74,12 +72,6 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
     setRejecting(false);
     onClose();
   };
-
-  const finiquitoPreview = useMemo(() => {
-    if (!report || mode !== "audit" || !project) return null;
-    const winner = project.proposals?.find((p) => p.id === project.selectedProposalId);
-    return previewFiniquito({ contractedTotal: winner?.totalCost, advancePaid: project.advancePaidAmount, items: report.items });
-  }, [report, mode, project]);
 
   const rejectHint = mode === "audit" ? TARGET_OPTIONS.find((o) => o.value === target)?.hint : config.rejectHint;
   const rejectLabel = mode === "audit" ? `Rechazar: ${TARGET_OPTIONS.find((o) => o.value === target)?.label.toLowerCase()}` : config.rejectLabel;
@@ -152,7 +144,6 @@ export default function ClosureReviewModal({ project, mode, authToken, actions, 
           project={project}
           authToken={authToken}
           disabled={isBusy}
-          summary={report && mode === "audit" && !readOnly ? <ClosureMeasurementSummary stage="audit" differences={0} totalItems={report.items.length} finiquitoPreview={finiquitoPreview} /> : undefined}
         />
 
         {!readOnly && rejecting && mode === "audit" && (

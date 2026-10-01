@@ -8,7 +8,7 @@ export interface MeasurementDraft {
 
 export type MeasurementDrafts = Record<number, MeasurementDraft>;
 
-/** Cantidad contra la que se compara el informe del residente: lo contratado (es independiente del contratista). */
+/** Cantidad contra la que se compara el informe del residente: lo contratado (es independiente del proveedor). */
 export function baselineQuantity(item: ClosureReportItem): number {
   return item.contractedQuantity;
 }
@@ -57,26 +57,6 @@ export function countDifferences(items: ClosureReportItem[], drafts: Measurement
 /** Discrepancia entre dos mediciones ya registradas (vista de solo lectura). */
 export function differs(a: number | null | undefined, b: number | null | undefined): boolean {
   return a != null && b != null && Math.abs(a - b) > 0.001;
-}
-
-interface FiniquitoPreviewInput {
-  contractedTotal: number | null | undefined;
-  advancePaid: number | null | undefined;
-  items: ClosureReportItem[];
-}
-
-/**
- * Vista previa del finiquito: contratado − anticipo − Σ(contratado − final) × precio unitario,
- * donde la cantidad final es la medición del residente. Solo orientativa — el monto oficial
- * lo calcula y devuelve el backend al verificar.
- */
-export function previewFiniquito({ contractedTotal, advancePaid, items }: FiniquitoPreviewInput): number | null {
-  if (contractedTotal == null) return null;
-  const reductions = items.reduce((sum, item) => {
-    const final = item.finalQuantity ?? item.residentQuantity ?? item.executedQuantity;
-    return sum + (item.contractedQuantity - final) * (item.unitPriceUsd ?? 0);
-  }, 0);
-  return Math.round(Math.max(0, contractedTotal - (advancePaid ?? 0) - reductions) * 100) / 100;
 }
 
 export interface ResidentMeasurement {

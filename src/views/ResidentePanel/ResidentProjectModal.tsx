@@ -153,7 +153,7 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
           onDraftChange={handleDraftChange}
           authToken={authToken}
           disabled={isBusy}
-          summary={report && editable ? <ClosureMeasurementSummary stage="resident" differences={countDifferences(report.items, drafts)} totalItems={report.items.length} finiquitoPreview={null} /> : undefined}
+          summary={report && editable ? <ClosureMeasurementSummary differences={countDifferences(report.items, drafts)} totalItems={report.items.length} /> : undefined}
         />
 
         {editable && project && (

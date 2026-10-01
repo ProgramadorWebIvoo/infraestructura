@@ -58,13 +58,6 @@ describe("ClosureReviewModal — Auditoría", () => {
     expect(document.querySelector("#closure-qty-1")).toBeNull();
   });
 
-  it("muestra el finiquito estimado con la medición del residente", async () => {
-    setup();
-
-    // 10000 − 3000 − (100−90)×2 = 6980
-    expect(await screen.findByText("$6,980.00")).toBeInTheDocument();
-  });
-
   it("aprueba sin enviar cantidades", async () => {
     const actions = setup();
 
@@ -75,11 +68,11 @@ describe("ClosureReviewModal — Auditoría", () => {
     await waitFor(() => expect(actions.handleAuditApproval).toHaveBeenCalledWith("P1", undefined));
   });
 
-  it("rechazar exige motivo y por defecto devuelve al contratista", async () => {
+  it("rechazar exige motivo y por defecto devuelve al proveedor", async () => {
     const actions = setup();
 
     await userEvent.click(await screen.findByRole("button", { name: /rechazar…/i }));
-    const confirm = screen.getByRole("button", { name: /rechazar: devolver al contratista/i });
+    const confirm = screen.getByRole("button", { name: /rechazar: devolver al proveedor/i });
     expect(confirm).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText(/motivo del rechazo/i), "No coincide");

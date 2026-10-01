@@ -3,7 +3,6 @@ import {
   countDifferences,
   initialDrafts,
   measurementErrors,
-  previewFiniquito,
   toMeasurementPayload,
   validateMeasurement,
 } from "@/components/ClosureReport/closureMeasurements";
@@ -14,7 +13,7 @@ const item = (over: Partial<ClosureReportItem> = {}): ClosureReportItem => ({
 });
 
 describe("closureMeasurements", () => {
-  it("arranca vacío: el informe del residente es independiente del contratista", () => {
+  it("arranca vacío: el informe del residente es independiente del proveedor", () => {
     expect(initialDrafts([item()])[1]).toEqual({ quantity: "", note: "" });
   });
 
@@ -44,16 +43,6 @@ describe("closureMeasurements", () => {
     const drafts = { 1: { quantity: "80", note: "" }, 2: { quantity: "12", note: "" } };
     expect(Object.keys(measurementErrors(items, drafts))).toEqual(["1"]);
     expect(countDifferences(items, drafts)).toBe(1);
-  });
-
-  it("calcula la vista previa del finiquito con la medición del residente", () => {
-    const items = [item({ id: 1, contractedQuantity: 100 }), item({ id: 2, contractedQuantity: 12, unitPriceUsd: 50 })];
-    items[0].residentQuantity = 100;
-    items[1].residentQuantity = 8;
-    // 10000 − 3000 − (12−8)×50 = 6800
-    expect(previewFiniquito({ contractedTotal: 10000, advancePaid: 3000, items })).toBe(6800);
-    expect(previewFiniquito({ contractedTotal: null, advancePaid: 0, items })).toBeNull();
-    expect(previewFiniquito({ contractedTotal: 100, advancePaid: 500, items })).toBe(0);
   });
 
   it("arma el payload de cada etapa", () => {
