@@ -22,7 +22,8 @@ import Modal from "@/components/UI/Modal";
 import SummaryStat from "@/components/UI/SummaryStat";
 import Tooltip from "@/components/UI/Tooltip";
 import type { Project, Proposal, ProposalMaterialItem } from "@/types";
-import { apiDownload } from "@/services/api";
+import ProductLinesTable from "@/components/UI/ProductLinesTable";
+import { useAuthedImageCache } from "@/hooks/useAuthedImageCache";
 import { formatProposalDuration } from "@/views/AnalistasPanel/components/RegisterProposalModal";
 import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 import { useFrozenBsAmount } from "@/hooks/useFrozenBsAmount";
@@ -56,34 +57,30 @@ const WARRANTY_UNIT_LABEL: Record<string, string> = {
 };
 
 /** Miniatura de la imagen de un material — requiere auth (Bearer), por lo
- * que no puede ser un <img src> directo: se descarga como blob (mismo patrón
- * que DocumentPreviewModal) y se libera el object URL al desmontar. Un botón
- * de lupa abre la misma imagen ya descargada en grande, sin volver a pedirla. */
-function ProposalItemImage({ imagePath, authToken, alt, onExpand }: { imagePath: string; authToken: string; alt: string; onExpand: (blobUrl: string, alt: string) => void }) {
+ * que no puede ser un <img src> directo: se descarga como blob mediante el
+ * caché del modal (`useAuthedImageCache`), que limita las descargas
+ * simultáneas, evita repetirlas al volver de página y libera los object URLs
+ * al cerrar. Un botón de lupa abre la misma imagen ya descargada en grande. */
+type LoadImage = (imagePath: string, isCancelled?: () => boolean) => Promise<string>;
+
+function ProposalItemImage({ imagePath, loadImage, alt, onExpand }: { imagePath: string; loadImage: LoadImage; alt: string; onExpand: (blobUrl: string, alt: string) => void }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    let objectUrl: string | null = null;
     setFailed(false);
-
-    (async () => {
-      try {
-        const blob = await apiDownload(`/supplier-proposal-images/${imagePath.replace(/^supplier-proposal-images\//, "")}`, { token: authToken });
-        if (cancelled) return;
-        objectUrl = URL.createObjectURL(blob);
-        setBlobUrl(objectUrl);
-      } catch {
+    loadImage(imagePath, () => cancelled)
+      .then((url) => {
+        if (!cancelled) setBlobUrl(url);
+      })
+      .catch(() => {
         if (!cancelled) setFailed(true);
-      }
-    })();
-
+      });
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [imagePath, authToken]);
+  }, [imagePath, loadImage]);
 
   if (failed) {
     return (
@@ -108,7 +105,7 @@ function ProposalItemImage({ imagePath, authToken, alt, onExpand }: { imagePath:
       className="group relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-slate-100"
       aria-label={`Ver imagen de ${alt} en grande`}
     >
-      <img src={blobUrl} alt={alt} className="h-full w-full object-cover" />
+      <img src={blobUrl} alt={alt} loading="lazy" className="h-full w-full object-cover" />
       <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
         <Expand className="h-4 w-4 text-white" />
       </span>
@@ -116,13 +113,13 @@ function ProposalItemImage({ imagePath, authToken, alt, onExpand }: { imagePath:
   );
 }
 
-function ItemDetailBadges({ item, authToken, onExpandImage }: { item: EnrichedProposalMaterialItem; authToken: string; onExpandImage: (blobUrl: string, alt: string) => void }) {
+function ItemDetailBadges({ item, loadImage, onExpandImage }: { item: EnrichedProposalMaterialItem; loadImage: LoadImage; onExpandImage: (blobUrl: string, alt: string) => void }) {
   const hasEnrichedData = item.conditionStatus || item.warrantyDescription || item.imagePath;
   if (!hasEnrichedData) return null;
 
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-      {item.imagePath && <ProposalItemImage imagePath={item.imagePath} authToken={authToken} alt={item.materialName} onExpand={onExpandImage} />}
+      {item.imagePath && <ProposalItemImage imagePath={item.imagePath} loadImage={loadImage} alt={item.materialName} onExpand={onExpandImage} />}
       <div className="flex flex-wrap items-center gap-1.5">
         {item.conditionStatus && (
           <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
@@ -146,6 +143,7 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
   const isRenegotiation = proposal.origen === "RENEGOCIACION";
   const currency = proposal.quoteCurrency;
   const [expandedImage, setExpandedImage] = useState<{ blobUrl: string; alt: string } | null>(null);
+  const loadImage = useAuthedImageCache(authToken);
   const { convert, hasRates, isLoading: isLoadingRates, convertToModeUsd, usdLabel } = useCurrencyConversion();
   /** Valor de la oferta en el dólar activo (USD-BCV o USD-USDT según el switch). */
   const usdOf = (amountBase: number, amountOriginal?: number | null) => convertToModeUsd(amountBase, amountOriginal, proposal.quoteCurrency);
@@ -332,93 +330,124 @@ export default function InspectProposalModal({ project, proposal, authToken, onC
           </div>
         )}
 
-        {/* Detalle de materiales cotizados */}
-        <div className="rounded-lg border border-slate-200 overflow-hidden">
-          <div className="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-1.5">
+        {/* Detalle de materiales cotizados — tabla paginada: una oferta puede traer ~70 líneas. */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
             <Package className="h-3.5 w-3.5 text-slate-400" />
             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Detalle de Materiales Cotizados</span>
             {lineCurrency !== "USD" && <span className="ml-auto font-mono text-[9px] font-bold text-amber-600">Cotizado en {lineCurrency}</span>}
           </div>
           {materialItems.length === 0 ? (
-            <p className="px-3.5 py-4 text-center text-[10px] text-slate-400 italic">Sin detalle línea por línea para esta propuesta.</p>
+            <p className="rounded-lg border border-slate-200 px-3.5 py-4 text-center text-[10px] text-slate-400 italic">Sin detalle línea por línea para esta propuesta.</p>
           ) : (
-            <div className="max-h-96 overflow-y-auto overflow-x-auto">
-              <table className="w-full border-collapse text-left">
-                <thead className="sticky top-0 z-10">
-                  <tr className="border-b border-slate-100 bg-white text-[8px] font-bold uppercase tracking-wider text-slate-400">
-                    <th className="px-3 py-2">Material</th>
-                    <th className="px-3 py-2 text-center">Cant.</th>
-                    <th className="px-3 py-2">Unidad</th>
-                    <th className="px-3 py-2 text-right">Precio unit. ({lineCurrency})</th>
-                    <th className="px-3 py-2 text-right">Est. (USD)</th>
-                    <th className="px-3 py-2 text-center">Var.</th>
-                    <th className="px-3 py-2 text-right">Total ({lineCurrency})</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {materialItems.map((item, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2 align-top">
-                        <span className="font-semibold text-slate-700 text-[11px]">{item.materialName}</span>
-                        {item.notes && <span className="block text-[9px] text-slate-400 mt-0.5">{item.notes}</span>}
-                        <ItemDetailBadges item={item} authToken={authToken} onExpandImage={(blobUrl, alt) => setExpandedImage({ blobUrl, alt })} />
-                      </td>
-                      <td className="px-3 py-2 text-center font-mono font-bold text-slate-600 text-[11px] align-top">{item.quantity}</td>
-                      <td className="px-3 py-2 text-slate-500 font-medium text-[11px] align-top">{item.unit}</td>
-                      <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600 align-top">
-                        {fmtLine(item.unitPrice)}
-                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(item.unitPrice * fxToBase, item.unitPrice))} {usdLabel}</span>}
-                        <BsAmount amount={item.unitPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-500 align-top">
-                        {item.estimatedPriceUsd ? formatCurrency(item.estimatedPriceUsd) : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-center align-top">
-                        {item.variationPercent != null ? (
-                          <span
-                            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap ${
-                              item.variationDirection === 'increase'
-                                ? 'bg-danger-100 text-danger-700'
-                                : item.variationDirection === 'decrease'
-                                ? 'bg-success-100 text-success-700'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {item.variationPercent > 0 ? '+' : ''}{item.variationPercent.toFixed(1)}%
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-slate-300">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px] align-top">
-                        {fmtLine(item.totalPrice)}
-                        {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(item.totalPrice * fxToBase, item.totalPrice))} {usdLabel}</span>}
-                        <BsAmount amount={item.totalPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-200 bg-slate-50">
-                    <td colSpan={6} className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-500">
-                      Total materiales:
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                      {fmtLine(proposal.materialCostOriginal ?? proposal.materialCost)}
-                      {proposal.materialCostOriginal != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(proposal.materialCost, proposal.materialCostOriginal))} {usdLabel}</span>}
-                      <BsAmount
-                        amount={proposal.materialCostOriginal ?? proposal.materialCost}
-                        fromCode={proposal.materialCostOriginal != null ? lineCurrency : "USD"}
-                        convert={convert}
-                        hasRates={hasRates}
-                        isLoading={isLoadingRates}
-                        className="text-emerald-500/80"
-                      />
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            <ProductLinesTable
+              ariaLabel="Detalle de materiales cotizados"
+              items={materialItems}
+              rowKey={(_item, i) => i}
+              rowAlign="top"
+              maxHeight="32rem"
+              searchText={(item) => `${item.materialName} ${item.notes ?? ""}`}
+              searchPlaceholder="Buscar material…"
+              filters={[{ key: "increase", label: "Con aumento", predicate: (item) => item.variationDirection === "increase" }]}
+              columns={[
+                {
+                  key: "material",
+                  label: "Material",
+                  render: (item) => (
+                    <>
+                      <span className="font-semibold text-slate-700 text-[11px]">{item.materialName}</span>
+                      {item.notes && <span className="block text-[9px] text-slate-400 mt-0.5">{item.notes}</span>}
+                      <ItemDetailBadges item={item} loadImage={loadImage} onExpandImage={(blobUrl, alt) => setExpandedImage({ blobUrl, alt })} />
+                    </>
+                  ),
+                },
+                {
+                  key: "quantity",
+                  label: "Cant.",
+                  align: "center",
+                  className: "font-mono font-bold text-slate-600 text-[11px]",
+                  render: (item) => item.quantity,
+                },
+                {
+                  key: "unit",
+                  label: "Unidad",
+                  className: "text-slate-500 font-medium text-[11px]",
+                  render: (item) => item.unit,
+                },
+                {
+                  key: "unitPrice",
+                  label: `Precio unit. (${lineCurrency})`,
+                  align: "right",
+                  className: "font-mono text-[11px] text-slate-600",
+                  render: (item) => (
+                    <>
+                      {fmtLine(item.unitPrice)}
+                      {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(item.unitPrice * fxToBase, item.unitPrice))} {usdLabel}</span>}
+                      <BsAmount amount={item.unitPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} />
+                    </>
+                  ),
+                },
+                {
+                  key: "estimated",
+                  label: "Est. (USD)",
+                  align: "right",
+                  className: "font-mono text-[11px] text-slate-500",
+                  render: (item) => (item.estimatedPriceUsd ? formatCurrency(item.estimatedPriceUsd) : "—"),
+                },
+                {
+                  key: "variation",
+                  label: "Var.",
+                  align: "center",
+                  render: (item) =>
+                    item.variationPercent != null ? (
+                      <span
+                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap ${
+                          item.variationDirection === "increase"
+                            ? "bg-danger-100 text-danger-700"
+                            : item.variationDirection === "decrease"
+                              ? "bg-success-100 text-success-700"
+                              : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {item.variationPercent > 0 ? "+" : ""}
+                        {item.variationPercent.toFixed(1)}%
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-300">—</span>
+                    ),
+                },
+                {
+                  key: "total",
+                  label: `Total (${lineCurrency})`,
+                  align: "right",
+                  className: "font-mono font-bold text-emerald-700 text-[11px]",
+                  render: (item) => (
+                    <>
+                      {fmtLine(item.totalPrice)}
+                      {fxToBase != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(item.totalPrice * fxToBase, item.totalPrice))} {usdLabel}</span>}
+                      <BsAmount amount={item.totalPrice} fromCode={lineCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80" />
+                    </>
+                  ),
+                },
+              ]}
+              summary={
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">Total materiales:</span>
+                  <span className="text-right font-mono text-xs font-black text-emerald-700">
+                    {fmtLine(proposal.materialCostOriginal ?? proposal.materialCost)}
+                    {proposal.materialCostOriginal != null && <span className="block text-[9px] font-semibold text-amber-600">≈ {formatCurrency(usdOf(proposal.materialCost, proposal.materialCostOriginal))} {usdLabel}</span>}
+                    <BsAmount
+                      amount={proposal.materialCostOriginal ?? proposal.materialCost}
+                      fromCode={proposal.materialCostOriginal != null ? lineCurrency : "USD"}
+                      convert={convert}
+                      hasRates={hasRates}
+                      isLoading={isLoadingRates}
+                      className="text-emerald-500/80"
+                    />
+                  </span>
+                </div>
+              }
+            />
           )}
         </div>
 

@@ -48,6 +48,8 @@ export interface ProductLinesTableProps<T> {
   emptyMessage?: string;
   /** "dark" para las páginas públicas sobre fondo oscuro. Default "light". */
   tone?: "light" | "dark";
+  /** Alineación vertical del contenido de cada fila. Default "middle". */
+  rowAlign?: "top" | "middle";
   /** Describe la tabla a lectores de pantalla. */
   ariaLabel: string;
 }
@@ -97,6 +99,7 @@ export default function ProductLinesTable<T>({
   rowClassName,
   emptyMessage = "No hay productos que coincidan.",
   tone = "light",
+  rowAlign = "middle",
   ariaLabel,
 }: ProductLinesTableProps<T>) {
   const t = TONES[tone];
@@ -225,7 +228,7 @@ export default function ProductLinesTable<T>({
               visible.map(({ row, index }) => (
                 <tr key={rowKey(row, index)} className={rowClassName?.(row, index) ?? ""}>
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-3 py-2 align-middle ${ALIGN[col.align ?? "left"]} ${col.className ?? ""}`}>
+                    <td key={col.key} className={`px-3 py-2 ${rowAlign === "top" ? "align-top" : "align-middle"} ${ALIGN[col.align ?? "left"]} ${col.className ?? ""}`}>
                       {col.render(row, index)}
                     </td>
                   ))}
