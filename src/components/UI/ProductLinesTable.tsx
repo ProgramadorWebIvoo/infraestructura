@@ -6,7 +6,7 @@
 // nuevo), solo cuando cambia el buscador o el filtro. A `render` se le pasa el
 // índice original en `items`, que es lo que necesitan los updaters del padre.
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Search, X } from "lucide-react";
 import { PaginationBar } from "./Table";
 
@@ -86,6 +86,35 @@ const TONES = {
 const normalize = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 const ALIGN = { left: "text-left", center: "text-center", right: "text-right" } as const;
+
+interface ProductRowProps<T> {
+  row: T;
+  index: number;
+  columns: ProductColumn<T>[];
+  className: string;
+  testId?: string;
+  verticalAlign: "align-top" | "align-middle";
+}
+
+/**
+ * Fila memoizada: solo se vuelve a renderizar si cambia su dato (`row`), su índice, sus
+ * columnas o su clase. Como el padre reemplaza únicamente la fila editada (las demás
+ * conservan su referencia), escribir un precio re-renderiza 1 fila en lugar de toda la
+ * página. Requiere que quien llama memoice `columns` (useMemo) y sus manejadores
+ * (useCallback); si no, la fila simplemente se renderiza como antes.
+ */
+function ProductRowInner<T>({ row, index, columns, className, testId, verticalAlign }: ProductRowProps<T>) {
+  return (
+    <tr data-testid={testId} className={className}>
+      {columns.map((col) => (
+        <td key={col.key} className={`px-3 py-2 ${verticalAlign} ${ALIGN[col.align ?? "left"]} ${col.className ?? ""}`}>
+          {col.render(row, index)}
+        </td>
+      ))}
+    </tr>
+  );
+}
+const ProductRow = memo(ProductRowInner) as typeof ProductRowInner;
 
 export default function ProductLinesTable<T>({
   items,
@@ -229,13 +258,15 @@ export default function ProductLinesTable<T>({
               </tr>
             ) : (
               visible.map(({ row, index }) => (
-                <tr key={rowKey(row, index)} data-testid={rowTestId?.(row, index)} className={rowClassName?.(row, index) ?? ""}>
-                  {columns.map((col) => (
-                    <td key={col.key} className={`px-3 py-2 ${rowAlign === "top" ? "align-top" : "align-middle"} ${ALIGN[col.align ?? "left"]} ${col.className ?? ""}`}>
-                      {col.render(row, index)}
-                    </td>
-                  ))}
-                </tr>
+                <ProductRow
+                  key={rowKey(row, index)}
+                  row={row}
+                  index={index}
+                  columns={columns}
+                  className={rowClassName?.(row, index) ?? ""}
+                  testId={rowTestId?.(row, index)}
+                  verticalAlign={rowAlign === "top" ? "align-top" : "align-middle"}
+                />
               ))
             )}
           </tbody>

@@ -16,8 +16,8 @@ import Select from "@/components/UI/Select";
 import { RequiredMark, HelpHint } from "@/components/UI/HintSignals";
 import { useToast } from "@/components/UI/Toast";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
-import { sanitize, CONDITION_OPTIONS, DURATION_UNITS, type ItemRow, type PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
-import { isWarrantyDurationIncomplete, planBulkApply, type BulkPatch } from "@/views/PropuestaMaterialesPublica/itemStatus";
+import { sanitize, CONDITION_OPTIONS, DURATION_UNITS, type ItemPatch, type ItemRow, type PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
+import { isWarrantyDurationIncomplete, planBulkApply } from "@/views/PropuestaMaterialesPublica/itemStatus";
 import CatalogProductPicker from "./CatalogProductPicker";
 import ImageUploader from "./ImageUploader";
 
@@ -32,6 +32,8 @@ interface MaterialDetailPanelProps {
   hasPending: boolean;
   onUpdateItem: (index: number, field: keyof ItemRow, value: ItemRow[keyof ItemRow]) => void;
   onUpdateItemSpec: (index: number, specKey: string, value: string | number | boolean) => void;
+  /** Aplica varios cambios de una vez (una sola actualización de estado). */
+  onApplyPatches: (patches: ItemPatch[]) => void;
   onNavigate: (index: number) => void;
   onNextPending: () => void;
   onRemove: (index: number) => void;
@@ -53,6 +55,7 @@ export default function MaterialDetailPanel({
   hasPending,
   onUpdateItem,
   onUpdateItemSpec,
+  onApplyPatches,
   onNavigate,
   onNextPending,
   onRemove,
@@ -65,9 +68,7 @@ export default function MaterialDetailPanel({
   // Copiar condición y garantía de esta línea a las demás cotizadas que no las tienen.
   const bulkPlan = planBulkApply(items, index);
   const applyToOthers = () => {
-    bulkPlan.forEach(({ index: target, patch }) => {
-      (Object.keys(patch) as (keyof BulkPatch)[]).forEach((field) => onUpdateItem(target, field, patch[field] as ItemRow[keyof ItemRow]));
-    });
+    onApplyPatches(bulkPlan);
     showToast(`Condición y garantía aplicadas a ${bulkPlan.length} material${bulkPlan.length === 1 ? "" : "es"}.`, "success");
   };
 

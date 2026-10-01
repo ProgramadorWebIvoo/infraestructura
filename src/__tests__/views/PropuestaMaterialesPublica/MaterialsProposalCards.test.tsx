@@ -46,6 +46,13 @@ function Harness({ initial }: { initial: ItemRow[] }) {
       currencyCode="USD"
       onUpdateItem={updateItem}
       onUpdateItemSpec={() => {}}
+      onApplyPatches={(patches) =>
+        setItems((prev) => {
+          const next = [...prev];
+          for (const { index, patch } of patches) next[index] = { ...next[index], ...patch };
+          return next;
+        })
+      }
       onAddCustomItem={() =>
         setItems((prev) => [
           ...prev,

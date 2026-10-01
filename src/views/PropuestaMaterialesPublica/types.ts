@@ -35,6 +35,12 @@ export interface ItemRow extends Omit<SupplierMaterialProposalItem, "unitPrice" 
   categoryId?: number | null;
 }
 
+/** Cambio parcial a una línea, para aplicar varios a la vez (ver `applyItemPatches`). */
+export interface ItemPatch {
+  index: number;
+  patch: Partial<ItemRow>;
+}
+
 export type DurationUnit = "dias" | "semanas" | "meses";
 
 export const DURATION_UNITS: { value: DurationUnit; label: string; description: string }[] = [

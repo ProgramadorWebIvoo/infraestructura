@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Eye, FileText } from "lucide-react";
 import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
@@ -67,8 +67,11 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
   const needsPhoto = project ? editable && !hasResidentPhoto(project) : false;
   const canApprove = !!report && editable && !needsPhoto && Object.keys(errors).length === 0;
 
-  const handleDraftChange = (itemId: number, patch: Partial<MeasurementDraft>) =>
-    setDrafts((current) => ({ ...current, [itemId]: { ...current[itemId], ...patch } }));
+  // Estable: permite memoizar las columnas de la tabla de partidas (ver ClosureItemsTable).
+  const handleDraftChange = useCallback(
+    (itemId: number, patch: Partial<MeasurementDraft>) => setDrafts((current) => ({ ...current, [itemId]: { ...current[itemId], ...patch } })),
+    [],
+  );
 
   const run = async (action: () => Promise<unknown>, failMessage: string) => {
     setIsBusy(true);

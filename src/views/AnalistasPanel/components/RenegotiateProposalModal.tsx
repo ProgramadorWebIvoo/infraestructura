@@ -11,13 +11,13 @@
  * sobrescribe) — base para el futuro análisis inflacionario de productos.
  */
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Project, Proposal, ProposalMaterialItem, ProposalDurationUnit } from "@/types";
 import { AlertTriangle, ArrowRight, MessageSquareWarning, Plus, Trash2, Wallet } from "lucide-react";
 import { formatCurrency } from "@ivoo/shared";
 import Modal from "@/components/UI/Modal";
 import NumericInput from "@/components/UI/NumericInput";
-import ProductLinesTable from "@/components/UI/ProductLinesTable";
+import ProductLinesTable, { type ProductColumn } from "@/components/UI/ProductLinesTable";
 import Select from "@/components/UI/Select";
 import DatePicker from "@/components/UI/DatePicker";
 import Button from "@/components/UI/Button";
@@ -105,7 +105,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
   const motivoAnticipoFilled = motivoAnticipoExcedido.trim().length > 0;
   const canSubmit = motivoFilled && (!motivoAnticipoRequired || motivoAnticipoFilled);
 
-  const updateMaterialRow = (index: number, field: keyof MaterialItemRow, value: string | number) => {
+  const updateMaterialRow = useCallback((index: number, field: keyof MaterialItemRow, value: string | number) => {
     setMaterialRows((prev) => {
       const next = [...prev];
       const row = { ...next[index], [field]: value } as MaterialItemRow;
@@ -115,18 +115,124 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
       next[index] = row;
       return next;
     });
-  };
+  }, []);
 
-  const addCustomMaterialRow = () => {
+  const addCustomMaterialRow = useCallback(() => {
     setMaterialRows((prev) => [
       ...prev,
       { _id: `custom-${Date.now()}`, materialName: "", quantity: 1, unit: "", unitPrice: 0, totalPrice: 0, notes: "", isCustom: true },
     ]);
-  };
+  }, []);
 
-  const removeMaterialRow = (index: number) => {
+  const removeMaterialRow = useCallback((index: number) => {
     setMaterialRows((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
+
+  // Columnas memoizadas: con manejadores estables, escribir un precio re-renderiza solo la fila editada.
+  const materialColumns = useMemo<ProductColumn<MaterialItemRow>[]>(
+    () => [
+            {
+              key: "material",
+              label: "Material",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <input
+                    type="text"
+                    value={row.materialName}
+                    onChange={(e) => updateMaterialRow(index, "materialName", e.target.value)}
+                    placeholder="Nombre del material"
+                    maxLength={220}
+                    className="w-full min-w-30 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-semibold text-slate-800 outline-hidden focus:border-amber-400"
+                  />
+                ) : (
+                  <span className="font-semibold text-slate-700 text-[11px]">{row.materialName}</span>
+                ),
+            },
+            {
+              key: "quantity",
+              label: "Cant.",
+              align: "center",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <NumericInput
+                    value={row.quantity === 0 ? "" : row.quantity}
+                    onChange={(v) => updateMaterialRow(index, "quantity", v === "" ? 0 : v)}
+                    placeholder="0"
+                    integer
+                    className="w-16! px-2! py-1.5! text-center! text-[11px]!"
+                  />
+                ) : (
+                  <span className="font-mono font-bold text-slate-600 text-[11px]" title="Cantidad auditada en Auditoría — no editable">
+                    {row.quantity}
+                  </span>
+                ),
+            },
+            {
+              key: "unit",
+              label: "Unidad",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <input
+                    type="text"
+                    value={row.unit}
+                    onChange={(e) => updateMaterialRow(index, "unit", e.target.value)}
+                    placeholder="Und."
+                    maxLength={60}
+                    className="w-16 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-medium text-slate-700 outline-hidden focus:border-amber-400"
+                  />
+                ) : (
+                  <span className="text-slate-500 font-medium text-[11px]">{row.unit}</span>
+                ),
+            },
+            {
+              key: "unitPrice",
+              label: `Precio unit. (${quoteCurrency})`,
+              align: "right",
+              render: (row, index) => (
+                <NumericInput
+                  thousands
+                  value={row.unitPrice === 0 ? "" : row.unitPrice}
+                  onChange={(v) => updateMaterialRow(index, "unitPrice", v === "" ? 0 : v)}
+                  placeholder="0.00"
+                  className="w-28! px-2! py-1.5! text-right! text-[11px]! ml-auto"
+                />
+              ),
+            },
+            {
+              key: "total",
+              label: "Total",
+              align: "right",
+              className: "font-mono font-bold text-emerald-700 text-[11px]",
+              render: (row) =>
+                row.totalPrice > 0 ? (
+                  <>
+                    {formatCurrency(row.totalPrice)}
+                    <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
+                  </>
+                ) : (
+                  "—"
+                ),
+            },
+            {
+              key: "actions",
+              label: "",
+              align: "center",
+              width: "2.5rem",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <button
+                    type="button"
+                    onClick={() => removeMaterialRow(index)}
+                    className="rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-500 cursor-pointer"
+                    aria-label="Eliminar material"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                ) : null,
+            },
+          ],
+    [quoteCurrency, convert, hasRates, isLoadingRates, updateMaterialRow, removeMaterialRow],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,107 +352,7 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
               Agregar material
             </button>
           }
-          columns={[
-            {
-              key: "material",
-              label: "Material",
-              render: (row, index) =>
-                row.isCustom ? (
-                  <input
-                    type="text"
-                    value={row.materialName}
-                    onChange={(e) => updateMaterialRow(index, "materialName", e.target.value)}
-                    placeholder="Nombre del material"
-                    maxLength={220}
-                    className="w-full min-w-30 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-semibold text-slate-800 outline-hidden focus:border-amber-400"
-                  />
-                ) : (
-                  <span className="font-semibold text-slate-700 text-[11px]">{row.materialName}</span>
-                ),
-            },
-            {
-              key: "quantity",
-              label: "Cant.",
-              align: "center",
-              render: (row, index) =>
-                row.isCustom ? (
-                  <NumericInput
-                    value={row.quantity === 0 ? "" : row.quantity}
-                    onChange={(v) => updateMaterialRow(index, "quantity", v === "" ? 0 : v)}
-                    placeholder="0"
-                    integer
-                    className="w-16! px-2! py-1.5! text-center! text-[11px]!"
-                  />
-                ) : (
-                  <span className="font-mono font-bold text-slate-600 text-[11px]" title="Cantidad auditada en Auditoría — no editable">
-                    {row.quantity}
-                  </span>
-                ),
-            },
-            {
-              key: "unit",
-              label: "Unidad",
-              render: (row, index) =>
-                row.isCustom ? (
-                  <input
-                    type="text"
-                    value={row.unit}
-                    onChange={(e) => updateMaterialRow(index, "unit", e.target.value)}
-                    placeholder="Und."
-                    maxLength={60}
-                    className="w-16 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-medium text-slate-700 outline-hidden focus:border-amber-400"
-                  />
-                ) : (
-                  <span className="text-slate-500 font-medium text-[11px]">{row.unit}</span>
-                ),
-            },
-            {
-              key: "unitPrice",
-              label: `Precio unit. (${quoteCurrency})`,
-              align: "right",
-              render: (row, index) => (
-                <NumericInput
-                  thousands
-                  value={row.unitPrice === 0 ? "" : row.unitPrice}
-                  onChange={(v) => updateMaterialRow(index, "unitPrice", v === "" ? 0 : v)}
-                  placeholder="0.00"
-                  className="w-28! px-2! py-1.5! text-right! text-[11px]! ml-auto"
-                />
-              ),
-            },
-            {
-              key: "total",
-              label: "Total",
-              align: "right",
-              className: "font-mono font-bold text-emerald-700 text-[11px]",
-              render: (row) =>
-                row.totalPrice > 0 ? (
-                  <>
-                    {formatCurrency(row.totalPrice)}
-                    <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
-                  </>
-                ) : (
-                  "—"
-                ),
-            },
-            {
-              key: "actions",
-              label: "",
-              align: "center",
-              width: "2.5rem",
-              render: (row, index) =>
-                row.isCustom ? (
-                  <button
-                    type="button"
-                    onClick={() => removeMaterialRow(index)}
-                    className="rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-500 cursor-pointer"
-                    aria-label="Eliminar material"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                ) : null,
-            },
-          ]}
+          columns={materialColumns}
           summary={
             <div className="flex items-center justify-between gap-3">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">Total materiales:</span>

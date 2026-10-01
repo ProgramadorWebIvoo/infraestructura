@@ -68,8 +68,11 @@ export default function CierrePublico() {
   const itemErrors = items.map(validateClosureItem);
   const canSubmit = editable && photos.length > 0 && itemErrors.every((e) => e === null);
 
-  const updateItem = (id: number, patch: Partial<ClosureReportItem>) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  // Estable (solo actualización funcional): permite memoizar las columnas de la tabla de partidas.
+  const updateItem = useCallback(
+    (id: number, patch: Partial<ClosureReportItem>) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i))),
+    [],
+  );
 
   const uploadOne = async (file: File): Promise<boolean> => {
     if (!CLOSURE_PHOTO_MIMES.includes(file.type)) {
@@ -250,7 +253,7 @@ export default function CierrePublico() {
                 <h3 id="closure-items-title" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
                   Partidas ejecutadas
                 </h3>
-                <ClosureItemCards items={items} errors={itemErrors} editable={editable} onChange={updateItem} />
+                <ClosureItemCards items={items} editable={editable} onChange={updateItem} />
               </motion.section>
 
               <motion.section variants={itemVariants} className="space-y-2">

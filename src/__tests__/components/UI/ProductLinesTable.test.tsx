@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -115,6 +115,34 @@ describe("ProductLinesTable", () => {
     await userEvent.click(screen.getByRole("button", { name: "agregar" }));
     expect(screen.getByText("Línea nueva")).toBeInTheDocument();
     expect(screen.getByRole("searchbox")).toHaveValue("");
+  });
+
+  it("con columnas y manejadores estables, escribir en una fila re-renderiza solo esa fila", async () => {
+    const renders: Record<number, number> = {};
+    function Editable() {
+      const [lines, setLines] = useState(makeLines(30));
+      const setPrice = useCallback((index: number, price: number) => setLines((prev) => prev.map((l, i) => (i === index ? { ...l, price } : l))), []);
+      const columns = useMemo<ProductColumn<Line>[]>(
+        () => [
+          {
+            key: "price",
+            label: "Precio",
+            render: (row, index) => {
+              renders[row.id] = (renders[row.id] ?? 0) + 1;
+              return <input aria-label={`p-${row.id}`} value={row.price} onChange={(e) => setPrice(index, Number(e.target.value) || 0)} />;
+            },
+          },
+        ],
+        [setPrice],
+      );
+      return <ProductLinesTable items={lines} columns={columns} rowKey={(row) => row.id} pageSize={10} ariaLabel="memo" />;
+    }
+    render(<Editable />);
+    const before = { ...renders };
+    await userEvent.type(screen.getByLabelText("p-3"), "7");
+
+    expect(renders[3]).toBeGreaterThan(before[3]);
+    for (const id of [1, 2, 4, 5, 10]) expect(renders[id]).toBe(before[id]);
   });
 
   it("buscar vuelve a la primera página", async () => {

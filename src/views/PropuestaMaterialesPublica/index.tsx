@@ -10,7 +10,7 @@
  * bloque estático.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { useToast } from "@/components/UI/Toast";
@@ -27,6 +27,7 @@ import {
   type DurationUnit,
   type InvitationPublicInfo,
   type ItemRow,
+  type ItemPatch,
   type PublicCurrency,
   type PublicCatalogCategory,
 } from "./types";
@@ -144,7 +145,9 @@ export default function PropuestaMaterialesPublica() {
     load();
   }, [token]);
 
-  const updateItem = (index: number, field: keyof ItemRow, value: ItemRow[keyof ItemRow]) => {
+  // Manejadores estables (solo usan actualizaciones funcionales): permiten memoizar las
+  // columnas de la tabla y que escribir un precio re-renderice solo la fila editada.
+  const updateItem = useCallback((index: number, field: keyof ItemRow, value: ItemRow[keyof ItemRow]) => {
     setItems((prev) => {
       const next = [...prev];
       const row = { ...next[index], [field]: value };
@@ -156,17 +159,29 @@ export default function PropuestaMaterialesPublica() {
       next[index] = row;
       return next;
     });
-  };
+  }, []);
 
-  const updateItemSpec = (index: number, specKey: string, value: string | number | boolean) => {
+  /** Aplica varios cambios en UNA sola actualización de estado (en vez de una por campo y línea). */
+  const applyItemPatches = useCallback((patches: ItemPatch[]) => {
+    if (patches.length === 0) return;
+    setItems((prev) => {
+      const next = [...prev];
+      for (const { index, patch } of patches) {
+        if (next[index]) next[index] = { ...next[index], ...patch };
+      }
+      return next;
+    });
+  }, []);
+
+  const updateItemSpec = useCallback((index: number, specKey: string, value: string | number | boolean) => {
     setItems((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], technicalSpecs: { ...next[index].technicalSpecs, [specKey]: value } };
       return next;
     });
-  };
+  }, []);
 
-  const addCustomItem = () => {
+  const addCustomItem = useCallback(() => {
     setItems((prev) => [
       ...prev,
       {
@@ -183,11 +198,11 @@ export default function PropuestaMaterialesPublica() {
         technicalSpecs: {},
       },
     ]);
-  };
+  }, []);
 
-  const removeItem = (index: number) => {
+  const removeItem = useCallback((index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -376,6 +391,7 @@ export default function PropuestaMaterialesPublica() {
                 token={token ?? ""}
                 items={items}
                 onUpdateItem={updateItem}
+                onApplyPatches={applyItemPatches}
                 onUpdateItemSpec={updateItemSpec}
                 onAddCustomItem={addCustomItem}
                 onRemoveItem={removeItem}

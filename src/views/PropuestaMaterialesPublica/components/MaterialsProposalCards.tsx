@@ -19,7 +19,7 @@ import ProductLinesTable, { type ProductColumn } from "@/components/UI/ProductLi
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
 import { getItemStatus, type ItemStatus } from "@/views/PropuestaMaterialesPublica/itemStatus";
-import type { ItemRow, PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
+import type { ItemPatch, ItemRow, PublicCatalogCategory } from "@/views/PropuestaMaterialesPublica/types";
 import MaterialDetailPanel from "./MaterialDetailPanel";
 
 interface MaterialsProposalCardsProps {
@@ -27,6 +27,8 @@ interface MaterialsProposalCardsProps {
   items: ItemRow[];
   onUpdateItem: (index: number, field: keyof ItemRow, value: ItemRow[keyof ItemRow]) => void;
   onUpdateItemSpec: (index: number, specKey: string, value: string | number | boolean) => void;
+  /** Aplica varios cambios de una vez (una sola actualización de estado). */
+  onApplyPatches: (patches: ItemPatch[]) => void;
   onAddCustomItem: () => void;
   onRemoveItem: (index: number) => void;
   categories: PublicCatalogCategory[];
@@ -72,6 +74,7 @@ export default function MaterialsProposalCards({
   items,
   onUpdateItem,
   onUpdateItemSpec,
+  onApplyPatches,
   onAddCustomItem,
   onRemoveItem,
   categories,
@@ -80,7 +83,8 @@ export default function MaterialsProposalCards({
   const [detailIndex, setDetailIndex] = useState<number | null>(null);
   const warningColor = SEMANTIC_COLOR_MAP.warning;
 
-  const categoryFor = useCallback((item: ItemRow) => categories.find((c) => c.id === item.categoryId), [categories]);
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
+  const categoryFor = useCallback((item: ItemRow) => (item.categoryId == null ? undefined : categoriesById.get(item.categoryId)), [categoriesById]);
   const statusOf = useCallback((item: ItemRow) => getItemStatus(item, categoryFor(item)), [categoryFor]);
 
   const statuses = useMemo(() => items.map(statusOf), [items, statusOf]);
@@ -92,7 +96,7 @@ export default function MaterialsProposalCards({
     }),
     [statuses],
   );
-  const grandTotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
+  const grandTotal = useMemo(() => items.reduce((sum, i) => sum + i.totalPrice, 0), [items]);
 
   const nextMissingAfter = (from: number) => {
     for (let step = 1; step <= items.length; step++) {
@@ -108,12 +112,17 @@ export default function MaterialsProposalCards({
     setDetailIndex(items.length);
   };
 
-  const handleRemove = (index: number) => {
-    onRemoveItem(index);
-    setDetailIndex((current) => (current === null ? null : current === index ? null : current > index ? current - 1 : current));
-  };
+  const handleRemove = useCallback(
+    (index: number) => {
+      onRemoveItem(index);
+      setDetailIndex((current) => (current === null ? null : current === index ? null : current > index ? current - 1 : current));
+    },
+    [onRemoveItem],
+  );
 
-  const columns: ProductColumn<ItemRow>[] = [
+  // Memoizadas: con manejadores estables, escribir un precio re-renderiza solo la fila editada.
+  const columns = useMemo<ProductColumn<ItemRow>[]>(
+    () => [
     {
       key: "material",
       label: "Material",
@@ -179,7 +188,9 @@ export default function MaterialsProposalCards({
         </div>
       ),
     },
-  ];
+    ],
+    [currencyCode, onUpdateItem, handleRemove, statusOf, warningColor],
+  );
 
   const detailStatus = detailIndex !== null ? statuses[detailIndex] : undefined;
 
@@ -253,6 +264,7 @@ export default function MaterialsProposalCards({
           hasPending={counts.missing > (detailStatus === "missing" ? 1 : 0)}
           onUpdateItem={onUpdateItem}
           onUpdateItemSpec={onUpdateItemSpec}
+          onApplyPatches={onApplyPatches}
           onNavigate={setDetailIndex}
           onNextPending={() => setDetailIndex(nextMissingAfter(detailIndex))}
           onRemove={handleRemove}

@@ -1,11 +1,11 @@
+import { useMemo } from "react";
 import { AlertTriangle, TrendingDown, TrendingUp } from "lucide-react";
 import NumericInput from "@/components/UI/NumericInput";
 import ProductLinesTable, { type ProductColumn } from "@/components/UI/ProductLinesTable";
-import { isDecrease, isIncrease, type ClosureReportItem } from "@/components/ClosureReport/types";
+import { isDecrease, isIncrease, validateClosureItem, type ClosureReportItem } from "@/components/ClosureReport/types";
 
 interface ClosureItemCardsProps {
   items: ClosureReportItem[];
-  errors: (string | null)[];
   editable: boolean;
   onChange: (id: number, patch: Partial<ClosureReportItem>) => void;
 }
@@ -17,11 +17,15 @@ const BADGE = "mt-1 inline-flex items-center gap-1 rounded-full border border-am
  * oscuro): con ~70 partidas, una tarjeta por línea era una pared de campos. Paginada, con
  * buscador y filtros «con ajustes» / «sin justificar» para llegar rápido a lo pendiente.
  */
-export default function ClosureItemCards({ items, errors, editable, onChange }: ClosureItemCardsProps) {
-  const errorById = new Map(items.map((item, index) => [item.id, editable ? errors[index] : null]));
-  const hasAdjustment = (item: ClosureReportItem) => isDecrease(item) || isIncrease(item);
+const hasAdjustment = (item: ClosureReportItem) => isDecrease(item) || isIncrease(item);
 
-  const columns: ProductColumn<ClosureReportItem>[] = [
+export default function ClosureItemCards({ items, editable, onChange }: ClosureItemCardsProps) {
+  // El error de una partida depende solo de la propia partida: se calcula por fila, sin recibir un
+  // array nuevo en cada tecla. Con `onChange` estable, las columnas se memoizan y escribir en una
+  // partida re-renderiza solo esa fila.
+  const errorOf = (item: ClosureReportItem) => (editable ? validateClosureItem(item) : null);
+
+  const columns = useMemo<ProductColumn<ClosureReportItem>[]>(() => [
     {
       key: "name",
       label: "Partida",
@@ -74,7 +78,7 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
       key: "justification",
       label: "Justificación",
       render: (item) => {
-        const error = errorById.get(item.id);
+        const error = editable ? validateClosureItem(item) : null;
         return (
           <div className="min-w-52 space-y-1">
             <input
@@ -99,7 +103,7 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
         );
       },
     },
-  ];
+  ], [editable, onChange]);
 
   return (
     <ProductLinesTable
@@ -114,9 +118,9 @@ export default function ClosureItemCards({ items, errors, editable, onChange }: 
       searchPlaceholder="Buscar partida…"
       filters={[
         { key: "adjusted", label: "Con ajustes", predicate: hasAdjustment },
-        ...(editable ? [{ key: "unjustified", label: "Sin justificar", predicate: (item: ClosureReportItem) => Boolean(errorById.get(item.id)) }] : []),
+        ...(editable ? [{ key: "unjustified", label: "Sin justificar", predicate: (item: ClosureReportItem) => Boolean(errorOf(item)) }] : []),
       ]}
-      rowClassName={(item) => (errorById.get(item.id) ? "bg-amber-400/5" : "")}
+      rowClassName={(item) => (errorOf(item) ? "bg-amber-400/5" : "")}
       emptyMessage="Ninguna partida coincide con la búsqueda."
     />
   );
