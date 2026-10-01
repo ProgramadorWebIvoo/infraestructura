@@ -400,9 +400,9 @@ export default function BidEvaluationSection({
         <div className="min-w-0">
           <div className="font-bold text-slate-800 truncate">{p.title}</div>
           <div className="text-[10px] text-slate-400 font-medium truncate">{p.location}</div>
+          {p.returnInfo && <ReturnedBadge info={p.returnInfo} className="mt-1 text-[9px]" />}
         </div>
       ),
-          {p.returnInfo && <ReturnedBadge info={p.returnInfo} className="mt-1 text-[9px]" />}
     },
     {
       key: "proposals",
