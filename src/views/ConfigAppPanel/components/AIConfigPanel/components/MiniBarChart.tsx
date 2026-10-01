@@ -53,13 +53,13 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
     const slice = viewMode === "daily" ? data.slice(-14) : data.slice(-7);
     return {
       currentData: slice,
-      maxVal: Math.max(...slice.map((d) => d.total_tokens), 1),
+      maxVal: Math.max(...slice.map((d) => d.total_tokens ?? 0), 1),
     };
   }, [data, viewMode]);
 
   const chartLabel = useMemo(() => {
     const lines = currentData
-      .map((d) => `${d.date.slice(5)}: ${d.total_tokens.toLocaleString()} tokens`)
+      .map((d) => `${d.date.slice(5)}: ${(d.total_tokens ?? 0).toLocaleString()} tokens`)
       .join(", ");
     return `Gráfico de uso de tokens. ${lines}. Máximo: ${maxVal.toLocaleString()}`;
   }, [currentData, maxVal]);
@@ -87,9 +87,9 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
           /* ── Horizontal bar chart ── */
           <div className="space-y-1.5">
             {currentData.map((d, i) => {
-              const pct = Math.max(1, (d.total_tokens / maxVal) * 100);
+              const pct = Math.max(1, ((d.total_tokens ?? 0) / maxVal) * 100);
               const shortDate = d.date.slice(5);
-              const tokensStr = d.total_tokens.toLocaleString();
+              const tokensStr = (d.total_tokens ?? 0).toLocaleString();
 
               return (
                 <div key={d.date} className="flex items-center gap-2 text-[10px]">
@@ -115,10 +115,10 @@ export default function MiniBarChart({ data }: { data: AiUsageDaily[] }) {
           /* ── Vertical bar chart ── */
           <div className="flex items-end gap-1 h-32 pb-4">
             {currentData.map((d, i) => {
-              const pct = Math.max(0, (d.total_tokens / maxVal) * 100);
-              const barHeightPx = Math.max(3, (d.total_tokens / maxVal) * 96); // 96px = alto útil de h-32
+              const pct = Math.max(0, ((d.total_tokens ?? 0) / maxVal) * 100);
+              const barHeightPx = Math.max(3, ((d.total_tokens ?? 0) / maxVal) * 96); // 96px = alto útil de h-32
               const shortDate = d.date.slice(5);
-              const tokensStr = d.total_tokens.toLocaleString();
+              const tokensStr = (d.total_tokens ?? 0).toLocaleString();
 
               return (
                 <div key={d.date} className="flex flex-col items-center gap-1 flex-1 min-w-0 h-full">

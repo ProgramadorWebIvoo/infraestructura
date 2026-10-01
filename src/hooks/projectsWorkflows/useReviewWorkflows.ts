@@ -6,6 +6,12 @@
  * rechazo/reenvío (Auditoría), reevaluación (Procura ↔ Auditoría)
  * y eliminación de adjuntos. Extraído de useProjectsWorkflows.ts (antes 795
  * líneas / 22 handlers en un solo archivo — ver graphify toxic hotspot).
+ *
+ * Los procesos que llevan adjuntos (crear, reenviar, rechazar, reevaluar) los
+ * mandan en la MISMA petición que el proceso: el backend los guarda juntos en
+ * una sola transacción, así que un archivo rechazado (código embebido, tipo,
+ * tamaño) tumba el proceso completo — nunca queda un proceso registrado sin
+ * sus archivos.
  */
 
 import { useCallback } from "react";
@@ -14,7 +20,7 @@ import { ProjectStatus } from "@/types";
 import type { NewProjectPayload, ResubmitProjectPayload } from "@/utils/projectLocation";
 import { apiFetch } from "@/services/api";
 import { getErrorMessage, logError } from "@/services/logger";
-import { describeUploadFailures, uploadDocumentGroup, type UploadDocumentGroupResult, type WorkflowContext } from "./shared";
+import { buildProcessBody, settleAttachments, type ProjectWithAttachments, type WorkflowContext } from "./shared";
 
 export function useReviewWorkflows({
   authTokenRef,
@@ -22,14 +28,7 @@ export function useReviewWorkflows({
   syncProjectRef,
   optimisticUpdate,
 }: WorkflowContext) {
-  /**
-   * Orquesta 2 fases desde la perspectiva de la UX (un solo submit): (1)
-   * crea el proyecto con datos+materiales vía JSON, (2) sube los grupos de
-   * archivos no vacíos vía multipart reutilizando el endpoint de documentos
-   * ya existente, (3) refresca el proyecto completo. El proyecto ya existe
-   * tras (1) — no hay rollback si falla algún grupo de archivos; se reporta
-   * como éxito parcial (warning), no como error total.
-   */
+  /** Crea la obra con sus adjuntos; si un archivo es rechazado no se crea nada. */
   const handleAddProject = useCallback(
     async (
       newProj: NewProjectPayload,
@@ -39,45 +38,20 @@ export function useReviewWorkflows({
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
 
-      let project: Project;
       try {
-        project = await apiFetch<Project>("/projects", {
+        const result = await apiFetch<ProjectWithAttachments>("/projects", {
           method: "POST",
           token,
-          body: JSON.stringify(newProj),
+          body: buildProcessBody(newProj, files),
         });
-        sync(project);
+        sync(settleAttachments(show, result));
+        show("Petición de Infraestructura registrada con éxito y enviada a Auditoría.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
       } catch (error) {
         logError("handleAddProject", error);
-        show("No se pudo registrar la obra en Laravel.", "error");
+        show(`No se pudo registrar la obra. ${getErrorMessage(error, "")}`.trim(), "error");
         return { ok: false, partial: false, failedGroups: [] };
       }
-
-      const results = await Promise.all([
-        uploadDocumentGroup(project.id, files.photos, "FOTO", "fotos", token, "handleAddProject:upload:FOTO"),
-        uploadDocumentGroup(project.id, files.documents, "CALC", "documentos", token, "handleAddProject:upload:CALC"),
-        uploadDocumentGroup(project.id, files.plans, "PLANO", "planos", token, "handleAddProject:upload:PLANO"),
-      ]);
-      const failedGroups = results.filter(r => r.failedGroup !== null);
-      const optimizedCount = results.reduce((sum, r) => sum + r.optimizedCount, 0);
-
-      try {
-        const refreshed = await apiFetch<Project>(`/projects/${project.id}`, { token });
-        sync(refreshed);
-      } catch (error) {
-        logError("handleAddProject:refresh", error);
-      }
-
-      if (failedGroups.length === 0) {
-        show("Petición de Infraestructura registrada con éxito y enviada a Auditoría.", "success");
-        if (optimizedCount > 0) {
-          show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
-        }
-        return { ok: true, partial: false, failedGroups: [] };
-      }
-
-      show(describeUploadFailures(failedGroups), "warning");
-      return { ok: true, partial: true, failedGroups: failedGroups.map(g => g.failedGroup as string) };
     },
     [authTokenRef, showToastRef, syncProjectRef],
   );
@@ -107,10 +81,9 @@ export function useReviewWorkflows({
   );
 
   /** Rechaza la petición inicial (antes de revisión de planos) — distinto de
-   * handleRejectProposals (Procura, rechaza el cuadro comparativo). Mismo
-   * shape de dos fases que handleAddProject/handleResubmitProject cuando hay
-   * correcciones que adjuntar (JSON de rechazo + upload multipart opcional
-   * + refetch), para que sync() traiga los documentos CORRECCION nuevos. */
+   * handleRejectProposals (Procura, rechaza el cuadro comparativo). Las
+   * correcciones opcionales viajan en la misma petición: si un archivo es
+   * rechazado, la petición no se rechaza. */
   const handleRejectProject = useCallback(
     async (
       projectId: string,
@@ -124,123 +97,67 @@ export function useReviewWorkflows({
 
       const previous = optimisticUpdate(projectId, { status: ProjectStatus.RECHAZADO_AUDITORIA });
       try {
-        const project = await apiFetch<Project>(`/projects/${projectId}/reject-project`, {
+        const result = await apiFetch<ProjectWithAttachments>(`/projects/${projectId}/reject-project`, {
           method: "POST",
           token,
-          body: JSON.stringify({ reason, observations: observations || undefined }),
+          body: buildProcessBody({ reason, observations: observations || undefined }, { files: correctionFiles }),
         });
-        sync(project);
+        sync(settleAttachments(show, result));
+        show(
+          correctionFiles.length > 0
+            ? "Petición rechazada y correcciones adjuntadas correctamente."
+            : "Petición rechazada correctamente.",
+          "success",
+        );
+        return { ok: true, partial: false, failedGroups: [] };
       } catch (error) {
         logError("handleRejectProject", error);
         if (previous) sync(previous);
-        show("No se pudo rechazar la petición.", "error");
+        show(`No se pudo rechazar la petición. ${getErrorMessage(error, "")}`.trim(), "error");
         return { ok: false, partial: false, failedGroups: [] };
-      }
-
-      if (correctionFiles.length === 0) {
-        show("Petición rechazada correctamente.", "success");
-        return { ok: true, partial: false, failedGroups: [] };
-      }
-
-      try {
-        const form = new FormData();
-        form.append("document_type", "CORRECCION");
-        correctionFiles.forEach(f => form.append("files[]", f));
-        await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-
-        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
-        sync(refreshed);
-        show("Petición rechazada y correcciones adjuntadas correctamente.", "success");
-        return { ok: true, partial: false, failedGroups: [] };
-      } catch (error) {
-        logError("handleRejectProject:uploadCorrections", error);
-        show(
-          getErrorMessage(error, "Petición rechazada, pero no se pudieron adjuntar las correcciones."),
-          "warning",
-        );
-        return { ok: true, partial: true, failedGroups: ["correcciones"] };
       }
     },
     [authTokenRef, showToastRef, syncProjectRef, optimisticUpdate],
   );
 
   /** Reenvía una petición previamente rechazada (mismo Project.id) con los campos
-   * corregidos — mismo shape de dos fases que handleAddProject (JSON + upload de
-   * adjuntos nuevos + refetch), pero contra /resubmit en vez de crear un proyecto.
+   * corregidos, contra /resubmit en vez de crear un proyecto. Los adjuntos viajan
+   * en la misma petición: si alguno es rechazado no se reenvía nada y la petición
+   * sigue rechazada, lista para corregir y reintentar.
    *
    * `existingDocuments` son los adjuntos vivos (no marcados para eliminar) que
    * el proyecto ya tenía antes de este reenvío. `versionReplacements` son
    * archivos elegidos EXPLÍCITAMENTE por el usuario (botón "Nueva versión" por
    * fila en AttachmentsSection) como reemplazo de un documento puntual — cada
-   * uno sube con `new_version_of` fijo al id de esa fila, sin adivinar. Los 3
-   * grupos de `files` (fotos/documentos/planos) son siempre archivos nuevos
-   * sin vínculo, nunca versionan nada existente. */
+   * uno sube con el id de esa fila, sin adivinar. Los 3 grupos de `files`
+   * (fotos/documentos/planos) son siempre archivos nuevos sin vínculo, nunca
+   * versionan nada existente. */
   const handleResubmitProject = useCallback(
     async (
       projectId: string,
       updated: ResubmitProjectPayload,
       files: { photos: File[]; documents: File[]; plans: File[] },
-      existingDocuments: ProjectDocument[] = [],
+      _existingDocuments: ProjectDocument[] = [],
       versionReplacements: { documentId: number; documentType: ProjectDocument["documentType"]; file: File }[] = [],
     ): Promise<{ ok: boolean; partial: boolean; failedGroups: string[] }> => {
       const token = authTokenRef.current;
       const show = showToastRef.current;
       const sync = syncProjectRef.current;
 
-      let project: Project;
       try {
-        project = await apiFetch<Project>(`/projects/${projectId}/resubmit`, {
+        const result = await apiFetch<ProjectWithAttachments>(`/projects/${projectId}/resubmit`, {
           method: "POST",
           token,
-          body: JSON.stringify(updated),
+          body: buildProcessBody(updated, files, versionReplacements),
         });
-        sync(project);
+        sync(settleAttachments(show, result));
+        show("Petición corregida y reenviada a Auditoría.", "success");
+        return { ok: true, partial: false, failedGroups: [] };
       } catch (error) {
         logError("handleResubmitProject", error);
-        show("No se pudo reenviar la petición corregida.", "error");
+        show(`No se pudo reenviar la petición corregida. ${getErrorMessage(error, "")}`.trim(), "error");
         return { ok: false, partial: false, failedGroups: [] };
       }
-
-      const uploadReplacement = async (documentId: number, documentType: ProjectDocument["documentType"], file: File): Promise<UploadDocumentGroupResult> => {
-        const form = new FormData();
-        form.append("document_type", documentType);
-        form.append("new_version_of", String(documentId));
-        form.append("files[]", file);
-        try {
-          const saved = await apiFetch<ProjectDocument[]>(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-          return { failedGroup: null, optimizedCount: saved.filter(d => d.optimized).length };
-        } catch (error) {
-          logError(`handleResubmitProject:uploadReplacement:${documentId}`, error);
-          return { failedGroup: `nueva versión de ${file.name}`, errorMessage: getErrorMessage(error), optimizedCount: 0 };
-        }
-      };
-
-      const results = await Promise.all([
-        uploadDocumentGroup(projectId, files.photos, "FOTO", "fotos", token, "handleResubmitProject:upload:FOTO"),
-        uploadDocumentGroup(projectId, files.documents, "CALC", "documentos", token, "handleResubmitProject:upload:CALC"),
-        uploadDocumentGroup(projectId, files.plans, "PLANO", "planos", token, "handleResubmitProject:upload:PLANO"),
-        ...versionReplacements.map((r) => uploadReplacement(r.documentId, r.documentType, r.file)),
-      ]);
-      const failedGroups = results.filter(r => r.failedGroup !== null);
-      const optimizedCount = results.reduce((sum, r) => sum + r.optimizedCount, 0);
-
-      try {
-        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
-        sync(refreshed);
-      } catch (error) {
-        logError("handleResubmitProject:refresh", error);
-      }
-
-      if (failedGroups.length === 0) {
-        show("Petición corregida y reenviada a Auditoría.", "success");
-        if (optimizedCount > 0) {
-          show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
-        }
-        return { ok: true, partial: false, failedGroups: [] };
-      }
-
-      show(describeUploadFailures(failedGroups), "warning");
-      return { ok: true, partial: true, failedGroups: failedGroups.map(g => g.failedGroup as string) };
     },
     [authTokenRef, showToastRef, syncProjectRef],
   );
@@ -267,9 +184,9 @@ export function useReviewWorkflows({
   );
 
   /** Procura devuelve a Auditoría, con motivo obligatorio, un expediente
-   * recién llegado (REVISADO_AUDITORIA) antes de autorizar inversión — mismo
-   * shape de dos fases que handleRejectProject (JSON de motivo + upload
-   * multipart opcional de evidencia + refetch). */
+   * recién llegado (REVISADO_AUDITORIA) antes de autorizar inversión. La
+   * evidencia opcional viaja en la misma petición: si un archivo es
+   * rechazado, el expediente no cambia de estado. */
   const handleSendToReevaluation = useCallback(
     async (
       projectId: string,
@@ -283,41 +200,24 @@ export function useReviewWorkflows({
 
       const previous = optimisticUpdate(projectId, { status: ProjectStatus.EN_REEVALUACION_AUDITORIA });
       try {
-        const project = await apiFetch<Project>(`/projects/${projectId}/send-to-reevaluation`, {
+        const result = await apiFetch<ProjectWithAttachments>(`/projects/${projectId}/send-to-reevaluation`, {
           method: "POST",
           token,
-          body: JSON.stringify({ reason, observations: observations || undefined }),
+          body: buildProcessBody({ reason, observations: observations || undefined }, { files: evidenceFiles }),
         });
-        sync(project);
+        sync(settleAttachments(show, result));
+        show(
+          evidenceFiles.length > 0
+            ? "Expediente enviado a reevaluación y evidencia adjuntada correctamente."
+            : "Expediente enviado a reevaluación de Auditoría.",
+          "success",
+        );
+        return { ok: true, partial: false, failedGroups: [] };
       } catch (error) {
         logError("handleSendToReevaluation", error);
         if (previous) sync(previous);
-        show("No se pudo enviar el expediente a reevaluación.", "error");
+        show(`No se pudo enviar el expediente a reevaluación. ${getErrorMessage(error, "")}`.trim(), "error");
         return { ok: false, partial: false, failedGroups: [] };
-      }
-
-      if (evidenceFiles.length === 0) {
-        show("Expediente enviado a reevaluación de Auditoría.", "success");
-        return { ok: true, partial: false, failedGroups: [] };
-      }
-
-      try {
-        const form = new FormData();
-        form.append("document_type", "REEVALUACION");
-        evidenceFiles.forEach(f => form.append("files[]", f));
-        await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-
-        const refreshed = await apiFetch<Project>(`/projects/${projectId}`, { token });
-        sync(refreshed);
-        show("Expediente enviado a reevaluación y evidencia adjuntada correctamente.", "success");
-        return { ok: true, partial: false, failedGroups: [] };
-      } catch (error) {
-        logError("handleSendToReevaluation:uploadEvidence", error);
-        show(
-          getErrorMessage(error, "Expediente enviado a reevaluación, pero no se pudo adjuntar la evidencia."),
-          "warning",
-        );
-        return { ok: true, partial: true, failedGroups: ["evidencia"] };
       }
     },
     [authTokenRef, showToastRef, syncProjectRef, optimisticUpdate],

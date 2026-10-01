@@ -115,10 +115,10 @@ function ProviderUsageBar({ provider }: { provider: ProviderUsage }) {
           {PROVIDER_LABELS[provider.provider.provider] ?? provider.provider.provider}
         </span>
         <span className="font-mono text-[11px] font-black text-text-primary">
-          {provider.provider.total_tokens.toLocaleString()} tokens
+          {(provider.provider.total_tokens ?? 0).toLocaleString()} tokens
         </span>
       </div>
-      <Tooltip content={`${(provider.pctOfTotal * 100).toFixed(1)}% del total de tokens — ${provider.provider.total_tokens.toLocaleString()} tokens`} placement="top">
+      <Tooltip content={`${(provider.pctOfTotal * 100).toFixed(1)}% del total de tokens — ${(provider.provider.total_tokens ?? 0).toLocaleString()} tokens`} placement="top">
         <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised cursor-help">
           {/* scaleX en vez de width: evita layout/reflow en cada frame. */}
           <motion.div
@@ -156,7 +156,7 @@ export default function UsageDashboard({
   const providersWithShare: ProviderUsage[] =
     usage?.byProvider.map((p) => ({
       provider: p,
-      pctOfTotal: totalTokens > 0 ? p.total_tokens / totalTokens : 0,
+      pctOfTotal: totalTokens > 0 ? (p.total_tokens ?? 0) / totalTokens : 0,
     })) ?? [];
 
   const info = SEMANTIC_COLOR_MAP.info;

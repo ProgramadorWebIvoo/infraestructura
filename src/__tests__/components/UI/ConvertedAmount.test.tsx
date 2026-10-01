@@ -17,19 +17,19 @@ describe("ConvertedAmount", () => {
   it("monto nativo en USD: solo el valor y los Bs., sin 'Cotizado'", () => {
     render(<ConvertedAmount amountBase={100} quoteCurrency="USD" fxRateToBase={1} />);
 
-    expect(screen.getByText("$100,00")).toBeInTheDocument();
+    expect(screen.getByText("$100.00")).toBeInTheDocument();
     expect(screen.queryByText(/Cotizado/)).not.toBeInTheDocument();
   });
 
   it("oferta en USDT: muestra el equivalente USD-BCV, el monto cotizado y sigue al switch", () => {
     // 1 USDT = 1,25 USD-BCV → 1.500 base = 1.200 USDT
     const { rerender } = render(<ConvertedAmount amountBase={1500} quoteCurrency="USDT" fxRateToBase={1.25} />);
-    expect(screen.getByText("$1.500,00")).toBeInTheDocument();
+    expect(screen.getByText("$1,500.00")).toBeInTheDocument();
     expect(screen.getByText(/Cotizado:/)).toBeInTheDocument();
 
     useUsdRateModeStore.setState({ mode: "USDT" });
     rerender(<ConvertedAmount amountBase={1500} quoteCurrency="USDT" fxRateToBase={1.25} />);
-    expect(screen.getByText("$1.200,00")).toBeInTheDocument();
+    expect(screen.getByText("$1,200.00")).toBeInTheDocument();
   });
 
   it("awardedProposalOf devuelve la propuesta seleccionada o null", () => {

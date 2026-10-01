@@ -44,7 +44,6 @@ export interface ContractorDocumentCompleteness {
 
 export const CONTRACTOR_DOCUMENT_ACCEPT = ".pdf,.jpg,.jpeg,.png";
 export const CONTRACTOR_DOCUMENT_EXTENSIONS_LABEL = "PDF, JPG o PNG";
-export const CONTRACTOR_DOCUMENT_MAX_BYTES = 25 * 1024 * 1024;
 
 /** Roles que pueden cargar, reemplazar y eliminar documentos (espejo de las rutas del backend). */
 const DOCUMENT_MANAGER_ROLES = ["ADMIN", "SUPERADMIN", "CATALOGOS"];

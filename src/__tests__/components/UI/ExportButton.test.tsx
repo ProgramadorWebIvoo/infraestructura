@@ -108,7 +108,9 @@ describe("ExportButton — CSV", () => {
 // Excel (XLSX real vía write-excel-file)
 // ---------------------------------------------------------------------------
 
-describe("ExportButton — Excel", () => {
+// Timeout ampliado: el primer test paga la carga en frío de write-excel-file (import dinámico),
+// que bajo la suite completa en paralelo supera los 5000ms por defecto.
+describe("ExportButton — Excel", { timeout: 20_000 }, () => {
   it("descarga un XLSX real: ZIP con partes OOXML, sharedStrings y contenido escapado", async () => {
     const cap = captureDownload();
 
@@ -122,7 +124,7 @@ describe("ExportButton — Excel", () => {
     // el handler es async: esperar a que se genere y descargue el blob
     // timeout explícito: generar el XLSX real (write-excel-file, ZIP+XML)
     // bajo la suite completa en paralelo puede superar el default de 1000ms.
-    await vi.waitFor(() => expect(cap.createObjectUrlSpy).toHaveBeenCalled(), { timeout: 5000 });
+    await vi.waitFor(() => expect(cap.createObjectUrlSpy).toHaveBeenCalled(), { timeout: 15000 });
 
     expect(cap.getAnchor().download).toBe("master.xlsx");
     expect(cap.getBlob().type).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

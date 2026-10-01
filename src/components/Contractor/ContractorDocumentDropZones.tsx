@@ -12,9 +12,9 @@ import { RequiredMark } from "@/components/UI/HintSignals";
 import {
   CONTRACTOR_DOCUMENT_ACCEPT,
   CONTRACTOR_DOCUMENT_EXTENSIONS_LABEL,
-  CONTRACTOR_DOCUMENT_MAX_BYTES,
   type ContractorDocumentType,
 } from "@/services/contractorDocuments";
+import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
 
 interface ContractorDocumentDropZonesProps {
   types: ContractorDocumentType[];
@@ -27,6 +27,7 @@ interface ContractorDocumentDropZonesProps {
 }
 
 export default function ContractorDocumentDropZones({ types, files, onChange, idPrefix, columns = 1, onFileRejected }: ContractorDocumentDropZonesProps) {
+  const { maxFileSizeBytes } = useAppGroupSettings();
   return (
     <div className={columns === 2 ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "space-y-3"}>
       {types.map((type) => {
@@ -40,7 +41,7 @@ export default function ContractorDocumentDropZones({ types, files, onChange, id
             label={type.label}
             accept={CONTRACTOR_DOCUMENT_ACCEPT}
             extensionsLabel={CONTRACTOR_DOCUMENT_EXTENSIONS_LABEL}
-            maxSizeBytes={CONTRACTOR_DOCUMENT_MAX_BYTES}
+            maxSizeBytes={maxFileSizeBytes}
             maxFileCount={1}
             color="sky"
             icon={<FileText className="h-5 w-5" />}

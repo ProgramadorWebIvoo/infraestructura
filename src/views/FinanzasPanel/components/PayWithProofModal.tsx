@@ -15,6 +15,7 @@ import Modal from "@/components/UI/Modal";
 import Spinner from "@/components/UI/Spinner";
 import FileDropZone from "@/components/UI/FileDropZone";
 import { RequiredMark } from "@/components/UI/HintSignals";
+import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
 
 interface PayWithProofModalProps {
   isOpen: boolean;
@@ -42,9 +43,6 @@ const VARIANT_STYLES = {
   info: { icon: CheckCircle, iconColor: "sky" as const, confirmBg: "bg-sky-600 hover:bg-sky-700 focus:ring-sky-500", badge: "Confirmación" },
 };
 
-/** Tamaño máximo razonable para un comprobante escaneado/foto: 10 MB. */
-const MAX_PROOF_SIZE_BYTES = 10 * 1024 * 1024;
-
 export default function PayWithProofModal({
   isOpen,
   onClose,
@@ -61,6 +59,7 @@ export default function PayWithProofModal({
   onProofFilesChange,
   onFileRejected,
 }: PayWithProofModalProps) {
+  const { maxFileSizeBytes } = useAppGroupSettings();
   const styles = VARIANT_STYLES[variant];
   const Icon = styles.icon;
   const canConfirm = proofFiles.length > 0 && !isLoading && !confirmDisabled;
@@ -111,7 +110,7 @@ export default function PayWithProofModal({
         fileIcon={<Paperclip className="h-3.5 w-3.5" />}
         required
         requiredIndicator={<RequiredMark filled={proofFiles.length > 0} />}
-        maxSizeBytes={MAX_PROOF_SIZE_BYTES}
+        maxSizeBytes={maxFileSizeBytes}
         maxFileCount={1}
         onFileRejected={onFileRejected}
       />

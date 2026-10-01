@@ -11,9 +11,7 @@
  */
 
 import { useCallback, useRef } from "react";
-import type { Project, ProjectDocument } from "@/types";
-import { apiFetch } from "@/services/api";
-import { getErrorMessage, logError } from "@/services/logger";
+import type { Project } from "@/types";
 import type { ShowToast } from "../useProjects";
 
 export interface UseProjectsWorkflowsOptions {
@@ -72,57 +70,46 @@ export function useWorkflowContext(options: UseProjectsWorkflowsOptions): Workfl
   return { authTokenRef, showToastRef, syncProjectRef, refreshAuditLogsRef, getProjectRef, optimisticUpdate };
 }
 
-export interface UploadDocumentGroupResult {
-  /** `groupLabel` si el grupo falló por completo, `null` si estaba vacío o subió bien. */
-  failedGroup: string | null;
-  /** Mensaje ya en español listo para mostrar al usuario (viene del backend:
-   *  pared de seguridad, tipo de archivo no permitido, tamaño excedido, etc.)
-   *  — undefined si no falló. */
-  errorMessage?: string;
-  /** Cuántos archivos de este grupo el backend optimizó (recomprimió/redimensionó). */
-  optimizedCount: number;
-}
+/** Archivos por campo de la petición (`photos`, `documents`, `plans`, `files`…). */
+export type AttachmentFiles = Record<string, File[]>;
+
+/** Respuesta de los procesos que adjuntan archivos: el proyecto + cuántas imágenes optimizó el backend. */
+export type ProjectWithAttachments = Project & { optimizedCount?: number };
 
 /**
- * Sube un grupo de archivos (fotos/documentos/planos) al endpoint de
- * documentos de un proyecto — usado por `handleAddProject` y
- * `handleResubmitProject` (mismo shape de dos fases: JSON + upload
- * multipart opcional + refetch).
+ * Cuerpo de un proceso que adjunta archivos EN LA MISMA petición: el backend
+ * los guarda junto con el proceso en una sola transacción, así que un archivo
+ * rechazado (pared de seguridad, tipo, tamaño) tumba el proceso completo en
+ * vez de dejarlo registrado sin el adjunto. Sin archivos viaja JSON plano;
+ * con archivos, multipart con el resto de campos como JSON en `payload`
+ * (los arrays anidados como `materials` no se expresan bien en FormData).
  */
-export async function uploadDocumentGroup(
-  projectId: string,
-  list: File[],
-  type: "FOTO" | "CALC" | "PLANO",
-  groupLabel: string,
-  token: string,
-  logContext: string,
-): Promise<UploadDocumentGroupResult> {
-  if (list.length === 0) return { failedGroup: null, optimizedCount: 0 };
+export function buildProcessBody(
+  payload: object,
+  files: AttachmentFiles = {},
+  replacements: { documentId: number; file: File }[] = [],
+): string | FormData {
+  const hasFiles = Object.values(files).some(list => list.length > 0) || replacements.length > 0;
+  if (!hasFiles) return JSON.stringify(payload);
+
   const form = new FormData();
-  form.append("document_type", type);
-  list.forEach(f => form.append("files[]", f));
-  try {
-    const saved = await apiFetch<ProjectDocument[]>(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
-    const optimizedCount = saved.filter(d => d.optimized).length;
-    return { failedGroup: null, optimizedCount };
-  } catch (error) {
-    logError(logContext, error);
-    return { failedGroup: groupLabel, errorMessage: getErrorMessage(error), optimizedCount: 0 };
-  }
+  form.append("payload", JSON.stringify(payload));
+  Object.entries(files).forEach(([field, list]) => list.forEach(file => form.append(`${field}[]`, file)));
+  replacements.forEach((r, index) => {
+    form.append(`replacements[${index}][documentId]`, String(r.documentId));
+    form.append(`replacements[${index}][file]`, r.file);
+  });
+  return form;
 }
 
 /**
- * Arma el mensaje de "éxito parcial" para el toast — antepone el motivo real
- * que dio el backend (pared de seguridad, tipo no permitido, tamaño
- * excedido) en vez de solo listar los grupos que fallaron a secas, sin
- * exponer detalles internos (el backend ya filtra eso, ver
- * FileRejectedException).
+ * Separa el proyecto del contador de imágenes optimizadas (no es un campo de
+ * `Project`: no debe quedar en el estado) y, si hubo, avisa al usuario.
  */
-export function describeUploadFailures(
-  failed: Array<Pick<UploadDocumentGroupResult, "failedGroup" | "errorMessage">>,
-): string {
-  const reasons = failed
-    .map(f => (f.errorMessage ? `${f.failedGroup} (${f.errorMessage})` : f.failedGroup))
-    .join(", ");
-  return `Se guardó, pero no se pudieron adjuntar: ${reasons}.`;
+export function settleAttachments(show: ShowToast, result: ProjectWithAttachments): Project {
+  const { optimizedCount = 0, ...project } = result;
+  if (optimizedCount > 0) {
+    show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
+  }
+  return project as Project;
 }

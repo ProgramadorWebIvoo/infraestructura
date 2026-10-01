@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import InspectProjectModal from "@/components/Modals/InspectProjectModal";
 import type { Project, Proposal } from "@/types";
 import { ProjectStatus } from "@/types";
@@ -105,27 +105,27 @@ describe("InspectProjectModal", () => {
     expect(screen.getByText("-24.0% vs estimado")).toBeInTheDocument();
   });
 
-  it("muestra los nodos del organigrama IVOO y la leyenda", () => {
+  it("muestra los nodos del flujograma IVOO y la leyenda", () => {
     renderModal(createProject());
 
-    expect(screen.getByText("PRESIDENCIA")).toBeInTheDocument();
-    expect(screen.getByText("AUDITORÍA")).toBeInTheDocument();
-    expect(screen.getByText("GERENCIA PROCURA")).toBeInTheDocument();
-    expect(screen.getByText("ANALISTAS")).toBeInTheDocument();
-    expect(screen.getByText("FINANZAS")).toBeInTheDocument();
-    expect(screen.getByText("BASE DE DATOS IVOO")).toBeInTheDocument();
-    expect(screen.getByText("Núcleo Centralizador")).toBeInTheDocument();
-    expect(screen.getByText("Infraestructura")).toBeInTheDocument();
-    expect(screen.getByText("Mantenimiento")).toBeInTheDocument();
+    const flow = within(screen.getByRole("img", { name: "Flujograma del proceso de obra IVOO" }));
+    for (const node of ["INFRAESTRUCTURA", "OBRA", "AUDITORIA", "PROCURA", "ANALISTAS", "PRESIDENCIA", "FINANZAS", "RESIDENTES", "PROVEEDOR"]) {
+      expect(flow.getAllByText(node).length).toBeGreaterThan(0);
+    }
+    expect(screen.getByRole("button", { name: "Ajustar a pantalla" })).toBeInTheDocument();
+    // Leyenda de estado (en el flujograma el estado de cada nodo es solo color)
+    expect(screen.getAllByText("Hecho").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("En curso").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Pendiente").length).toBeGreaterThan(0);
   });
 
   it("proyecto CREADO: Auditoría en curso, resto pendiente, trazabilidad en paso 2", () => {
     renderModal(createProject());
 
-    // Organigrama: Presidencia hecho + leyenda; Auditoría en curso; Procura/Analistas/Finanzas pendientes
-    expect(screen.getAllByText("Hecho").length).toBe(2); // nodo Presidencia + leyenda
-    expect(screen.getAllByText("En curso").length).toBe(3); // nodo Auditoría + paso 2 + leyenda
-    expect(screen.getAllByText("Pendiente").length).toBe(10); // 3 nodos + pasos 3-8 (6) + leyenda
+    // Flujograma: el estado de los nodos es solo color, el texto viene de la leyenda y la trazabilidad
+    expect(screen.getAllByText("Hecho").length).toBe(1); // leyenda
+    expect(screen.getAllByText("En curso").length).toBe(2); // paso 2 + leyenda
+    expect(screen.getAllByText("Pendiente").length).toBe(7); // pasos 3-8 (6) + leyenda
 
     // Trazabilidad: paso 1 completado, pasos 3-8 pendientes
     expect(screen.getAllByText("Completado").length).toBe(1);
@@ -148,8 +148,8 @@ describe("InspectProjectModal", () => {
     });
     renderModal(project);
 
-    // 5 nodos hechos + leyenda
-    expect(screen.getAllByText("Hecho").length).toBe(6);
+    // Flujograma completo: solo queda el "Hecho" de la leyenda (los nodos se distinguen por color)
+    expect(screen.getAllByText("Hecho").length).toBe(1);
     // 8 pasos completados + badge de estado "Completado"
     expect(screen.getAllByText("Completado").length).toBe(9);
   });

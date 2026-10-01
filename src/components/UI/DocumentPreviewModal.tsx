@@ -160,10 +160,14 @@ function PdfViewer({ blobUrl }: { blobUrl: string }) {
   const [numPages, setNumPages] = useState(1);
   const [scale, setScale] = useState(1);
   const [error, setError] = useState(false);
+  // docRef no dispara re-render: sin este flag, un PDF de 1 página (numPages
+  // ya vale 1) nunca volvía a ejecutar el efecto de render y quedaba en blanco.
+  const [isReady, setIsReady] = useState(false);
   const docRef = useRef<import("pdfjs-dist").PDFDocumentProxy | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setIsReady(false);
 
     (async () => {
       try {
@@ -175,6 +179,8 @@ function PdfViewer({ blobUrl }: { blobUrl: string }) {
         if (cancelled) return;
         docRef.current = doc;
         setNumPages(doc.numPages);
+        setPage(1);
+        setIsReady(true);
       } catch {
         if (!cancelled) setError(true);
       }
@@ -187,7 +193,7 @@ function PdfViewer({ blobUrl }: { blobUrl: string }) {
   }, [blobUrl]);
 
   useEffect(() => {
-    if (!docRef.current || !canvasRef.current) return;
+    if (!isReady || !docRef.current || !canvasRef.current) return;
     let cancelled = false;
 
     (async () => {
@@ -208,7 +214,7 @@ function PdfViewer({ blobUrl }: { blobUrl: string }) {
     return () => {
       cancelled = true;
     };
-  }, [page, scale, numPages]);
+  }, [page, scale, isReady]);
 
   if (error) {
     return <p className="text-xs text-danger-600 font-semibold text-center py-8">No se pudo renderizar el PDF.</p>;

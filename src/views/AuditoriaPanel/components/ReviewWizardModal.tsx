@@ -14,7 +14,7 @@
  * ya revisados.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Award,
@@ -42,7 +42,7 @@ import DossierEvaluationPanel from "./DossierEvaluationPanel";
 import ReviewResidentField from "./ReviewResidentField";
 import { reviewNeedsResidentChoice, reviewResidentPayload } from "@/utils/projectLocation";
 import { AttachmentsSummary, MaterialDetailRow, ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import { downloadProjectDocument } from "@/services/api";
+import { apiFetch, downloadProjectDocument } from "@/services/api";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -97,8 +97,24 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
   const { isAiFeatureEnabled } = useAiFeatureGate();
   const showAiEval = isAiFeatureEnabled("AUDITORIA", "ia.auditoria.evaluacion_expediente");
 
+  // El listado de proyectos omite `documents` (ver Project::listRelations); se
+  // cargan desde el detalle al abrir el expediente. Estado local, no syncProject:
+  // el polling reemplaza la lista y los borraría.
+  const [detailDocuments, setDetailDocuments] = useState<ProjectDocument[] | null>(null);
+  const projectId = project?.id;
+  useEffect(() => {
+    setDetailDocuments(null);
+    if (!projectId) return;
+    let cancelled = false;
+    apiFetch<Project>(`/projects/${projectId}`, { token: authToken })
+      .then((detail) => { if (!cancelled) setDetailDocuments(detail.documents ?? []); })
+      .catch(() => { if (!cancelled) showToast("No se pudieron cargar los adjuntos del expediente.", "error"); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, authToken]);
+
   const brand = SEMANTIC_COLOR_MAP.brand;
-  const activeDocuments = project?.documents ?? [];
+  const activeDocuments = detailDocuments ?? project?.documents ?? [];
 
   const resetWizard = () => {
     setStepIndex(0);
@@ -328,7 +344,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                   />
                 ) : (
                   <ProjectDocumentsList
-                    project={project}
+                    project={{ ...project, documents: activeDocuments }}
                     onDownload={handleDownload}
                     onPreview={setPreviewDoc}
                   />

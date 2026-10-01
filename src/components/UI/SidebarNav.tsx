@@ -11,7 +11,7 @@
  * muestra un tooltip flotante (SidebarTip) al hacer hover/focus.
  */
 
-import { memo, useRef } from "react";
+import { memo, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { MotionConfig } from "motion/react";
 import {
@@ -30,6 +30,7 @@ import {
   House,
   BanknoteArrowDown,
   FileSignature,
+  UserRound,
 } from "lucide-react";
 import SidebarTip from "./SidebarTip";
 import SidebarCollapseHint from "./SidebarCollapseHint";
@@ -89,7 +90,7 @@ function SidebarNav({
   );
   const prefetchAuditoria = usePrefetchOnIntent(ROUTES.AUDITORIA, authToken);
   const prefetchResidente = usePrefetchOnIntent(ROUTES.RESIDENTE, authToken);
-  const prefetchProcura =usePrefetchOnIntent(ROUTES.PROCURA, authToken);
+  const prefetchProcura = usePrefetchOnIntent(ROUTES.PROCURA, authToken);
   const prefetchAnalistas = usePrefetchOnIntent(ROUTES.ANALISTAS, authToken);
   const prefetchFinanzas = usePrefetchOnIntent(ROUTES.FINANZAS, authToken);
   const prefetchCatalogos = usePrefetchOnIntent(ROUTES.CATALOGOS, authToken);
@@ -99,7 +100,8 @@ function SidebarNav({
   // Sin gate de canAccess a propósito: la cadena de firmas es configurable
   // con cualquier rol, así que la visibilidad depende de si el usuario tiene
   // al menos un paso a su nombre/rol, no de permisos de vista tradicionales.
-  const { hasConfiguredSteps, orders: pendingSignatureOrders } = useMyPendingSignatures(authToken);
+  const { hasConfiguredSteps, orders: pendingSignatureOrders } =
+    useMyPendingSignatures(authToken);
 
   const userInitials = user?.name ? getUserInitials(user.name) : "?";
   const collapseLabel = isCollapsed
@@ -113,6 +115,9 @@ function SidebarNav({
   // quedado el rail de desktop la última vez. El botón de colapsar (lg:flex,
   // oculto en mobile) sigue leyendo isCollapsed real, no este valor derivado.
   const effectiveCollapsed = isCollapsed && !isOpen;
+
+  // Analisis de Hover para animacion del icono 'Mi Perfil'
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -483,7 +488,10 @@ function SidebarNav({
           )}
 
           {hasConfiguredSteps && (
-            <SidebarTip label="Firmas Pendientes" disabled={!effectiveCollapsed}>
+            <SidebarTip
+              label="Firmas Pendientes"
+              disabled={!effectiveCollapsed}
+            >
               <NavLink
                 to={ROUTES.MIS_FIRMAS}
                 id="sidebar-mis-firmas"
@@ -584,6 +592,7 @@ function SidebarNav({
                   {userInitials}
                 </div>
               </SidebarTip>
+              
               <div
                 className={`${sidebarTextClass(effectiveCollapsed)} min-w-0 flex-1`}
               >
@@ -594,6 +603,19 @@ function SidebarNav({
                   {user.email}
                 </p>
               </div>
+
+              {/* <SidebarTip label="Mi Perfil">
+                <div
+                  className="cursor-pointer p-1 bg-slate-600" 
+                  onMouseEnter={() => setIsHovered(true)} 
+                  onMouseLeave={() => setIsHovered(false)}
+                >
+                  { isHovered 
+                    ? (<ChevronRight className="" />) 
+                    : (<UserRound className="" />)
+                  }
+                </div>
+              </SidebarTip> */}
             </div>
           )}
 

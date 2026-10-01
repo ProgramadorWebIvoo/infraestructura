@@ -21,6 +21,9 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, Download, Eye, FileSpreadsheet, Image as ImageIcon, Map, RefreshCw, Undo2, X } from "lucide-react";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
+import { formatFileSize } from "@/utils";
+import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
+import { useToast } from "./Toast";
 import Tooltip from "./Tooltip";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 
@@ -159,6 +162,8 @@ function DocumentGroupRow({
   pendingReplacement?: File;
   onClearReplacement?: () => void;
 }) {
+  const { showToast } = useToast();
+  const { maxFileSizeBytes } = useAppGroupSettings();
   const [expanded, setExpanded] = useState(false);
   const newVersionInputRef = useRef<HTMLInputElement>(null);
   const canRequestNewVersion = mode === "manage" && !isGroupDeleted && !isMarkedForDeletion && !!onRequestNewVersion;
@@ -254,7 +259,11 @@ function DocumentGroupRow({
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) onRequestNewVersion!(current, file);
+            if (file && file.size > maxFileSizeBytes) {
+              showToast(`«${file.name}» excede el límite de ${formatFileSize(maxFileSizeBytes)}.`, "warning");
+            } else if (file) {
+              onRequestNewVersion!(current, file);
+            }
             e.target.value = "";
           }}
         />

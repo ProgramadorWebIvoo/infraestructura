@@ -31,3 +31,8 @@ if (!window.IntersectionObserver) {
 if (!window.ResizeObserver) {
   window.ResizeObserver = MockObserver as unknown as typeof ResizeObserver;
 }
+
+// jsdom no implementa scrollIntoView (el Select custom lo llama en un requestAnimationFrame).
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}

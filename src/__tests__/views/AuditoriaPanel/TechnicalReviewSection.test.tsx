@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import TechnicalReviewSection from "@/views/AuditoriaPanel/components/TechnicalReviewSection";
 import { ToastProvider } from "@/components/UI/Toast";
+import { apiFetch } from "@/services/api";
 import { ProjectStatus } from "@/types";
 import type { Project } from "@/types";
 
@@ -23,14 +24,19 @@ vi.mock("motion/react", () => {
   return {
     useReducedMotion: () => false,
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    motion: new Proxy(
-      {},
-      {
-        get: (_target, tag: string) =>
-          ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-            React.createElement(tag, stripMotionProps(props), children),
-      },
-    ),
+    // Un componente estable por etiqueta: si cada acceso a motion.ul creara uno nuevo,
+    // cualquier re-render remontaría el DOM y los clics caerían en nodos ya desmontados.
+    motion: (() => {
+      const cache: Record<string, React.ComponentType<React.PropsWithChildren<Record<string, unknown>>>> = {};
+      return new Proxy(
+        {},
+        {
+          get: (_target, tag: string) =>
+            (cache[tag] ??= ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+              React.createElement(tag, stripMotionProps(props), children)),
+        },
+      );
+    })(),
   };
 });
 
@@ -125,6 +131,10 @@ let restoreRO: () => void;
 let restoreSize: () => void;
 
 beforeEach(() => {
+  // El wizard carga los adjuntos desde el detalle de la obra al abrir el expediente.
+  vi.mocked(apiFetch).mockResolvedValue({ documents: [] });
+  // El Select custom hace scrollIntoView de la opción activa; jsdom no lo implementa.
+  Element.prototype.scrollIntoView = vi.fn();
   restoreRO = stubSyncResizeObserver();
   restoreSize = stubContainerSize(900, 600);
 });

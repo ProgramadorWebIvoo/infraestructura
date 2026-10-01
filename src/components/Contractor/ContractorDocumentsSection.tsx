@@ -21,9 +21,9 @@ import { useToast } from "@/components/UI/Toast";
 import { useContractorDocumentTypes } from "@/hooks/useContractorDocumentTypes";
 import { getErrorMessage, logError } from "@/services/logger";
 import { formatFileSize } from "@/utils";
+import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
 import {
   CONTRACTOR_DOCUMENT_ACCEPT,
-  CONTRACTOR_DOCUMENT_MAX_BYTES,
   canManageContractorDocuments,
   contractorDocumentPath,
   deleteContractorDocument,
@@ -50,6 +50,7 @@ interface DocumentRow {
 
 export default function ContractorDocumentsSection({ contractorCode, authToken, activeRole }: ContractorDocumentsSectionProps) {
   const { showToast } = useToast();
+  const { maxFileSizeBytes } = useAppGroupSettings();
   const { types } = useContractorDocumentTypes();
   const canManage = canManageContractorDocuments(activeRole);
   const [documents, setDocuments] = useState<ContractorDocument[]>([]);
@@ -109,8 +110,8 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
   const handleFileChosen = async (file: File | undefined) => {
     const typeId = uploadTypeRef.current;
     if (!file || typeId === null) return;
-    if (file.size > CONTRACTOR_DOCUMENT_MAX_BYTES) {
-      showToast("El archivo supera el tamaño máximo permitido.", "warning");
+    if (file.size > maxFileSizeBytes) {
+      showToast(`El archivo supera el tamaño máximo permitido (${formatFileSize(maxFileSizeBytes)}).`, "warning");
       return;
     }
     setBusyTypeId(typeId);

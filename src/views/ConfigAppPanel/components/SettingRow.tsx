@@ -18,7 +18,8 @@ import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import type { AppSettingRecord } from "@/hooks/useAppSettings";
 import SegmentedControl from "@/components/UI/SegmentedControl";
 import { formatRangeBound } from "@/views/ConfigAppPanel/utils";
-import { ENUM_SETTING_OPTIONS } from "@/views/ConfigAppPanel/settingOptions";
+import Select from "@/components/UI/Select";
+import { ENUM_SETTING_OPTIONS, SELECT_SETTING_OPTIONS } from "@/views/ConfigAppPanel/settingOptions";
 
 interface SettingRowProps {
   setting: AppSettingRecord;
@@ -49,6 +50,7 @@ export default function SettingRow({ setting, value, onChange, error, readOnly, 
   const isNumeric = setting.type === "integer" || setting.type === "float";
   const isRoleList = setting.type === "json" && ROLE_LIST_SETTING_KEYS.has(setting.key) && !!roles?.length;
   const enumOptions = ENUM_SETTING_OPTIONS[setting.key];
+  const selectOptions = SELECT_SETTING_OPTIONS[setting.key];
   const isCronHour = setting.key === "tasa_cambio_cron_hora" || setting.key === "rating_ia_cron_hora";
 
   const rangeHint =
@@ -95,6 +97,17 @@ export default function SettingRow({ setting, value, onChange, error, readOnly, 
                 disabled={readOnly}
               />
             </div>
+          ) : selectOptions ? (
+            <Select
+              id={`setting-${setting.id}-select`}
+              value={value}
+              onChange={next => onChange(setting.id, next)}
+              options={selectOptions}
+              ariaLabel={setting.label}
+              hasError={!!error}
+              disabled={readOnly}
+              className="w-48"
+            />
           ) : isRoleList ? (
             <RoleMultiSelect
               roles={roles ?? []}

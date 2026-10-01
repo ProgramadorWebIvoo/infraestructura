@@ -11,6 +11,7 @@
 import type { ReactNode } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import FinanzasPanel from "@/views/FinanzasPanel";
 import { ProjectStatus, type PaymentOrder, type Project, type Proposal } from "@/types";
 
@@ -66,6 +67,13 @@ function stubContainerSize(width: number, height: number) {
     // @ts-expect-error restaurar el descriptor original de jsdom
     delete proto.offsetHeight;
   };
+}
+
+// El diario de egresos inspecciona cada pago con useFinanceDisbursements (react-query),
+// así que el panel necesita un QueryClient ancestro.
+function renderPanel(ui: ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
 function makeProposal(overrides: Partial<Proposal> = {}): Proposal {
@@ -141,7 +149,7 @@ describe("FinanzasPanel", () => {
       makeProject({ id: "PRJ-5", status: ProjectStatus.COMPLETADO_PAGADO }),
     ];
 
-    render(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
+    renderPanel(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
 
     expect(screen.getByText("Anticipos por Liberar")).toBeInTheDocument();
     expect(screen.getByText("Finiquitos por Liquidar")).toBeInTheDocument();
@@ -152,7 +160,7 @@ describe("FinanzasPanel", () => {
   });
 
   it("arranca en la tab 'Estadisticas' y cambia de tab al hacer click", () => {
-    render(<FinanzasPanel projects={[]} onPayAdvance={noop} onPayFinal={noop} />);
+    renderPanel(<FinanzasPanel projects={[]} onPayAdvance={noop} onPayFinal={noop} />);
 
     const tablist = screen.getByRole("tablist", { name: "Secciones de Finanzas" });
     expect(within(tablist).getByRole("tab", { name: /Estadisticas/ })).toHaveAttribute("aria-selected", "true");
@@ -164,7 +172,7 @@ describe("FinanzasPanel", () => {
 
   it("muestra el contenido de 'Estadisticas' (Ejecución Financiera) sin quedar invisible por herencia de animación rota bajo TabPanel", async () => {
     const projects = [makeProject({ status: ProjectStatus.COMPLETADO_PAGADO })];
-    render(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
+    renderPanel(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
 
     // Bug real: FinancialSummarySection usaba variants={itemVariants} sin
     // initial/animate propios, dependiendo de que el ancestro propagara el
@@ -203,7 +211,7 @@ describe("FinanzasPanel", () => {
       }),
     ];
 
-    render(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
+    renderPanel(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
 
     fireEvent.click(screen.getByRole("tab", { name: /Diario de Egresos/ }));
 
@@ -228,7 +236,7 @@ describe("FinanzasPanel", () => {
         }),
       ];
 
-      render(<FinanzasPanel projects={projects} onPayAdvance={onPayAdvance} onPayFinal={noop} />);
+      renderPanel(<FinanzasPanel projects={projects} onPayAdvance={onPayAdvance} onPayFinal={noop} />);
 
       fireEvent.click(screen.getByRole("tab", { name: /Anticipos/ }));
       // GridView (vista por defecto) virtualiza con @tanstack/react-virtual
@@ -275,7 +283,7 @@ describe("FinanzasPanel", () => {
         }),
       ];
 
-      render(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={onPayFinal} />);
+      renderPanel(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={onPayFinal} />);
 
       fireEvent.click(screen.getByRole("tab", { name: /Finiquitos/ }));
       fireEvent.click(screen.getByLabelText("Vista de tabla"));
@@ -314,7 +322,7 @@ describe("FinanzasPanel", () => {
         }),
       ];
 
-      render(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={onPayFinal} />);
+      renderPanel(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={onPayFinal} />);
 
       fireEvent.click(screen.getByRole("tab", { name: /Finiquitos/ }));
       fireEvent.click(screen.getByLabelText("Vista de tabla"));
@@ -336,7 +344,7 @@ describe("FinanzasPanel", () => {
   });
 
   it("muestra el skeleton mientras isLoading es true, sin renderizar las tabs", () => {
-    render(<FinanzasPanel projects={[]} onPayAdvance={noop} onPayFinal={noop} isLoading />);
+    renderPanel(<FinanzasPanel projects={[]} onPayAdvance={noop} onPayFinal={noop} isLoading />);
 
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
   });
