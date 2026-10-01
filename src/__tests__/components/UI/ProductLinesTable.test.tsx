@@ -100,6 +100,23 @@ describe("ProductLinesTable", () => {
     expect(screen.queryByLabelText("precio-1")).not.toBeInTheDocument();
   });
 
+  it("al agregar una línea limpia la búsqueda y va a la última página", async () => {
+    function Growing() {
+      const [lines, setLines] = useState(makeLines(20));
+      return (
+        <>
+          <button onClick={() => setLines((prev) => [...prev, { id: prev.length + 1, name: "Línea nueva", price: 0 }])}>agregar</button>
+          <Table lines={lines} pageSize={10} />
+        </>
+      );
+    }
+    render(<Growing />);
+    await userEvent.type(screen.getByRole("searchbox"), "Producto 01");
+    await userEvent.click(screen.getByRole("button", { name: "agregar" }));
+    expect(screen.getByText("Línea nueva")).toBeInTheDocument();
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+  });
+
   it("buscar vuelve a la primera página", async () => {
     render(<Table lines={makeLines(40)} pageSize={10} />);
     await userEvent.click(screen.getByRole("button", { name: "Página siguiente" }));

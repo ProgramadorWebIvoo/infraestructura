@@ -17,6 +17,7 @@ import { AlertTriangle, ArrowRight, MessageSquareWarning, Plus, Trash2, Wallet }
 import { formatCurrency } from "@ivoo/shared";
 import Modal from "@/components/UI/Modal";
 import NumericInput from "@/components/UI/NumericInput";
+import ProductLinesTable from "@/components/UI/ProductLinesTable";
 import Select from "@/components/UI/Select";
 import DatePicker from "@/components/UI/DatePicker";
 import Button from "@/components/UI/Button";
@@ -225,9 +226,17 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 overflow-hidden">
-          <div className="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Materiales</span>
+        {/* Tabla paginada con buscador: una obra puede traer ~70 productos. */}
+        <ProductLinesTable
+          ariaLabel="Materiales de la renegociación"
+          items={materialRows}
+          rowKey={(row) => row._id}
+          searchText={(row) => row.materialName}
+          searchPlaceholder="Buscar material…"
+          filters={[{ key: "unpriced", label: "Sin precio", predicate: (row) => !(Number(row.unitPrice) > 0) }]}
+          rowClassName={(row) => (row.isCustom ? "bg-amber-50/30" : "")}
+          emptyMessage="Ningún material coincide con la búsqueda."
+          toolbarActions={
             <button
               type="button"
               onClick={addCustomMaterialRow}
@@ -236,119 +245,118 @@ export default function RenegotiateProposalModal({ project, proposal, onClose, o
               <Plus className="h-3 w-3" />
               Agregar material
             </button>
-          </div>
-          <div className="max-h-64 overflow-y-auto overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-              <thead className="sticky top-0 z-10">
-                <tr className="border-b border-slate-100 bg-white text-[8px] font-bold uppercase tracking-wider text-slate-400">
-                  <th className="px-3 py-2">Material</th>
-                  <th className="px-3 py-2 text-center">Cant.</th>
-                  <th className="px-3 py-2">Unidad</th>
-                  <th className="px-3 py-2 text-right">Precio unit. ({quoteCurrency})</th>
-                  <th className="px-3 py-2 text-right">Total</th>
-                  <th className="px-3 py-2 w-8" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {materialRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-3 text-center text-[10px] text-slate-400 italic">
-                      Sin materiales. Agregue líneas manualmente.
-                    </td>
-                  </tr>
+          }
+          columns={[
+            {
+              key: "material",
+              label: "Material",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <input
+                    type="text"
+                    value={row.materialName}
+                    onChange={(e) => updateMaterialRow(index, "materialName", e.target.value)}
+                    placeholder="Nombre del material"
+                    maxLength={220}
+                    className="w-full min-w-30 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-semibold text-slate-800 outline-hidden focus:border-amber-400"
+                  />
                 ) : (
-                  materialRows.map((row, index) => (
-                    <tr key={row._id} className={row.isCustom ? "bg-amber-50/30" : ""}>
-                      <td className="px-3 py-2">
-                        {row.isCustom ? (
-                          <input
-                            type="text"
-                            value={row.materialName}
-                            onChange={(e) => updateMaterialRow(index, "materialName", e.target.value)}
-                            placeholder="Nombre del material"
-                            maxLength={220}
-                            className="w-full min-w-30 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-semibold text-slate-800 outline-hidden focus:border-amber-400"
-                          />
-                        ) : (
-                          <span className="font-semibold text-slate-700 text-[11px]">{row.materialName}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {row.isCustom ? (
-                          <NumericInput
-                            value={row.quantity === 0 ? "" : row.quantity}
-                            onChange={(v) => updateMaterialRow(index, "quantity", v === "" ? 0 : v)}
-                            placeholder="0"
-                            integer
-                            className="w-16! px-2! py-1.5! text-center! text-[11px]!"
-                          />
-                        ) : (
-                          <span className="font-mono font-bold text-slate-600 text-[11px]" title="Cantidad auditada en Auditoría — no editable">
-                            {row.quantity}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        {row.isCustom ? (
-                          <input
-                            type="text"
-                            value={row.unit}
-                            onChange={(e) => updateMaterialRow(index, "unit", e.target.value)}
-                            placeholder="Und."
-                            maxLength={60}
-                            className="w-16 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-medium text-slate-700 outline-hidden focus:border-amber-400"
-                          />
-                        ) : (
-                          <span className="text-slate-500 font-medium text-[11px]">{row.unit}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <NumericInput thousands
-                          value={row.unitPrice === 0 ? "" : row.unitPrice}
-                          onChange={(v) => updateMaterialRow(index, "unitPrice", v === "" ? 0 : v)}
-                          placeholder="0.00"
-                          className="w-24! px-2! py-1.5! text-right! text-[11px]!"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-bold text-emerald-700 text-[11px]">
-                        {row.totalPrice > 0 ? (
-                          <>
-                            {formatCurrency(row.totalPrice)}
-                            <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
-                          </>
-                        ) : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {row.isCustom && (
-                          <button
-                            type="button"
-                            onClick={() => removeMaterialRow(index)}
-                            className="rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-500 cursor-pointer"
-                            aria-label="Eliminar material"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-slate-200 bg-slate-50 sticky bottom-0">
-                  <td colSpan={4} className="px-3 py-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-500">
-                    Total materiales:
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs font-black text-emerald-700">
-                    {formatCurrency(materialCostTotal, quoteCurrency)}
-                    <BsAmount amount={materialCostTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
-                  </td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
+                  <span className="font-semibold text-slate-700 text-[11px]">{row.materialName}</span>
+                ),
+            },
+            {
+              key: "quantity",
+              label: "Cant.",
+              align: "center",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <NumericInput
+                    value={row.quantity === 0 ? "" : row.quantity}
+                    onChange={(v) => updateMaterialRow(index, "quantity", v === "" ? 0 : v)}
+                    placeholder="0"
+                    integer
+                    className="w-16! px-2! py-1.5! text-center! text-[11px]!"
+                  />
+                ) : (
+                  <span className="font-mono font-bold text-slate-600 text-[11px]" title="Cantidad auditada en Auditoría — no editable">
+                    {row.quantity}
+                  </span>
+                ),
+            },
+            {
+              key: "unit",
+              label: "Unidad",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <input
+                    type="text"
+                    value={row.unit}
+                    onChange={(e) => updateMaterialRow(index, "unit", e.target.value)}
+                    placeholder="Und."
+                    maxLength={60}
+                    className="w-16 rounded-lg border border-amber-200 px-2 py-1.5 text-[11px] font-medium text-slate-700 outline-hidden focus:border-amber-400"
+                  />
+                ) : (
+                  <span className="text-slate-500 font-medium text-[11px]">{row.unit}</span>
+                ),
+            },
+            {
+              key: "unitPrice",
+              label: `Precio unit. (${quoteCurrency})`,
+              align: "right",
+              render: (row, index) => (
+                <NumericInput
+                  thousands
+                  value={row.unitPrice === 0 ? "" : row.unitPrice}
+                  onChange={(v) => updateMaterialRow(index, "unitPrice", v === "" ? 0 : v)}
+                  placeholder="0.00"
+                  className="w-28! px-2! py-1.5! text-right! text-[11px]! ml-auto"
+                />
+              ),
+            },
+            {
+              key: "total",
+              label: "Total",
+              align: "right",
+              className: "font-mono font-bold text-emerald-700 text-[11px]",
+              render: (row) =>
+                row.totalPrice > 0 ? (
+                  <>
+                    {formatCurrency(row.totalPrice)}
+                    <BsAmount amount={row.totalPrice} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-normal" />
+                  </>
+                ) : (
+                  "—"
+                ),
+            },
+            {
+              key: "actions",
+              label: "",
+              align: "center",
+              width: "2.5rem",
+              render: (row, index) =>
+                row.isCustom ? (
+                  <button
+                    type="button"
+                    onClick={() => removeMaterialRow(index)}
+                    className="rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-500 cursor-pointer"
+                    aria-label="Eliminar material"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                ) : null,
+            },
+          ]}
+          summary={
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">Total materiales:</span>
+              <span className="text-right font-mono text-xs font-black text-emerald-700">
+                {formatCurrency(materialCostTotal, quoteCurrency)}
+                <BsAmount amount={materialCostTotal} fromCode={quoteCurrency} convert={convert} hasRates={hasRates} isLoading={isLoadingRates} className="text-emerald-500/80 font-semibold" />
+              </span>
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>

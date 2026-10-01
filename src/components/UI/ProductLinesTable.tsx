@@ -6,7 +6,7 @@
 // nuevo), solo cuando cambia el buscador o el filtro. A `render` se le pasa el
 // índice original en `items`, que es lo que necesitan los updaters del padre.
 
-import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Search, X } from "lucide-react";
 import { PaginationBar } from "./Table";
 
@@ -125,9 +125,26 @@ export default function ProductLinesTable<T>({
   const currentPage = Math.min(page, totalPages);
 
   // Buscar o cambiar de filtro vuelve a la primera página; editar filas, no.
-  useEffect(() => {
+  const updateQuery = (value: string) => {
+    setQuery(value);
     setPage(1);
-  }, [deferredQuery, activeFilter]);
+  };
+  const updateFilter = (key: string | null) => {
+    setActiveFilter(key);
+    setPage(1);
+  };
+
+  // Si el padre agrega una línea (ej. "Agregar material"), se muestra: se limpian
+  // buscador/filtro y se va a la última página, donde queda la fila nueva.
+  const previousLength = useRef(items.length);
+  useEffect(() => {
+    if (items.length > previousLength.current) {
+      setQuery("");
+      setActiveFilter(null);
+      setPage(Math.max(1, Math.ceil(items.length / pageSize)));
+    }
+    previousLength.current = items.length;
+  }, [items.length, pageSize]);
 
   const visible = useMemo(() => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize), [filtered, currentPage, pageSize]);
 
@@ -146,7 +163,7 @@ export default function ProductLinesTable<T>({
               <input
                 type="search"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => updateQuery(e.target.value)}
                 placeholder={searchPlaceholder}
                 aria-label={searchPlaceholder}
                 className={`w-full rounded-lg border py-1.5 pl-8 pr-7 text-xs font-medium outline-hidden transition ${t.input}`}
@@ -154,7 +171,7 @@ export default function ProductLinesTable<T>({
               {query && (
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
+                  onClick={() => updateQuery("")}
                   aria-label="Limpiar búsqueda"
                   className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer ${t.icon}`}
                 >
@@ -172,7 +189,7 @@ export default function ProductLinesTable<T>({
                     key={chip.key ?? "all"}
                     type="button"
                     aria-pressed={activeFilter === chip.key}
-                    onClick={() => setActiveFilter(chip.key)}
+                    onClick={() => updateFilter(chip.key)}
                     className={`cursor-pointer rounded-pill border px-2.5 py-1 text-[10px] font-bold transition-colors ${activeFilter === chip.key ? t.chipOn : t.chip}`}
                   >
                     {chip.label} <span className="font-mono opacity-70">{chip.count}</span>
