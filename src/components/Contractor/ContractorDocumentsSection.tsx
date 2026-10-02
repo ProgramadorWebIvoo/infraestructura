@@ -21,6 +21,7 @@ import { useToast } from "@/components/UI/Toast";
 import { useContractorDocumentTypes } from "@/hooks/useContractorDocumentTypes";
 import { getErrorMessage, logError } from "@/services/logger";
 import { formatFileSize } from "@/utils";
+import { useDocumentDownload } from "@/hooks/useDocumentDownload";
 import { useFileValidation } from "@/hooks/useFileValidation";
 import { useUploadLimits } from "@/hooks/useUploadLimits";
 import {
@@ -53,6 +54,7 @@ interface DocumentRow {
 
 export default function ContractorDocumentsSection({ contractorCode, authToken, activeRole, readOnly = false }: ContractorDocumentsSectionProps) {
   const { showToast } = useToast();
+  const { run: runDownload, isBusy: isDownloading } = useDocumentDownload();
   const { maxFileSizeBytes } = useUploadLimits();
   const { validate } = useFileValidation({
     accept: CONTRACTOR_DOCUMENT_ACCEPT,
@@ -133,13 +135,9 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
     }
   };
 
-  const handleDownload = async (doc: ContractorDocument) => {
-    try {
-      await downloadContractorDocument(contractorCode, doc, authToken);
-    } catch (error) {
-      showToast(getErrorMessage(error, "No se pudo descargar el documento."), "error");
-    }
-  };
+  const downloadKey = (doc: ContractorDocument) => `contractor:${contractorCode}:${doc.id}`;
+  const handleDownload = (doc: ContractorDocument) =>
+    runDownload(downloadKey(doc), () => downloadContractorDocument(contractorCode, doc, authToken), "No se pudo descargar el documento.");
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -243,7 +241,7 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
                   {row.document && (
                     <>
                       <IconActionButton label={`Ver ${row.label}`} tooltip="Ver" tone="sky" onClick={() => setPreviewDoc(row.document!)} icon={<Eye className="h-3.5 w-3.5" />} />
-                      <IconActionButton label={`Descargar ${row.label}`} tooltip="Descargar" tone="indigo" onClick={() => void handleDownload(row.document!)} icon={<Download className="h-3.5 w-3.5" />} />
+                      <IconActionButton label={`Descargar ${row.label}`} tooltip="Descargar" tone="indigo" onClick={() => void handleDownload(row.document!)} isBusy={isDownloading(downloadKey(row.document!))} icon={<Download className="h-3.5 w-3.5" />} />
                     </>
                   )}
                   {canManage && !row.document && (

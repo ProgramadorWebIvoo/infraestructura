@@ -42,7 +42,8 @@ import DossierEvaluationPanel from "./DossierEvaluationPanel";
 import ReviewResidentField from "./ReviewResidentField";
 import { reviewNeedsResidentChoice, reviewResidentPayload } from "@/utils/projectLocation";
 import { AttachmentsSummary, MaterialsReviewTable, ProjectTypeBadge } from "./TechnicalReviewPresentational";
-import { apiFetch, downloadProjectDocument } from "@/services/api";
+import { apiFetch } from "@/services/api";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { springs } from "@/animations";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -87,6 +88,7 @@ interface ReviewWizardModalProps {
 
 export default function ReviewWizardModal({ project, authToken, mode = "review", reevaluationContext, onConfirm, onSyncProject, onClose, onOpenRejectModal }: ReviewWizardModalProps) {
   const { showToast } = useToast();
+  const { download: downloadDocument, isDownloading } = useProjectDocumentDownload(authToken);
   const [stepIndex, setStepIndex] = useState(0);
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
   const [auditNotes, setAuditNotes] = useState("");
@@ -129,13 +131,9 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
     onClose();
   };
 
-  const handleDownload = async (doc: ProjectDocument) => {
+  const handleDownload = (doc: ProjectDocument) => {
     if (!project) return;
-    try {
-      await downloadProjectDocument(project.id, doc, authToken);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
+    void downloadDocument(project.id, doc);
   };
 
   // First review of a custom-location work: Auditoría must pick the resident (D14).
@@ -342,6 +340,7 @@ export default function ReviewWizardModal({ project, authToken, mode = "review",
                   <ProjectDocumentsList
                     project={{ ...project, documents: activeDocuments }}
                     onDownload={handleDownload}
+                    isDownloading={(id) => isDownloading(project.id, id)}
                     onPreview={setPreviewDoc}
                   />
                 )}

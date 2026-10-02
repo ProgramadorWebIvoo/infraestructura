@@ -31,7 +31,8 @@ import { SEMANTIC_COLOR_MAP } from "@/components/UI/colorTokens";
 import { viewSwitchVariants } from "@/animations";
 import { useContainerRows } from "@/hooks/useContainerRows";
 import { useTableViewMode, type TableViewMode } from "@/hooks/useTableViewMode";
-import { downloadProjectDocument, fetchAllProjectDocuments } from "@/services/api";
+import { fetchAllProjectDocuments } from "@/services/api";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 import { useToast } from "@/components/UI/Toast";
 import { getErrorMessage } from "@/services/logger";
 import { ProjectStatus } from "@/types";
@@ -67,6 +68,7 @@ const STATUS_FILTER_OPTIONS = [
 
 export default function RevisedDocumentsSection({ projects, auditLogs, authToken, onChangeResident, onResendLink, defaultViewMode = "grid" }: RevisedDocumentsSectionProps) {
   const { showToast } = useToast();
+  const { download: downloadDocument, isDownloading } = useProjectDocumentDownload(authToken);
   const { containerRef, rows: pageSize } = useContainerRows();
   const [selectedId, setSelectedId] = useState("");
   const [residentTarget, setResidentTarget] = useState<Project | null>(null);
@@ -191,13 +193,9 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
     },
   ];
 
-  const handleDownload = async (doc: ProjectDocument) => {
+  const handleDownload = (doc: ProjectDocument) => {
     if (!selectedProject) return;
-    try {
-      await downloadProjectDocument(selectedProject.id, doc, authToken);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
+    void downloadDocument(selectedProject.id, doc);
   };
 
   return (
@@ -349,6 +347,7 @@ export default function RevisedDocumentsSection({ projects, auditLogs, authToken
                     project={{ ...selectedProject, documents: historyDocs ?? [] }}
                     auditLogs={auditLogs}
                     onDownload={handleDownload}
+                    isDownloading={(id) => isDownloading(selectedProject.id, id)}
                     onPreview={setPreviewDoc}
                   />
                 )

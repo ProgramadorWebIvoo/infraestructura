@@ -15,8 +15,7 @@ import Modal from "@/components/UI/Modal";
 import Button from "@/components/UI/Button";
 import ProjectDocumentsList from "@/components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
-import { downloadProjectDocument } from "@/services/api";
-import { useToast } from "@/components/UI/Toast";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 
 interface RejectedPetitionDetailModalProps {
   project: Project;
@@ -26,18 +25,12 @@ interface RejectedPetitionDetailModalProps {
 }
 
 export default function RejectedPetitionDetailModal({ project, log, authToken, onClose }: RejectedPetitionDetailModalProps) {
-  const { showToast } = useToast();
+  const { download: downloadDocument, isDownloading } = useProjectDocumentDownload(authToken);
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
 
   const corrections = (project.documents ?? []).filter((d) => d.documentType === "CORRECCION");
 
-  const handleDownload = async (doc: ProjectDocument) => {
-    try {
-      await downloadProjectDocument(project.id, doc, authToken);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
-  };
+  const handleDownload = (doc: ProjectDocument) => void downloadDocument(project.id, doc);
 
   return (
     <Modal
@@ -98,6 +91,7 @@ export default function RejectedPetitionDetailModal({ project, log, authToken, o
             <ProjectDocumentsList
               project={{ ...project, documents: corrections }}
               onDownload={handleDownload}
+              isDownloading={(id) => isDownloading(project.id, id)}
               onPreview={setPreviewDoc}
             />
           </div>

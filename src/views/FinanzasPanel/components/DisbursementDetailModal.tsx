@@ -17,10 +17,9 @@ import Spinner from "@/components/UI/Spinner";
 import AlertBanner from "@/components/UI/AlertBanner";
 import ConvertedAmount from "@/components/UI/ConvertedAmount";
 import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
-import { useToast } from "@/components/UI/Toast";
 import PaymentSettlementSummary from "@/components/PaymentOrder/PaymentSettlementSummary";
 import { useFinanceDisbursements, type Disbursement } from "@/hooks/useFinanceDisbursements";
-import { downloadProjectDocument } from "@/services/api";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 import type { LedgerEntry } from "./LedgerSection";
 
 const LABEL = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
@@ -43,20 +42,16 @@ interface DisbursementDetailModalProps {
 }
 
 export default function DisbursementDetailModal({ entry, authToken, onClose }: DisbursementDetailModalProps) {
-  const { showToast } = useToast();
+  const { download: downloadDocument } = useProjectDocumentDownload(authToken);
   const [previewing, setPreviewing] = useState(false);
   const { data, isLoading, isError } = useFinanceDisbursements(authToken, entry !== null);
 
   const expectedType = entry?.type === "ANTICIPO" ? "ADVANCE" : "FINAL";
   const detail: Disbursement | null = entry ? (data?.find(d => d.projectId === entry.projectId && d.type === expectedType) ?? null) : null;
 
-  const download = async () => {
+  const download = () => {
     if (!entry || !detail?.proof) return;
-    try {
-      await downloadProjectDocument(entry.projectId, { id: detail.proof.id, originalName: detail.proof.name }, authToken);
-    } catch {
-      showToast("No se pudo descargar el comprobante.", "error");
-    }
+    void downloadDocument(entry.projectId, { id: detail.proof.id, originalName: detail.proof.name }, "No se pudo descargar el comprobante.");
   };
 
   return (

@@ -19,7 +19,7 @@
  */
 
 import { useRef, useState } from "react";
-import { AlertTriangle, ChevronDown, Download, Eye, FileSpreadsheet, Image as ImageIcon, Map, RefreshCw, Undo2, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, Download, Eye, FileSpreadsheet, Image as ImageIcon, Loader2, Map, RefreshCw, Undo2, X } from "lucide-react";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
 import { useFileValidation } from "@/hooks/useFileValidation";
 import { useUploadLimits } from "@/hooks/useUploadLimits";
@@ -30,6 +30,8 @@ import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
 interface ProjectDocumentsListProps {
   project: Project;
   onDownload: (doc: ProjectDocument) => void;
+  /** Si una descarga de este documento está en curso: deshabilita su botón y muestra un spinner (ver useProjectDocumentDownload). */
+  isDownloading?: (documentId: number) => boolean;
   onPreview: (doc: ProjectDocument) => void;
   /** Marca/desmarca un documento para eliminar — el consumidor decide si es
    * inmediato o reversible (ver useRequestForm::markDocumentForDeletion, que
@@ -87,12 +89,15 @@ function HistoryVersionRow({
   reason,
   onPreview,
   onDownload,
+  isDownloading,
 }: {
   version: ProjectDocument;
   reason: string | null;
   onPreview: (doc: ProjectDocument) => void;
   onDownload: (doc: ProjectDocument) => void;
+  isDownloading?: (documentId: number) => boolean;
 }) {
+  const downloading = isDownloading?.(version.id) ?? false;
   const isDeleted = !!version.deletedAt;
   return (
     <li className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 ${isDeleted ? "bg-danger-50/50" : "bg-slate-50"}`}>
@@ -118,8 +123,8 @@ function HistoryVersionRow({
             </button>
           </Tooltip>
           <Tooltip content="Descargar">
-            <button type="button" onClick={() => onDownload(version)} aria-label={`Descargar V${version.versionNumber}`} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-              <Download className="h-3.5 w-3.5" />
+            <button type="button" onClick={() => onDownload(version)} disabled={downloading} aria-busy={downloading} aria-label={`Descargar V${version.versionNumber}`} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60">
+              {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             </button>
           </Tooltip>
         </div>
@@ -137,6 +142,7 @@ function DocumentGroupRow({
   projectId,
   auditLogs,
   onDownload,
+  isDownloading,
   onPreview,
   onDelete,
   isMarkedForDeletion,
@@ -153,6 +159,7 @@ function DocumentGroupRow({
   projectId: string;
   auditLogs?: AuditLog[];
   onDownload: (doc: ProjectDocument) => void;
+  isDownloading?: (documentId: number) => boolean;
   onPreview: (doc: ProjectDocument) => void;
   onDelete?: (doc: ProjectDocument) => void;
   isMarkedForDeletion?: boolean;
@@ -173,6 +180,7 @@ function DocumentGroupRow({
   const newVersionInputRef = useRef<HTMLInputElement>(null);
   const canRequestNewVersion = mode === "manage" && !isGroupDeleted && !isMarkedForDeletion && !!onRequestNewVersion;
   const hasHistory = olderVersions.length > 0;
+  const downloading = isDownloading?.(current.id) ?? false;
 
   return (
     <li className={`border rounded-xl overflow-hidden ${isMarkedForDeletion || isGroupDeleted ? "bg-danger-50/60 border-danger-100" : "bg-white border-slate-100"}`}>
@@ -228,8 +236,8 @@ function DocumentGroupRow({
                 </button>
               </Tooltip>
               <Tooltip content="Descargar">
-                <button type="button" onClick={() => onDownload(current)} aria-label="Descargar" className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-                  <Download className="h-4 w-4" />
+                <button type="button" onClick={() => onDownload(current)} disabled={downloading} aria-busy={downloading} aria-label="Descargar" className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60">
+                  {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 </button>
               </Tooltip>
               {canRequestNewVersion && (
@@ -298,6 +306,7 @@ function DocumentGroupRow({
                 reason={findRejectionReason(v, current.versionNumber, auditLogs ?? [], projectId)}
                 onPreview={onPreview}
                 onDownload={onDownload}
+                isDownloading={isDownloading}
               />
             ))}
         </ul>
@@ -309,6 +318,7 @@ function DocumentGroupRow({
 export default function ProjectDocumentsList({
   project,
   onDownload,
+  isDownloading,
   onPreview,
   onDelete,
   markedForDeletion,
@@ -372,6 +382,7 @@ export default function ProjectDocumentsList({
                     onClearReplacement={onClearReplacement ? () => onClearReplacement(current.id) : undefined}
                     auditLogs={auditLogs}
                     onDownload={onDownload}
+                    isDownloading={isDownloading}
                     onPreview={onPreview}
                     onDelete={onDelete}
                     isMarkedForDeletion={markedForDeletion?.has(current.id)}

@@ -9,11 +9,10 @@
  * la app) para no duplicar ese visor.
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Download, Eye } from "lucide-react";
 import DocumentPreviewModal, { type PreviewableDocument } from "@/components/UI/DocumentPreviewModal";
-import { useToast } from "@/components/UI/Toast";
-import { downloadProjectDocument } from "@/services/api";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 import type { HistoryDrawing, HistoryDrawingVersion } from "../projectHistoryTypes";
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -24,16 +23,10 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   REEVALUACION: "Evidencia de reevaluación",
 };
 
-/** Descarga un documento del histórico (comprobante, plano, foto, etc.) mostrando un toast si falla. */
+/** Descarga un documento del histórico (comprobante, plano, foto, etc.); el toast de error y el anti doble clic los pone el hook. */
 export function useHistoryDocumentDownload(projectId: string, authToken: string) {
-  const { showToast } = useToast();
-  return async (doc: { id: number; name: string }) => {
-    try {
-      await downloadProjectDocument(projectId, { id: doc.id, originalName: doc.name }, authToken);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
-  };
+  const { download } = useProjectDocumentDownload(authToken);
+  return useCallback((doc: { id: number; name: string }) => download(projectId, { id: doc.id, originalName: doc.name }), [download, projectId]);
 }
 
 const toPreviewable = (v: HistoryDrawingVersion): PreviewableDocument => ({ id: v.id, originalName: v.name, versionNumber: v.version });

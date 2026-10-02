@@ -26,7 +26,7 @@ import ProjectDocumentsList from "@/components/UI/ProjectDocumentsList";
 import DocumentPreviewModal from "@/components/UI/DocumentPreviewModal";
 import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
 import { useToast } from "@/components/UI/Toast";
-import { downloadProjectDocument } from "@/services/api";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 import { bannerVariants } from "@/animations";
 import type { Project, ProjectDocument } from "@/types";
 
@@ -68,17 +68,14 @@ export default function AttachmentsSection({
 }: AttachmentsSectionProps) {
   const { maxFileSizeBytes, maxFileCount } = useAppGroupSettings();
   const { showToast } = useToast();
+  const { download: downloadDocument, isDownloading } = useProjectDocumentDownload(authToken ?? "");
   const [previewDoc, setPreviewDoc] = useState<ProjectDocument | null>(null);
 
   const onFileRejected = (name: string, reason: string) => showToast(`${name}: ${reason}`, "warning");
 
-  const handleDownload = async (doc: ProjectDocument) => {
+  const handleDownload = (doc: ProjectDocument) => {
     if (!existingProjectId || !authToken) return;
-    try {
-      await downloadProjectDocument(existingProjectId, doc, authToken);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
+    void downloadDocument(existingProjectId, doc);
   };
 
   const hasExistingSection = !!existingProjectId && !!existingDocuments;
@@ -107,6 +104,7 @@ export default function AttachmentsSection({
           <ProjectDocumentsList
             project={{ id: existingProjectId, documents: ownDocuments } as Project}
             onDownload={handleDownload}
+            isDownloading={(id) => isDownloading(existingProjectId, id)}
             onPreview={setPreviewDoc}
             onDelete={(doc) => onToggleDeletion?.(doc.id)}
             markedForDeletion={markedForDeletion}

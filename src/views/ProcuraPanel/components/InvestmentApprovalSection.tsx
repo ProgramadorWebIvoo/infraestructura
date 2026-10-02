@@ -16,7 +16,7 @@ import { ArrowRight, CheckSquare, MapPin, SearchX, TrendingUp, Undo2 } from "luc
 import { formatCurrency } from "@ivoo/shared";
 import Button from "@/components/UI/Button";
 import { useToast } from "@/components/UI/Toast";
-import { downloadProjectDocument } from "@/services/api";
+import { useProjectDocumentDownload } from "@/hooks/useDocumentDownload";
 import { useCurrencyConversion, formatBs } from "@/hooks/useCurrencyConversion";
 import Card from "@/components/UI/Card";
 import SectionHeader from "@/components/UI/SectionHeader";
@@ -60,6 +60,7 @@ interface InvestmentApprovalSectionProps {
 
 export default function InvestmentApprovalSection({ projects, authToken, onApproveInvestment, onSendToReevaluation, onRefresh }: InvestmentApprovalSectionProps) {
   const { showToast } = useToast();
+  const { download: downloadDocument, isDownloading } = useProjectDocumentDownload(authToken);
   const [selectedReviewId, setSelectedReviewId] = useState("");
   const [stepIndex, setStepIndex] = useState(0);
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
@@ -141,13 +142,9 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
   ], [convert, hasRates, isLoadingRates]);
   const activeReviewProject = pendingInvestmentApproval.find(p => p.id === selectedReviewId);
 
-  const handleDownload = async (doc: ProjectDocument) => {
+  const handleDownload = (doc: ProjectDocument) => {
     if (!activeReviewProject) return;
-    try {
-      await downloadProjectDocument(activeReviewProject.id, doc, authToken);
-    } catch {
-      showToast("No se pudo descargar el archivo.", "error");
-    }
+    void downloadDocument(activeReviewProject.id, doc);
   };
 
   const openReview = (p: Project) => {
@@ -356,6 +353,7 @@ export default function InvestmentApprovalSection({ projects, authToken, onAppro
                     <ProjectDocumentsList
                       project={activeReviewProject}
                       onDownload={handleDownload}
+                      isDownloading={(id) => isDownloading(activeReviewProject.id, id)}
                       onPreview={setPreviewDoc}
                     />
                   </div>

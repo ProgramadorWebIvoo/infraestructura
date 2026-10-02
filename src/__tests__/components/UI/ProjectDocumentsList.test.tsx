@@ -319,4 +319,27 @@ describe("ProjectDocumentsList", () => {
       expect(screen.getByText("v3.pdf")).toBeInTheDocument();
     });
   });
+
+  describe("Descarga en curso (isDownloading)", () => {
+    it("deshabilita el botón Descargar del documento en curso y lo marca ocupado", () => {
+      const onDownload = vi.fn();
+      render(
+        <ProjectDocumentsList
+          project={makeProject([makeDoc({ id: 5 }), makeDoc({ id: 6, originalName: "otro.pdf", documentGroupId: 2 })])}
+          onDownload={onDownload}
+          isDownloading={(id) => id === 5}
+          onPreview={vi.fn()}
+        />,
+      );
+
+      const buttons = screen.getAllByLabelText("Descargar");
+      expect(buttons).toHaveLength(2);
+      const busy = buttons.find((b) => b.hasAttribute("disabled"))!;
+      expect(busy).toHaveAttribute("aria-busy", "true");
+      expect(buttons.filter((b) => !b.hasAttribute("disabled"))).toHaveLength(1);
+
+      fireEvent.click(busy);
+      expect(onDownload).not.toHaveBeenCalled();
+    });
+  });
 });
