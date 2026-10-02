@@ -61,13 +61,19 @@ async function readBytes(blob: Blob): Promise<Uint8Array> {
 
 /**
  * Nombre seguro y consistente: NFC, sin caracteres de control ni overrides
- * bidireccionales (el truco `fdp.exe` con U+202E), sin rutas, y con la
- * extensión canónica en minúsculas (`FOTO.JPEG` → `FOTO.jpg`).
+ * bidireccionales (el truco `fdp.exe` con U+202E) y sin rutas. También sirve
+ * para nombrar archivos que se GUARDAN (descargas): no toca la extensión.
  */
-export function normalizeFileName(name: string): string {
+export function sanitizeFileName(name: string): string {
   const base = name.split(/[\\/]/).pop() ?? name;
   // eslint-disable-next-line no-control-regex
   const clean = base.normalize("NFC").replace(/[\u0000-\u001f\u007f​-‏‪-‮⁦-⁩]/g, "").replace(/\s+/g, " ").trim();
+  return clean || "archivo";
+}
+
+/** sanitizeFileName + extensión canónica en minúsculas (`FOTO.JPEG` → `FOTO.jpg`). */
+export function normalizeFileName(name: string): string {
+  const clean = sanitizeFileName(name);
   const ext = extensionOf(clean);
   if (!ext) return clean || "archivo";
   const stem = clean.slice(0, clean.length - ext.length - 1).trim() || "archivo";

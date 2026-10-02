@@ -8,6 +8,7 @@
  */
 
 import type { DebugEntry } from "@/stores/debugStore";
+import { saveBlob } from "@/utils/saveBlob";
 
 /** Reconstruye un comando cURL equivalente a partir de una entrada `kind: "http"` capturada. */
 export function buildCurlCommand(entry: DebugEntry): string {
@@ -39,13 +40,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 /** Descarga un JSON en el navegador — no es un artifact sandboxeado, la app real permite `<a download>`. */
 export function downloadJson(filename: string, data: unknown): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  saveBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), filename);
 }
 
 /** Uso general (pocas iteraciones, ej. lista de queries de TanStack) — lowercasea ambos lados en cada llamada. */

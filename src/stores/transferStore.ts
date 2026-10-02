@@ -15,12 +15,15 @@ import { create } from "zustand";
  * Fases de una subida: revisión/optimización de archivos en el navegador →
  * envío de bytes → el servidor recibió todo y lo procesa (escáner, compresión).
  * En `processing` ya no tiene sentido cancelar: el servidor puede terminar la
- * operación igual.
+ * operación igual. Una descarga solo tiene `downloading`.
  */
-export type TransferPhase = "preparing" | "uploading" | "processing";
+export type TransferPhase = "preparing" | "uploading" | "processing" | "downloading";
+
+export type TransferKind = "upload" | "download";
 
 export interface Transfer {
   id: number;
+  kind: TransferKind;
   label: string;
   phase: TransferPhase;
   loaded: number;
@@ -34,7 +37,7 @@ export interface Transfer {
 
 interface TransferState {
   transfers: Transfer[];
-  start: (label: string, cancel: () => void) => number;
+  start: (kind: TransferKind, label: string, cancel: () => void) => number;
   update: (id: number, patch: Partial<Pick<Transfer, "phase" | "loaded" | "total" | "retryAttempt">>) => void;
   finish: (id: number) => void;
 }
@@ -44,10 +47,11 @@ let nextId = 1;
 export const useTransferStore = create<TransferState>((set) => ({
   transfers: [],
 
-  start: (label, cancel) => {
+  start: (kind, label, cancel) => {
     const id = nextId++;
+    const phase: TransferPhase = kind === "upload" ? "preparing" : "downloading";
     set((state) => ({
-      transfers: [...state.transfers, { id, label, phase: "preparing", loaded: 0, retryAttempt: 0, startedAt: Date.now(), cancel }],
+      transfers: [...state.transfers, { id, kind, label, phase, loaded: 0, retryAttempt: 0, startedAt: Date.now(), cancel }],
     }));
     return id;
   },

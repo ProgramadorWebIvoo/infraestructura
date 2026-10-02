@@ -2,6 +2,7 @@ import DocumentPreviewModal, { type PreviewableDocument } from "@/components/UI/
 import { useToast } from "@/components/UI/Toast";
 import { apiDownload } from "@/services/api";
 import { getErrorMessage } from "@/services/logger";
+import { saveBlob } from "@/utils/saveBlob";
 
 /** Archivo del cierre (foto o documento técnico) a previsualizar; las rutas son relativas a la API, sin "/" inicial. */
 export interface ClosurePreviewTarget {
@@ -26,13 +27,8 @@ export default function ClosureFilePreview({ target, authToken, onClose }: Closu
   const download = async (doc: PreviewableDocument) => {
     if (!target) return;
     try {
-      const blob = await apiDownload(`/${target.downloadPath ?? target.path}`, { token: authToken });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = doc.originalName;
-      link.click();
-      URL.revokeObjectURL(url);
+      const blob = await apiDownload(`/${target.downloadPath ?? target.path}`, { token: authToken, transferLabel: `Descargando «${doc.originalName}»` });
+      saveBlob(blob, doc.originalName);
     } catch (error) {
       showToast(getErrorMessage(error, "No se pudo descargar el archivo."), "error");
     }

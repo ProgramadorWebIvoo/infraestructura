@@ -15,8 +15,8 @@ vi.mock("axios", () => ({
   },
 }));
 
-import { apiFetch, setApiBaseUrl, isRequestCanceled, REQUEST_TIMEOUT } from "@/services/api";
-import { ApiError, TRANSFER_INACTIVITY_MS, TRANSFER_PROCESSING_MS } from "@ivoo/shared";
+import { apiFetch, apiDownload, setApiBaseUrl, isRequestCanceled, REQUEST_TIMEOUT } from "@/services/api";
+import { ApiError, EMPTY_DOWNLOAD, NETWORK_ERROR, TRANSFER_INACTIVITY_MS, TRANSFER_PROCESSING_MS, UNEXPECTED_DOWNLOAD_TYPE } from "@ivoo/shared";
 import { useTransferStore } from "@/stores/transferStore";
 
 const BASE_URL = "http://localhost:8000/api";
@@ -217,6 +217,141 @@ describe("apiFetch — registro en el dock de transferencias", () => {
 
     expect(isRequestCanceled(await result)).toBe(true);
     expect(useTransferStore.getState().transfers).toEqual([]);
+  });
+});
+
+describe("apiDownload — robustez", () => {
+  const pdf = () => new Blob([new ArrayBuffer(10)], { type: "application/pdf" });
+  const httpError = (status: number, body = "") => ({ isAxiosError: true, response: { status, data: new Blob([body]) } });
+
+  beforeEach(() => useTransferStore.setState({ transfers: [] }));
+
+  it("devuelve el blob cuando es un archivo real", async () => {
+    mockRequest.mockResolvedValue({ status: 200, data: pdf(), headers: {} });
+
+    await expect(apiDownload("/f.pdf")).resolves.toBeInstanceOf(Blob);
+  });
+
+  it("rechaza un archivo vacío en vez de guardar un 'plano.pdf' de 0 bytes", async () => {
+    mockRequest.mockResolvedValue({ status: 200, data: new Blob([]), headers: {} });
+
+    const error = (await apiDownload("/f.pdf").catch((e: ApiError) => e)) as ApiError;
+
+    expect(error.code).toBe(EMPTY_DOWNLOAD);
+    expect(error.message).toContain("vacío");
+  });
+
+  it("rechaza HTML (la pantalla de login con 200 por sesión vencida) o JSON de error", async () => {
+    mockRequest.mockResolvedValueOnce({ status: 200, data: new Blob(["<html>login</html>"], { type: "text/html" }), headers: {} });
+    mockRequest.mockResolvedValueOnce({ status: 200, data: new Blob(['{"message":"x"}'], { type: "application/json" }), headers: {} });
+
+    const html = (await apiDownload("/f.pdf").catch((e: ApiError) => e)) as ApiError;
+    const json = (await apiDownload("/f.pdf").catch((e: ApiError) => e)) as ApiError;
+
+    expect(html.code).toBe(UNEXPECTED_DOWNLOAD_TYPE);
+    expect(html.message).toContain("la sesión venció");
+    expect(json.code).toBe(UNEXPECTED_DOWNLOAD_TYPE);
+  });
+
+  it("traduce el estado HTTP a un mensaje claro cuando el backend no manda uno", async () => {
+    const messageFor = async (status: number, body = "") => {
+      mockRequest.mockRejectedValueOnce(httpError(status, body));
+      return ((await apiDownload("/f.pdf").catch((e: ApiError) => e)) as ApiError).message;
+    };
+
+    expect(await messageFor(401)).toContain("Sesión expirada");
+    expect(await messageFor(419)).toContain("sesión de seguridad venció");
+    expect(await messageFor(403)).toContain("No tienes permiso");
+    expect(await messageFor(404)).toBe("El archivo no fue encontrado.");
+    expect(await messageFor(413)).toContain("demasiado grande");
+  });
+
+  it("prefiere el mensaje del backend (p. ej. 'El archivo ya no existe en el servidor.')", async () => {
+    mockRequest.mockRejectedValue(httpError(404, JSON.stringify({ message: "El archivo ya no existe en el servidor." })));
+
+    const error = (await apiDownload("/f.pdf").catch((e: ApiError) => e)) as ApiError;
+
+    expect(error.message).toBe("El archivo ya no existe en el servidor.");
+    expect(error.status).toBe(404);
+  });
+
+  it("sin conexión: mensaje claro (tras reintentar) en vez del error técnico de axios", async () => {
+    vi.useFakeTimers();
+    mockRequest.mockRejectedValue({ isAxiosError: true, message: "Network Error" });
+
+    const result = apiDownload("/f.pdf").catch((e: ApiError) => e);
+    await vi.advanceTimersByTimeAsync(10_000);
+    const error = (await result) as ApiError;
+
+    expect(error.code).toBe(NETWORK_ERROR);
+    expect(error.message).toContain("conexión a internet");
+    expect(mockRequest).toHaveBeenCalledTimes(3); // 1 intento + 2 reintentos (GET idempotente)
+  });
+
+  it("un 404 definitivo no se reintenta", async () => {
+    mockRequest.mockRejectedValue(httpError(404));
+
+    await apiDownload("/f.pdf").catch(() => undefined);
+
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("informa el progreso de recepción y, con transferLabel, aparece en el dock como descarga", async () => {
+    let emit!: (e: { loaded: number; total: number }) => void;
+    let finish!: (value: unknown) => void;
+    mockRequest.mockImplementation((config: { onDownloadProgress: typeof emit }) => {
+      emit = config.onDownloadProgress;
+      return new Promise((resolve) => { finish = resolve; });
+    });
+    const progress: Array<{ loaded: number; total?: number }> = [];
+
+    const result = apiDownload("/f.pdf", { transferLabel: "Descargando «plano.pdf»", onDownloadProgress: (p) => progress.push(p) });
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    emit({ loaded: 2000, total: 8000 });
+
+    expect(progress).toEqual([{ loaded: 2000, total: 8000 }]);
+    expect(useTransferStore.getState().transfers).toMatchObject([{ kind: "download", phase: "downloading", label: "Descargando «plano.pdf»", loaded: 2000, total: 8000 }]);
+
+    finish({ status: 200, data: pdf(), headers: {} });
+    await result;
+    expect(useTransferStore.getState().transfers).toEqual([]);
+  });
+
+  it("sin transferLabel no toca el dock (vistas previas e imágenes no hacen ruido)", async () => {
+    let finish!: (value: unknown) => void;
+    mockRequest.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+
+    const result = apiDownload("/preview.png");
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    expect(useTransferStore.getState().transfers).toEqual([]);
+
+    finish({ status: 200, data: pdf(), headers: {} });
+    await result;
+  });
+
+  it("cancelar una descarga rechaza como cancelación, sin reintentos ni mensaje de red", async () => {
+    hangUntilAborted();
+    const controller = new AbortController();
+
+    const result = apiDownload("/f.pdf", { signal: controller.signal }).catch((e: unknown) => e);
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    controller.abort();
+
+    expect(isRequestCanceled(await result)).toBe(true);
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("una descarga que no avanza expira (espera inicial de 5 min, luego 60 s sin bytes)", async () => {
+    vi.useFakeTimers();
+    hangUntilAborted();
+
+    const result = apiDownload("/f.pdf").catch((e: ApiError) => e);
+    await flush();
+    await vi.advanceTimersByTimeAsync(TRANSFER_PROCESSING_MS - 1_000);
+    expect(mockRequest).toHaveBeenCalledTimes(1); // aún espera: el servidor puede estar armando el archivo
+    await vi.advanceTimersByTimeAsync(30 * TRANSFER_PROCESSING_MS);
+
+    expect(((await result) as ApiError).code).toBe(REQUEST_TIMEOUT);
   });
 });
 

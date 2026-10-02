@@ -7,7 +7,7 @@ import { useTransferStore, type Transfer } from "@/stores/transferStore";
 const MB = 1024 * 1024;
 
 const transfer = (overrides: Partial<Transfer> = {}): Transfer => ({
-  id: 1, label: "Subiendo archivos", phase: "uploading", loaded: 0, retryAttempt: 0, startedAt: 0, cancel: vi.fn(), ...overrides,
+  id: 1, kind: "upload", label: "Subiendo archivos", phase: "uploading", loaded: 0, retryAttempt: 0, startedAt: 0, cancel: vi.fn(), ...overrides,
 });
 
 describe("transferStatusText / transferPercent", () => {
@@ -22,6 +22,13 @@ describe("transferStatusText / transferPercent", () => {
     expect(transferStatusText(transfer({ phase: "uploading", loaded: 1 * MB, total: 4 * MB }))).toBe("Enviando · 25% (1.0 MB de 4.0 MB)");
     expect(transferStatusText(transfer({ phase: "uploading", loaded: 0 }))).toBe("Enviando…");
     expect(transferStatusText(transfer({ phase: "processing", loaded: 4 * MB, total: 4 * MB }))).toContain("verificando");
+  });
+
+  it("describe una descarga, con bytes recibidos cuando el servidor no manda el total", () => {
+    expect(transferStatusText(transfer({ kind: "download", phase: "downloading", loaded: 1 * MB, total: 4 * MB }))).toBe("Descargando · 25% (1.0 MB de 4.0 MB)");
+    expect(transferStatusText(transfer({ kind: "download", phase: "downloading", loaded: 2 * MB }))).toBe("Descargando · 2.0 MB");
+    expect(transferStatusText(transfer({ kind: "download", phase: "downloading", loaded: 0 }))).toBe("Descargando…");
+    expect(transferStatusText(transfer({ kind: "download", phase: "downloading", retryAttempt: 1, total: 4 * MB }))).toContain("Reintentando la descarga");
   });
 
   it("avisa el reintento automático", () => {
@@ -47,7 +54,7 @@ describe("TransferDock", () => {
   it("no muestra una subida que termina enseguida (evita el parpadeo)", () => {
     render(<TransferDock />);
 
-    act(() => { useTransferStore.getState().start("Rápida", vi.fn()); });
+    act(() => { useTransferStore.getState().start("upload", "Rápida", vi.fn()); });
     act(() => { vi.advanceTimersByTime(200); });
     expect(screen.queryByText("Rápida")).not.toBeInTheDocument();
 
@@ -60,7 +67,7 @@ describe("TransferDock", () => {
     render(<TransferDock />);
     let id = 0;
 
-    act(() => { id = useTransferStore.getState().start("Enviando petición con adjuntos", vi.fn()); });
+    act(() => { id = useTransferStore.getState().start("upload", "Enviando petición con adjuntos", vi.fn()); });
     act(() => { useTransferStore.getState().update(id, { phase: "uploading", loaded: 1 * MB, total: 4 * MB }); });
     act(() => { vi.advanceTimersByTime(600); });
 

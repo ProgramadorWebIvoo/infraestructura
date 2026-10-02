@@ -86,6 +86,8 @@ export interface ApiFetchOptions extends RequestInit {
    * procesarlo (escaneo, compresión): esa espera es posterior.
    */
   onUploadProgress?: (progress: TransferProgress) => void;
+  /** Progreso de recepción en bytes (descargas). `total` es desconocido si el servidor no manda Content-Length. */
+  onDownloadProgress?: (progress: TransferProgress) => void;
   /** Se llama justo antes de cada reintento automático (red, timeout, 502/504); `attempt` empieza en 1. */
   onRetry?: (attempt: number) => void;
 }
@@ -109,6 +111,9 @@ export interface TransferProgress {
 export const TRANSFER_INACTIVITY_MS = 60_000;
 export const TRANSFER_PROCESSING_MS = 5 * 60_000;
 export const REQUEST_TIMEOUT = "REQUEST_TIMEOUT";
+export const NETWORK_ERROR = "NETWORK_ERROR";
+export const EMPTY_DOWNLOAD = "EMPTY_DOWNLOAD";
+export const UNEXPECTED_DOWNLOAD_TYPE = "UNEXPECTED_DOWNLOAD_TYPE";
 
 export { isRequestCanceled };
 
@@ -172,6 +177,8 @@ const ERROR_MESSAGES: Record<number, string> = {
   401: "Sesión expirada. Inicia sesión nuevamente.",
   403: "No tienes permiso para realizar esta acción.",
   404: "El recurso solicitado no fue encontrado.",
+  // Laravel responde 419 cuando el token CSRF venció (pestaña abierta mucho tiempo).
+  419: "La sesión de seguridad venció. Recarga la página e inténtalo de nuevo.",
   429: "Demasiadas solicitudes. Intenta nuevamente en un minuto.",
 };
 
@@ -294,9 +301,12 @@ type RequestConfig = Parameters<AxiosInstance["request"]>[0];
 
 interface TransferHooks {
   onUploadProgress?: (progress: TransferProgress) => void;
+  onDownloadProgress?: (progress: TransferProgress) => void;
   onRetry?: (attempt: number) => void;
-  /** Vigila la inactividad (subidas con FormData). */
+  /** Vigila la inactividad (subidas con FormData y descargas). */
   watchInactivity?: boolean;
+  /** Espera antes del primer evento de progreso (por defecto INACTIVITY). Una descarga puede tardar en empezar a fluir. */
+  initialWaitMs?: number;
 }
 
 class TransferTimeoutError extends Error {}
@@ -316,7 +326,7 @@ function transferTimeoutError(): ApiError {
  * usuario) para poder abortar por inactividad sin confundirlo con un cancelar.
  */
 async function attemptRequest(config: RequestConfig, hooks: TransferHooks) {
-  if (!hooks.watchInactivity && !hooks.onUploadProgress) return http.request<string>(config);
+  if (!hooks.watchInactivity && !hooks.onUploadProgress && !hooks.onDownloadProgress) return http.request<string>(config);
 
   const controller = new AbortController();
   const userSignal = config.signal as AbortSignal | undefined;
@@ -334,7 +344,7 @@ async function attemptRequest(config: RequestConfig, hooks: TransferHooks) {
       controller.abort();
     }, ms);
   };
-  arm(TRANSFER_INACTIVITY_MS);
+  arm(hooks.initialWaitMs ?? TRANSFER_INACTIVITY_MS);
 
   try {
     return await http.request<string>({
@@ -344,6 +354,10 @@ async function attemptRequest(config: RequestConfig, hooks: TransferHooks) {
         hooks.onUploadProgress?.({ loaded: event.loaded, total: event.total });
         // Todo el cuerpo ya llegó: el servidor puede tardar procesándolo.
         arm(event.total && event.loaded >= event.total ? TRANSFER_PROCESSING_MS : TRANSFER_INACTIVITY_MS);
+      },
+      onDownloadProgress: (event: { loaded: number; total?: number }) => {
+        hooks.onDownloadProgress?.({ loaded: event.loaded, total: event.total });
+        arm(TRANSFER_INACTIVITY_MS);
       },
     });
   } catch (err) {
@@ -673,31 +687,36 @@ export async function apiDownload(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  let response;
+  let response: { data: Blob; headers: Record<string, unknown> };
   try {
-    response = await http.request<Blob>({
-      url: `${_baseUrl}${path}`,
-      method: (fetchOptions.method ?? "GET") as any,
-      headers: { ...headers, ...normalizeHeaders(fetchOptions.headers) },
-      data: fetchOptions.body,
-      signal: fetchOptions.signal as any,
-      withCredentials: fetchOptions.credentials === "include",
-      responseType: "blob",
-    });
+    // Las descargas son GET idempotentes: reintentar red/timeout/502/504 es seguro.
+    response = (await requestWithRetry(
+      {
+        url: `${_baseUrl}${path}`,
+        method: (fetchOptions.method ?? "GET") as any,
+        headers: { ...headers, ...normalizeHeaders(fetchOptions.headers) },
+        data: fetchOptions.body,
+        signal: fetchOptions.signal as any,
+        withCredentials: fetchOptions.credentials === "include",
+        responseType: "blob",
+      },
+      true,
+      {
+        onDownloadProgress: fetchOptions.onDownloadProgress,
+        onRetry: fetchOptions.onRetry,
+        watchInactivity: true,
+        // El servidor puede tardar en armar el archivo (p. ej. un CSV grande) antes del primer byte.
+        initialWaitMs: TRANSFER_PROCESSING_MS,
+      },
+    )) as unknown as typeof response;
   } catch (err) {
+    if (isRequestCanceled(err) || err instanceof ApiError) throw err;
+
     const ex = err as AxiosError;
     if (ex.response) {
-      let message: string;
-      try {
-        const text = await (ex.response.data as unknown as Blob).text();
-        const body = JSON.parse(text);
-        message = body.message ?? body.error ?? `Error al descargar (${ex.response.status})`;
-      } catch {
-        message = `Error al descargar (${ex.response.status})`;
-      }
-      throw new Error(message);
+      throw await buildDownloadError(ex.response.status, ex.response.data as unknown as Blob | undefined);
     }
-    throw err;
+    throw new ApiError("No se pudo conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo.", 0, undefined, NETWORK_ERROR);
   }
 
   const refreshedToken = response.headers["x-refresh-token"] as string | undefined;
@@ -705,5 +724,55 @@ export async function apiDownload(
     _onTokenRefreshed(refreshedToken);
   }
 
+  assertIsFile(response.data);
   return response.data;
+}
+
+/** Mensaje al usuario por estado HTTP de una descarga; prefiere el del backend cuando trae uno. */
+async function buildDownloadError(status: number, data: Blob | undefined): Promise<ApiError> {
+  let body: Record<string, any> | null = null;
+  try {
+    body = safeJsonParse(await (data as Blob).text());
+  } catch {
+    // Sin cuerpo legible: se usa el mensaje por estado.
+  }
+  const code = typeof body?.code === "string" ? body.code : undefined;
+  const fromBackend = body?.message ?? body?.error;
+
+  const message =
+    status === 401 || status === 419 || status === 429
+      ? ERROR_MESSAGES[status]
+      : typeof fromBackend === "string"
+        ? fromBackend
+        : status === 403
+          ? "No tienes permiso para descargar este archivo."
+          : status === 404
+            ? "El archivo no fue encontrado."
+            : status === 413
+              ? "El archivo es demasiado grande para el servidor."
+              : status >= 500
+                ? `Error al descargar (${status}). El servidor no pudo entregar el archivo; inténtalo más tarde.`
+                : `Error al descargar (${status}).`;
+
+  return new ApiError(message, status, undefined, code);
+}
+
+/**
+ * Una descarga 200 que no es el archivo no debe guardarse como si lo fuera: el
+ * HTML de la pantalla de login (sesión vencida) o un JSON de error terminarían
+ * como "plano.pdf" corrupto. Ningún archivo legítimo de la app es HTML ni JSON.
+ */
+function assertIsFile(blob: Blob): void {
+  if (blob.size === 0) {
+    throw new ApiError("El archivo llegó vacío. Inténtalo de nuevo; si persiste, avisa a soporte.", 0, undefined, EMPTY_DOWNLOAD);
+  }
+  const type = (blob.type ?? "").toLowerCase();
+  if (type.startsWith("text/html") || type.startsWith("application/json")) {
+    throw new ApiError(
+      "El servidor respondió con una página en lugar del archivo (¿la sesión venció?). Recarga la página e inténtalo de nuevo.",
+      0,
+      undefined,
+      UNEXPECTED_DOWNLOAD_TYPE,
+    );
+  }
 }

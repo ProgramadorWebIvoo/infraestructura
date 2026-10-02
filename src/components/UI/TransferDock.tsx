@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Loader2, UploadCloud, X } from "lucide-react";
+import { Download, Loader2, UploadCloud, X } from "lucide-react";
 import { formatFileSize } from "@/utils";
 import { useTransferStore, type Transfer } from "@/stores/transferStore";
 import { SEMANTIC_COLOR_MAP } from "./colorTokens";
@@ -33,8 +33,14 @@ export function transferStatusText(transfer: Transfer): string {
   if (transfer.phase === "processing") return "Recibido. El servidor está verificando los archivos…";
 
   const percent = transferPercent(transfer);
-  const base = transfer.retryAttempt > 0 ? `Reintentando el envío (intento ${transfer.retryAttempt + 1})` : "Enviando";
-  if (percent === null) return `${base}…`;
+  const isDownload = transfer.phase === "downloading";
+  const base = transfer.retryAttempt > 0
+    ? `Reintentando ${isDownload ? "la descarga" : "el envío"} (intento ${transfer.retryAttempt + 1})`
+    : isDownload ? "Descargando" : "Enviando";
+  if (percent === null) {
+    // Sin Content-Length no hay %: se muestran al menos los bytes recibidos.
+    return isDownload && transfer.loaded > 0 ? `${base} · ${formatFileSize(transfer.loaded)}` : `${base}…`;
+  }
   return `${base} · ${percent}% (${formatFileSize(transfer.loaded)} de ${formatFileSize(transfer.total ?? 0)})`;
 }
 
@@ -55,7 +61,7 @@ function TransferCard({ transfer }: { transfer: Transfer }) {
     >
       <div className="flex items-start gap-3">
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${b.bg100} ${b.text600}`}>
-          {transfer.phase === "uploading" ? <UploadCloud className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
+          {transfer.phase === "uploading" ? <UploadCloud className="h-4 w-4" /> : transfer.phase === "downloading" ? <Download className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
         </span>
 
         <div className="min-w-0 flex-1">
@@ -70,7 +76,7 @@ function TransferCard({ transfer }: { transfer: Transfer }) {
           onClick={transfer.cancel}
           disabled={isProcessing}
           aria-label={`Cancelar: ${transfer.label}`}
-          title={isProcessing ? "Ya no se puede cancelar: el servidor está procesando los archivos." : "Cancelar el envío"}
+          title={isProcessing ? "Ya no se puede cancelar: el servidor está procesando los archivos." : transfer.kind === "download" ? "Cancelar la descarga" : "Cancelar el envío"}
           className="shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <X className="h-4 w-4" />

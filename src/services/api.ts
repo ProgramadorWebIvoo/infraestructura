@@ -32,7 +32,8 @@ import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugSt
 import { applyDebugNetworkProfile } from "./debugNetwork";
 import { prepareFormDataFiles } from "@/utils/fileUpload";
 import type { TransferPhase } from "@/stores/transferStore";
-import { trackUpload } from "./transferTracking";
+import { saveBlob } from "@/utils/saveBlob";
+import { trackDownload, trackUpload } from "./transferTracking";
 export type { TransferProgress } from "@ivoo/shared";
 export { isRequestCanceled, REQUEST_TIMEOUT } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
@@ -163,7 +164,7 @@ export async function apiFetch<T = unknown>(
 
   // Subida: queda registrada en transferStore (TransferDock muestra fase,
   // progreso y "Cancelar") sin que el caller tenga que hacer nada.
-  const tracked = trackUpload({ label: transferLabel, signal: rest.signal, onPhase, onUploadProgress: rest.onUploadProgress, onRetry: rest.onRetry });
+  const tracked = trackUpload({ label: transferLabel, signal: rest.signal, onPhase, onProgress: rest.onUploadProgress, onRetry: rest.onRetry });
   try {
     tracked.setPhase("preparing");
     const body = await prepareFormDataFiles(rest.body);
@@ -175,7 +176,7 @@ export async function apiFetch<T = unknown>(
       body,
       signal: tracked.signal,
       onUploadProgress: (progress) => {
-        tracked.onUploadProgress(progress);
+        tracked.onProgress(progress);
         // Todo el cuerpo ya llegó: el servidor está procesándolo.
         if (progress.total && progress.loaded >= progress.total) tracked.setPhase("processing");
       },
@@ -192,11 +193,22 @@ export async function apiDownload(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<Blob> {
-  const { token: _webIgnoresBearer, ...rest } = options;
+  const { token: _webIgnoresBearer, onPhase: _uploadOnly, transferLabel, ...rest } = options;
   await applyDebugNetworkProfile(`DOWNLOAD ${path}`, options.signal);
   const startedAt = performance.now();
+
+  // Con `transferLabel` la descarga aparece en el dock (progreso + cancelar). Sin ella no:
+  // las vistas previas e imágenes cargan muchas descargas pequeñas que no deben hacer ruido.
+  const tracked = transferLabel
+    ? trackDownload({ label: transferLabel, signal: rest.signal, onProgress: rest.onDownloadProgress, onRetry: rest.onRetry })
+    : null;
+
   try {
-    const blob = await sharedApiDownload(path, { ...rest, credentials: "include" });
+    const blob = await sharedApiDownload(path, {
+      ...rest,
+      ...(tracked && { signal: tracked.signal, onDownloadProgress: tracked.onProgress, onRetry: tracked.onRetry }),
+      credentials: "include",
+    });
     pushDebugEntry({
       kind: "http",
       level: "info",
@@ -212,6 +224,8 @@ export async function apiDownload(
       detail: { method: "DOWNLOAD", path, durationMs: Math.round(performance.now() - startedAt), errorMessage: err instanceof Error ? err.message : String(err) },
     });
     throw err;
+  } finally {
+    tracked?.finish();
   }
 }
 
@@ -221,13 +235,8 @@ export async function downloadProjectDocument(
   doc: Pick<ProjectDocument, "id" | "originalName">,
   authToken: string,
 ): Promise<void> {
-  const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = doc.originalName;
-  a.click();
-  URL.revokeObjectURL(url);
+  const blob = await apiDownload(`/projects/${projectId}/documents/${doc.id}/download`, { token: authToken, transferLabel: `Descargando «${doc.originalName}»` });
+  saveBlob(blob, doc.originalName);
 }
 
 /**
@@ -243,13 +252,8 @@ export async function downloadAuditLogsExport(
   authToken: string,
 ): Promise<void> {
   const path = queryString ? `/${scope}/export?${queryString}` : `/${scope}/export`;
-  const blob = await apiDownload(path, { token: authToken });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${scope === "audit-logs" ? "auditoria-proyectos" : "auditoria-configuracion"}-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const blob = await apiDownload(path, { token: authToken, transferLabel: "Generando exportación de auditoría" });
+  saveBlob(blob, `${scope === "audit-logs" ? "auditoria-proyectos" : "auditoria-configuracion"}-${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
 /**

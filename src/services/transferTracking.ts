@@ -2,47 +2,47 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Registra una subida en `transferStore` y devuelve las opciones que `apiFetch`
- * (shared) necesita para reportar fase, bytes y reintentos, más una señal
- * propia para poder cancelarla desde el dock. Compone con los callbacks y la
- * señal que el caller ya pasara: nada de lo suyo se pierde.
+ * Registra una subida o descarga en `transferStore` y devuelve lo que
+ * `apiFetch`/`apiDownload` (shared) necesitan para reportar fase, bytes y
+ * reintentos, más una señal propia para poder cancelarla desde el dock.
+ * Compone con los callbacks y la señal que el caller ya pasara: nada de lo
+ * suyo se pierde.
  */
 
 import type { TransferProgress } from "@ivoo/shared";
-import { useTransferStore, type TransferPhase } from "@/stores/transferStore";
+import { useTransferStore, type TransferKind, type TransferPhase } from "@/stores/transferStore";
 
 export const DEFAULT_TRANSFER_LABEL = "Subiendo archivos";
 
-export interface TrackUploadOptions {
+export interface TrackTransferOptions {
   label?: string;
-  /** Señal del caller: si la aborta, la subida se cancela igual que desde el dock. */
+  /** Señal del caller: si la aborta, la transferencia se cancela igual que desde el dock. */
   signal?: AbortSignal | null;
   onPhase?: (phase: TransferPhase) => void;
-  onUploadProgress?: (progress: TransferProgress) => void;
+  onProgress?: (progress: TransferProgress) => void;
   onRetry?: (attempt: number) => void;
 }
 
-export interface TrackedUpload {
+export interface TrackedTransfer {
   signal: AbortSignal;
   setPhase: (phase: TransferPhase) => void;
-  onUploadProgress: (progress: TransferProgress) => void;
+  onProgress: (progress: TransferProgress) => void;
   onRetry: (attempt: number) => void;
   /** Lanza si ya se canceló (p. ej. durante `preparing`, que no es abortable por sí misma). */
   throwIfCanceled: () => void;
-  /** Quita la subida del dock y desengancha la señal del caller. Llamar siempre (finally). */
+  /** Quita la transferencia del dock y desengancha la señal del caller. Llamar siempre (finally). */
   finish: () => void;
 }
 
-export function trackUpload(options: TrackUploadOptions): TrackedUpload {
+function trackTransfer(kind: TransferKind, options: TrackTransferOptions): TrackedTransfer {
   const controller = new AbortController();
   const abort = () => controller.abort();
 
   if (options.signal?.aborted) abort();
   else options.signal?.addEventListener("abort", abort, { once: true });
 
-  const store = useTransferStore.getState();
-  const id = store.start(options.label ?? DEFAULT_TRANSFER_LABEL, abort);
-
+  const sendingPhase: TransferPhase = kind === "upload" ? "uploading" : "downloading";
+  const id = useTransferStore.getState().start(kind, options.label ?? DEFAULT_TRANSFER_LABEL, abort);
   const update = useTransferStore.getState().update;
 
   return {
@@ -53,16 +53,16 @@ export function trackUpload(options: TrackUploadOptions): TrackedUpload {
       options.onPhase?.(phase);
     },
 
-    onUploadProgress: (progress) => {
+    onProgress: (progress) => {
       update(id, { loaded: progress.loaded, total: progress.total });
-      options.onUploadProgress?.(progress);
+      options.onProgress?.(progress);
     },
 
     onRetry: (attempt) => {
-      // Un reintento automático vuelve a enviar los bytes desde cero.
-      update(id, { retryAttempt: attempt, loaded: 0, phase: "uploading" });
+      // Un reintento automático vuelve a mover los bytes desde cero.
+      update(id, { retryAttempt: attempt, loaded: 0, phase: sendingPhase });
       options.onRetry?.(attempt);
-      options.onPhase?.("uploading");
+      options.onPhase?.(sendingPhase);
     },
 
     throwIfCanceled: () => {
@@ -75,3 +75,6 @@ export function trackUpload(options: TrackUploadOptions): TrackedUpload {
     },
   };
 }
+
+export const trackUpload = (options: TrackTransferOptions) => trackTransfer("upload", options);
+export const trackDownload = (options: TrackTransferOptions) => trackTransfer("download", options);

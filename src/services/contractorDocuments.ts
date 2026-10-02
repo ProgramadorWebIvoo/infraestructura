@@ -8,6 +8,7 @@
  */
 
 import { apiDownload, apiFetch } from "@/services/api";
+import { saveBlob } from "@/utils/saveBlob";
 
 export interface ContractorDocumentType {
   id: number;
@@ -88,13 +89,8 @@ export function contractorDocumentPath(code: string, documentId: number): string
 
 /** Descarga con sesión (blob) y dispara el guardado; lanza si falla. */
 export async function downloadContractorDocument(code: string, doc: Pick<ContractorDocument, "id" | "originalName">, token: string): Promise<void> {
-  const blob = await apiDownload(contractorDocumentPath(code, doc.id), { token });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = doc.originalName;
-  a.click();
-  URL.revokeObjectURL(url);
+  const blob = await apiDownload(contractorDocumentPath(code, doc.id), { token, transferLabel: `Descargando «${doc.originalName}»` });
+  saveBlob(blob, doc.originalName);
 }
 
 /** Tipos obligatorios que aún no tienen archivo seleccionado. */

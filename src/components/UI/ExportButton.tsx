@@ -11,6 +11,7 @@
 import { useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useToastStore } from "@/stores/toastStore";
 import { formatCurrency } from "@/utils";
+import { saveBlob } from "@/utils/saveBlob";
 
 export type ExportFormat = "csv" | "excel" | "pdf";
 export type ExportRow = (string | number | null | undefined)[];
@@ -213,13 +214,7 @@ export async function buildXlsx(
 }
 
 export function downloadBlob(content: BlobPart, mime: string, downloadName: string): void {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = downloadName;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  saveBlob(new Blob([content], { type: mime }), downloadName);
 }
 
 /** Exportado — mismo motivo que buildXlsx: consumidores con dataset server-side paginado. */
