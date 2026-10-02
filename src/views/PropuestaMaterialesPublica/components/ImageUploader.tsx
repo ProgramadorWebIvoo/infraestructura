@@ -34,7 +34,7 @@ export default function ImageUploader({ token, item, onUploaded }: { token: stri
     try {
       const form = new FormData();
       form.append("image", file);
-      const res = await apiFetch<{ path: string; optimized: boolean }>(`/public/invitations/${token}/proposal-image`, { method: "POST", body: form });
+      const res = await apiFetch<{ path: string; optimized: boolean }>(`/public/invitations/${token}/proposal-image`, { method: "POST", body: form, transferLabel: "Subiendo imagen del material" });
       onUploaded(res.path);
     } catch (error) {
       // Mensaje del backend (pared de seguridad, tipo/tamaño no permitido) —

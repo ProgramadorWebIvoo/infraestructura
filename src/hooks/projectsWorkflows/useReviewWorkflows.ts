@@ -43,6 +43,7 @@ export function useReviewWorkflows({
           method: "POST",
           token,
           body: buildProcessBody(newProj, files),
+          transferLabel: "Enviando petición con adjuntos",
         });
         sync(settleAttachments(show, result));
         show("Petición de Infraestructura registrada con éxito y enviada a Auditoría.", "success");
@@ -101,6 +102,7 @@ export function useReviewWorkflows({
           method: "POST",
           token,
           body: buildProcessBody({ reason, observations: observations || undefined }, { files: correctionFiles }),
+          transferLabel: "Enviando rechazo con correcciones",
         });
         sync(settleAttachments(show, result));
         show(
@@ -149,6 +151,7 @@ export function useReviewWorkflows({
           method: "POST",
           token,
           body: buildProcessBody(updated, files, versionReplacements),
+          transferLabel: "Reenviando petición corregida",
         });
         sync(settleAttachments(show, result));
         show("Petición corregida y reenviada a Auditoría.", "success");
@@ -204,6 +207,7 @@ export function useReviewWorkflows({
           method: "POST",
           token,
           body: buildProcessBody({ reason, observations: observations || undefined }, { files: evidenceFiles }),
+          transferLabel: "Enviando reevaluación con evidencia",
         });
         sync(settleAttachments(show, result));
         show(

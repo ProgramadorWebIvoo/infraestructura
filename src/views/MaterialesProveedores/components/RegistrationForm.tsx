@@ -104,6 +104,7 @@ export default function RegistrationForm({ onAddContractor }: RegistrationFormPr
         method: "POST",
         // rating: no se envía desde el portal público; el backend asigna valor por defecto
         body: buildContractorFormData({ name: cleanName, rif, specialty: cleanSpecialty, email: cleanContact }, documentFiles),
+        transferLabel: "Enviando registro de proveedor",
       });
 
       onAddContractor(contractor);

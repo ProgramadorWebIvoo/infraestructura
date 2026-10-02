@@ -50,7 +50,7 @@ export function useClosureWorkflows({ authTokenRef, syncProjectRef }: WorkflowCo
       const form = new FormData();
       form.append("image", file);
       try {
-        await apiFetch(`/projects/${projectId}/closure-report/photos`, { method: "POST", token: authTokenRef.current, body: form });
+        await apiFetch(`/projects/${projectId}/closure-report/photos`, { method: "POST", token: authTokenRef.current, body: form, transferLabel: "Subiendo foto de verificación" });
       } catch (error) {
         logError("handleUploadResidentPhoto", error);
         throw error;

@@ -96,6 +96,7 @@ describe("useProjectsWorkflows", () => {
         method: "POST",
         token: "valid-token",
         body: expect.any(String),
+        transferLabel: "Enviando petición con adjuntos",
       });
       expect(syncProject).toHaveBeenCalledWith(newProject);
       expect(outcome).toEqual({ ok: true, partial: false, failedGroups: [] });

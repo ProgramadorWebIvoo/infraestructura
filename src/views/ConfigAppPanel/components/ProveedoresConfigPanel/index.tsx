@@ -185,6 +185,7 @@ export default function ProveedoresConfigPanel({ authToken, onContractorMutated,
           method: "POST",
           token: authToken,
           body: buildContractorFormData(payload, documentFiles),
+          transferLabel: "Guardando proveedor con documentos",
         });
         setContractors((prev) => [...prev, created]);
         if (created.auditLog && isSuperadmin) prependAuditLog(created.auditLog);

@@ -77,7 +77,7 @@ export default function CierrePublico() {
     const form = new FormData();
     form.append("image", file);
     try {
-      await apiFetch(`/public/closures/${token}/photos`, { method: "POST", body: form });
+      await apiFetch(`/public/closures/${token}/photos`, { method: "POST", body: form, transferLabel: `Subiendo foto «${file.name}»` });
       return true;
     } catch (error) {
       showToast(error instanceof Error ? error.message : "No se pudo subir la foto.", "error");

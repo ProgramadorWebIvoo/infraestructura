@@ -74,6 +74,7 @@ export async function uploadContractorDocument(code: string, documentTypeId: num
     method: "POST",
     token,
     body: form,
+    transferLabel: "Subiendo documento del proveedor",
   });
 }
 

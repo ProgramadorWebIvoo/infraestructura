@@ -101,7 +101,7 @@ export function useResidentProjects(authToken: string) {
       form.append("image", file);
       if (itemId) form.append("itemId", String(itemId));
       try {
-        await apiFetch(`/resident/projects/${projectId}/photos`, { method: "POST", token: authToken, body: form });
+        await apiFetch(`/resident/projects/${projectId}/photos`, { method: "POST", token: authToken, body: form, transferLabel: "Subiendo foto de verificación" });
         replace(await apiFetch<ResidentProjectDto>(`/resident/projects/${projectId}`, { token: authToken }));
       } catch (error) {
         logError("resident.uploadPhoto", error);

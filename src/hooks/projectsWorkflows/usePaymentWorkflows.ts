@@ -28,7 +28,7 @@ async function uploadPaymentProof(
   const form = new FormData();
   form.append("document_type", documentType);
   form.append("files[]", proofFile);
-  await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form });
+  await apiFetch(`/projects/${projectId}/documents`, { method: "POST", token, body: form, transferLabel: "Subiendo comprobante de pago" });
 }
 
 export function usePaymentWorkflows({
