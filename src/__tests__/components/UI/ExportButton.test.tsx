@@ -78,7 +78,8 @@ describe("ExportButton — CSV", () => {
 
     expect(cap.getAnchor().download).toBe("master-obras-2026-07-31.csv");
     expect(cap.getAnchor().href).toBe("blob:mock");
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock");
+    // La URL se revoca con retraso (saveBlob): revocarla en el mismo instante del click podía cancelar la descarga.
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
 
     // Blob.text() decodifica y descarta el BOM; verificar los bytes crudos
     const bytes = new Uint8Array(await cap.getBlob().arrayBuffer());
