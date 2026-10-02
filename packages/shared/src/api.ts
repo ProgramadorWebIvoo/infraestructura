@@ -79,6 +79,44 @@ export interface ApiFetchOptions extends RequestInit {
    * useIdempotentAction).
    */
   idempotencyKey?: string;
+  /**
+   * Progreso de envío del cuerpo en bytes (subidas con FormData). `loaded ===
+   * total` significa que el servidor YA recibió todo, no que terminó de
+   * procesarlo (escaneo, compresión): esa espera es posterior.
+   */
+  onUploadProgress?: (progress: TransferProgress) => void;
+  /** Se llama justo antes de cada reintento automático (red, timeout, 502/504); `attempt` empieza en 1. */
+  onRetry?: (attempt: number) => void;
+}
+
+export interface TransferProgress {
+  loaded: number;
+  /** Desconocido (undefined) si el navegador no puede calcularlo. */
+  total?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Timeout por inactividad (subidas)
+// ---------------------------------------------------------------------------
+// axios no tiene timeout propio: una subida colgada nunca expiraría. Un
+// timeout TOTAL cortaría archivos grandes que sí avanzan por una red lenta, así
+// que el reloj se reinicia con cada evento de progreso: solo se aborta si no
+// pasa ni un byte durante INACTIVITY. Cuando el cuerpo ya llegó completo el
+// servidor puede tardar legítimamente (escáner, Ghostscript, compresión): ahí
+// rige PROCESSING, más holgado. Solo aplica a FormData; el resto de peticiones
+// (p. ej. evaluaciones IA de minutos) no se toca.
+export const TRANSFER_INACTIVITY_MS = 60_000;
+export const TRANSFER_PROCESSING_MS = 5 * 60_000;
+export const REQUEST_TIMEOUT = "REQUEST_TIMEOUT";
+
+/** ¿El error es una cancelación pedida por el usuario (AbortController)? No es un fallo: no se muestra como error. */
+export function isRequestCanceled(err: unknown): boolean {
+  const e = err as { code?: string; name?: string } | null;
+  return e?.code === "ERR_CANCELED" || e?.name === "CanceledError" || e?.name === "AbortError";
+}
+
+function canceledError(): Error {
+  return Object.assign(new Error("Operación cancelada."), { name: "CanceledError", code: "ERR_CANCELED" });
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +210,15 @@ export function buildApiError(status: number, text: string, headers?: unknown): 
     return new ApiError(ERROR_MESSAGES[status], status, undefined, code, retryAfterSeconds);
   }
 
+  // 413: el total de la subida superó el límite. Laravel responde JSON con el
+  // límite real; si el 413 lo da el proxy (nginx → HTML) no hay cuerpo útil.
+  if (status === 413) {
+    const message = typeof body?.message === "string"
+      ? body.message
+      : "Los archivos pesan demasiado en conjunto para el servidor. Adjunte menos archivos o archivos más livianos.";
+    return new ApiError(message, status, undefined, code ?? "PAYLOAD_TOO_LARGE");
+  }
+
   if (status === 422) {
     const firstKey = body?.errors ? Object.keys(body.errors)[0] : null;
     const message = firstKey
@@ -250,15 +297,85 @@ function retryDelayMs(err: AxiosError, attempt: number): number | null {
   return null;
 }
 
-async function requestWithRetry(config: Parameters<AxiosInstance["request"]>[0], canRetry: boolean) {
+type RequestConfig = Parameters<AxiosInstance["request"]>[0];
+
+interface TransferHooks {
+  onUploadProgress?: (progress: TransferProgress) => void;
+  onRetry?: (attempt: number) => void;
+  /** Vigila la inactividad (subidas con FormData). */
+  watchInactivity?: boolean;
+}
+
+class TransferTimeoutError extends Error {}
+
+function transferTimeoutError(): ApiError {
+  return new ApiError(
+    "La conexión se quedó sin respuesta. Revisa tu internet e inténtalo de nuevo.",
+    0,
+    undefined,
+    REQUEST_TIMEOUT,
+  );
+}
+
+/**
+ * Un intento de envío. Sin progreso ni vigilancia es la llamada directa de
+ * siempre; con ellos arma un AbortController propio (enlazado a la señal del
+ * usuario) para poder abortar por inactividad sin confundirlo con un cancelar.
+ */
+async function attemptRequest(config: RequestConfig, hooks: TransferHooks) {
+  if (!hooks.watchInactivity && !hooks.onUploadProgress) return http.request<string>(config);
+
+  const controller = new AbortController();
+  const userSignal = config.signal as AbortSignal | undefined;
+  const abortFromUser = () => controller.abort();
+  if (userSignal?.aborted) controller.abort();
+  else userSignal?.addEventListener("abort", abortFromUser, { once: true });
+
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const arm = (ms: number) => {
+    if (!hooks.watchInactivity) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, ms);
+  };
+  arm(TRANSFER_INACTIVITY_MS);
+
+  try {
+    return await http.request<string>({
+      ...config,
+      signal: controller.signal as any,
+      onUploadProgress: (event: { loaded: number; total?: number }) => {
+        hooks.onUploadProgress?.({ loaded: event.loaded, total: event.total });
+        // Todo el cuerpo ya llegó: el servidor puede tardar procesándolo.
+        arm(event.total && event.loaded >= event.total ? TRANSFER_PROCESSING_MS : TRANSFER_INACTIVITY_MS);
+      },
+    });
+  } catch (err) {
+    if (timedOut) throw new TransferTimeoutError();
+    throw err;
+  } finally {
+    clearTimeout(timer);
+    userSignal?.removeEventListener("abort", abortFromUser);
+  }
+}
+
+async function requestWithRetry(config: RequestConfig, canRetry: boolean, hooks: TransferHooks = {}) {
   for (let attempt = 0; ; attempt++) {
     try {
-      return await http.request<string>(config);
+      return await attemptRequest(config, hooks);
     } catch (err) {
-      const wait = canRetry && attempt < MAX_RETRIES && !config.signal?.aborted
-        ? retryDelayMs(err as AxiosError, attempt)
-        : null;
-      if (wait === null) throw err;
+      const timedOut = err instanceof TransferTimeoutError;
+      const retryable = canRetry && attempt < MAX_RETRIES && !config.signal?.aborted;
+      const wait = !retryable
+        ? null
+        : timedOut
+          ? RETRY_BACKOFF_MS[Math.min(attempt, RETRY_BACKOFF_MS.length - 1)]
+          : retryDelayMs(err as AxiosError, attempt);
+      if (wait === null) throw timedOut ? transferTimeoutError() : err;
+      hooks.onRetry?.(attempt + 1);
       await delay(wait);
     }
   }
@@ -315,7 +432,15 @@ export async function apiFetch<T = unknown>(
 // Con un resultado definitivo (éxito o error con respuesta) la clave se
 // descarta: la siguiente operación igual es una nueva. Si el usuario cambia los
 // datos, la identidad cambia y nace una clave nueva.
-const inFlightMutations = new Map<string, Promise<unknown>>();
+//
+// Quien se une a una operación ya en vuelo no dispara otra petición, pero SÍ
+// se suscribe a su progreso/reintentos (su UI mostraría una barra congelada si
+// no), y puede abandonarla con su propia señal sin cancelar la original.
+interface InFlightMutation {
+  promise: Promise<unknown>;
+  listeners: Set<Pick<ApiFetchOptions, "onUploadProgress" | "onRetry">>;
+}
+const inFlightMutations = new Map<string, InFlightMutation>();
 const pendingKeys = new Map<string, { key: string; at: number }>();
 /** Una intención abandonada no debe reutilizarse horas después. */
 const PENDING_KEY_TTL_MS = 10 * 60 * 1000;
@@ -350,8 +475,19 @@ function bodySignature(body: unknown): string | null {
 
 /** ¿No sabemos si el servidor aplicó la operación? Entonces la clave debe conservarse para el reintento. */
 function isOutcomeUnknown(err: unknown): boolean {
-  if (!(err instanceof ApiError)) return true; // sin respuesta: red, timeout, cancelación
-  return err.status === 502 || err.status === 504 || (err.status === 409 && err.code === IDEMPOTENCY_IN_PROGRESS);
+  if (!(err instanceof ApiError)) return true; // sin respuesta: red, cancelación
+  return err.code === REQUEST_TIMEOUT || err.status === 502 || err.status === 504 || (err.status === 409 && err.code === IDEMPOTENCY_IN_PROGRESS);
+}
+
+/** Deja que quien se unió a una operación ajena la abandone con su señal, sin cancelar la original. */
+function abandonable<T>(promise: Promise<T>, signal?: AbortSignal | null): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(canceledError());
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(canceledError());
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
+  });
 }
 
 /** Descarta las claves pendientes (logout / cambio de usuario): no deben cruzar sesiones. */
@@ -368,13 +504,26 @@ async function apiFetchMutation<T>(path: string, options: ApiFetchOptions): Prom
   const identity = `${(options.method ?? "POST").toUpperCase()} ${path} ${signature}`;
 
   const existing = inFlightMutations.get(identity);
-  if (existing) return existing as Promise<T>;
+  if (existing) {
+    existing.listeners.add({ onUploadProgress: options.onUploadProgress, onRetry: options.onRetry });
+    return abandonable(existing.promise as Promise<T>, options.signal);
+  }
 
   const pending = pendingKeys.get(identity);
   const key = pending && Date.now() - pending.at < PENDING_KEY_TTL_MS ? pending.key : generateIdempotencyKey();
   pendingKeys.set(identity, { key, at: Date.now() });
 
-  const promise = apiFetchUncached<T>(path, { ...options, idempotencyKey: key })
+  const listeners: InFlightMutation["listeners"] = new Set([{ onUploadProgress: options.onUploadProgress, onRetry: options.onRetry }]);
+  // Solo las subidas reparten progreso/reintentos entre quienes se unan; el resto de mutaciones va tal cual.
+  const isUpload = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const promise = apiFetchUncached<T>(path, {
+    ...options,
+    idempotencyKey: key,
+    ...(isUpload && {
+      onUploadProgress: (progress: TransferProgress) => listeners.forEach((l) => l.onUploadProgress?.(progress)),
+      onRetry: (attempt: number) => listeners.forEach((l) => l.onRetry?.(attempt)),
+    }),
+  })
     .then(
       (result) => {
         pendingKeys.delete(identity);
@@ -388,7 +537,7 @@ async function apiFetchMutation<T>(path: string, options: ApiFetchOptions): Prom
     .finally(() => {
       inFlightMutations.delete(identity);
     });
-  inFlightMutations.set(identity, promise);
+  inFlightMutations.set(identity, { promise, listeners });
   return promise;
 }
 
@@ -429,7 +578,11 @@ async function apiFetchUncached<T = unknown>(
       signal: fetchOptions.signal as any,
       withCredentials: fetchOptions.credentials === "include",
       responseType: "text",
-    }, isRetryableRequest(method, path));
+    }, isRetryableRequest(method, path), {
+      onUploadProgress: fetchOptions.onUploadProgress,
+      onRetry: fetchOptions.onRetry,
+      watchInactivity: typeof FormData !== "undefined" && fetchOptions.body instanceof FormData,
+    });
   } catch (err) {
     const ex = err as AxiosError;
     const apiError = ex.response ? buildApiError(ex.response.status, (ex.response.data as string) ?? "", ex.response.headers) : null;

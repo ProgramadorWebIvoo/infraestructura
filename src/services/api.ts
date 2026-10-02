@@ -26,13 +26,27 @@ import {
   apiFetch as sharedApiFetch,
   apiDownload as sharedApiDownload,
 } from "@ivoo/shared";
-import type { ApiFetchOptions, ApiDebugEvent } from "@ivoo/shared";
+import type { ApiFetchOptions as SharedApiFetchOptions, ApiDebugEvent } from "@ivoo/shared";
 import type { ProjectDocument } from "@/types";
 import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugStore";
 import { applyDebugNetworkProfile } from "./debugNetwork";
 import { prepareFormDataFiles } from "@/utils/fileUpload";
-export type { ApiFetchOptions } from "@ivoo/shared";
+export type { TransferProgress } from "@ivoo/shared";
+export { isRequestCanceled, REQUEST_TIMEOUT } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
+
+/**
+ * Fases de una subida: revisión/optimización de archivos en el navegador →
+ * envío de bytes → el servidor recibió todo y lo procesa (escáner, compresión).
+ * `processing` NO se puede cancelar de forma útil: el servidor puede terminar
+ * la operación igual.
+ */
+export type TransferPhase = "preparing" | "uploading" | "processing";
+
+export interface ApiFetchOptions extends SharedApiFetchOptions {
+  /** Solo subidas (FormData): informa en qué fase va. Pensado para `useFileTransfer`. */
+  onPhase?: (phase: TransferPhase) => void;
+}
 
 // ---------------------------------------------------------------------------
 // DEBUG-MODE: instrumentación de red
@@ -129,7 +143,7 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { token: _webIgnoresBearer, ...rest } = options;
+  const { token: _webIgnoresBearer, onPhase, ...rest } = options;
   const method = (options.method ?? "GET").toUpperCase();
   await applyDebugNetworkProfile(`${method} ${path}`, options.signal);
 
@@ -145,9 +159,29 @@ export async function apiFetch<T = unknown>(
 
   // Todo archivo que sube la app viaja en un FormData por este punto: se
   // normaliza/revisa/optimiza aquí para que ningún formulario pueda saltárselo.
-  const body = MUTATING_METHODS.has(method) && rest.body instanceof FormData ? await prepareFormDataFiles(rest.body) : rest.body;
+  const isUpload = MUTATING_METHODS.has(method) && rest.body instanceof FormData;
+  let body = rest.body;
+  let { onUploadProgress, onRetry } = rest;
 
-  return sharedApiFetch<T>(path, { ...rest, body, headers, credentials: "include" });
+  if (isUpload) {
+    onPhase?.("preparing");
+    body = await prepareFormDataFiles(rest.body as FormData);
+    onPhase?.("uploading");
+
+    if (onPhase) {
+      onUploadProgress = (progress) => {
+        rest.onUploadProgress?.(progress);
+        if (progress.total && progress.loaded >= progress.total) onPhase("processing");
+      };
+      // Un reintento automático vuelve a enviar los bytes desde cero.
+      onRetry = (attempt) => {
+        rest.onRetry?.(attempt);
+        onPhase("uploading");
+      };
+    }
+  }
+
+  return sharedApiFetch<T>(path, { ...rest, body, onUploadProgress, onRetry, headers, credentials: "include" });
 }
 
 export async function apiDownload(
