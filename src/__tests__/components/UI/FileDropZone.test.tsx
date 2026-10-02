@@ -9,6 +9,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import FileDropZone from "@/components/UI/FileDropZone";
 
+// Sin red: los límites del servidor no llegan, así que se usan los ajustes de la app por defecto.
+vi.mock("@/stores/uploadLimitsStore", () => ({
+  useUploadLimitsStore: (selector: (state: unknown) => unknown) => selector({ limits: null, load: () => Promise.resolve() }),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -446,6 +451,39 @@ describe("FileDropZone", () => {
 
     // Se llama con el mismo array (ningún archivo nuevo agregado)
     expect(onFilesChange).toHaveBeenCalledWith([file]);
+  });
+
+  it("avisa cuando el archivo ya está en la lista", () => {
+    const file = createFile("doc", 100, "application/pdf", ".pdf");
+
+    render(
+      <FileDropZone files={[file]} onFilesChange={onFilesChange} label="Docs" accept=".pdf" extensionsLabel="PDF" onFileRejected={onFileRejected} />
+    );
+
+    fireEvent.change(screen.getByTestId("file-input"), { target: { files: [file] } });
+
+    expect(onFileRejected).toHaveBeenCalledWith("doc.pdf", "Ya está en la lista.");
+  });
+
+  it("rechaza archivos vacíos (0 bytes)", () => {
+    const empty = createFile("vacio", 0, "application/pdf", ".pdf");
+
+    render(
+      <FileDropZone files={[]} onFilesChange={onFilesChange} label="Docs" accept=".pdf" extensionsLabel="PDF" onFileRejected={onFileRejected} />
+    );
+
+    fireEvent.change(screen.getByTestId("file-input"), { target: { files: [empty] } });
+
+    expect(onFileRejected).toHaveBeenCalledWith("vacio.pdf", expect.stringContaining("vacío"));
+    expect(onFilesChange).toHaveBeenCalledWith([]);
+  });
+
+  it("muestra el peso máximo por archivo antes de elegirlo", () => {
+    render(
+      <FileDropZone files={[]} onFilesChange={onFilesChange} label="Docs" accept=".pdf" extensionsLabel="PDF" maxSizeBytes={5 * 1024 * 1024} />
+    );
+
+    expect(screen.getByText("Máx. 5.0 MB por archivo")).toBeInTheDocument();
   });
 
   it("agrega archivos con mismo nombre pero diferente tamaño", () => {

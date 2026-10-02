@@ -15,6 +15,10 @@ vi.mock("@/hooks/useAppGroupSettings", () => ({
   useAppGroupSettings: () => ({ maxFileSizeBytes: 10 * 1024 * 1024 }),
 }));
 
+vi.mock("@/stores/uploadLimitsStore", () => ({
+  useUploadLimitsStore: (selector: (state: unknown) => unknown) => selector({ limits: null, load: () => Promise.resolve() }),
+}));
+
 afterEach(() => {
   vi.restoreAllMocks();
 });

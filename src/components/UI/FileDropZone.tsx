@@ -11,26 +11,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Upload, X } from "lucide-react";
 import { formatFileSize } from "@/utils";
 import { springs } from "@/animations";
-
-const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-
-/** Mapeo extensión → MIME types válidos para validación client-side. */
-const EXT_MIME_MAP: Record<string, string[]> = {
-  ".pdf":    ["application/pdf"],
-  ".dwg":    ["application/acad", "application/x-autocad", "image/vnd.dwg", "application/dwg"],
-  ".dxf":    ["application/dxf", "image/vnd.dxf", "application/x-autocad"],
-  ".png":    ["image/png"],
-  ".jpg":    ["image/jpeg"],
-  ".jpeg":   ["image/jpeg"],
-  ".svg":    ["image/svg+xml"],
-  ".xlsx":   ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
-  ".xls":    ["application/vnd.ms-excel"],
-  ".csv":    ["text/csv", "text/plain"],
-  ".ods":    ["application/vnd.oasis.opendocument.spreadsheet"],
-  ".numbers":["application/x-iwork-numbers-sffnumbers"],
-  ".tif":    ["image/tiff"],
-  ".tiff":   ["image/tiff"],
-};
+import { useFileValidation } from "@/hooks/useFileValidation";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 
 interface FileDropZoneProps {
   /** Archivos actualmente seleccionados */
@@ -61,7 +43,8 @@ interface FileDropZoneProps {
   requiredIndicator?: React.ReactNode;
   /** Texto de contador (ej. "planos adjuntos") */
   countLabel?: string;
-  /** Tamaño máximo en bytes (default: 10 MB). 0 = sin límite. */
+  /** Tamaño máximo en bytes por archivo. Sin valor usa el del servidor/ajustes de la app; siempre se
+   * acota al límite real del servidor. 0 = sin límite. */
   maxSizeBytes?: number;
   /** Cantidad máxima de archivos en total (existentes + nuevos). undefined/0 = sin límite. */
   maxFileCount?: number;
@@ -165,7 +148,7 @@ export default function FileDropZone({
   required = false,
   requiredIndicator,
   countLabel,
-  maxSizeBytes = DEFAULT_MAX_SIZE,
+  maxSizeBytes,
   maxFileCount,
   onFileRejected,
   compact = false,
@@ -189,56 +172,14 @@ export default function FileDropZone({
     [onFileRejected],
   );
 
+  // Siempre acotado al límite real del servidor; `0` explícito = sin validar tamaño.
+  const limits = useUploadLimits();
+  const effectiveMaxSize = maxSizeBytes === 0 ? 0 : Math.min(maxSizeBytes ?? Infinity, limits.maxFileSizeBytes);
+  const { validate } = useFileValidation({ accept, maxSizeBytes: effectiveMaxSize, maxFileCount, maxTotalBytes: limits.maxTotalBytes, onRejected: reject });
+
   const addFiles = useCallback(
-    (incoming: FileList) => {
-      const allowedExts = accept.split(",").map(e => e.trim().toLowerCase());
-      const existing = new Set(files.map(f => f.name + f.size));
-      const merged = [...files];
-
-      Array.from(incoming).forEach(f => {
-        const ext = "." + f.name.split(".").pop()?.toLowerCase();
-
-        // 1. Validar extensión contra accept
-        if (!allowedExts.some(a => a === ext)) {
-          reject(f.name, `Extensión "${ext}" no permitida. Extensiones aceptadas: ${accept}`);
-          return;
-        }
-
-        // 2. Validar tamaño máximo
-        if (maxSizeBytes > 0 && f.size > maxSizeBytes) {
-          const limit = formatFileSize(maxSizeBytes);
-          reject(f.name, `El archivo excede el límite de ${limit}.`);
-          return;
-        }
-
-        // 3. Validar MIME type si el browser lo reporta
-        if (f.type) {
-          const validMimes = EXT_MIME_MAP[ext];
-          if (validMimes && !validMimes.includes(f.type)) {
-            reject(f.name, `El tipo MIME "${f.type}" no coincide con la extensión "${ext}".`);
-            return;
-          }
-        }
-
-        // 4. Evitar duplicados
-        if (existing.has(f.name + f.size)) {
-          return;
-        }
-
-        // 5. Validar cantidad máxima (existentes + ya aceptados en este mismo
-        // drop) — se evalúa último para no rechazar por cupo un archivo que
-        // de todas formas iba a rechazarse por extensión/tamaño/MIME.
-        if (maxFileCount && merged.length >= maxFileCount) {
-          reject(f.name, `Se alcanzó el máximo de ${maxFileCount} archivo(s).`);
-          return;
-        }
-
-        merged.push(f);
-      });
-
-      onFilesChange(merged);
-    },
-    [files, onFilesChange, accept, maxSizeBytes, maxFileCount, reject],
+    (incoming: FileList) => onFilesChange(validate(Array.from(incoming), files)),
+    [files, onFilesChange, validate],
   );
 
   const removeFile = useCallback(
@@ -347,6 +288,9 @@ export default function FileDropZone({
               {icon ?? <Upload className="h-6 w-6 text-slate-400" />}
               <span className="text-[11px] font-bold text-slate-500">Arrastra o haz clic para adjuntar</span>
               <span className="text-[10px] text-slate-400 font-medium">{extensionsLabel}</span>
+              {effectiveMaxSize > 0 && (
+                <span className="text-[10px] text-slate-400 font-medium">Máx. {formatFileSize(effectiveMaxSize)} por archivo</span>
+              )}
             </>
           )}
           <input
