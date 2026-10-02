@@ -11,6 +11,10 @@ vi.mock("@/services/api", () => ({
   getApiBaseUrl: () => "http://api.test",
 }));
 vi.mock("@/components/UI/Toast", () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+// PhotoDropzone pide los límites de subida al montar; sin este mock esa petición consumiría las respuestas encadenadas de apiFetch.
+vi.mock("@/stores/uploadLimitsStore", () => ({
+  useUploadLimitsStore: (selector: (state: unknown) => unknown) => selector({ limits: null, load: () => Promise.resolve() }),
+}));
 
 const baseItem = { id: 1, name: "Tomacorriente", unit: "und", contractedQuantity: 12, executedQuantity: 12, unitPriceUsd: null, note: null };
 const photo = { id: 9, itemId: null, uploadedByType: "CONTRATISTA", originalName: "obra.jpg", path: "public/closures/tok/photos/9" };
