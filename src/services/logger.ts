@@ -10,6 +10,7 @@
  * simplemente no se emiten a ningún lado.
  */
 
+import { isRequestCanceled } from "@ivoo/shared";
 import { useDebugStore, pushDebugEntry, prepareForDebug, type DebugLevel } from "@/stores/debugStore";
 
 const PREFIX = "[IVOO]";
@@ -47,6 +48,8 @@ export function setErrorSink(sink: ErrorSink | null): void {
  * Útil en catch blocks donde `err` es `unknown`.
  */
 export function getErrorMessage(error: unknown, fallback = "Error inesperado."): string {
+  // Cancelar una subida no es un fallo: el mensaje técnico ("canceled") no sirve al usuario.
+  if (isRequestCanceled(error)) return "Envío cancelado.";
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   try {

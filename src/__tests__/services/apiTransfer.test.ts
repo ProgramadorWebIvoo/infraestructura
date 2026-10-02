@@ -17,6 +17,7 @@ vi.mock("axios", () => ({
 
 import { apiFetch, setApiBaseUrl, isRequestCanceled, REQUEST_TIMEOUT } from "@/services/api";
 import { ApiError, TRANSFER_INACTIVITY_MS, TRANSFER_PROCESSING_MS } from "@ivoo/shared";
+import { useTransferStore } from "@/stores/transferStore";
 
 const BASE_URL = "http://localhost:8000/api";
 const OK = { status: 200, data: JSON.stringify({ data: { ok: true } }), headers: {} };
@@ -166,6 +167,56 @@ describe("apiFetch — cancelación del usuario", () => {
     const error = (await result) as ApiError;
     expect(isRequestCanceled(error)).toBe(true);
     expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("apiFetch — registro en el dock de transferencias", () => {
+  beforeEach(() => useTransferStore.setState({ transfers: [] }));
+
+  it("registra la subida con su etiqueta y fase, y la quita al terminar", async () => {
+    let emit!: (e: { loaded: number; total: number }) => void;
+    let finish!: (value: unknown) => void;
+    mockRequest.mockImplementation((config: { onUploadProgress: typeof emit }) => {
+      emit = config.onUploadProgress;
+      return new Promise((resolve) => { finish = resolve; });
+    });
+
+    const result = apiFetch("/projects/1/documents", { method: "POST", body: upload("dock"), transferLabel: "Enviando plano" });
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    emit({ loaded: 30, total: 100 });
+
+    expect(useTransferStore.getState().transfers).toMatchObject([{ label: "Enviando plano", phase: "uploading", loaded: 30, total: 100 }]);
+
+    emit({ loaded: 100, total: 100 });
+    expect(useTransferStore.getState().transfers[0].phase).toBe("processing");
+
+    finish(OK);
+    await result;
+    expect(useTransferStore.getState().transfers).toEqual([]);
+  });
+
+  it("usa la etiqueta por defecto y limpia el dock también si la subida falla", async () => {
+    let during = "";
+    mockRequest.mockImplementation(async () => {
+      during = useTransferStore.getState().transfers[0]?.label ?? "";
+      throw { isAxiosError: true, response: { status: 422, data: JSON.stringify({ message: "Inválido" }) } };
+    });
+
+    await apiFetch("/projects/1/documents", { method: "POST", body: upload("falla") }).catch(() => undefined);
+
+    expect(during).toBe("Subiendo archivos");
+    expect(useTransferStore.getState().transfers).toEqual([]);
+  });
+
+  it("cancelar desde el dock aborta la subida como cancelación", async () => {
+    hangUntilAborted();
+
+    const result = apiFetch("/projects/1/documents", { method: "POST", body: upload("cancelable") }).catch((e: unknown) => e);
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    useTransferStore.getState().transfers[0].cancel();
+
+    expect(isRequestCanceled(await result)).toBe(true);
+    expect(useTransferStore.getState().transfers).toEqual([]);
   });
 });
 

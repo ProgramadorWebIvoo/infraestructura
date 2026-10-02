@@ -31,21 +31,19 @@ import type { ProjectDocument } from "@/types";
 import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugStore";
 import { applyDebugNetworkProfile } from "./debugNetwork";
 import { prepareFormDataFiles } from "@/utils/fileUpload";
+import type { TransferPhase } from "@/stores/transferStore";
+import { trackUpload } from "./transferTracking";
 export type { TransferProgress } from "@ivoo/shared";
 export { isRequestCanceled, REQUEST_TIMEOUT } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
-/**
- * Fases de una subida: revisión/optimización de archivos en el navegador →
- * envío de bytes → el servidor recibió todo y lo procesa (escáner, compresión).
- * `processing` NO se puede cancelar de forma útil: el servidor puede terminar
- * la operación igual.
- */
-export type TransferPhase = "preparing" | "uploading" | "processing";
+export type { TransferPhase };
 
 export interface ApiFetchOptions extends SharedApiFetchOptions {
-  /** Solo subidas (FormData): informa en qué fase va. Pensado para `useFileTransfer`. */
+  /** Solo subidas (FormData): informa en qué fase va (preparing → uploading → processing). */
   onPhase?: (phase: TransferPhase) => void;
+  /** Solo subidas: texto que ve el usuario en el dock de transferencias (por defecto "Subiendo archivos"). */
+  transferLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -143,7 +141,7 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { token: _webIgnoresBearer, onPhase, ...rest } = options;
+  const { token: _webIgnoresBearer, onPhase, transferLabel, ...rest } = options;
   const method = (options.method ?? "GET").toUpperCase();
   await applyDebugNetworkProfile(`${method} ${path}`, options.signal);
 
@@ -159,29 +157,35 @@ export async function apiFetch<T = unknown>(
 
   // Todo archivo que sube la app viaja en un FormData por este punto: se
   // normaliza/revisa/optimiza aquí para que ningún formulario pueda saltárselo.
-  const isUpload = MUTATING_METHODS.has(method) && rest.body instanceof FormData;
-  let body = rest.body;
-  let { onUploadProgress, onRetry } = rest;
-
-  if (isUpload) {
-    onPhase?.("preparing");
-    body = await prepareFormDataFiles(rest.body as FormData);
-    onPhase?.("uploading");
-
-    if (onPhase) {
-      onUploadProgress = (progress) => {
-        rest.onUploadProgress?.(progress);
-        if (progress.total && progress.loaded >= progress.total) onPhase("processing");
-      };
-      // Un reintento automático vuelve a enviar los bytes desde cero.
-      onRetry = (attempt) => {
-        rest.onRetry?.(attempt);
-        onPhase("uploading");
-      };
-    }
+  if (!(MUTATING_METHODS.has(method) && rest.body instanceof FormData)) {
+    return sharedApiFetch<T>(path, { ...rest, headers, credentials: "include" });
   }
 
-  return sharedApiFetch<T>(path, { ...rest, body, onUploadProgress, onRetry, headers, credentials: "include" });
+  // Subida: queda registrada en transferStore (TransferDock muestra fase,
+  // progreso y "Cancelar") sin que el caller tenga que hacer nada.
+  const tracked = trackUpload({ label: transferLabel, signal: rest.signal, onPhase, onUploadProgress: rest.onUploadProgress, onRetry: rest.onRetry });
+  try {
+    tracked.setPhase("preparing");
+    const body = await prepareFormDataFiles(rest.body);
+    tracked.throwIfCanceled();
+    tracked.setPhase("uploading");
+
+    return await sharedApiFetch<T>(path, {
+      ...rest,
+      body,
+      signal: tracked.signal,
+      onUploadProgress: (progress) => {
+        tracked.onUploadProgress(progress);
+        // Todo el cuerpo ya llegó: el servidor está procesándolo.
+        if (progress.total && progress.loaded >= progress.total) tracked.setPhase("processing");
+      },
+      onRetry: tracked.onRetry,
+      headers,
+      credentials: "include",
+    });
+  } finally {
+    tracked.finish();
+  }
 }
 
 export async function apiDownload(

@@ -8,6 +8,12 @@ describe("logger", () => {
   });
 
   describe("getErrorMessage", () => {
+    it("una cancelación del usuario se muestra como 'Envío cancelado.'", async () => {
+      const { getErrorMessage } = await import("@/services/logger");
+      expect(getErrorMessage(new DOMException("aborted", "AbortError"))).toBe("Envío cancelado.");
+      expect(getErrorMessage({ code: "ERR_CANCELED" })).toBe("Envío cancelado.");
+    });
+
     it("extrae el mensaje de una instancia de Error", async () => {
       const { getErrorMessage } = await import("@/services/logger");
       expect(getErrorMessage(new Error("boom"))).toBe("boom");

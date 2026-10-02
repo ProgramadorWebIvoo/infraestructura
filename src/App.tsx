@@ -21,6 +21,7 @@ const LoggingOutOverlay = lazy(() => import("./components/LoggingOutOverlay"));
 
 import Spinner from "./components/UI/Spinner";
 import { ToastProvider, useToast } from "./components/UI/Toast";
+import TransferDock from "./components/UI/TransferDock";
 import PublicRouteShell from "./routes/PublicRouteShell";
 import AccessDeniedView from "./routes/AccessDeniedView";
 import AuthenticatedRoutes from "./routes/AuthenticatedRoutes";
@@ -182,6 +183,8 @@ export default function App({ router: Router = BrowserRouter, ...routerProps }: 
               <AppRoutes />
             </AiFeatureGateProvider>
           </PublicSettingsProvider>
+          {/* Progreso y cancelar de TODA subida (también en las páginas públicas): lo alimenta apiFetch vía transferStore. */}
+          <TransferDock />
         </ToastProvider>
       </Router>
     </PersistQueryClientProvider>
