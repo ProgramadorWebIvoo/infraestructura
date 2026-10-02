@@ -10,12 +10,14 @@
  */
 
 import type { SettlementPayload } from "@/hooks/usePaymentSettlement";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { BookText, CheckCircle2, Hourglass, Wallet } from "lucide-react";
 import { ProjectStatus, type Project } from "@/types";
 import { SkeletonCard, SkeletonTable, SkeletonBlock } from "@/components/SkeletonLoader";
 import { containerVariants, itemVariants } from "@/animations";
+import AlertBanner from "@/components/UI/AlertBanner";
+import Button from "@/components/UI/Button";
 import KpiPill from "@/components/UI/KpiPill";
 import RateModeSwitch from "@/components/UI/RateModeSwitch";
 import Tabs from "@/components/UI/Tabs";
@@ -119,7 +121,20 @@ export default function FinanzasPanel({ projects, authToken = "", activeRole, on
   ]);
   useSyncActiveTab(visibleTabs, activeTab, setActiveTab);
 
+  // Al entrar, Finanzas debe caer donde hay trabajo pendiente y no en las
+  // estadísticas. Se decide una sola vez tras la carga: después manda el usuario.
+  const initialTabPicked = useRef(false);
+  useEffect(() => {
+    if (initialTabPicked.current || isLoading || isLoadingTabs) return;
+    initialTabPicked.current = true;
+    if (kpis.pendingAdvances > 0) setActiveTab("advances");
+    else if (kpis.pendingFinal > 0) setActiveTab("settlements");
+  }, [isLoading, isLoadingTabs, kpis.pendingAdvances, kpis.pendingFinal]);
+
   if (isLoading || isLoadingTabs) return <FinanzasSkeleton />;
+
+  const hasPending = kpis.pendingAdvances + kpis.pendingFinal > 0;
+  const canOpenTab = (key: TabKey) => visibleTabs.some(tab => tab.key === key);
 
   return (
     <motion.div className="flex min-h-0 flex-col gap-4" variants={containerVariants} initial="hidden" animate="visible">
@@ -136,6 +151,32 @@ export default function FinanzasPanel({ projects, authToken = "", activeRole, on
           tabs={visibleTabs}
         />
       </motion.div>
+
+      {/* Aviso de trabajo pendiente: lo primero que ve Finanzas al entrar, con
+          acceso directo a cada bandeja (los KPIs de abajo son solo contexto). */}
+      {hasPending && (
+        <motion.div variants={itemVariants} className="shrink-0">
+          <AlertBanner
+            type="action-required"
+            message={
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="font-bold">
+                  {[
+                    kpis.pendingAdvances > 0 && `${kpis.pendingAdvances} ${kpis.pendingAdvances === 1 ? "anticipo por liberar" : "anticipos por liberar"}`,
+                    kpis.pendingFinal > 0 && `${kpis.pendingFinal} ${kpis.pendingFinal === 1 ? "finiquito por liquidar" : "finiquitos por liquidar"}`,
+                  ].filter(Boolean).join(" y ")}
+                </span>
+                {kpis.pendingAdvances > 0 && canOpenTab("advances") && activeTab !== "advances" && (
+                  <Button variant="secondary" size="sm" onClick={() => setActiveTab("advances")}>Ver anticipos</Button>
+                )}
+                {kpis.pendingFinal > 0 && canOpenTab("settlements") && activeTab !== "settlements" && (
+                  <Button variant="secondary" size="sm" onClick={() => setActiveTab("settlements")}>Ver finiquitos</Button>
+                )}
+              </span>
+            }
+          />
+        </motion.div>
+      )}
 
       {/* KPIs operativos del departamento — contexto secundario compacto
           debajo de las tabs, no cards grandes compitiendo por atención. */}

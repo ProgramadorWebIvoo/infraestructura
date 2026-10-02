@@ -12,6 +12,39 @@ export function getReadyForFinanceCount(projects: Project[]): number {
   return projects.filter(p => p.status === ProjectStatus.APROBADO_PRESIDENCIA).length;
 }
 
+/** Advances and final settlements Finanzas still has to pay. */
+export function getPendingFinancePayments(projects: Project[]): { advances: number; settlements: number } {
+  return {
+    advances: projects.filter(p => p.status === ProjectStatus.CONTRATADO).length,
+    settlements: projects.filter(p => p.status === ProjectStatus.LISTO_PAGO_FINAL).length,
+  };
+}
+
+/** Awards waiting for Presidencia's approval ("Aprobaciones" tab). */
+export function getPendingPresidenciaCount(projects: Project[]): number {
+  return projects.filter(p => p.status === ProjectStatus.PENDIENTE_PRESIDENCIA).length;
+}
+
+/** Petitions rejected by Auditoría that Infraestructura must fix and resubmit ("Rechazadas" tab). */
+export function getRejectedPetitionsCount(projects: Project[]): number {
+  return projects.filter(p => p.status === ProjectStatus.RECHAZADO_AUDITORIA).length;
+}
+
+/** Sum of the Auditoría approval tabs: petition review, Procura re-evaluations and end-of-work audit. */
+export function getPendingAuditCount(projects: Project[]): number {
+  return projects.filter(
+    p =>
+      p.status === ProjectStatus.CREADO ||
+      p.status === ProjectStatus.EN_REEVALUACION_AUDITORIA ||
+      p.status === ProjectStatus.VERIFICANDO_FINALIZACION,
+  ).length;
+}
+
+/** Projects confirmed by Procura that Analistas still have to load proposals for. */
+export function getPendingProposalLoadCount(projects: Project[]): number {
+  return projects.filter(p => p.status === ProjectStatus.CONFIRMADO_PROCURA).length;
+}
+
 /**
  * Returns the count of projects that are pending action for a given role,
  * based on their current workflow status.

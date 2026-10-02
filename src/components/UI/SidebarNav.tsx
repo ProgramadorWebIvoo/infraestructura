@@ -44,7 +44,15 @@ import {
   SIDEBAR_FOCUS_RING,
 } from "./sidebarNavClasses";
 import { getUserInitials } from "@/utils";
-import { getReadyForFinanceCount } from "@/utils/workflowStatus";
+import SidebarCountBadge from "./SidebarCountBadge";
+import {
+  getPendingFinancePayments,
+  getPendingAuditCount,
+  getPendingPresidenciaCount,
+  getPendingProposalLoadCount,
+  getReadyForFinanceCount,
+  getRejectedPetitionsCount,
+} from "@/utils/workflowStatus";
 import type { Project } from "@/types";
 import { usePrefetchOnIntent } from "@/hooks/usePrefetchOnIntent";
 import { useMyPendingSignatures } from "@/hooks/useMyPendingSignatures";
@@ -82,6 +90,21 @@ function SidebarNav({
   // vista (p. ej. ADMIN) no deben ver un contador que no les toca atender.
   const readyForFinanceCount =
     activeRole === "PROCURA" && projects ? getReadyForFinanceCount(projects) : 0;
+
+  // Solo para Finanzas: anticipos por liberar + finiquitos por liquidar.
+  const pendingFinance =
+    activeRole === "FINANZAS" && projects ? getPendingFinancePayments(projects) : null;
+  const pendingFinanceCount = pendingFinance ? pendingFinance.advances + pendingFinance.settlements : 0;
+
+  // Mismo criterio por rol: cada contador solo aparece a quien le toca atenderlo.
+  const pendingPresidenciaCount =
+    activeRole === "PRESIDENCIA" && projects ? getPendingPresidenciaCount(projects) : 0;
+  const rejectedPetitionsCount =
+    activeRole === "INFRAESTRUCTURA" && projects ? getRejectedPetitionsCount(projects) : 0;
+  const pendingAuditCount =
+    activeRole === "AUDITORIA" && projects ? getPendingAuditCount(projects) : 0;
+  const pendingProposalLoadCount =
+    activeRole === "ANALISTA" && projects ? getPendingProposalLoadCount(projects) : 0;
 
   // Pre-fetch en hover/focus: un handler por ruta del sidebar (ver
   // usePrefetchOnIntent — debounced, respeta saveData/2G, no compite con la
@@ -295,7 +318,13 @@ function SidebarNav({
               >
                 {({ isActive }) => (
                   <>
-                    <TrendingUp className={sidebarIconClass(isActive)} />
+                    <span className="relative inline-flex">
+                      <TrendingUp className={sidebarIconClass(isActive)} />
+                      <SidebarCountBadge
+                        count={pendingPresidenciaCount}
+                        label={`${pendingPresidenciaCount} aprobaciones pendientes`}
+                      />
+                    </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Presidencia
                     </span>
@@ -343,7 +372,13 @@ function SidebarNav({
               >
                 {({ isActive }) => (
                   <>
-                    <Building2 className={sidebarIconClass(isActive)} />
+                    <span className="relative inline-flex">
+                      <Building2 className={sidebarIconClass(isActive)} />
+                      <SidebarCountBadge
+                        count={rejectedPetitionsCount}
+                        label={`${rejectedPetitionsCount} peticiones rechazadas por corregir`}
+                      />
+                    </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Infra / Mant
                     </span>
@@ -367,7 +402,13 @@ function SidebarNav({
               >
                 {({ isActive }) => (
                   <>
-                    <CheckSquare className={sidebarIconClass(isActive)} />
+                    <span className="relative inline-flex">
+                      <CheckSquare className={sidebarIconClass(isActive)} />
+                      <SidebarCountBadge
+                        count={pendingAuditCount}
+                        label={`${pendingAuditCount} expedientes pendientes de auditoría`}
+                      />
+                    </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Auditoría
                     </span>
@@ -417,14 +458,10 @@ function SidebarNav({
                   <>
                     <span className="relative inline-flex">
                       <FileSearch className={sidebarIconClass(isActive)} />
-                      {readyForFinanceCount > 0 && (
-                        <span
-                          aria-label={`${readyForFinanceCount} adjudicaciones listas para enviar a Finanzas`}
-                          className="absolute -top-1 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white ring-2 ring-white"
-                        >
-                          {readyForFinanceCount}
-                        </span>
-                      )}
+                      <SidebarCountBadge
+                        count={readyForFinanceCount}
+                        label={`${readyForFinanceCount} adjudicaciones listas para enviar a Finanzas`}
+                      />
                     </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Procura
@@ -449,7 +486,13 @@ function SidebarNav({
               >
                 {({ isActive }) => (
                   <>
-                    <Users className={sidebarIconClass(isActive)} />
+                    <span className="relative inline-flex">
+                      <Users className={sidebarIconClass(isActive)} />
+                      <SidebarCountBadge
+                        count={pendingProposalLoadCount}
+                        label={`${pendingProposalLoadCount} proyectos pendientes de carga de propuestas`}
+                      />
+                    </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Analistas
                     </span>
@@ -473,7 +516,13 @@ function SidebarNav({
               >
                 {({ isActive }) => (
                   <>
-                    <DollarSign className={sidebarIconClass(isActive)} />
+                    <span className="relative inline-flex">
+                      <DollarSign className={sidebarIconClass(isActive)} />
+                      <SidebarCountBadge
+                        count={pendingFinanceCount}
+                        label={`${pendingFinanceCount} pagos pendientes por procesar`}
+                      />
+                    </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Finanzas
                     </span>
@@ -526,11 +575,7 @@ function SidebarNav({
                   <>
                     <span className="relative inline-flex">
                       <FileSignature className={sidebarIconClass(isActive)} />
-                      {pendingSignatureOrders.length > 0 && (
-                        <span className="absolute -top-1 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
-                          {pendingSignatureOrders.length}
-                        </span>
-                      )}
+                      <SidebarCountBadge count={pendingSignatureOrders.length} />
                     </span>
                     <span className={sidebarTextClass(effectiveCollapsed)}>
                       Firmas Pendientes

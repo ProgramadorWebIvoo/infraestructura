@@ -170,6 +170,24 @@ describe("FinanzasPanel", () => {
     expect(within(tablist).getByRole("tab", { name: /Estadisticas/ })).toHaveAttribute("aria-selected", "false");
   });
 
+  it("abre en la tab con pendientes y avisa con un banner, sin banner si no hay nada pendiente", () => {
+    const { unmount } = renderPanel(
+      <FinanzasPanel
+        projects={[makeProject({ id: "PRJ-1", status: ProjectStatus.LISTO_PAGO_FINAL })]}
+        onPayAdvance={noop}
+        onPayFinal={noop}
+      />,
+    );
+
+    const tablist = screen.getByRole("tablist", { name: "Secciones de Finanzas" });
+    expect(within(tablist).getByRole("tab", { name: /Finiquitos/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("1 finiquito por liquidar")).toBeInTheDocument();
+    unmount();
+
+    renderPanel(<FinanzasPanel projects={[]} onPayAdvance={noop} onPayFinal={noop} />);
+    expect(screen.queryByText(/por liquidar|por liberar$/)).not.toBeInTheDocument();
+  });
+
   it("muestra el contenido de 'Estadisticas' (Ejecución Financiera) sin quedar invisible por herencia de animación rota bajo TabPanel", async () => {
     const projects = [makeProject({ status: ProjectStatus.COMPLETADO_PAGADO })];
     renderPanel(<FinanzasPanel projects={projects} onPayAdvance={noop} onPayFinal={noop} />);
