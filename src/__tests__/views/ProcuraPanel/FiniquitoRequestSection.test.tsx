@@ -62,8 +62,9 @@ describe("FiniquitoRequestSection", () => {
 
     const summary = await screen.findByTestId("closure-final-quantities");
     expect(summary).toHaveTextContent("1 de 2 ajustadas");
-    expect(summary).toHaveTextContent("Cable: 90/100 m");
-    expect(summary).toHaveTextContent("Tomacorriente: 12/12 und");
+    // Solo se listan las partidas ajustadas (nombre y cantidad van en spans separados); las completas no.
+    expect(summary).toHaveTextContent("Cable90/100 m (-10)");
+    expect(summary).not.toHaveTextContent("Tomacorriente");
   });
 
   it("solicita el pago del finiquito", async () => {

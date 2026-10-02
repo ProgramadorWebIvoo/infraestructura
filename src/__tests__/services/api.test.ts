@@ -357,6 +357,8 @@ describe("apiFetch", () => {
     const p1 = apiFetch("/dedup-test");
     const p2 = apiFetch("/dedup-test");
 
+    // apiFetch espera el perfil de red de DEBUG-MODE antes de llamar a axios: hay que esperar a que la petición salga.
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
     resolveRequest({ status: 200, data: JSON.stringify({ data: { id: 1 } }), headers: {} });
 
     const [r1, r2] = await Promise.all([p1, p2]);

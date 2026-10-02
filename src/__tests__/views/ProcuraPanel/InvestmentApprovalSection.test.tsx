@@ -280,7 +280,7 @@ describe("InvestmentApprovalSection — retroalimentación de la evaluación IA 
       expect(screen.getByText("Sugerido por IA (referencial)")).toBeInTheDocument();
       // El campo sigue precargado con el estimado de Auditoría (500),
       // no con el monto sugerido por IA (4800) — nunca se autocompleta.
-      expect(document.getElementById("procura-approved-amount")).toHaveValue(500);
+      expect(document.getElementById("procura-approved-amount")).toHaveValue("500"); // NumericInput con separador de miles es un input de texto
     } finally {
       restoreSize();
       restoreRO();

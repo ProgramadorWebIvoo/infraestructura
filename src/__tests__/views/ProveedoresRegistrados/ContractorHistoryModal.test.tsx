@@ -45,7 +45,8 @@ const history: ContractorHistory = {
   },
 };
 
-vi.mock("@/services/api", () => ({ apiFetch: vi.fn().mockResolvedValue(history) }));
+// `history` se lee al llamar, no al evaluar la fábrica: vi.mock se iza sobre los imports y `history` aún no existe.
+vi.mock("@/services/api", () => ({ apiFetch: vi.fn(() => Promise.resolve(history)) }));
 
 const contractor = { code: "CON-1", name: "Proveedor", rating: 4 } as unknown as Contractor;
 const dataRows = (name: string) => within(screen.getByRole("table", { name })).getAllByRole("row").length - 1;

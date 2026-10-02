@@ -24,7 +24,7 @@ describe("buildSearchMatcher — texto plano", () => {
 
 describe("buildSearchMatcher — regex", () => {
   it("aplica la expresión (insensible a mayúsculas) y es repetible (sin lastIndex)", () => {
-    const { matches, error } = buildSearchMatcher("^(get|post) /pro\w+", true);
+    const { matches, error } = buildSearchMatcher(String.raw`^(get|post) /pro\w+`, true);
     expect(error).toBeNull();
     expect(matches(entry("get /projects"))).toBe(true);
     expect(matches(entry("get /projects"))).toBe(true);
