@@ -10,7 +10,8 @@
  * simplemente no se emiten a ningún lado.
  */
 
-import { isRequestCanceled } from "@ivoo/shared";
+// Subruta (no el barrel): el barrel de @ivoo/shared carga axios y el cliente HTTP completo.
+import { isRequestCanceled } from "@ivoo/shared/cancel";
 import { useDebugStore, pushDebugEntry, prepareForDebug, type DebugLevel } from "@/stores/debugStore";
 
 const PREFIX = "[IVOO]";

@@ -13,6 +13,7 @@
 // ---------------------------------------------------------------------------
 import axios, { AxiosInstance, AxiosError } from "axios";
 import { delay, generateIdempotencyKey } from "./utils";
+import { canceledError, isRequestCanceled } from "./cancel";
 
 const http: AxiosInstance = axios.create();
 
@@ -109,15 +110,7 @@ export const TRANSFER_INACTIVITY_MS = 60_000;
 export const TRANSFER_PROCESSING_MS = 5 * 60_000;
 export const REQUEST_TIMEOUT = "REQUEST_TIMEOUT";
 
-/** ¿El error es una cancelación pedida por el usuario (AbortController)? No es un fallo: no se muestra como error. */
-export function isRequestCanceled(err: unknown): boolean {
-  const e = err as { code?: string; name?: string } | null;
-  return e?.code === "ERR_CANCELED" || e?.name === "CanceledError" || e?.name === "AbortError";
-}
-
-function canceledError(): Error {
-  return Object.assign(new Error("Operación cancelada."), { name: "CanceledError", code: "ERR_CANCELED" });
-}
+export { isRequestCanceled };
 
 // ---------------------------------------------------------------------------
 // Dedup de GETs concurrentes
