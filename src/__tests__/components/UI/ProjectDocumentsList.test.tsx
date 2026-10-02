@@ -192,6 +192,26 @@ describe("ProjectDocumentsList", () => {
       expect(onRequestNewVersion).toHaveBeenCalledWith(doc, file);
     });
 
+    it("rechaza una nueva versión con extensión no permitida o vacía y no dispara onRequestNewVersion", () => {
+      const onRequestNewVersion = vi.fn();
+      render(
+        <ProjectDocumentsList
+          project={makeProject([makeDoc({ id: 5 })])}
+          onDownload={vi.fn()}
+          onPreview={vi.fn()}
+          mode="manage"
+          onRequestNewVersion={onRequestNewVersion}
+        />,
+      );
+
+      fireEvent.click(screen.getByLabelText("Subir nueva versión"));
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [new File(["x"], "virus.exe", { type: "application/x-msdownload" })] } });
+      fireEvent.change(input, { target: { files: [new File([], "vacio.pdf", { type: "application/pdf" })] } });
+
+      expect(onRequestNewVersion).not.toHaveBeenCalled();
+    });
+
     it("muestra el chip 'Nueva versión lista' cuando pendingReplacementFor devuelve un archivo, con opción de quitar", () => {
       const onClearReplacement = vi.fn();
       const pendingFile = new File(["x"], "reemplazo.pdf");

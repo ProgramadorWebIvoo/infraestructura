@@ -21,7 +21,8 @@ import { useToast } from "@/components/UI/Toast";
 import { useContractorDocumentTypes } from "@/hooks/useContractorDocumentTypes";
 import { getErrorMessage, logError } from "@/services/logger";
 import { formatFileSize } from "@/utils";
-import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
+import { useFileValidation } from "@/hooks/useFileValidation";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 import {
   CONTRACTOR_DOCUMENT_ACCEPT,
   canManageContractorDocuments,
@@ -52,7 +53,12 @@ interface DocumentRow {
 
 export default function ContractorDocumentsSection({ contractorCode, authToken, activeRole, readOnly = false }: ContractorDocumentsSectionProps) {
   const { showToast } = useToast();
-  const { maxFileSizeBytes } = useAppGroupSettings();
+  const { maxFileSizeBytes } = useUploadLimits();
+  const { validate } = useFileValidation({
+    accept: CONTRACTOR_DOCUMENT_ACCEPT,
+    maxSizeBytes: maxFileSizeBytes,
+    onRejected: (name, reason) => showToast(`«${name}»: ${reason}`, "warning"),
+  });
   const { types } = useContractorDocumentTypes();
   const canManage = !readOnly && canManageContractorDocuments(activeRole);
   const [documents, setDocuments] = useState<ContractorDocument[]>([]);
@@ -109,13 +115,11 @@ export default function ContractorDocumentsSection({ contractorCode, authToken, 
     fileInputRef.current?.click();
   };
 
-  const handleFileChosen = async (file: File | undefined) => {
+  const handleFileChosen = async (chosen: File | undefined) => {
     const typeId = uploadTypeRef.current;
-    if (!file || typeId === null) return;
-    if (file.size > maxFileSizeBytes) {
-      showToast(`El archivo supera el tamaño máximo permitido (${formatFileSize(maxFileSizeBytes)}).`, "warning");
-      return;
-    }
+    if (!chosen || typeId === null) return;
+    const [file] = validate([chosen]);
+    if (!file) return;
     setBusyTypeId(typeId);
     try {
       await uploadContractorDocument(contractorCode, typeId, file, authToken);

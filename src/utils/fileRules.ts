@@ -33,7 +33,7 @@ export const EXT_MIME_MAP: Record<string, string[]> = {
 };
 
 export interface FileRules {
-  /** Extensiones aceptadas, formato `.ext` separadas por coma (igual que el atributo `accept`). */
+  /** Extensiones aceptadas, formato `.ext` separadas por coma (igual que el atributo `accept`). Vacío = cualquiera. */
   accept: string;
   /** Peso máximo por archivo en bytes. `0`/`undefined` = sin límite. */
   maxSizeBytes?: number;
@@ -75,7 +75,7 @@ function totalBytes(files: File[]): number {
  * no consume cupo.
  */
 export function validateFiles(incoming: File[], existing: File[], rules: FileRules): FileValidationResult {
-  const allowedExts = rules.accept.split(",").map(e => e.trim().toLowerCase());
+  const allowedExts = rules.accept.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
   const known = new Set(existing.map(fileKey));
   const merged = [...existing];
   const rejected: FileRejection[] = [];
@@ -86,7 +86,7 @@ export function validateFiles(incoming: File[], existing: File[], rules: FileRul
   for (const file of incoming) {
     const ext = extensionOf(file.name);
 
-    if (!allowedExts.includes(ext)) {
+    if (allowedExts.length > 0 && !allowedExts.includes(ext)) {
       reject(file, `Extensión "${ext}" no permitida. Extensiones aceptadas: ${rules.accept}`);
       continue;
     }

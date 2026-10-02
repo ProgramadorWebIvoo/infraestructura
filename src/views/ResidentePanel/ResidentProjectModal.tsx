@@ -17,7 +17,7 @@ import {
 } from "@/components/ClosureReport/closureMeasurements";
 import { getErrorMessage } from "@/services/logger";
 import type { ResidentDocument, ResidentProject, useResidentProjects } from "@/hooks/useResidentProjects";
-import { hasResidentPhoto, toClosureReport, validateResidentPhoto } from "./residentRules";
+import { hasResidentPhoto, toClosureReport } from "./residentRules";
 
 type ResidentActions = ReturnType<typeof useResidentProjects>;
 
@@ -88,12 +88,8 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
   const handleFiles = async (files: File[]) => {
     if (!project) return;
     setIsUploading(true);
+    // La validación (tipo, tamaño, vacío, duplicado) ya la hizo PhotoDropzone antes de llegar aquí.
     for (const file of files) {
-      const problem = validateResidentPhoto(file);
-      if (problem) {
-        showToast(problem, "error");
-        continue;
-      }
       try {
         await actions.uploadPhoto(project.id, file);
       } catch (error) {
@@ -166,6 +162,7 @@ export default function ResidentProjectModal({ project, authToken, actions, onCl
               onPreview={(photo) => setPreview(photo)}
               isUploading={isUploading}
               onFiles={handleFiles}
+              onFileRejected={(name, reason) => showToast(`«${name}»: ${reason}`, "error")}
               onDelete={(photo) => project && actions.deletePhoto(project.id, photo.id).catch((error) => showToast(getErrorMessage(error, "No se pudo eliminar la foto."), "error"))}
             />
             {needsPhoto && <p className="text-[11px] text-amber-700">Adjunte al menos una foto de verificación para enviar su informe.</p>}

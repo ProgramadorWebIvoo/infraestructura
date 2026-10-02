@@ -2,7 +2,11 @@ import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { getApiBaseUrl } from "@/services/api";
-import { CLOSURE_PHOTO_MIMES, type ClosureReportPhoto } from "@/components/ClosureReport/types";
+import { CLOSURE_PHOTO_MAX_BYTES, CLOSURE_PHOTO_MIMES, type ClosureReportPhoto } from "@/components/ClosureReport/types";
+import { useFileValidation } from "@/hooks/useFileValidation";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
+
+const PHOTO_ACCEPT = ".jpg,.jpeg,.png,.webp";
 
 interface PhotoDropzoneProps {
   photos: ClosureReportPhoto[];
@@ -10,7 +14,10 @@ interface PhotoDropzoneProps {
   /** Permite borrar fotos (por defecto sí cuando es editable). */
   canDelete?: boolean;
   isUploading: boolean;
+  /** Recibe solo las fotos que pasaron la validación (extensión, vacío, tamaño, MIME, duplicado, peso total). */
   onFiles: (files: File[]) => void;
+  /** Cada foto rechazada con su motivo — el padre decide cómo mostrarlo (toast). */
+  onFileRejected?: (fileName: string, reason: string) => void;
   onDelete: (photo: ClosureReportPhoto) => void;
   /** "dark" (portal público del proveedor) o "light" (módulos internos). */
   theme?: "dark" | "light";
@@ -44,16 +51,28 @@ const THEMES = {
 } as const;
 
 /** Zona de arrastre + miniaturas de las fotos de evidencia (JPG/PNG/WEBP, máx. 5 MB c/u). */
-export default function PhotoDropzone({ photos, editable, canDelete = true, isUploading, onFiles, onDelete, theme = "dark", onPreview }: PhotoDropzoneProps) {
+export default function PhotoDropzone({ photos, editable, canDelete = true, isUploading, onFiles, onFileRejected, onDelete, theme = "dark", onPreview }: PhotoDropzoneProps) {
   const t = THEMES[theme];
   const reduceMotion = useReducedMotion();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const limits = useUploadLimits();
+  const { validate } = useFileValidation({
+    accept: PHOTO_ACCEPT,
+    maxSizeBytes: Math.min(CLOSURE_PHOTO_MAX_BYTES, limits.maxFileSizeBytes),
+    maxTotalBytes: limits.maxTotalBytes,
+    onRejected: onFileRejected,
+  });
+
+  const submit = (incoming: File[]) => {
+    const valid = validate(incoming);
+    if (valid.length) onFiles(valid);
+  };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (files.length) onFiles(files);
+    if (files.length) submit(files);
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
@@ -61,7 +80,7 @@ export default function PhotoDropzone({ photos, editable, canDelete = true, isUp
     setIsDragging(false);
     if (!editable || isUploading) return;
     const files = Array.from(event.dataTransfer.files);
-    if (files.length) onFiles(files);
+    if (files.length) submit(files);
   };
 
   return (

@@ -8,15 +8,28 @@ import { Camera, Loader2, X } from "lucide-react";
 import { apiFetch, getApiBaseUrl } from "@/services/api";
 import { getErrorMessage } from "@/services/logger";
 import { useToast } from "@/components/UI/Toast";
+import { useFileValidation } from "@/hooks/useFileValidation";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 import type { ItemRow } from "@/views/PropuestaMaterialesPublica/types";
+
+const IMAGE_ACCEPT = ".png,.jpg,.jpeg,.webp";
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 /** Subida + preview de imagen del material — opcional, con estado de carga propio. */
 export default function ImageUploader({ token, item, onUploaded }: { token: string; item: ItemRow; onUploaded: (path: string | null) => void }) {
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
+  const limits = useUploadLimits();
+  const { validate } = useFileValidation({
+    accept: IMAGE_ACCEPT,
+    maxSizeBytes: Math.min(IMAGE_MAX_BYTES, limits.maxFileSizeBytes),
+    onRejected: (name, reason) => showToast(`«${name}»: ${reason}`, "warning"),
+  });
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (chosen: File) => {
+    const [file] = validate([chosen]);
+    if (!file) return;
     setIsUploading(true);
     try {
       const form = new FormData();

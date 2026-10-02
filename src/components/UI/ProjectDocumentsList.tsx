@@ -21,8 +21,8 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, Download, Eye, FileSpreadsheet, Image as ImageIcon, Map, RefreshCw, Undo2, X } from "lucide-react";
 import type { AuditLog, Project, ProjectDocument } from "@/types";
-import { formatFileSize } from "@/utils";
-import { useAppGroupSettings } from "@/hooks/useAppGroupSettings";
+import { useFileValidation } from "@/hooks/useFileValidation";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 import { useToast } from "./Toast";
 import Tooltip from "./Tooltip";
 import { SEMANTIC_COLOR_MAP, type SemanticColor } from "./colorTokens";
@@ -163,7 +163,12 @@ function DocumentGroupRow({
   onClearReplacement?: () => void;
 }) {
   const { showToast } = useToast();
-  const { maxFileSizeBytes } = useAppGroupSettings();
+  const { maxFileSizeBytes } = useUploadLimits();
+  const { validate } = useFileValidation({
+    accept: accept ?? "",
+    maxSizeBytes: maxFileSizeBytes,
+    onRejected: (name, reason) => showToast(`«${name}»: ${reason}`, "warning"),
+  });
   const [expanded, setExpanded] = useState(false);
   const newVersionInputRef = useRef<HTMLInputElement>(null);
   const canRequestNewVersion = mode === "manage" && !isGroupDeleted && !isMarkedForDeletion && !!onRequestNewVersion;
@@ -258,13 +263,10 @@ function DocumentGroupRow({
           accept={accept}
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file && file.size > maxFileSizeBytes) {
-              showToast(`«${file.name}» excede el límite de ${formatFileSize(maxFileSizeBytes)}.`, "warning");
-            } else if (file) {
-              onRequestNewVersion!(current, file);
-            }
+            const chosen = e.target.files?.[0];
             e.target.value = "";
+            const [file] = chosen ? validate([chosen]) : [];
+            if (file) onRequestNewVersion!(current, file);
           }}
         />
       )}

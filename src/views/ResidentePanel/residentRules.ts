@@ -1,4 +1,4 @@
-import { CLOSURE_PHOTO_MAX_BYTES, CLOSURE_PHOTO_MIMES, type ClosureReport } from "@/components/ClosureReport/types";
+import type { ClosureReport } from "@/components/ClosureReport/types";
 import type { ResidentProject } from "@/hooks/useResidentProjects";
 
 /** Obras pendientes de su informe primero; el resto conserva el orden del backend. */
@@ -23,13 +23,6 @@ export function filterResidentProjects(projects: ResidentProject[], query: strin
       (filter === "ALL" || reportState(p) === filter) &&
       (!q || p.title.toLowerCase().includes(q) || p.id.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)),
   );
-}
-
-/** Mensaje de error de una foto de verificación, o null si es válida. */
-export function validateResidentPhoto(file: Pick<File, "name" | "type" | "size">): string | null {
-  if (!CLOSURE_PHOTO_MIMES.includes(file.type)) return `«${file.name}»: solo se permiten imágenes JPG, PNG o WEBP.`;
-  if (file.size > CLOSURE_PHOTO_MAX_BYTES) return `«${file.name}»: la imagen debe pesar máximo 5 MB.`;
-  return null;
 }
 
 export function hasResidentPhoto(project: ResidentProject): boolean {

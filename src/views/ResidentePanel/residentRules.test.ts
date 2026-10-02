@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ResidentProject } from "@/hooks/useResidentProjects";
-import { filterResidentProjects, hasResidentPhoto, reportState, sortPendingFirst, toClosureReport, validateResidentPhoto } from "./residentRules";
+import { filterResidentProjects, hasResidentPhoto, reportState, sortPendingFirst, toClosureReport } from "./residentRules";
 
 const project = (id: string, pendingAction: boolean, photos: ResidentProject["closure"] extends infer C ? any : never = []): ResidentProject => ({
   id, title: id, location: "L", description: null, status: "INFORME_ENVIADO", pendingAction,
@@ -30,12 +30,6 @@ describe("residentRules", () => {
     expect(filterResidentProjects(list, "", "ENVIADO").map((p) => p.id)).toEqual(["PRJ-002"]);
     expect(filterResidentProjects(list, "planta", "PENDIENTE")).toEqual([]);
     expect(filterResidentProjects(list, "  ", "ALL")).toHaveLength(3);
-  });
-
-  it("valida tipo y tamaño de la foto", () => {
-    expect(validateResidentPhoto({ name: "a.jpg", type: "image/jpeg", size: 100 })).toBeNull();
-    expect(validateResidentPhoto({ name: "a.pdf", type: "application/pdf", size: 100 })).toMatch(/JPG, PNG o WEBP/);
-    expect(validateResidentPhoto({ name: "a.png", type: "image/png", size: 6 * 1024 * 1024 })).toMatch(/5 MB/);
   });
 
   it("exige foto del residente y no cuenta las del proveedor", () => {

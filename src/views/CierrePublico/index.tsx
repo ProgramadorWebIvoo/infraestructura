@@ -22,8 +22,6 @@ import ClosureItemCards from "./components/ClosureItemCards";
 import PhotoDropzone from "./components/PhotoDropzone";
 import ClosureFilePreview, { type ClosurePreviewTarget } from "@/components/ClosureReport/ClosureFilePreview";
 import {
-  CLOSURE_PHOTO_MAX_BYTES,
-  CLOSURE_PHOTO_MIMES,
   isClosureEditable,
   validateClosureItem,
   type ClosureReportItem,
@@ -74,16 +72,8 @@ export default function CierrePublico() {
     [],
   );
 
+  // La validación (tipo, tamaño, vacío, duplicado) ya la hizo PhotoDropzone antes de llegar aquí.
   const uploadOne = async (file: File): Promise<boolean> => {
-    if (!CLOSURE_PHOTO_MIMES.includes(file.type)) {
-      showToast(`«${file.name}»: solo se permiten imágenes JPG, PNG o WEBP.`, "error");
-      return false;
-    }
-    if (file.size > CLOSURE_PHOTO_MAX_BYTES) {
-      showToast(`«${file.name}»: la imagen debe pesar máximo 5 MB.`, "error");
-      return false;
-    }
-
     const form = new FormData();
     form.append("image", file);
     try {
@@ -275,7 +265,7 @@ export default function CierrePublico() {
                 <h3 id="closure-photos-title" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
                   Fotos de evidencia (mínimo 1)
                 </h3>
-                <PhotoDropzone photos={photos} editable={editable} isUploading={isUploading} onFiles={(files) => void handleFiles(files)} onDelete={(p) => void handleDelete(p.id)} onPreview={setPreview} />
+                <PhotoDropzone photos={photos} editable={editable} isUploading={isUploading} onFiles={(files) => void handleFiles(files)} onFileRejected={(name, reason) => showToast(`«${name}»: ${reason}`, "error")}onDelete={(p) => void handleDelete(p.id)} onPreview={setPreview} />
               </motion.section>
 
               {editable && (

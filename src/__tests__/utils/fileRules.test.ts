@@ -79,6 +79,14 @@ describe("fileRules", () => {
     expect(rejected[0].reason).toContain("por envío");
   });
 
+  it("un accept vacío acepta cualquier extensión (y sigue validando el resto)", () => {
+    const { merged, rejected } = validateFiles([makeFile("a.xyz", 10, ""), makeFile("vacio.xyz", 0, "")], [], { accept: "" });
+
+    expect(merged.map(f => f.name)).toEqual(["a.xyz"]);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0].reason).toContain("vacío");
+  });
+
   it("0 o undefined en los límites significa sin límite", () => {
     const { merged, rejected } = validateFiles([makeFile("a.pdf", 50 * MB)], [], { accept: ".pdf", maxSizeBytes: 0, maxFileCount: 0, maxTotalBytes: 0 });
 
