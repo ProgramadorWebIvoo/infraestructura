@@ -151,7 +151,7 @@ describe("useProjectsWorkflows", () => {
       await result.current.handleAddProject(basePayload, { photos: [new File(["a"], "foto.jpg")], documents: [], plans: [] });
 
       expect(syncProject).toHaveBeenCalledWith(newProject);
-      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("2 imagen(es) optimizada(s)"), "info");
+      expect(showToast).toHaveBeenCalledWith(expect.stringContaining("2 archivo(s) optimizado(s)"), "info");
     });
   });
 

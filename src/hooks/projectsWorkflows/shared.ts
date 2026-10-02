@@ -73,7 +73,7 @@ export function useWorkflowContext(options: UseProjectsWorkflowsOptions): Workfl
 /** Archivos por campo de la petición (`photos`, `documents`, `plans`, `files`…). */
 export type AttachmentFiles = Record<string, File[]>;
 
-/** Respuesta de los procesos que adjuntan archivos: el proyecto + cuántas imágenes optimizó el backend. */
+/** Respuesta de los procesos que adjuntan archivos: el proyecto + cuántos archivos optimizó/normalizó el backend. */
 export type ProjectWithAttachments = Project & { optimizedCount?: number };
 
 /**
@@ -103,13 +103,13 @@ export function buildProcessBody(
 }
 
 /**
- * Separa el proyecto del contador de imágenes optimizadas (no es un campo de
+ * Separa el proyecto del contador de archivos optimizados (no es un campo de
  * `Project`: no debe quedar en el estado) y, si hubo, avisa al usuario.
  */
 export function settleAttachments(show: ShowToast, result: ProjectWithAttachments): Project {
   const { optimizedCount = 0, ...project } = result;
   if (optimizedCount > 0) {
-    show(`${optimizedCount} imagen(es) optimizada(s) automáticamente antes de guardarse.`, "info");
+    show(`${optimizedCount} archivo(s) optimizado(s) o normalizado(s) automáticamente antes de guardarse.`, "info");
   }
   return project as Project;
 }

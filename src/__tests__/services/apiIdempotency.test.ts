@@ -342,7 +342,7 @@ describe("identidad de la operación (doble clic y reintento manual)", () => {
   it("FormData: los mismos archivos son la misma operación; otro archivo, otra", async () => {
     const form = (content: string) => {
       const data = new FormData();
-      data.append("files[]", new File([content], "comprobante.pdf", { type: "application/pdf", lastModified: 1 }));
+      data.append("files[]", new File(["%PDF-1.4 " + content], "comprobante.pdf", { type: "application/pdf", lastModified: 1 }));
       return data;
     };
     let resolve!: (value: unknown) => void;
@@ -351,6 +351,8 @@ describe("identidad de la operación (doble clic y reintento manual)", () => {
     const a = apiFetch("/projects/P1/documents", { method: "POST", body: form("AAAA") });
     const b = apiFetch("/projects/P1/documents", { method: "POST", body: form("AAAA") });
     const c = apiFetch("/projects/P1/documents", { method: "POST", body: form("BBBBBB") });
+    // Los archivos se preparan (async) antes de llegar a la red: se espera a que ambas operaciones estén en vuelo.
+    await vi.waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(2));
     resolve(ok());
     await Promise.all([a, b, c]);
 

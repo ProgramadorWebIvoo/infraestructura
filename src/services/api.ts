@@ -30,6 +30,7 @@ import type { ApiFetchOptions, ApiDebugEvent } from "@ivoo/shared";
 import type { ProjectDocument } from "@/types";
 import { pushDebugEntry, prepareForDebug, useDebugStore } from "@/stores/debugStore";
 import { applyDebugNetworkProfile } from "./debugNetwork";
+import { prepareFormDataFiles } from "@/utils/fileUpload";
 export type { ApiFetchOptions } from "@ivoo/shared";
 export { setApiBaseUrl, setTokenRefreshHandler, getApiBaseUrl };
 
@@ -142,7 +143,11 @@ export async function apiFetch<T = unknown>(
     if (csrfToken) headers["X-XSRF-TOKEN"] = csrfToken;
   }
 
-  return sharedApiFetch<T>(path, { ...rest, headers, credentials: "include" });
+  // Todo archivo que sube la app viaja en un FormData por este punto: se
+  // normaliza/revisa/optimiza aquí para que ningún formulario pueda saltárselo.
+  const body = MUTATING_METHODS.has(method) && rest.body instanceof FormData ? await prepareFormDataFiles(rest.body) : rest.body;
+
+  return sharedApiFetch<T>(path, { ...rest, body, headers, credentials: "include" });
 }
 
 export async function apiDownload(
